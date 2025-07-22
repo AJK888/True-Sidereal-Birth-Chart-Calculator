@@ -38,7 +38,7 @@
       try {
         const locationInput = form.querySelector("[name='location']").value;
         const geoUrl = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(locationInput)}&key=122d238a65bc443297d6144ba105975d`;
-        const geoRes = await fetch(AJK888.pythonanywhere.com);
+        const geoRes = await fetch(geoUrl);
         const geoData = await geoRes.json();
         if (!geoData.results || geoData.results.length === 0) throw new Error("Location not found.");
         const { lat, lng } = geoData.results[0].geometry;
@@ -52,11 +52,18 @@
         if (!localTime.isValid) throw new Error(`Invalid Date/Time: ${localTime.invalidReason}`);
         const utcTime = localTime.toUTC();
 
-        const apiRes = await fetch("http://127.0.0.1:8000/calculate_chart", {
-          method: "POST", headers: { "Content-Type": "application/json" },
+        const apiRes = await fetch("https://AJK888.pythonanywhere.com/calculate_chart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name: form.querySelector("[name='name']").value, year: utcTime.year, month: utcTime.month,
-            day: utcTime.day, hour: utcTime.hour, minute: utcTime.minute, latitude: lat, longitude: lng
+            name: form.querySelector("[name='name']").value,
+            year: utcTime.year,
+            month: utcTime.month,
+            day: utcTime.day,
+            hour: utcTime.hour,
+            minute: utcTime.minute,
+            latitude: lat,
+            longitude: lng
           }),
         });
         if (!apiRes.ok) { const errTxt = await apiRes.text(); throw new Error(`API Error ${apiRes.status}: ${errTxt}`); }
