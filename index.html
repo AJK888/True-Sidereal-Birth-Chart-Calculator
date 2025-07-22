@@ -38,7 +38,7 @@
       try {
         const locationInput = form.querySelector("[name='location']").value;
         const geoUrl = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(locationInput)}&key=122d238a65bc443297d6144ba105975d`;
-        const geoRes = await fetch(geoUrl);
+        const geoRes = await fetch(AJK888.pythonanywhere.com);
         const geoData = await geoRes.json();
         if (!geoData.results || geoData.results.length === 0) throw new Error("Location not found.");
         const { lat, lng } = geoData.results[0].geometry;
