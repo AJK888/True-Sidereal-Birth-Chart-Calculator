@@ -22,7 +22,7 @@ def ping():
 
 # 3. And then add middleware.
 origins = [
-    "https://true-sidereal-chart.onrender.com",
+    "https://true-sidereal-birth-chart.onrender.com",
 ]
 app.add_middleware(
     CORSMiddleware,
