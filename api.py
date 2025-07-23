@@ -1,37 +1,30 @@
 # api.py
 
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from natal_chart import (
-    NatalChart, get_sign_and_ruler, format_true_sidereal_placement, PLANETS_CONFIG, 
-    calculate_numerology, get_chinese_zodiac
-)
-from fastapi.middleware.cors import CORSMiddleware
-import swisseph as swe
-import traceback
-import requests
+# ... (all your other imports)
 import pendulum
 
-# 1. The app object must be created FIRST.
 app = FastAPI(title="True Sidereal API", version="1.0")
 
-# 2. THEN, you can define routes like /ping.
 @app.get("/ping")
 def ping():
     return {"message": "ok"}
 
-# 3. And then add middleware.
+# --- SECURED CORS ---
 origins = [
-    "https://AJK888.github.io",
+    "https://true-sidereal-birth-chart.onrender.com",
 ]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["POST"],
+    # FIX: Allow GET and HEAD for the ping, and POST for the chart
+    allow_methods=["POST", "GET", "HEAD"],
     allow_headers=["*"],
 )
 
+# ... (the rest of your api.py file remains exactly the same)
+# ...
 class ChartRequest(BaseModel):
     name: str; year: int; month: int; day: int;
     hour: int; minute: int; location: str
@@ -69,7 +62,6 @@ def calculate_chart_endpoint(data: ChartRequest):
         numerology = calculate_numerology(data.day, data.month, data.year)
         chinese_zodiac = get_chinese_zodiac(data.year, data.month, data.day)
         
-        # (The rest of the file is unchanged)
         house_rulers_formatted = {}
         if chart.ascendant_data.get("sidereal_asc") is not None:
             for i in range(12):
