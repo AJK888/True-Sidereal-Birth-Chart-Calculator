@@ -11,7 +11,7 @@ import swisseph as swe
 import traceback
 import requests
 import pendulum
-import os # Import the os module to access environment variables
+import os
 
 app = FastAPI(title="True Sidereal API", version="1.0")
 
@@ -27,6 +27,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
+    # FIX: Allow GET and HEAD for the ping, and POST for the chart
     allow_methods=["POST", "GET", "HEAD"],
     allow_headers=["*"],
 )
@@ -46,26 +47,20 @@ def calculate_chart_endpoint(data: ChartRequest):
         swe.set_ephe_path(r".")
 
         # --- SECURE GEOCODING ON BACKEND ---
-        # 1. Securely get the API key from environment variables
         opencage_key = os.getenv("OPENCAGE_KEY")
         if not opencage_key:
             raise HTTPException(status_code=500, detail="Server is missing the geocoding API key.")
         
         geo_url = f"https://api.opencagedata.com/geocode/v1/json?q={data.location}&key={opencage_key}"
         
-        # 2. Make the request and check for HTTP errors
         response = requests.get(geo_url, timeout=10)
-        response.raise_for_status()  # This will raise an exception for HTTP errors (like 4xx or 5xx)
+        response.raise_for_status()
         geo_res = response.json()
 
-        # 3. Safely access the response data using .get()
         result = geo_res.get("results", [])[0] if geo_res.get("results") else {}
         geometry = result.get("geometry", {})
         annotations = result.get("annotations", {}).get("timezone", {})
-
-        lat = geometry.get("lat")
-        lng = geometry.get("lng")
-        timezone_name = annotations.get("name")
+        lat, lng, timezone_name = geometry.get("lat"), geometry.get("lng"), annotations.get("name")
 
         if not all([lat, lng, timezone_name]):
             raise HTTPException(status_code=400, detail="Could not retrieve complete location data.")
@@ -129,7 +124,6 @@ def calculate_chart_endpoint(data: ChartRequest):
             "house_sign_distributions": chart.house_sign_distributions
         }
     except HTTPException as e:
-        # Re-raise HTTP exceptions directly
         raise e
     except Exception as e:
         print("\n--- AN EXCEPTION WAS CAUGHT ---"); traceback.print_exc(); print("-----------------------------\n")
