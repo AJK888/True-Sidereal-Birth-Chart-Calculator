@@ -1,7 +1,16 @@
 # api.py
 
 from fastapi import FastAPI, HTTPException
-# ... (all your other imports)
+# Add CORSMiddleware to this import
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from natal_chart import (
+    NatalChart, get_sign_and_ruler, format_true_sidereal_placement, PLANETS_CONFIG, 
+    calculate_numerology, get_chinese_zodiac
+)
+import swisseph as swe
+import traceback
+import requests
 import pendulum
 
 app = FastAPI(title="True Sidereal API", version="1.0")
@@ -18,13 +27,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    # FIX: Allow GET and HEAD for the ping, and POST for the chart
     allow_methods=["POST", "GET", "HEAD"],
     allow_headers=["*"],
 )
 
-# ... (the rest of your api.py file remains exactly the same)
-# ...
 class ChartRequest(BaseModel):
     name: str; year: int; month: int; day: int;
     hour: int; minute: int; location: str
