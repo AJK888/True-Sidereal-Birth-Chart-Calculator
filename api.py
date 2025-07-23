@@ -1,7 +1,6 @@
 # api.py
 
 from fastapi import FastAPI, HTTPException
-# FIX #1: Add CORSMiddleware to this import
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from natal_chart import (
@@ -27,7 +26,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    # FIX #2: Allow GET and HEAD for the ping, and POST for the chart
+    # FIX: Allow GET and HEAD for the ping, and POST for the chart
     allow_methods=["POST", "GET", "HEAD"],
     allow_headers=["*"],
 )
