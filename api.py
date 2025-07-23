@@ -15,23 +15,59 @@ import os
 
 app = FastAPI(title="True Sidereal API", version="1.0")
 
-@app.get("/ping")
-def ping():
-    return {"message": "ok"}
+@app.post("/calculate_chart")
+def calculate_chart_endpoint(data: ChartRequest):
+    try:
+        print("--- REQUEST START ---")
+        swe.set_ephe_path(r".")
 
-# --- SECURED CORS ---
-origins = [
-    "https://true-sidereal-birth-chart.onrender.com",
-]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    # FIX: Allow GET and HEAD for the ping, and POST for the chart
-    allow_methods=["POST", "GET", "HEAD"],
-    allow_headers=["*"],
-)
+        # --- SECURE GEOCODING ON BACKEND ---
+        print("DEBUG: Preparing to call OpenCage API...")
+        opencage_key = os.getenv("OPENCAGE_KEY")
+        if not opencage_key:
+            raise HTTPException(status_code=500, detail="Server is missing the geocoding API key.")
+        
+        geo_url = f"https://api.opencagedata.com/geocode/v1/json?q={data.location}&key={opencage_key}"
+        
+        print(f"DEBUG: Making request to {geo_url}")
+        response = requests.get(geo_url, timeout=15) # Increased timeout slightly for testing
+        print("DEBUG: OpenCage API request finished.")
 
+        response.raise_for_status()
+        geo_res = response.json()
+        print("DEBUG: JSON response parsed.")
+        
+        # (The rest of the function continues as before)
+        result = geo_res.get("results", [])[0] if geo_res.get("results") else {}
+        geometry = result.get("geometry", {})
+        annotations = result.get("annotations", {}).get("timezone", {})
+        lat, lng, timezone_name = geometry.get("lat"), geometry.get("lng"), annotations.get("name")
+
+        if not all([lat, lng, timezone_name]):
+            raise HTTPException(status_code=400, detail="Could not retrieve complete location data.")
+
+        local_time = pendulum.datetime(
+            data.year, data.month, data.day, data.hour, data.minute, tz=timezone_name
+        )
+        utc_time = local_time.in_timezone('UTC')
+
+        chart = NatalChart(
+            name=data.name, year=utc_time.year, month=utc_time.month, day=utc_time.day,
+            hour=utc_time.hour, minute=utc_time.minute, latitude=lat, longitude=lng
+        )
+        chart.calculate_chart()
+        print("DEBUG: Chart calculation finished.")
+        
+        # ... (rest of the function is the same)
+        
+        print("--- REQUEST END ---")
+        return {
+            # ... (the full return dictionary)
+        }
+    except Exception as e:
+        print("\n--- AN EXCEPTION WAS CAUGHT ---"); traceback.print_exc(); print("-----------------------------\n")
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {type(e).__name__} - {e}")
+        
 class ChartRequest(BaseModel):
     name: str
     year: int
