@@ -11,6 +11,7 @@ import swisseph as swe
 import traceback
 import requests
 import pendulum
+import os # Import the os module to access environment variables
 
 app = FastAPI(title="True Sidereal API", version="1.0")
 
@@ -26,14 +27,18 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    # FIX: Allow GET and HEAD for the ping, and POST for the chart
     allow_methods=["POST", "GET", "HEAD"],
     allow_headers=["*"],
 )
 
 class ChartRequest(BaseModel):
-    name: str; year: int; month: int; day: int;
-    hour: int; minute: int; location: str
+    name: str
+    year: int
+    month: int
+    day: int
+    hour: int
+    minute: int
+    location: str
 
 @app.post("/calculate_chart")
 def calculate_chart_endpoint(data: ChartRequest):
@@ -41,17 +46,29 @@ def calculate_chart_endpoint(data: ChartRequest):
         swe.set_ephe_path(r".")
 
         # --- SECURE GEOCODING ON BACKEND ---
-        opencage_key = "122d238a65bc443297d6144ba105975d"
-        geo_url = f"https://api.opencagedata.com/geocode/v1/json?q={data.location}&key={opencage_key}"
-        geo_res = requests.get(geo_url, timeout=10).json()
-
-        if not geo_res or not geo_res.get("results"):
-            raise HTTPException(status_code=400, detail="Location could not be found.")
+        # 1. Securely get the API key from environment variables
+        opencage_key = os.getenv("OPENCAGE_KEY")
+        if not opencage_key:
+            raise HTTPException(status_code=500, detail="Server is missing the geocoding API key.")
         
-        result = geo_res["results"][0]
-        lat = result["geometry"]["lat"]
-        lng = result["geometry"]["lng"]
-        timezone_name = result["annotations"]["timezone"]["name"]
+        geo_url = f"https://api.opencagedata.com/geocode/v1/json?q={data.location}&key={opencage_key}"
+        
+        # 2. Make the request and check for HTTP errors
+        response = requests.get(geo_url, timeout=10)
+        response.raise_for_status()  # This will raise an exception for HTTP errors (like 4xx or 5xx)
+        geo_res = response.json()
+
+        # 3. Safely access the response data using .get()
+        result = geo_res.get("results", [])[0] if geo_res.get("results") else {}
+        geometry = result.get("geometry", {})
+        annotations = result.get("annotations", {}).get("timezone", {})
+
+        lat = geometry.get("lat")
+        lng = geometry.get("lng")
+        timezone_name = annotations.get("name")
+
+        if not all([lat, lng, timezone_name]):
+            raise HTTPException(status_code=400, detail="Could not retrieve complete location data.")
 
         # --- TIMEZONE CONVERSION ON BACKEND using Pendulum ---
         local_time = pendulum.datetime(
@@ -111,6 +128,9 @@ def calculate_chart_endpoint(data: ChartRequest):
             "house_rulers": house_rulers_formatted,
             "house_sign_distributions": chart.house_sign_distributions
         }
+    except HTTPException as e:
+        # Re-raise HTTP exceptions directly
+        raise e
     except Exception as e:
         print("\n--- AN EXCEPTION WAS CAUGHT ---"); traceback.print_exc(); print("-----------------------------\n")
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {type(e).__name__} - {e}")
