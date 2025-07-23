@@ -27,11 +27,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
+    # FIX #1: Allow GET and HEAD for the ping, and POST for the chart
     allow_methods=["POST", "GET", "HEAD"],
     allow_headers=["*"],
 )
 
-# FIX: The ChartRequest class must be defined BEFORE it is used.
+# FIX #2: The ChartRequest class must be defined BEFORE it is used.
 class ChartRequest(BaseModel):
     name: str
     year: int
