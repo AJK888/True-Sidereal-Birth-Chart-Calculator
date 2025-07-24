@@ -29,7 +29,6 @@
   <pre id="output">Enter birth details and click "Calculate Chart".</pre>
   
   <script>
-    // NOTE: The Luxon script tag has been removed as it's no longer needed on the frontend.
     document.getElementById("chartForm").addEventListener("submit", async function (e) {
       e.preventDefault();
       const form = e.target, outputEl = document.getElementById("output"), btn = document.getElementById("submitBtn");
@@ -37,9 +36,8 @@
       outputEl.innerText = "Calculating chart...";
 
       try {
-        // --- Geocoding and Timezone logic has been REMOVED from the frontend ---
-        
-        const apiRes = await fetch("https://AJK888.pythonanywhere.com/calculate_chart", {
+        // FIX: Update this URL to point to your Render API
+        const apiRes = await fetch("https://true-sidereal-api.onrender.com/calculate_chart", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -49,7 +47,7 @@
             day: parseInt(form.querySelector("[name='day']").value),
             hour: parseInt(form.querySelector("[name='hour']").value),
             minute: parseInt(form.querySelector("[name='minute']").value),
-            location: form.querySelector("[name='location']").value // Send location name directly
+            location: form.querySelector("[name='location']").value
           }),
         });
         if (!apiRes.ok) { 
