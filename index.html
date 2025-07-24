@@ -17,10 +17,9 @@
             --accent-hover: #6b46c1;
             --border-color: #4a5568;
             --pre-background: #171923;
-            /* --- NEW: Aspect Colors --- */
-            --aspect-hard: #e53e3e; /* Red for Opposition, Square */
-            --aspect-soft: #3182ce; /* Blue for Trine, Sextile */
-            --aspect-neutral: #38a169; /* Green for Conjunction */
+            --aspect-hard: #e53e3e;
+            --aspect-soft: #3182ce;
+            --aspect-neutral: #38a169;
         }
         
         body {
@@ -58,14 +57,11 @@
         .zodiac-glyph { fill: var(--text-color); font-size: 40px; text-anchor: middle; dominant-baseline: middle; }
         .planet-glyph { fill: var(--heading-color); font-size: 35px; text-anchor: middle; dominant-baseline: middle; }
         .planet-retrograde { fill: var(--text-color); font-size: 20px; }
-
-        /* --- NEW SVG STYLES --- */
         .aspect-line { stroke-width: 1.5; opacity: 0.7; }
         .aspect-conjunction { stroke: var(--aspect-neutral); }
         .aspect-opposition, .aspect-square { stroke: var(--aspect-hard); }
         .aspect-trine, .aspect-sextile { stroke: var(--aspect-soft); }
         .aspect-quincunx, .aspect-semisextile, .aspect-semisquare, .aspect-sesquiquadrate, .aspect-quintile, .aspect-biquintile { stroke: var(--border-color); stroke-dasharray: 4 4; }
-
     </style>
 </head>
 <body>
@@ -133,7 +129,48 @@
             }
         });
 
-        function renderResults(res) { /* ... (This function remains unchanged) ... */ }
+        // FIX: The full, correct renderResults function is now here.
+        function renderResults(res) {
+            let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
+            out += `UTC Date & Time: ${res.utc_datetime}\n`;
+            out += `Location: ${res.location}\n`;
+            out += `Day/Night Determination: ${res.day_night_status}\n\n`;
+            out += `-- CHART ANALYSIS --\n`;
+            out += `Chart Ruler: ${res.chart_analysis.chart_ruler}\n`;
+            out += `Dominant Sign: ${res.chart_analysis.dominant_sign}\n`;
+            out += `Dominant Element: ${res.chart_analysis.dominant_element}\n`;
+            out += `Dominant Modality: ${res.chart_analysis.dominant_modality}\n`;
+            out += `Dominant Planet: ${res.chart_analysis.dominant_planet}\n`;
+            out += `Life Path Number: ${res.chart_analysis.life_path_number}\n`;
+            out += `Day Number: ${res.chart_analysis.day_number}\n`;
+            out += `Chinese Zodiac: ${res.chart_analysis.chinese_zodiac}\n\n`;
+            out += `--- MAJOR POSITIONS ---\n`;
+            res.major_positions.forEach(p => {
+                let line = `${p.name}: ${p.position}`;
+                if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
+                    line += ` (${p.percentage}%)`;
+                }
+                if (p.retrograde) { line += " (Rx)"; }
+                if (p.house_info) { line += ` ${p.house_info}`; }
+                out += `${line}\n`;
+            });
+            out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
+            res.aspects.forEach(a => { out += `${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
+            out += `\n--- ASPECT PATTERNS ---\n`;
+            (res.aspect_patterns && res.aspect_patterns.length > 0) ? res.aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "No major aspect patterns detected.\n";
+            out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
+            res.additional_points.forEach(p => { out += `${p.name}: ${p.info}\n`; });
+            out += `\n--- HOUSE RULERS ---\n`;
+            for (const [house, info] of Object.entries(res.house_rulers)) { out += `${house}: ${info}\n`; }
+            out += `\n--- HOUSE SIGN DISTRIBUTIONS ---\n`;
+            for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
+                out += `- ${house}\n`;
+                if (segments && segments.length > 0) {
+                    segments.forEach(seg => { out += `     - ${seg}\n`; });
+                }
+            }
+            document.getElementById("output").innerText = out;
+        }
 
         const SVG_NS = "http://www.w3.org/2000/svg";
         const ZODIAC_GLYPHS = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
@@ -155,32 +192,94 @@
                 return { x: centerX + radius * Math.cos(angleRadians), y: centerY + radius * Math.sin(angleRadians) };
             }
 
-            // Draw concentric circles, zodiac, houses, planets... (all previous drawing logic remains here)
-            // ... (omitted for brevity, but it's the same as the last prompt)
-            
-            // --- NEW: 7. Draw the Aspect Lines ---
+            const aspectGroup = document.createElementNS(SVG_NS, 'g');
             if (data.aspects) {
-                const aspectGroup = document.createElementNS(SVG_NS, 'g');
                 data.aspects.forEach(aspect => {
                     if (aspect.p1_degrees === null || aspect.p2_degrees === null) return;
-
                     const startPoint = getCoords(innerRadius, aspect.p1_degrees);
                     const endPoint = getCoords(innerRadius, aspect.p2_degrees);
-                    
                     const line = document.createElementNS(SVG_NS, 'line');
-                    line.setAttribute('x1', startPoint.x);
-                    line.setAttribute('y1', startPoint.y);
-                    line.setAttribute('x2', endPoint.x);
-                    line.setAttribute('y2', endPoint.y);
-
-                    // Set class based on aspect type for coloring
+                    line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
+                    line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
                     const aspectClass = aspect.type.toLowerCase().replace(' ', '-');
                     line.setAttribute('class', `aspect-line aspect-${aspectClass}`);
-                    
                     aspectGroup.appendChild(line);
                 });
-                // Append the group to the SVG. Appending the group at the end ensures lines are drawn on top.
-                svg.insertBefore(aspectGroup, svg.firstChild); // Insert lines behind other elements
+            }
+            svg.appendChild(aspectGroup);
+
+            [zodiacRadius, houseRingRadius, innerRadius].forEach(r => {
+                const circle = document.createElementNS(SVG_NS, 'circle');
+                circle.setAttribute('cx', centerX); circle.setAttribute('cy', centerY);
+                circle.setAttribute('r', r); circle.setAttribute('class', 'wheel-circle');
+                svg.appendChild(circle);
+            });
+
+            const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2;
+            for (let i = 0; i < 12; i++) {
+                const angle = i * 30;
+                const startPoint = getCoords(houseRingRadius, angle);
+                const endPoint = getCoords(zodiacRadius, angle);
+                const line = document.createElementNS(SVG_NS, 'line');
+                line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
+                line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
+                line.setAttribute('class', 'zodiac-divider');
+                svg.appendChild(line);
+                const glyphAngle = angle + 15;
+                const textCoords = getCoords(glyphRadius, glyphAngle);
+                const text = document.createElementNS(SVG_NS, 'text');
+                text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
+                text.setAttribute('class', 'zodiac-glyph');
+                text.textContent = ZODIAC_GLYPHS[i];
+                svg.appendChild(text);
+            }
+
+            if (data.house_cusps && data.house_cusps.length === 12) {
+                data.house_cusps.forEach((cuspDegrees, i) => {
+                    const startPoint = getCoords(innerRadius, cuspDegrees);
+                    const endPoint = getCoords(houseRingRadius, cuspDegrees);
+                    const line = document.createElementNS(SVG_NS, 'line');
+                    line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
+                    line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
+                    line.setAttribute('class', (i === 0 || i === 9) ? 'house-cusp major' : 'house-cusp');
+                    svg.appendChild(line);
+                });
+                for (let i = 0; i < 12; i++) {
+                    const startAngle = data.house_cusps[i];
+                    const endAngle = data.house_cusps[(i + 1) % 12];
+                    let midAngle = (startAngle + endAngle) / 2;
+                    if (endAngle < startAngle) midAngle = (startAngle + endAngle + 360) / 2;
+                    const textCoords = getCoords(innerRadius + 35, midAngle);
+                    const text = document.createElementNS(SVG_NS, 'text');
+                    text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
+                    text.setAttribute('class', 'house-number');
+                    text.textContent = i + 1;
+                    svg.appendChild(text);
+                }
+            }
+            
+            if (data.major_positions) {
+                const sortedPlanets = [...data.major_positions].sort((a, b) => a.degrees - b.degrees);
+                sortedPlanets.forEach((planet, i) => {
+                    if (planet.degrees === null || !PLANET_GLYPHS[planet.name]) return;
+                    let currentRadius = planetRingRadius + (i % 3 - 1) * 25;
+                    const textCoords = getCoords(currentRadius, planet.degrees);
+                    const text = document.createElementNS(SVG_NS, 'text');
+                    text.setAttribute('x', textCoords.x);
+                    text.setAttribute('y', textCoords.y);
+                    text.setAttribute('class', 'planet-glyph');
+                    text.textContent = PLANET_GLYPHS[planet.name];
+                    svg.appendChild(text);
+                    if (planet.retrograde) {
+                        const rxCoords = getCoords(currentRadius, planet.degrees + 6);
+                        const rxText = document.createElementNS(SVG_NS, 'text');
+                        rxText.setAttribute('x', rxCoords.x);
+                        rxText.setAttribute('y', rxCoords.y);
+                        rxText.setAttribute('class', 'planet-retrograde');
+                        rxText.textContent = '℞';
+                        svg.appendChild(rxText);
+                    }
+                });
             }
         }
     </script>
