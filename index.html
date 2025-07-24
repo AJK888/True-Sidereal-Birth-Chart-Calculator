@@ -1,3 +1,16 @@
+Of course. Here is the updated code for **Prompt 3**.
+
+I have updated the `drawChartWheel` function in your `index.html` file. It now includes the logic to place the 12 zodiac glyphs (♈, ♉, ♊, etc.) in the center of their respective 30-degree segments on the outer ring of the chart.
+
+I've also added a new CSS style to make the glyphs large and clear.
+
+-----
+
+### Updated `index.html`
+
+This is the only file that needs to be changed. Replace its entire content with the code below.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -52,12 +65,14 @@
         #chart-wheel-container { display: flex; justify-content: center; align-items: center; margin-top: 2rem; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; }
         #chart-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; background-color: var(--pre-background); border-radius: 50%; }
 
-        /* --- NEW SVG STYLES --- */
         .wheel-circle { stroke: var(--border-color); stroke-width: 2; fill: none; }
         .zodiac-divider { stroke: var(--border-color); stroke-width: 1; }
         .house-cusp { stroke: var(--text-color); stroke-width: 2; }
-        .house-cusp.major { stroke-width: 4; } /* For Ascendant and MC */
+        .house-cusp.major { stroke-width: 4; }
         .house-number { fill: var(--text-color); font-size: 28px; font-family: 'Inter', sans-serif; text-anchor: middle; dominant-baseline: middle; }
+        
+        /* --- NEW SVG STYLE --- */
+        .zodiac-glyph { fill: var(--text-color); font-size: 40px; text-anchor: middle; dominant-baseline: middle; }
 
     </style>
 </head>
@@ -117,7 +132,7 @@
                 }
                 const result = await apiRes.json();
                 renderResults(result);
-                drawChartWheel(result); // <-- NEW: Call the drawing function
+                drawChartWheel(result);
             } catch (err) {
                 outputEl.innerText = "Error: " + err.message;
             } finally {
@@ -169,13 +184,16 @@
             document.getElementById("output").innerText = out;
         }
 
-        // --- NEW CHART DRAWING LOGIC ---
-
         const SVG_NS = "http://www.w3.org/2000/svg";
+        
+        // --- NEW: Zodiac glyphs (Tropical order) ---
+        const ZODIAC_GLYPHS = [
+            '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'
+        ];
 
         function drawChartWheel(data) {
             const svg = document.getElementById('chart-wheel-svg');
-            svg.innerHTML = ''; // Clear previous chart
+            svg.innerHTML = ''; 
 
             const centerX = 500;
             const centerY = 500;
@@ -183,8 +201,6 @@
             const houseRingRadius = 350;
             const innerRadius = 150;
 
-            // Helper function to convert astrological degrees to SVG coordinates
-            // 0 degrees (Aries) is at the left (9 o'clock position)
             function getCoords(radius, angleDegrees) {
                 const angleRadians = (angleDegrees - 90) * (Math.PI / 180);
                 const x = centerX + radius * Math.cos(angleRadians);
@@ -217,6 +233,19 @@
                 svg.appendChild(line);
             }
 
+            // --- NEW: 5. Add Zodiac Glyphs ---
+            const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2;
+            for (let i = 0; i < 12; i++) {
+                const angle = i * 30 + 15; // Midpoint of the 30-degree segment
+                const textCoords = getCoords(glyphRadius, angle);
+                const text = document.createElementNS(SVG_NS, 'text');
+                text.setAttribute('x', textCoords.x);
+                text.setAttribute('y', textCoords.y);
+                text.setAttribute('class', 'zodiac-glyph');
+                text.textContent = ZODIAC_GLYPHS[i];
+                svg.appendChild(text);
+            }
+
             // 3. Draw 12 house cusps
             if (data.house_cusps && data.house_cusps.length === 12) {
                 data.house_cusps.forEach((cuspDegrees, i) => {
@@ -227,8 +256,6 @@
                     line.setAttribute('y1', startPoint.y);
                     line.setAttribute('x2', endPoint.x);
                     line.setAttribute('y2', endPoint.y);
-                    
-                    // Make Ascendant and MC lines thicker
                     const isMajor = (i === 0 || i === 9);
                     line.setAttribute('class', isMajor ? 'house-cusp major' : 'house-cusp');
                     svg.appendChild(line);
@@ -240,12 +267,10 @@
                 for (let i = 0; i < 12; i++) {
                     const startAngle = data.house_cusps[i];
                     const endAngle = data.house_cusps[(i + 1) % 12];
-                    // Handle wrap-around for the 12th house
                     let midAngle = (startAngle + endAngle) / 2;
                     if (endAngle < startAngle) {
                         midAngle = (startAngle + endAngle + 360) / 2;
                     }
-                    
                     const textCoords = getCoords(innerRadius + 35, midAngle);
                     const text = document.createElementNS(SVG_NS, 'text');
                     text.setAttribute('x', textCoords.x);
@@ -259,3 +284,4 @@
     </script>
 </body>
 </html>
+```
