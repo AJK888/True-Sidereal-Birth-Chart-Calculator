@@ -2,5 +2,7 @@ fastapi
 uvicorn
 pyswisseph
 anyio
+a2wsgi
 requests
 pendulum
+logtail-python
