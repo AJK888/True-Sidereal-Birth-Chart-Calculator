@@ -31,124 +31,42 @@
             align-items: center;
         }
 
-        .container {
-            max-width: 800px;
-            width: 100%;
-        }
+        .container { max-width: 800px; width: 100%; }
+        h1, h2 { color: var(--heading-color); text-align: center; font-weight: 700; }
+        h1 { font-size: 2.25rem; margin-bottom: 0.5rem; }
+        h2 { margin-top: 3rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
 
-        h1, h2 {
-            color: var(--heading-color);
-            text-align: center;
-            font-weight: 700;
-        }
+        .description { background-color: var(--card-background); padding: 1.5rem 2rem; border-radius: 8px; margin: 1.5rem 0; border: 1px solid var(--border-color); }
+        .description h3 { margin-top: 0; color: var(--heading-color); }
 
-        h1 {
-            font-size: 2.25rem;
-            margin-bottom: 0.5rem;
-        }
+        form { background: var(--card-background); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color); }
+        label { font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.5rem; }
+        input { display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; background-color: var(--background-color); color: var(--text-color); font-size: 1rem; }
+        input:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.3); }
+        button { width: 100%; padding: 0.85rem; font-size: 1.1rem; font-weight: 500; color: #fff; background-color: var(--accent-color); border: none; border-radius: 6px; cursor: pointer; margin-top: 2rem; transition: background-color 0.2s ease-in-out; }
+        button:hover:not(:disabled) { background-color: var(--accent-hover); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        h2 {
-            margin-top: 3rem;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 0.5rem;
-        }
-
-        .description {
-            background-color: var(--card-background);
-            padding: 1.5rem 2rem;
-            border-radius: 8px;
-            margin: 1.5rem 0;
-            border: 1px solid var(--border-color);
-        }
-
-        .description h3 {
-            margin-top: 0;
-            color: var(--heading-color);
-        }
-
-        form {
-            background: var(--card-background);
-            padding: 2rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-        }
-
-        label {
-            font-weight: 500;
-            display: block;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        input {
-            display: block;
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            box-sizing: border-box;
-            background-color: var(--background-color);
-            color: var(--text-color);
-            font-size: 1rem;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.3);
-        }
-
-        button {
-            width: 100%;
-            padding: 0.85rem;
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: #fff;
-            background-color: var(--accent-color);
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 2rem;
-            transition: background-color 0.2s ease-in-out;
-        }
-
-        button:hover:not(:disabled) {
-            background-color: var(--accent-hover);
-        }
+        pre { background: var(--pre-background); padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 8px; white-space: pre-wrap; word-break: break-word; font-family: "Courier New", Courier, monospace; font-size: 14px; color: var(--text-color); }
         
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
+        #chart-wheel-container { display: flex; justify-content: center; align-items: center; margin-top: 2rem; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; }
+        #chart-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; background-color: var(--pre-background); border-radius: 50%; }
 
-        pre {
-            background: var(--pre-background);
-            padding: 1.5rem;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            white-space: pre-wrap;
-            word-break: break-word;
-            font-family: "Courier New", Courier, monospace;
-            font-size: 14px;
-            color: var(--text-color);
-        }
+        /* --- NEW SVG STYLES --- */
+        .wheel-circle { stroke: var(--border-color); stroke-width: 2; fill: none; }
+        .zodiac-divider { stroke: var(--border-color); stroke-width: 1; }
+        .house-cusp { stroke: var(--text-color); stroke-width: 2; }
+        .house-cusp.major { stroke-width: 4; } /* For Ascendant and MC */
+        .house-number { fill: var(--text-color); font-size: 28px; font-family: 'Inter', sans-serif; text-anchor: middle; dominant-baseline: middle; }
+
     </style>
 </head>
 <body>
     <div class="container">
         <h1>True Sidereal Chart</h1>
-
         <div class="description">
             <h3>Discover Your True Cosmic Blueprint</h3>
-            <p>
-                Welcome to the True Sidereal Birth Chart Calculator. This tool is designed to reveal your astrological chart based on the actual, observable positions of the constellations in the sky, including the often-overlooked 13th sign, Ophiuchus.
-            </p>
-            <p>
-                Unlike conventional Tropical astrology, which is tied to the seasons, the True Sidereal system reflects where the planets were at the exact moment of your birth. This offers a unique and precise perspective on your personality, strengths, and life's path.
-            </p>
-            <p>
-                <strong>To begin, please enter your birth details in the form below. An accurate birth time is essential for the most precise calculation.</strong>
-            </p>
+            <p>Welcome to the True Sidereal Birth Chart Calculator...</p>
         </div>
 
         <form id="chartForm">
@@ -161,6 +79,11 @@
             <label for="location">Birth Location</label><input type="text" id="location" name="location" required value="Boston, MA">
             <button type="submit" id="submitBtn">Calculate Chart</button>
         </form>
+
+        <h2>Chart Wheel</h2>
+        <div id="chart-wheel-container">
+            <svg id="chart-wheel-svg" viewBox="0 0 1000 1000"></svg>
+        </div>
 
         <h2>Results</h2>
         <pre id="output">Your personalized report will appear here.</pre>
@@ -194,6 +117,7 @@
                 }
                 const result = await apiRes.json();
                 renderResults(result);
+                drawChartWheel(result); // <-- NEW: Call the drawing function
             } catch (err) {
                 outputEl.innerText = "Error: " + err.message;
             } finally {
@@ -203,11 +127,11 @@
         });
 
         function renderResults(res) {
+            // This function remains the same
             let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
             out += `UTC Date & Time: ${res.utc_datetime}\n`;
             out += `Location: ${res.location}\n`;
             out += `Day/Night Determination: ${res.day_night_status}\n\n`;
-
             out += `-- CHART ANALYSIS --\n`;
             out += `Chart Ruler: ${res.chart_analysis.chart_ruler}\n`;
             out += `Dominant Sign: ${res.chart_analysis.dominant_sign}\n`;
@@ -217,7 +141,6 @@
             out += `Life Path Number: ${res.chart_analysis.life_path_number}\n`;
             out += `Day Number: ${res.chart_analysis.day_number}\n`;
             out += `Chinese Zodiac: ${res.chart_analysis.chinese_zodiac}\n\n`;
-            
             out += `--- MAJOR POSITIONS ---\n`;
             res.major_positions.forEach(p => {
                 let line = `${p.name}: ${p.position}`;
@@ -228,19 +151,14 @@
                 if (p.house_info) { line += ` ${p.house_info}`; }
                 out += `${line}\n`;
             });
-
             out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
             res.aspects.forEach(a => { out += `${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
-            
             out += `\n--- ASPECT PATTERNS ---\n`;
             (res.aspect_patterns && res.aspect_patterns.length > 0) ? res.aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "No major aspect patterns detected.\n";
-
             out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
             res.additional_points.forEach(p => { out += `${p.name}: ${p.info}\n`; });
-            
             out += `\n--- HOUSE RULERS ---\n`;
             for (const [house, info] of Object.entries(res.house_rulers)) { out += `${house}: ${info}\n`; }
-            
             out += `\n--- HOUSE SIGN DISTRIBUTIONS ---\n`;
             for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
                 out += `- ${house}\n`;
@@ -249,6 +167,94 @@
                 }
             }
             document.getElementById("output").innerText = out;
+        }
+
+        // --- NEW CHART DRAWING LOGIC ---
+
+        const SVG_NS = "http://www.w3.org/2000/svg";
+
+        function drawChartWheel(data) {
+            const svg = document.getElementById('chart-wheel-svg');
+            svg.innerHTML = ''; // Clear previous chart
+
+            const centerX = 500;
+            const centerY = 500;
+            const zodiacRadius = 450;
+            const houseRingRadius = 350;
+            const innerRadius = 150;
+
+            // Helper function to convert astrological degrees to SVG coordinates
+            // 0 degrees (Aries) is at the left (9 o'clock position)
+            function getCoords(radius, angleDegrees) {
+                const angleRadians = (angleDegrees - 90) * (Math.PI / 180);
+                const x = centerX + radius * Math.cos(angleRadians);
+                const y = centerY + radius * Math.sin(angleRadians);
+                return { x, y };
+            }
+
+            // 1. Draw concentric circles
+            const radii = [zodiacRadius, houseRingRadius, innerRadius];
+            radii.forEach(r => {
+                const circle = document.createElementNS(SVG_NS, 'circle');
+                circle.setAttribute('cx', centerX);
+                circle.setAttribute('cy', centerY);
+                circle.setAttribute('r', r);
+                circle.setAttribute('class', 'wheel-circle');
+                svg.appendChild(circle);
+            });
+
+            // 2. Draw 12 zodiac dividers
+            for (let i = 0; i < 12; i++) {
+                const angle = i * 30;
+                const startPoint = getCoords(houseRingRadius, angle);
+                const endPoint = getCoords(zodiacRadius, angle);
+                const line = document.createElementNS(SVG_NS, 'line');
+                line.setAttribute('x1', startPoint.x);
+                line.setAttribute('y1', startPoint.y);
+                line.setAttribute('x2', endPoint.x);
+                line.setAttribute('y2', endPoint.y);
+                line.setAttribute('class', 'zodiac-divider');
+                svg.appendChild(line);
+            }
+
+            // 3. Draw 12 house cusps
+            if (data.house_cusps && data.house_cusps.length === 12) {
+                data.house_cusps.forEach((cuspDegrees, i) => {
+                    const startPoint = getCoords(innerRadius, cuspDegrees);
+                    const endPoint = getCoords(houseRingRadius, cuspDegrees);
+                    const line = document.createElementNS(SVG_NS, 'line');
+                    line.setAttribute('x1', startPoint.x);
+                    line.setAttribute('y1', startPoint.y);
+                    line.setAttribute('x2', endPoint.x);
+                    line.setAttribute('y2', endPoint.y);
+                    
+                    // Make Ascendant and MC lines thicker
+                    const isMajor = (i === 0 || i === 9);
+                    line.setAttribute('class', isMajor ? 'house-cusp major' : 'house-cusp');
+                    svg.appendChild(line);
+                });
+            }
+
+            // 4. Add house numbers
+            if (data.house_cusps && data.house_cusps.length === 12) {
+                for (let i = 0; i < 12; i++) {
+                    const startAngle = data.house_cusps[i];
+                    const endAngle = data.house_cusps[(i + 1) % 12];
+                    // Handle wrap-around for the 12th house
+                    let midAngle = (startAngle + endAngle) / 2;
+                    if (endAngle < startAngle) {
+                        midAngle = (startAngle + endAngle + 360) / 2;
+                    }
+                    
+                    const textCoords = getCoords(innerRadius + 35, midAngle);
+                    const text = document.createElementNS(SVG_NS, 'text');
+                    text.setAttribute('x', textCoords.x);
+                    text.setAttribute('y', textCoords.y);
+                    text.setAttribute('class', 'house-number');
+                    text.textContent = i + 1;
+                    svg.appendChild(text);
+                }
+            }
         }
     </script>
 </body>
