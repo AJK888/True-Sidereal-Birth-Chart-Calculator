@@ -1,113 +1,255 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>True Sidereal Chart Calculator</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; padding: 2rem; max-width: 800px; margin: auto; background-color: #f8f9fa; }
-    h1 { color: #333; }
-    form { background: #fff; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    label { font-weight: bold; display: block; margin-top: 1rem; color: #555; }
-    input { display: block; width: 100%; padding: 0.75rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-    button { width: 100%; padding: 0.75rem; font-size: 1rem; color: #fff; background-color: #007bff; border: none; border-radius: 4px; cursor: pointer; }
-    pre { background: #fff; padding: 1.5rem; border: 1px solid #eee; border-radius: 4px; white-space: pre-wrap; word-break: break-word; font-family: "Courier New", Courier, monospace; font-size: 14px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>True Sidereal Chart Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --background-color: #1a202c;
+            --card-background: #2d3748;
+            --text-color: #e2e8f0;
+            --heading-color: #ffffff;
+            --accent-color: #805ad5;
+            --accent-hover: #6b46c1;
+            --border-color: #4a5568;
+            --pre-background: #171923;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.7;
+            padding: 2rem;
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1, h2 {
+            color: var(--heading-color);
+            text-align: center;
+            font-weight: 700;
+        }
+
+        h1 {
+            font-size: 2.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            margin-top: 3rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .description {
+            background-color: var(--card-background);
+            padding: 1.5rem 2rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .description h3 {
+            margin-top: 0;
+            color: var(--heading-color);
+        }
+
+        form {
+            background: var(--card-background);
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        label {
+            font-weight: 500;
+            display: block;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        input {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.3);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.85rem;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #fff;
+            background-color: var(--accent-color);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 2rem;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: var(--accent-hover);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        pre {
+            background: var(--pre-background);
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+    </style>
 </head>
 <body>
-  <h1>True Sidereal Chart</h1>
-  <form id="chartForm">
-    <label for="name">Name</label><input type="text" id="name" name="name" required value="">
-    <label for="year">Birth Year</label><input type="number" id="year" name="year" required value="">
-    <label for="month">Birth Month</label><input type="number" id="month" name="month" required value="">
-    <label for="day">Birth Day</label><input type="number" id="day" name="day" required value="">
-    <label for="hour">Birth Hour (24-hour format) (e.g., 17 for 5 PM)</label><input type="number" id="hour" name="hour" required value="">
-    <label for="minute">Birth Minute</label><input type="number" id="minute" name="minute" required value="">
-    <label for="location">Birth Location</label><input type="text" id="location" name="location" required value="">
-    <button type="submit" id="submitBtn">Calculate Chart</button>
-  </form>
-  <h2>Results</h2>
-  <pre id="output">Enter birth details and click "Calculate Chart".</pre>
-  
-  <script>
-    document.getElementById("chartForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
-      const form = e.target, outputEl = document.getElementById("output"), btn = document.getElementById("submitBtn");
-      btn.disabled = true; btn.innerText = "Calculating...";
-      outputEl.innerText = "Calculating chart...";
+    <div class="container">
+        <h1>True Sidereal Chart</h1>
 
-      try {
-        // FIX: Update this URL to point to your Render API
-        const apiRes = await fetch("https://true-sidereal-api.onrender.com/calculate_chart", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: form.querySelector("[name='name']").value,
-            year: parseInt(form.querySelector("[name='year']").value),
-            month: parseInt(form.querySelector("[name='month']").value),
-            day: parseInt(form.querySelector("[name='day']").value),
-            hour: parseInt(form.querySelector("[name='hour']").value),
-            minute: parseInt(form.querySelector("[name='minute']").value),
-            location: form.querySelector("[name='location']").value
-          }),
+        <div class="description">
+            <h3>Discover Your True Cosmic Blueprint</h3>
+            <p>
+                Welcome to the True Sidereal Birth Chart Calculator. This tool is designed to reveal your astrological chart based on the actual, observable positions of the constellations in the sky, including the often-overlooked 13th sign, Ophiuchus.
+            </p>
+            <p>
+                Unlike conventional Tropical astrology, which is tied to the seasons, the True Sidereal system reflects where the planets were at the exact moment of your birth. This offers a unique and precise perspective on your personality, strengths, and life's path.
+            </p>
+            <p>
+                <strong>To begin, please enter your birth details in the form below. An accurate birth time is essential for the most precise calculation.</strong>
+            </p>
+        </div>
+
+        <form id="chartForm">
+            <label for="name">Name</label><input type="text" id="name" name="name" required value="Alexander">
+            <label for="year">Birth Year</label><input type="number" id="year" name="year" required value="1998">
+            <label for="month">Birth Month</label><input type="number" id="month" name="month" required value="8">
+            <label for="day">Birth Day</label><input type="number" id="day" name="day" required value="26">
+            <label for="hour">Birth Hour (e.g., 17 for 5 PM)</label><input type="number" id="hour" name="hour" required value="17">
+            <label for="minute">Birth Minute</label><input type="number" id="minute" name="minute" required value="40">
+            <label for="location">Birth Location</label><input type="text" id="location" name="location" required value="Boston, MA">
+            <button type="submit" id="submitBtn">Calculate Chart</button>
+        </form>
+
+        <h2>Results</h2>
+        <pre id="output">Your personalized report will appear here.</pre>
+    </div>
+
+    <script>
+        document.getElementById("chartForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const form = e.target, outputEl = document.getElementById("output"), btn = document.getElementById("submitBtn");
+            btn.disabled = true; btn.innerText = "Calculating...";
+            outputEl.innerText = "Calculating chart...";
+
+            try {
+                const apiRes = await fetch("https://true-sidereal-api.onrender.com/calculate_chart", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        name: form.querySelector("[name='name']").value,
+                        year: parseInt(form.querySelector("[name='year']").value),
+                        month: parseInt(form.querySelector("[name='month']").value),
+                        day: parseInt(form.querySelector("[name='day']").value),
+                        hour: parseInt(form.querySelector("[name='hour']").value),
+                        minute: parseInt(form.querySelector("[name='minute']").value),
+                        location: form.querySelector("[name='location']").value
+                    }),
+                });
+
+                if (!apiRes.ok) { 
+                    const errData = await apiRes.json();
+                    throw new Error(`API Error ${apiRes.status}: ${errData.detail}`); 
+                }
+                const result = await apiRes.json();
+                renderResults(result);
+            } catch (err) {
+                outputEl.innerText = "Error: " + err.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Calculate Chart";
+            }
         });
-        if (!apiRes.ok) { 
-            const errData = await apiRes.json();
-            throw new Error(`API Error ${apiRes.status}: ${errData.detail}`); 
+
+        function renderResults(res) {
+            let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
+            out += `UTC Date & Time: ${res.utc_datetime}\n`;
+            out += `Location: ${res.location}\n`;
+            out += `Day/Night Determination: ${res.day_night_status}\n\n`;
+
+            out += `-- CHART ANALYSIS --\n`;
+            out += `Chart Ruler: ${res.chart_analysis.chart_ruler}\n`;
+            out += `Dominant Sign: ${res.chart_analysis.dominant_sign}\n`;
+            out += `Dominant Element: ${res.chart_analysis.dominant_element}\n`;
+            out += `Dominant Modality: ${res.chart_analysis.dominant_modality}\n`;
+            out += `Dominant Planet: ${res.chart_analysis.dominant_planet}\n`;
+            out += `Life Path Number: ${res.chart_analysis.life_path_number}\n`;
+            out += `Day Number: ${res.chart_analysis.day_number}\n`;
+            out += `Chinese Zodiac: ${res.chart_analysis.chinese_zodiac}\n\n`;
+            
+            out += `--- MAJOR POSITIONS ---\n`;
+            res.major_positions.forEach(p => {
+                let line = `${p.name}: ${p.position}`;
+                if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
+                    line += ` (${p.percentage}%)`;
+                }
+                if (p.retrograde) { line += " (Rx)"; }
+                if (p.house_info) { line += ` ${p.house_info}`; }
+                out += `${line}\n`;
+            });
+
+            out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
+            res.aspects.forEach(a => { out += `${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
+            
+            out += `\n--- ASPECT PATTERNS ---\n`;
+            (res.aspect_patterns && res.aspect_patterns.length > 0) ? res.aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "No major aspect patterns detected.\n";
+
+            out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
+            res.additional_points.forEach(p => { out += `${p.name}: ${p.info}\n`; });
+            
+            out += `\n--- HOUSE RULERS ---\n`;
+            for (const [house, info] of Object.entries(res.house_rulers)) { out += `${house}: ${info}\n`; }
+            
+            out += `\n--- HOUSE SIGN DISTRIBUTIONS ---\n`;
+            for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
+                out += `- ${house}\n`;
+                if (segments && segments.length > 0) {
+                    segments.forEach(seg => { out += `     - ${seg}\n`; });
+                }
+            }
+            document.getElementById("output").innerText = out;
         }
-        const result = await apiRes.json();
-        renderResults(result);
-      } catch (err) { outputEl.innerText = "Error: " + err.message;
-      } finally { btn.disabled = false; btn.innerText = "Calculate Chart"; }
-    });
-
-    function renderResults(res) {
-      let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
-      out += `UTC Date & Time: ${res.utc_datetime}\n`;
-      out += `Location: ${res.location}\n`;
-      out += `Day/Night Determination: ${res.day_night_status}\n\n`;
-
-      out += `-- CHART ANALYSIS --\n`;
-      out += `Chart Ruler: ${res.chart_analysis.chart_ruler}\n`;
-      out += `Dominant Sign: ${res.chart_analysis.dominant_sign}\n`;
-      out += `Dominant Element: ${res.chart_analysis.dominant_element}\n`;
-      out += `Dominant Modality: ${res.chart_analysis.dominant_modality}\n`;
-      out += `Dominant Planet: ${res.chart_analysis.dominant_planet}\n`;
-      out += `Life Path Number: ${res.chart_analysis.life_path_number}\n`;
-      out += `Day Number: ${res.chart_analysis.day_number}\n`;
-      out += `Chinese Zodiac: ${res.chart_analysis.chinese_zodiac}\n\n`;
-      
-      out += `--- MAJOR POSITIONS ---\n`;
-      res.major_positions.forEach(p => {
-        let line = `${p.name}: ${p.position}`;
-        if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
-            line += ` (${p.percentage}%)`;
-        }
-        if (p.retrograde) { line += " (Rx)"; }
-        if (p.house_info) { line += ` ${p.house_info}`; }
-        out += `${line}\n`;
-      });
-
-      out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
-      res.aspects.forEach(a => { out += `${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
-      
-      out += `\n--- ASPECT PATTERNS ---\n`;
-      (res.aspect_patterns && res.aspect_patterns.length > 0) ? res.aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "No major aspect patterns detected.\n";
-
-      out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
-      res.additional_points.forEach(p => { out += `${p.name}: ${p.info}\n`; });
-      
-      out += `\n--- HOUSE RULERS ---\n`;
-      for (const [house, info] of Object.entries(res.house_rulers)) { out += `${house}: ${info}\n`; }
-      
-      out += `\n--- HOUSE SIGN DISTRIBUTIONS ---\n`;
-      for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
-        out += `- ${house}\n`;
-        if (segments && segments.length > 0) {
-            segments.forEach(seg => { out += `     - ${seg}\n`; });
-        }
-      }
-      document.getElementById("output").innerText = out;
-    }
-  </script>
+    </script>
 </body>
 </html>
