@@ -18,6 +18,9 @@ from logtail import LogtailHandler
 # --- SETUP THE LOGGER ---
 handler = None
 logtail_token = os.getenv("LOGTAIL_SOURCE_TOKEN")
+
+print(f"--- DEBUG: Reading LOGTAIL_SOURCE_TOKEN. Value found: {logtail_token} ---")
+
 if logtail_token:
     handler = LogtailHandler(source_token=logtail_token)
 
