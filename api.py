@@ -142,16 +142,11 @@ def calculate_chart_endpoint(data: ChartRequest):
             "aspects": [
                 {"p1_name": f"{a.p1.name}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}"} for a in chart.aspects
             ],
+            "true_sidereal_signs": TRUE_SIDEREAL_SIGNS,
             "aspect_patterns": [p['description'] for p in chart.aspect_patterns],
             "additional_points": [
                 {"name": p.name, "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}"}
                 for p in sorted(chart.all_points, key=lambda x: x.name) if p.name not in major_positions_order
-            ],
-             "true_sidereal_signs": TRUE_SIDEREAL_SIGNS,
-            
-            "aspect_patterns": [p['description'] for p in chart.aspect_patterns],
-            "additional_points": [
-                # ...
             ],
             "house_rulers": house_rulers_formatted,
             "house_sign_distributions": chart.house_sign_distributions
