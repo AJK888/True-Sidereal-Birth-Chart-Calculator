@@ -1,21 +1,19 @@
-import os
-import traceback
-import pendulum
-import requests
-import swisseph as swe
-import logging
-from logtail import LogtailHandler
+# api.py
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from natal_chart import (
-    NatalChart,
-    PLANETS_CONFIG,
-    calculate_numerology,
-    format_true_sidereal_placement,
-    get_chinese_zodiac,
-    get_sign_and_ruler,
+    NatalChart, get_sign_and_ruler, format_true_sidereal_placement, PLANETS_CONFIG, 
+    calculate_numerology, get_chinese_zodiac
 )
+import swisseph as swe
+import traceback
+import requests
+import pendulum
+import os
+import logging
+from logtail import LogtailHandler
 
 # --- SETUP THE LOGGER ---
 handler = None
@@ -28,10 +26,12 @@ logger.setLevel(logging.INFO)
 if handler:
     logger.addHandler(handler)
 
-# 1. Create the app object first.
 app = FastAPI(title="True Sidereal API", version="1.0")
 
-# 2. Add middleware.
+@app.get("/ping")
+def ping():
+    return {"message": "ok"}
+
 origins = [
     "https://true-sidereal-birth-chart.onrender.com",
 ]
@@ -43,7 +43,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 3. Define the Pydantic model.
 class ChartRequest(BaseModel):
     name: str
     year: int
@@ -53,16 +52,14 @@ class ChartRequest(BaseModel):
     minute: int
     location: str
 
-# 4. Define the routes.
-@app.get("/ping")
-def ping():
-    return {"message": "ok"}
-
 @app.post("/calculate_chart")
 def calculate_chart_endpoint(data: ChartRequest):
     try:
-        # Log the incoming request
+        # FIX: Rename the conflicting 'name' key before logging
         log_data = data.dict()
+        if 'name' in log_data:
+            log_data['chart_name'] = log_data.pop('name')
+        
         logger.info("New chart request received", extra=log_data)
 
         swe.set_ephe_path(r".")
@@ -92,7 +89,6 @@ def calculate_chart_endpoint(data: ChartRequest):
         )
         utc_time = local_time.in_timezone('UTC')
 
-        # --- MAIN CHART CALCULATION ---
         chart = NatalChart(
             name=data.name, year=utc_time.year, month=utc_time.month, day=utc_time.day,
             hour=utc_time.hour, minute=utc_time.minute, latitude=lat, longitude=lng
@@ -117,7 +113,6 @@ def calculate_chart_endpoint(data: ChartRequest):
             'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)'
         ]
         
-        # --- FORMAT FINAL JSON RESPONSE ---
         return {
             "name": chart.name, "utc_datetime": chart.utc_datetime_str, "location": chart.location_str,
             "day_night_status": chart.day_night_info.get("status", "N/A"),
@@ -149,8 +144,6 @@ def calculate_chart_endpoint(data: ChartRequest):
     except HTTPException as e:
         raise e
     except Exception as e:
-        # Log the full error to your logging service
         logger.error(f"An unexpected error occurred: {type(e).__name__} - {e}", exc_info=True)
-        # Also print to console for live debugging on Render
         print("\n--- AN EXCEPTION WAS CAUGHT ---"); traceback.print_exc(); print("-----------------------------\n")
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {type(e).__name__} - {e}")
