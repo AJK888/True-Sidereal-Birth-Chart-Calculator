@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from natal_chart import (
     NatalChart, get_sign_and_ruler, format_true_sidereal_placement, PLANETS_CONFIG, 
-    calculate_numerology, get_chinese_zodiac
+    calculate_numerology, get_chinese_zodiac, TRUE_SIDEREAL_SIGNS
 )
 import swisseph as swe
 import traceback
@@ -108,7 +108,6 @@ def calculate_chart_endpoint(data: ChartRequest):
             'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)'
         ]
         
-        # --- NEW: Create a list of house cusp degrees ---
         house_cusps = []
         if chart.ascendant_data.get("sidereal_asc") is not None:
             asc = chart.ascendant_data['sidereal_asc']
@@ -128,19 +127,20 @@ def calculate_chart_endpoint(data: ChartRequest):
                 "chinese_zodiac": chinese_zodiac
             },
             "major_positions": [
-                {
-                    "name": p.name, 
-                    "position": p.formatted_position,
-                    "degrees": p.degree, # <-- NEW
-                    "percentage": p.sign_percentage, 
-                    "retrograde": p.retrograde, 
-                    "house_info": f"– House {p.house_num}, {p.house_degrees}" if p.house_num > 0 else ""
-                }
+                {"name": p.name, "position": p.formatted_position, "degrees": p.degree, "percentage": p.sign_percentage, "retrograde": p.retrograde, "house_info": f"– House {p.house_num}, {p.house_degrees}" if p.house_num > 0 else ""}
                 for p in sorted(chart.all_points, key=lambda x: major_positions_order.index(x.name) if x.name in major_positions_order else 99) if p.name in major_positions_order
             ],
-            "house_cusps": house_cusps, # <-- NEW
+            "house_cusps": house_cusps,
             "aspects": [
-                {"p1_name": f"{a.p1.name}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}"} for a in chart.aspects
+                {
+                    "p1_name": f"{a.p1.name}{' (Rx)' if a.p1.retrograde else ''}", 
+                    "p2_name": f"{a.p2.name}{' (Rx)' if a.p2.retrograde else ''}", 
+                    "type": a.type, 
+                    "orb": f"{abs(a.orb):.2f}°", 
+                    "score": f"{a.strength:.2f}",
+                    "p1_degrees": a.p1.degree,
+                    "p2_degrees": a.p2.degree
+                } for a in chart.aspects
             ],
             "true_sidereal_signs": TRUE_SIDEREAL_SIGNS,
             "aspect_patterns": [p['description'] for p in chart.aspect_patterns],
@@ -151,7 +151,6 @@ def calculate_chart_endpoint(data: ChartRequest):
             "house_rulers": house_rulers_formatted,
             "house_sign_distributions": chart.house_sign_distributions
         }
-        
     except HTTPException as e:
         raise e
     except Exception as e:
