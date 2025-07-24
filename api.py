@@ -147,9 +147,16 @@ def calculate_chart_endpoint(data: ChartRequest):
                 {"name": p.name, "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}"}
                 for p in sorted(chart.all_points, key=lambda x: x.name) if p.name not in major_positions_order
             ],
+             "true_sidereal_signs": TRUE_SIDEREAL_SIGNS,
+            
+            "aspect_patterns": [p['description'] for p in chart.aspect_patterns],
+            "additional_points": [
+                # ...
+            ],
             "house_rulers": house_rulers_formatted,
             "house_sign_distributions": chart.house_sign_distributions
         }
+        
     except HTTPException as e:
         raise e
     except Exception as e:
