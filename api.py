@@ -3,6 +3,8 @@ import traceback
 import pendulum
 import requests
 import swisseph as swe
+import logging
+from logtail import LogtailHandler
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -15,9 +17,21 @@ from natal_chart import (
     get_sign_and_ruler,
 )
 
+# --- SETUP THE LOGGER ---
+handler = None
+logtail_token = os.getenv("LOGTAIL_SOURCE_TOKEN")
+if logtail_token:
+    handler = LogtailHandler(source_token=logtail_token)
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+if handler:
+    logger.addHandler(handler)
+
+# 1. Create the app object first.
 app = FastAPI(title="True Sidereal API", version="1.0")
 
-# --- SECURED CORS ---
+# 2. Add middleware.
 origins = [
     "https://true-sidereal-birth-chart.onrender.com",
 ]
@@ -29,7 +43,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Pydantic model for incoming data
+# 3. Define the Pydantic model.
 class ChartRequest(BaseModel):
     name: str
     year: int
@@ -39,13 +53,7 @@ class ChartRequest(BaseModel):
     minute: int
     location: str
 
-# Helper list for ordering positions
-major_positions_order = [
-    'Ascendant', 'Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn',
-    'Uranus', 'Neptune', 'Pluto', 'Chiron', 'True Node', 'South Node',
-    'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)'
-]
-
+# 4. Define the routes.
 @app.get("/ping")
 def ping():
     return {"message": "ok"}
@@ -53,6 +61,10 @@ def ping():
 @app.post("/calculate_chart")
 def calculate_chart_endpoint(data: ChartRequest):
     try:
+        # Log the incoming request
+        log_data = data.dict()
+        logger.info("New chart request received", extra=log_data)
+
         swe.set_ephe_path(r".")
 
         # --- SECURE GEOCODING ON BACKEND ---
@@ -98,7 +110,13 @@ def calculate_chart_endpoint(data: ChartRequest):
                 ruler_body = next((p for p in chart.celestial_bodies if p.name == ruler_name), None)
                 ruler_pos = f"– {ruler_body.formatted_position} – House {ruler_body.house_num}, {ruler_body.house_degrees}" if ruler_body and ruler_body.degree is not None else ""
                 house_rulers_formatted[f"House {i+1}"] = f"{sign} (Ruler: {ruler_name} {ruler_pos})"
-
+        
+        major_positions_order = [
+            'Ascendant', 'Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn',
+            'Uranus', 'Neptune', 'Pluto', 'Chiron', 'True Node', 'South Node',
+            'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)'
+        ]
+        
         # --- FORMAT FINAL JSON RESPONSE ---
         return {
             "name": chart.name, "utc_datetime": chart.utc_datetime_str, "location": chart.location_str,
@@ -131,5 +149,8 @@ def calculate_chart_endpoint(data: ChartRequest):
     except HTTPException as e:
         raise e
     except Exception as e:
+        # Log the full error to your logging service
+        logger.error(f"An unexpected error occurred: {type(e).__name__} - {e}", exc_info=True)
+        # Also print to console for live debugging on Render
         print("\n--- AN EXCEPTION WAS CAUGHT ---"); traceback.print_exc(); print("-----------------------------\n")
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {type(e).__name__} - {e}")
