@@ -1,5 +1,6 @@
 # api.py
 
+import time
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -12,12 +13,11 @@ import traceback
 import requests
 import pendulum
 import os
-import time
 
-# 1. Create the app object first.
+# 1. The app object is created first.
 app = FastAPI(title="True Sidereal API", version="1.0")
 
-# 2. Add middleware.
+# 2. Middleware is added.
 origins = [
     "https://true-sidereal-birth-chart.onrender.com",
 ]
@@ -29,7 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 3. Define the Pydantic model.
+# 3. Pydantic models are defined.
 class ChartRequest(BaseModel):
     name: str
     year: int
@@ -39,7 +39,7 @@ class ChartRequest(BaseModel):
     minute: int
     location: str
 
-# 4. Define the routes.
+# 4. Routes are defined.
 @app.get("/ping")
 def ping():
     return {"message": "ok"}
