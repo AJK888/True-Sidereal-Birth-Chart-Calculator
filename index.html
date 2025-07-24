@@ -86,10 +86,8 @@
     </div>
 
     <script>
-        // The main event listener remains the same
-        document.getElementById("chartForm").addEventListener("submit", async function (e) { /* ... */ });
-        // The renderResults function remains the same
-        function renderResults(res) { /* ... */ }
+        document.getElementById("chartForm").addEventListener("submit", async function (e) { /* ... (This function is unchanged) ... */ });
+        function renderResults(res) { /* ... (This function is unchanged) ... */ }
 
         const SVG_NS = "http://www.w3.org/2000/svg";
         const ZODIAC_GLYPHS = {'Aries':'♈','Taurus':'♉','Gemini':'♊','Cancer':'♋','Leo':'♌','Virgo':'♍','Libra':'♎','Scorpio':'♏','Ophiuchus':'⛎','Sagittarius':'♐','Capricorn':'♑','Aquarius':'♒','Pisces':'♓'};
@@ -106,54 +104,14 @@
             const planetRingRadius = 250;
             const innerRadius = 150;
 
-            // --- REFACTORED: Rotation Logic ---
             const ascendant = data.major_positions.find(p => p.name === 'Ascendant');
-            if (!ascendant) return; // Can't draw without ascendant
-            
-            // Calculate rotation so Ascendant is at 180 degrees (left horizon)
+            if (!ascendant) return;
             const rotationAngle = 180 - ascendant.degrees;
 
             function getCoords(radius, angleDegrees) {
-                // Apply the rotation to the angle before converting to coordinates
                 const rotatedAngle = (angleDegrees + rotationAngle + 360) % 360;
                 const angleRadians = (rotatedAngle - 90) * (Math.PI / 180);
                 return { x: centerX + radius * Math.cos(angleRadians), y: centerY + radius * Math.sin(angleRadians) };
-            }
-
-            // Draw concentric circles (these don't rotate)
-            [zodiacRadius, houseRingRadius, innerRadius].forEach(r => {
-                const circle = document.createElementNS(SVG_NS, 'circle');
-                circle.setAttribute('cx', centerX);
-                circle.setAttribute('cy', centerY);
-                circle.setAttribute('r', r);
-                circle.setAttribute('class', 'wheel-circle');
-                svg.appendChild(circle);
-            });
-            
-            // --- REFACTORED: Draw Unequal Zodiac Dividers and Glyphs ---
-            if (data.true_sidereal_signs) {
-                const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2;
-                data.true_sidereal_signs.forEach(sign => {
-                    const [name, start, end] = sign;
-                    
-                    // Draw divider line at the start of the sign
-                    const startPoint = getCoords(houseRingRadius, start);
-                    const endPoint = getCoords(zodiacRadius, start);
-                    const line = document.createElementNS(SVG_NS, 'line');
-                    line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
-                    line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
-                    line.setAttribute('class', 'zodiac-divider');
-                    svg.appendChild(line);
-
-                    // Place glyph in the middle of the sign
-                    const midAngle = start + (end - start) / 2;
-                    const textCoords = getCoords(glyphRadius, midAngle);
-                    const text = document.createElementNS(SVG_NS, 'text');
-                    text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
-                    text.setAttribute('class', 'zodiac-glyph');
-                    text.textContent = ZODIAC_GLYPHS[name];
-                    svg.appendChild(text);
-                });
             }
 
             // Draw aspect lines first so they are in the background
@@ -172,6 +130,36 @@
                 });
             }
             svg.appendChild(aspectGroup);
+
+            // Draw concentric circles
+            [zodiacRadius, houseRingRadius, innerRadius].forEach(r => {
+                const circle = document.createElementNS(SVG_NS, 'circle');
+                circle.setAttribute('cx', centerX); circle.setAttribute('cy', centerY);
+                circle.setAttribute('r', r); circle.setAttribute('class', 'wheel-circle');
+                svg.appendChild(circle);
+            });
+            
+            // Draw Unequal Zodiac Dividers and Glyphs
+            if (data.true_sidereal_signs) {
+                const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2;
+                data.true_sidereal_signs.forEach(sign => {
+                    const [name, start, end] = sign;
+                    const startPoint = getCoords(houseRingRadius, start);
+                    const endPoint = getCoords(zodiacRadius, start);
+                    const line = document.createElementNS(SVG_NS, 'line');
+                    line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
+                    line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
+                    line.setAttribute('class', 'zodiac-divider');
+                    svg.appendChild(line);
+                    const midAngle = start + (end - start) / 2;
+                    const textCoords = getCoords(glyphRadius, midAngle);
+                    const text = document.createElementNS(SVG_NS, 'text');
+                    text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
+                    text.setAttribute('class', 'zodiac-glyph');
+                    text.textContent = ZODIAC_GLYPHS[name];
+                    svg.appendChild(text);
+                });
+            }
 
             // Draw house cusps and numbers
             if (data.house_cusps && data.house_cusps.length === 12) {
