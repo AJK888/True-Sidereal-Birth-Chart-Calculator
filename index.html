@@ -215,7 +215,7 @@
             const centerY = 500;
             const zodiacRadius = 450;
             const houseRingRadius = 350;
-            const planetGlyphRadius = 320; // <-- NEW: Fixed radius for planets
+            const planetGlyphRadius = 320;
             const innerRadius = 150;
             
             const ascendant = data.major_positions.find(p => p.name === 'Ascendant');
@@ -224,20 +224,21 @@
                 return;
             }
             
-            const rotationAngle = 180 - ascendant.degrees;
-
+            // --- NEW COORDINATE LOGIC ---
+            // This function converts a raw astrological degree (0 = Aries) into an (x,y) coordinate
+            // for a chart where the Ascendant is fixed at the 9 o'clock position.
             function getCoords(radius, angleDegrees) {
-                const rotatedAngle = (angleDegrees + rotationAngle + 360) % 360;
-                const angleRadians = rotatedAngle * (Math.PI / 180);
+                // 1. Calculate the angle relative to the Ascendant
+                let relativeAngle = angleDegrees - ascendant.degrees;
+                // 2. Convert to a standard counter-clockwise system (0 degrees = right)
+                // We subtract from 180 to place the Ascendant (our new 0) on the left horizon
+                let finalAngle = 180 - relativeAngle;
+                const angleRadians = finalAngle * (Math.PI / 180);
                 return { 
                     x: centerX + radius * Math.cos(angleRadians), 
-                    y: centerY + radius * Math.sin(angleRadians) 
+                    y: centerY - radius * Math.sin(angleRadians) // Use minus for y to go counter-clockwise
                 };
             }
-            
-            const mainGroup = document.createElementNS(SVG_NS, 'g');
-            mainGroup.setAttribute('transform', `rotate(${rotationAngle} ${centerX} ${centerY})`);
-            svg.appendChild(mainGroup);
 
             // Draw aspect lines first
             if (data.aspects) {
@@ -250,7 +251,7 @@
                     line.setAttribute('x2', p2Coords.x); line.setAttribute('y2', p2Coords.y);
                     const aspectClass = aspect.type.toLowerCase().replace(' ', '-');
                     line.setAttribute('class', `aspect-line aspect-${aspectClass}`);
-                    svg.insertBefore(line, svg.firstChild);
+                    svg.appendChild(line);
                 });
             }
 
@@ -273,17 +274,14 @@
                     line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
                     line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
                     line.setAttribute('class', 'zodiac-divider');
-                    mainGroup.appendChild(line);
-
+                    svg.appendChild(line);
                     const midAngle = start + ((end - start + 360) % 360) / 2;
                     const textCoords = getCoords(glyphRadius, midAngle);
                     const text = document.createElementNS(SVG_NS, 'text');
-                    text.setAttribute('x', textCoords.x);
-                    text.setAttribute('y', textCoords.y);
+                    text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
                     text.setAttribute('class', 'zodiac-glyph');
-                    text.setAttribute('transform', `rotate(${-rotationAngle} ${textCoords.x} ${textCoords.y})`);
                     text.textContent = ZODIAC_GLYPHS[name];
-                    mainGroup.appendChild(text);
+                    svg.appendChild(text);
                 });
             }
 
@@ -296,49 +294,42 @@
                     line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
                     line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
                     line.setAttribute('class', (i === 0 || i === 6) ? 'house-cusp major' : 'house-cusp');
-                    mainGroup.appendChild(line);
+                    svg.appendChild(line);
                 });
                 for (let i = 0; i < 12; i++) {
                     const startAngle = data.house_cusps[i];
                     const endAngle = data.house_cusps[(i + 1) % 12];
                     let midAngle = (startAngle + endAngle) / 2;
                     if (endAngle < startAngle) midAngle = ((startAngle + endAngle + 360) / 2) % 360;
-                    const textCoords = getCoords(innerRadius + 35, midAngle);
+                    const textCoords = getCoords(innerRadius - 30, midAngle);
                     const text = document.createElementNS(SVG_NS, 'text');
                     text.setAttribute('x', textCoords.x);
                     text.setAttribute('y', textCoords.y);
                     text.setAttribute('class', 'house-number');
-                    text.setAttribute('transform', `rotate(${-rotationAngle} ${textCoords.x} ${textCoords.y})`);
                     text.textContent = i + 1;
-                    mainGroup.appendChild(text);
+                    svg.appendChild(text);
                 }
             }
             
             // Place the Planets
             if (data.major_positions) {
-                // FIX: Remove staggering logic and use the fixed planetGlyphRadius
                 data.major_positions.forEach(planet => {
                     if (planet.degrees === null || !PLANET_GLYPHS[planet.name]) return;
-                    
                     const textCoords = getCoords(planetGlyphRadius, planet.degrees);
                     const text = document.createElementNS(SVG_NS, 'text');
                     text.setAttribute('x', textCoords.x);
                     text.setAttribute('y', textCoords.y);
                     text.setAttribute('class', 'planet-glyph');
-                    text.setAttribute('transform', `rotate(${-rotationAngle} ${textCoords.x} ${textCoords.y})`);
                     text.textContent = PLANET_GLYPHS[planet.name];
-                    mainGroup.appendChild(text);
-
+                    svg.appendChild(text);
                     if (planet.retrograde) {
-                        // Place retrograde symbol slightly offset from the planet
-                        const rxCoords = getCoords(planetGlyphRadius + 20, planet.degrees + 1);
+                        const rxCoords = getCoords(planetGlyphRadius, planet.degrees - 4); // Adjusted offset
                         const rxText = document.createElementNS(SVG_NS, 'text');
                         rxText.setAttribute('x', rxCoords.x);
                         rxText.setAttribute('y', rxCoords.y);
                         rxText.setAttribute('class', 'planet-retrograde');
-                        rxText.setAttribute('transform', `rotate(${-rotationAngle} ${rxCoords.x} ${rxCoords.y})`);
                         rxText.textContent = '℞';
-                        mainGroup.appendChild(rxText);
+                        svg.appendChild(rxText);
                     }
                 });
             }
