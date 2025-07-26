@@ -17,6 +17,13 @@ ASPECTS_CONFIG: List[Tuple[str, float, float]] = [("Conjunction",0,8),("Oppositi
 ASPECT_LUMINARY_ORBS: Dict[str, float] = {"Conjunction":10,"Opposition":10,"Trine":8,"Square":8,"Sextile":6}
 ASPECT_SCORES: Dict[str, float] = {"Conjunction":5,"Opposition":4,"Trine":3.5,"Square":3,"Sextile":2.5,"Quincunx":2,"Semisextile":1.5,"Semisquare":1.5,"Sesquiquadrate":1.5,"Quintile":1.8,"Biquintile":1.8}
 
+# --- NEW: Tropical Zodiac Constants ---
+TROPICAL_SIGNS = [
+    ("Aries", 0), ("Taurus", 30), ("Gemini", 60), ("Cancer", 90),
+    ("Leo", 120), ("Virgo", 150), ("Libra", 180), ("Scorpio", 210),
+    ("Sagittarius", 240), ("Capricorn", 270), ("Aquarius", 300), ("Pisces", 330)
+]
+
 # --- Helper Functions ---
 def format_true_sidereal_placement(degrees: float) -> str:
     for sign, start, end in TRUE_SIDEREAL_SIGNS:
@@ -24,6 +31,16 @@ def format_true_sidereal_placement(degrees: float) -> str:
             deg_into_sign = degrees - start; d = int(deg_into_sign); m = int(round((deg_into_sign - d) * 60))
             return f"{d}°{m:02d}′ {sign}"
     return "Out of Bounds"
+
+# --- NEW: Tropical Formatting Helper ---
+def format_tropical_placement(degrees: float) -> str:
+    sign_index = int(degrees / 30)
+    sign = TROPICAL_SIGNS[sign_index][0]
+    deg_into_sign = degrees % 30
+    d = int(deg_into_sign)
+    m = int(round((deg_into_sign - d) * 60))
+    return f"{d}°{m:02d}′ {sign}"
+
 def get_sign_and_ruler(degrees: float) -> Tuple[str, str]:
     for sign, start, end in TRUE_SIDEREAL_SIGNS:
         if start <= degrees < end: return sign, SIGN_RULERS.get(sign, "Unknown")
@@ -40,38 +57,15 @@ def find_house_equal(sidereal_deg: float, ascendant: float) -> Tuple[int, float]
         elif house_start <= sidereal_deg < house_end: return i + 1, (sidereal_deg - house_start) % 360
     return -1, 0
 def calculate_numerology(day: int, month: int, year: int) -> dict:
-    """Calculates Life Path and Day numbers, preserving Master Numbers 11, 22, and 33."""
-    
     def reduce_number(n: int) -> str:
-        """
-        Reduces a number by summing its digits.
-        If the result is 11, 22, or 33, it stops and formats it (e.g., "33/6").
-        Otherwise, it reduces to a single digit.
-        """
-        # First reduction loop
-        reduced_num = n
-        while reduced_num > 9 and reduced_num not in [11, 22, 33]:
-            reduced_num = sum(int(digit) for digit in str(reduced_num))
-
-        # Format the final output
-        if reduced_num in [11, 22, 33]:
-            # For Master Numbers, show both the number and its single-digit sum
-            final_sum = sum(int(digit) for digit in str(reduced_num))
-            return f"{reduced_num}/{final_sum}"
+        final_num = n
+        while final_num > 9 and final_num not in [11, 22, 33]: final_num = sum(int(digit) for digit in str(final_num))
+        if final_num in [11, 22, 33]: return f"{final_num}/{sum(int(digit) for digit in str(final_num))}"
         else:
-            # For regular numbers, ensure they are fully reduced to a single digit
-            while reduced_num > 9:
-                 reduced_num = sum(int(digit) for digit in str(reduced_num))
-            return str(reduced_num)
-
-    # Calculate Life Path Number
-    full_date_sum = sum(int(digit) for digit in f"{day}{month}{year}")
-    life_path = reduce_number(full_date_sum)
-    
-    # Calculate Day Number
-    day_sum = sum(int(digit) for digit in str(day))
-    day_number = reduce_number(day_sum)
-    
+            while final_num > 9: final_num = sum(int(digit) for digit in str(final_num))
+            return str(final_num)
+    life_path = reduce_number(sum(int(digit) for digit in f"{day}{month}{year}"))
+    day_number = reduce_number(sum(int(digit) for digit in str(day)))
     return {"life_path": life_path, "day_number": day_number}
 def get_chinese_zodiac(year: int, month: int, day: int) -> str:
     zodiac_animals = ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"]
@@ -118,6 +112,7 @@ class NatalChart:
         self.utc_datetime_str = datetime(year, month, day, hour, minute, tzinfo=timezone.utc).strftime("%Y-%m-%d %H:%M")
         self.location_str = f"{abs(latitude):.4f}° {'N' if latitude >= 0 else 'S'}, {abs(longitude):.4f}° {'E' if longitude >= 0 else 'W'}"
         self.celestial_bodies: List[CelestialBody] = []; self.all_points: List[CelestialBody] = []
+        self.tropical_placements: List[Dict[str, Any]] = [] # <-- NEW
         self.aspects: List[Aspect] = []; self.aspect_patterns: List[Dict[str, Any]] = []
         self.house_sign_distributions: Dict[str, List[str]] = {}; self.dominance_analysis: Dict[str, Any] = {}
         self.ascendant_data: Dict[str, Any] = {}; self.day_night_info: Dict[str, Any] = {}
@@ -125,6 +120,7 @@ class NatalChart:
         self._calculate_ascendant_mc_data();
         if self.ascendant_data.get("sidereal_asc") is None: return
         self._determine_day_night(); self._calculate_all_points()
+        self._calculate_tropical_placements() # <-- NEW
         self._calculate_aspects(); self._detect_aspect_patterns()
         self._calculate_house_sign_distributions(); self._analyze_chart_dominance()
     def _calculate_ascendant_mc_data(self) -> None:
@@ -163,6 +159,29 @@ class NatalChart:
         nn = next((p for p in self.celestial_bodies if p.name == 'True Node'), None)
         sn_obj = CelestialBody("South Node", (nn.degree + 180) % 360, False, sidereal_asc, False) if nn and nn.degree is not None else None
         self.all_points.extend(filter(lambda p: p and p.degree is not None, [pof_obj, sn_obj, asc_obj, mc_obj, desc_obj, ic_obj]))
+    
+    # --- NEW: Tropical Calculation Method ---
+    def _calculate_tropical_placements(self) -> None:
+        all_bodies_config = PLANETS_CONFIG + ADDITIONAL_BODIES_CONFIG
+        for name, code in all_bodies_config:
+            try:
+                res = swe.calc_ut(self.jd, code)
+                tropical_lon = res[0][0]
+                is_retro = res[0][3] < 0
+                self.tropical_placements.append({
+                    "name": name,
+                    "position": format_tropical_placement(tropical_lon),
+                    "retrograde": is_retro
+                })
+            except Exception:
+                continue
+        # Add Angles
+        if self.ascendant_data.get("tropical_asc") is not None:
+            self.tropical_placements.append({"name": "Ascendant", "position": format_tropical_placement(self.ascendant_data["tropical_asc"]), "retrograde": False})
+            self.tropical_placements.append({"name": "Midheaven (MC)", "position": format_tropical_placement(self.ascendant_data["mc"]), "retrograde": False})
+            self.tropical_placements.append({"name": "Descendant", "position": format_tropical_placement((self.ascendant_data["tropical_asc"] + 180) % 360), "retrograde": False})
+            self.tropical_placements.append({"name": "Imum Coeli (IC)", "position": format_tropical_placement((self.ascendant_data["mc"] + 180) % 360), "retrograde": False})
+
     def _calculate_aspects(self) -> None:
         main_planets = [b for b in self.celestial_bodies if b.is_main_planet and b.degree is not None]
         for p1, p2 in combinations(main_planets, 2):
