@@ -62,27 +62,29 @@
     </style>
 </head>
 <body>
-    <div class="description">
-    <h3>Your Complete Astrological Blueprint</h3>
-    <p>
-        Discover the unique celestial energies that shaped you. This calculator provides a comprehensive analysis using the <strong>True Sidereal</strong> zodiac, which reflects the true, observable size of the constellations, including Ophiuchus.
-    </p>
-    <p>
-        For a complete perspective, your report also includes a full chart calculated in the standard <strong>Tropical</strong> zodiac, allowing for direct comparison.
-    </p>
-    <p>
-        <strong>Your personalized report features:</strong>
-    </p>
-    <ul>
-        <li>A visual chart wheel showing your unique planetary alignment.</li>
-        <li>Detailed Sidereal and Tropical placements for all planets and major points.</li>
-        <li>In-depth analysis of aspects, patterns, and chart dominance.</li>
-        <li>Your personal Numerology and Chinese Zodiac sign.</li>
-    </ul>
-    <p>
-        Enter your birth details below to generate your complete astrological profile.
-    </p>
-</div>
+    <div class="container">
+        <h1>True Sidereal Chart</h1>
+        <div class="description">
+            <h3>Your Complete Astrological Blueprint</h3>
+            <p>
+                Discover the unique celestial energies that shaped you. This calculator provides a comprehensive analysis using the <strong>True Sidereal</strong> zodiac, which reflects the true, observable size of the constellations, including Ophiuchus.
+            </p>
+            <p>
+                For a complete perspective, your report also includes a full chart calculated in the standard <strong>Tropical</strong> zodiac, allowing for direct comparison.
+            </p>
+            <p>
+                <strong>Your personalized report features:</strong>
+            </p>
+            <ul>
+                <li>A visual chart wheel showing your unique planetary alignment.</li>
+                <li>Detailed Sidereal and Tropical placements for all planets and major points.</li>
+                <li>In-depth analysis of aspects, patterns, and chart dominance.</li>
+                <li>Your personal Numerology and Chinese Zodiac sign.</li>
+            </ul>
+            <p>
+                Enter your birth details below to generate your complete astrological profile.
+            </p>
+        </div>
 
         <form id="chartForm">
             <label for="name">Name</label><input type="text" id="name" name="name" required value="Alexander">
@@ -174,21 +176,21 @@
                 wheelTitle.style.display = 'block';
             }
             let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
-            out += `UTC Date & Time: ${res.utc_datetime}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
-            out += `Location: ${res.location}\n`;
-            out += `Day/Night Determination: ${res.day_night_status}\n\n`;
+            out += `- UTC Date & Time: ${res.utc_datetime}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
+            out += `- Location: ${res.location}\n`;
+            out += `- Day/Night Determination: ${res.day_night_status}\n\n`;
             out += `-- CHART ANALYSIS --\n`;
-            out += `Chart Ruler: ${res.sidereal_chart_analysis.chart_ruler}\n`;
-            out += `Dominant Sign: ${res.sidereal_chart_analysis.dominant_sign}\n`;
-            out += `Dominant Element: ${res.sidereal_chart_analysis.dominant_element}\n`;
-            out += `Dominant Modality: ${res.sidereal_chart_analysis.dominant_modality}\n`;
-            out += `Dominant Planet: ${res.sidereal_chart_analysis.dominant_planet}\n`;
-            out += `Life Path Number: ${res.sidereal_chart_analysis.life_path_number}\n`;
-            out += `Day Number: ${res.sidereal_chart_analysis.day_number}\n`;
-            out += `Chinese Zodiac: ${res.sidereal_chart_analysis.chinese_zodiac}\n\n`;
+            out += `- Chart Ruler: ${res.sidereal_chart_analysis.chart_ruler}\n`;
+            out += `- Dominant Sign: ${res.sidereal_chart_analysis.dominant_sign}\n`;
+            out += `- Dominant Element: ${res.sidereal_chart_analysis.dominant_element}\n`;
+            out += `- Dominant Modality: ${res.sidereal_chart_analysis.dominant_modality}\n`;
+            out += `- Dominant Planet: ${res.sidereal_chart_analysis.dominant_planet}\n`;
+            out += `- Life Path Number: ${res.sidereal_chart_analysis.life_path_number}\n`;
+            out += `- Day Number: ${res.sidereal_chart_analysis.day_number}\n`;
+            out += `- Chinese Zodiac: ${res.sidereal_chart_analysis.chinese_zodiac}\n\n`;
             out += `--- MAJOR POSITIONS ---\n`;
             res.sidereal_major_positions.forEach(p => {
-                let line = `${p.name}: ${p.position}`;
+                let line = `- ${p.name}: ${p.position}`;
                 if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
                     line += ` (${p.percentage}%)`;
                 }
@@ -197,35 +199,35 @@
                 out += `${line}\n`;
             });
             out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
-            res.sidereal_aspects.forEach(a => { out += `${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
+            res.sidereal_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
             out += `\n--- ASPECT PATTERNS ---\n`;
-            (res.sidereal_aspect_patterns && res.sidereal_aspect_patterns.length > 0) ? res.sidereal_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "No major aspect patterns detected.\n";
+            (res.sidereal_aspect_patterns && res.sidereal_aspect_patterns.length > 0) ? res.sidereal_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "- No major aspect patterns detected.\n";
             if (!res.unknown_time) {
                 out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
-                res.sidereal_additional_points.forEach(p => { out += `${p.name}: ${p.info}\n`; });
+                res.sidereal_additional_points.forEach(p => { out += `- ${p.name}: ${p.info}\n`; });
                 out += `\n--- HOUSE RULERS ---\n`;
-                for (const [house, info] of Object.entries(res.house_rulers)) { out += `${house}: ${info}\n`; }
+                for (const [house, info] of Object.entries(res.house_rulers)) { out += `- ${house}: ${info}\n`; }
                 out += `\n--- HOUSE SIGN DISTRIBUTIONS ---\n`;
                 for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
-                    out += `- ${house}\n`;
+                    out += `${house}:\n`; // No dash on the house number itself
                     if (segments && segments.length > 0) {
                         segments.forEach(seg => { out += `     - ${seg}\n`; });
                     }
                 }
             } else {
-                 out += `\n(House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n`;
+                 out += `\n- (House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n`;
             }
 
             if (res.tropical_major_positions && res.tropical_major_positions.length > 0) {
                 out += `\n\n\n=== TROPICAL CHART ===\n\n`;
                 out += `-- CHART ANALYSIS --\n`;
-                out += `Dominant Sign: ${res.tropical_chart_analysis.dominant_sign}\n`;
-                out += `Dominant Element: ${res.tropical_chart_analysis.dominant_element}\n`;
-                out += `Dominant Modality: ${res.tropical_chart_analysis.dominant_modality}\n`;
-                out += `Dominant Planet: ${res.tropical_chart_analysis.dominant_planet}\n\n`;
+                out += `- Dominant Sign: ${res.tropical_chart_analysis.dominant_sign}\n`;
+                out += `- Dominant Element: ${res.tropical_chart_analysis.dominant_element}\n`;
+                out += `- Dominant Modality: ${res.tropical_chart_analysis.dominant_modality}\n`;
+                out += `- Dominant Planet: ${res.tropical_chart_analysis.dominant_planet}\n\n`;
                 out += `--- MAJOR POSITIONS ---\n`;
                 res.tropical_major_positions.forEach(p => {
-                    let line = `${p.name}: ${p.position}`;
+                    let line = `- ${p.name}: ${p.position}`;
                     if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
                         line += ` (${p.percentage}%)`;
                     }
@@ -234,12 +236,12 @@
                     out += `${line}\n`;
                 });
                 out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
-                res.tropical_aspects.forEach(a => { out += `${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
+                res.tropical_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
                 out += `\n--- ASPECT PATTERNS ---\n`;
-                (res.tropical_aspect_patterns && res.tropical_aspect_patterns.length > 0) ? res.tropical_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "No major aspect patterns detected.\n";
+                (res.tropical_aspect_patterns && res.tropical_aspect_patterns.length > 0) ? res.tropical_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "- No major aspect patterns detected.\n";
                 if (!res.unknown_time) {
                     out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
-                    res.tropical_additional_points.forEach(p => { out += `${p.name}: ${p.info}\n`; });
+                    res.tropical_additional_points.forEach(p => { out += `- ${p.name}: ${p.info}\n`; });
                 }
             }
 
