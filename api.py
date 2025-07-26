@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from natal_chart import (
     NatalChart, get_sign_and_ruler, format_true_sidereal_placement, PLANETS_CONFIG, 
-    calculate_numerology, get_chinese_zodiac, TRUE_SIDEREAL_SIGNS
+    calculate_numerology, get_chinese_zodiac, TRUE_SIDEREAL_SIGNS # Import the constant
 )
 import swisseph as swe
 import traceback
@@ -51,7 +51,7 @@ class ChartRequest(BaseModel):
     hour: int
     minute: int
     location: str
-    unknown_time: bool = False # <-- NEW
+    unknown_time: bool = False
 
 @app.post("/calculate_chart")
 def calculate_chart_endpoint(data: ChartRequest):
@@ -114,7 +114,6 @@ def calculate_chart_endpoint(data: ChartRequest):
             asc = chart.ascendant_data['sidereal_asc']
             house_cusps = [(asc + i * 30) % 360 for i in range(12)]
 
-        # --- Build the full response dictionary ---
         full_response = {
             "name": chart.name, "utc_datetime": chart.utc_datetime_str, "location": chart.location_str,
             "day_night_status": chart.day_night_info.get("status", "N/A"),
@@ -144,22 +143,14 @@ def calculate_chart_endpoint(data: ChartRequest):
             ],
             "house_rulers": house_rulers_formatted,
             "house_sign_distributions": chart.house_sign_distributions,
-            "unknown_time": data.unknown_time # <-- NEW
+            "unknown_time": data.unknown_time
         }
         
-        # --- NEW: If time is unknown, filter out sensitive data ---
         if data.unknown_time:
             full_response['chart_analysis']['chart_ruler'] = "Unavailable (Unknown Birth Time)"
-            
-            # Filter out angles from major positions
             angles = ['Ascendant', 'Midheaven (MC)', 'Descendant', 'Imum Coeli (IC)']
             full_response['major_positions'] = [p for p in full_response['major_positions'] if p['name'] not in angles]
-            
-            # Remove house info from all remaining positions
-            for p in full_response['major_positions']:
-                p['house_info'] = ""
-            
-            # Remove other time-sensitive sections
+            for p in full_response['major_positions']: p['house_info'] = ""
             full_response['house_cusps'] = []
             full_response['house_rulers'] = {}
             full_response['house_sign_distributions'] = {}
