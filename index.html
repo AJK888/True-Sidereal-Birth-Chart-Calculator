@@ -200,6 +200,20 @@
             } else {
                  out += `\n(House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n`;
             }
+
+            // --- NEW: Add the Tropical Chart section ---
+            if (res.tropical_placements && res.tropical_placements.length > 0) {
+                out += `\n\n\n=== TROPICAL CHART ===\n\n`;
+                out += `--- PLANETARY POSITIONS ---\n`;
+                const tropical_order = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn','Uranus', 'Neptune', 'Pluto', 'Chiron', 'True Node', 'Lilith','Ceres', 'Pallas', 'Juno', 'Vesta','Ascendant', 'Midheaven (MC)', 'Descendant', 'Imum Coeli (IC)', 'Vertex'];
+                const sorted_tropical = [...res.tropical_placements].sort((a, b) => tropical_order.indexOf(a.name) - tropical_order.indexOf(b.name));
+                sorted_tropical.forEach(p => {
+                    let line = `${p.name}: ${p.position}`;
+                    if (p.retrograde) { line += " (Rx)"; }
+                    out += `${line}\n`;
+                });
+            }
+
             document.getElementById("output").innerText = out;
         }
 
@@ -224,23 +238,19 @@
                 return;
             }
             
-            // This function converts a raw astrological degree (0 = Aries) into an (x,y) coordinate.
-            // It uses a standard counter-clockwise system where 0 degrees is on the right (3 o'clock).
             function degreeToCartesian(radius, angleDegrees) {
                 const angleRadians = angleDegrees * (Math.PI / 180);
                 return { 
                     x: centerX + radius * Math.cos(angleRadians), 
-                    y: centerY - radius * Math.sin(angleRadians) // Use minus for y to go counter-clockwise from the right
+                    y: centerY - radius * Math.sin(angleRadians)
                 };
             }
 
-            // Create a main group that will be rotated to place the Ascendant on the left.
             const rotation = -ascendant.degrees;
             const mainGroup = document.createElementNS(SVG_NS, 'g');
             mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
             svg.appendChild(mainGroup);
 
-            // Draw aspect lines first
             if (data.aspects) {
                 data.aspects.forEach(aspect => {
                     if (aspect.p1_degrees === null || aspect.p2_degrees === null) return;
@@ -255,7 +265,6 @@
                 });
             }
 
-            // Draw concentric circles (added to the main SVG so they don't rotate)
             [zodiacRadius, houseRingRadius, innerRadius].forEach(r => {
                 const circle = document.createElementNS(SVG_NS, 'circle');
                 circle.setAttribute('cx', centerX); circle.setAttribute('cy', centerY);
@@ -263,7 +272,6 @@
                 svg.appendChild(circle);
             });
             
-            // Draw Unequal Zodiac Dividers and Glyphs
             if (data.true_sidereal_signs) {
                 const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2;
                 data.true_sidereal_signs.forEach(sign => {
@@ -275,7 +283,6 @@
                     line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
                     line.setAttribute('class', 'zodiac-divider');
                     mainGroup.appendChild(line);
-
                     const midAngle = start + ((end - start + 360) % 360) / 2;
                     const textCoords = degreeToCartesian(glyphRadius, midAngle);
                     const text = document.createElementNS(SVG_NS, 'text');
@@ -288,7 +295,6 @@
                 });
             }
 
-            // Draw house cusps and numbers
             if (data.house_cusps && data.house_cusps.length === 12) {
                 data.house_cusps.forEach((cuspDegrees, i) => {
                     const startPoint = degreeToCartesian(innerRadius, cuspDegrees);
@@ -296,7 +302,6 @@
                     const line = document.createElementNS(SVG_NS, 'line');
                     line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
                     line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
-                    // AC=0, DC=6, MC=9, IC=3 (in a 0-11 index)
                     line.setAttribute('class', (i === 0 || i === 3 || i === 6 || i === 9) ? 'house-cusp major' : 'house-cusp');
                     mainGroup.appendChild(line);
                 });
@@ -316,7 +321,6 @@
                 }
             }
             
-            // Place the Planets
             if (data.major_positions) {
                 data.major_positions.forEach(planet => {
                     if (planet.degrees === null || !PLANET_GLYPHS[planet.name]) return;
