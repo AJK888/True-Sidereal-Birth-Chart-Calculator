@@ -76,7 +76,7 @@
             <label for="day">Birth Day</label><input type="number" id="day" name="day" required value="26">
             <div class="time-toggle">
                 <input type="checkbox" id="unknownTime" name="unknownTime">
-                <label for="unknownTime">I don't know my birth time (within an hour)</label>
+                <label for="unknownTime">I don't know my birth time</label>
             </div>
             <label for="hour">Birth Hour (e.g., 17 for 5 PM)</label><input type="number" id="hour" name="hour" required value="17">
             <label for="minute">Birth Minute</label><input type="number" id="minute" name="minute" required value="40">
@@ -215,7 +215,7 @@
             const centerY = 500;
             const zodiacRadius = 450;
             const houseRingRadius = 350;
-            const planetRingRadius = 250;
+            const planetGlyphRadius = 320; // <-- NEW: Fixed radius for planets
             const innerRadius = 150;
             
             const ascendant = data.major_positions.find(p => p.name === 'Ascendant');
@@ -262,6 +262,7 @@
                 svg.appendChild(circle);
             });
             
+            // Draw Unequal Zodiac Dividers and Glyphs
             if (data.true_sidereal_signs) {
                 const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2;
                 data.true_sidereal_signs.forEach(sign => {
@@ -272,7 +273,8 @@
                     line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
                     line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
                     line.setAttribute('class', 'zodiac-divider');
-                    svg.appendChild(line);
+                    mainGroup.appendChild(line);
+
                     const midAngle = start + ((end - start + 360) % 360) / 2;
                     const textCoords = getCoords(glyphRadius, midAngle);
                     const text = document.createElementNS(SVG_NS, 'text');
@@ -281,10 +283,11 @@
                     text.setAttribute('class', 'zodiac-glyph');
                     text.setAttribute('transform', `rotate(${-rotationAngle} ${textCoords.x} ${textCoords.y})`);
                     text.textContent = ZODIAC_GLYPHS[name];
-                    svg.appendChild(text);
+                    mainGroup.appendChild(text);
                 });
             }
 
+            // Draw house cusps and numbers
             if (data.house_cusps && data.house_cusps.length === 12) {
                 data.house_cusps.forEach((cuspDegrees, i) => {
                     const startPoint = getCoords(innerRadius, cuspDegrees);
@@ -293,7 +296,7 @@
                     line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
                     line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
                     line.setAttribute('class', (i === 0 || i === 6) ? 'house-cusp major' : 'house-cusp');
-                    svg.appendChild(line);
+                    mainGroup.appendChild(line);
                 });
                 for (let i = 0; i < 12; i++) {
                     const startAngle = data.house_cusps[i];
@@ -307,30 +310,35 @@
                     text.setAttribute('class', 'house-number');
                     text.setAttribute('transform', `rotate(${-rotationAngle} ${textCoords.x} ${textCoords.y})`);
                     text.textContent = i + 1;
-                    svg.appendChild(text);
+                    mainGroup.appendChild(text);
                 }
             }
             
+            // Place the Planets
             if (data.major_positions) {
-                const sortedPlanets = [...data.major_positions].sort((a, b) => a.degrees - b.degrees);
-                sortedPlanets.forEach((planet, i) => {
+                // FIX: Remove staggering logic and use the fixed planetGlyphRadius
+                data.major_positions.forEach(planet => {
                     if (planet.degrees === null || !PLANET_GLYPHS[planet.name]) return;
-                    let currentRadius = planetRingRadius + (i % 3 - 1) * 25;
-                    const textCoords = getCoords(currentRadius, planet.degrees);
+                    
+                    const textCoords = getCoords(planetGlyphRadius, planet.degrees);
                     const text = document.createElementNS(SVG_NS, 'text');
                     text.setAttribute('x', textCoords.x);
                     text.setAttribute('y', textCoords.y);
                     text.setAttribute('class', 'planet-glyph');
+                    text.setAttribute('transform', `rotate(${-rotationAngle} ${textCoords.x} ${textCoords.y})`);
                     text.textContent = PLANET_GLYPHS[planet.name];
-                    svg.appendChild(text);
+                    mainGroup.appendChild(text);
+
                     if (planet.retrograde) {
-                        const rxCoords = getCoords(currentRadius, planet.degrees + 6);
+                        // Place retrograde symbol slightly offset from the planet
+                        const rxCoords = getCoords(planetGlyphRadius + 20, planet.degrees + 1);
                         const rxText = document.createElementNS(SVG_NS, 'text');
                         rxText.setAttribute('x', rxCoords.x);
                         rxText.setAttribute('y', rxCoords.y);
                         rxText.setAttribute('class', 'planet-retrograde');
+                        rxText.setAttribute('transform', `rotate(${-rotationAngle} ${rxCoords.x} ${rxCoords.y})`);
                         rxText.textContent = '℞';
-                        svg.appendChild(rxText);
+                        mainGroup.appendChild(rxText);
                     }
                 });
             }
