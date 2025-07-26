@@ -51,6 +51,7 @@ class ChartRequest(BaseModel):
     hour: int
     minute: int
     location: str
+    unknown_time: bool = False # <-- NEW
 
 @app.post("/calculate_chart")
 def calculate_chart_endpoint(data: ChartRequest):
@@ -113,7 +114,8 @@ def calculate_chart_endpoint(data: ChartRequest):
             asc = chart.ascendant_data['sidereal_asc']
             house_cusps = [(asc + i * 30) % 360 for i in range(12)]
 
-        return {
+        # --- Build the full response dictionary ---
+        full_response = {
             "name": chart.name, "utc_datetime": chart.utc_datetime_str, "location": chart.location_str,
             "day_night_status": chart.day_night_info.get("status", "N/A"),
             "chart_analysis": {
@@ -132,15 +134,7 @@ def calculate_chart_endpoint(data: ChartRequest):
             ],
             "house_cusps": house_cusps,
             "aspects": [
-                {
-                    "p1_name": f"{a.p1.name}{' (Rx)' if a.p1.retrograde else ''}", 
-                    "p2_name": f"{a.p2.name}{' (Rx)' if a.p2.retrograde else ''}", 
-                    "type": a.type, 
-                    "orb": f"{abs(a.orb):.2f}°", 
-                    "score": f"{a.strength:.2f}",
-                    "p1_degrees": a.p1.degree,
-                    "p2_degrees": a.p2.degree
-                } for a in chart.aspects
+                {"p1_name": f"{a.p1.name}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}", "p1_degrees": a.p1.degree, "p2_degrees": a.p2.degree} for a in chart.aspects
             ],
             "true_sidereal_signs": TRUE_SIDEREAL_SIGNS,
             "aspect_patterns": [p['description'] for p in chart.aspect_patterns],
@@ -149,8 +143,30 @@ def calculate_chart_endpoint(data: ChartRequest):
                 for p in sorted(chart.all_points, key=lambda x: x.name) if p.name not in major_positions_order
             ],
             "house_rulers": house_rulers_formatted,
-            "house_sign_distributions": chart.house_sign_distributions
+            "house_sign_distributions": chart.house_sign_distributions,
+            "unknown_time": data.unknown_time # <-- NEW
         }
+        
+        # --- NEW: If time is unknown, filter out sensitive data ---
+        if data.unknown_time:
+            full_response['chart_analysis']['chart_ruler'] = "Unavailable (Unknown Birth Time)"
+            
+            # Filter out angles from major positions
+            angles = ['Ascendant', 'Midheaven (MC)', 'Descendant', 'Imum Coeli (IC)']
+            full_response['major_positions'] = [p for p in full_response['major_positions'] if p['name'] not in angles]
+            
+            # Remove house info from all remaining positions
+            for p in full_response['major_positions']:
+                p['house_info'] = ""
+            
+            # Remove other time-sensitive sections
+            full_response['house_cusps'] = []
+            full_response['house_rulers'] = {}
+            full_response['house_sign_distributions'] = {}
+            full_response['additional_points'] = [p for p in full_response['additional_points'] if p['name'] != 'Part of Fortune']
+        
+        return full_response
+
     except HTTPException as e:
         raise e
     except Exception as e:
