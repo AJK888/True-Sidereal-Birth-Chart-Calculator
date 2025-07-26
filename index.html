@@ -23,32 +23,26 @@
         }
         
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.7; padding: 2rem; margin: 0; background-color: var(--background-color);
-            color: var(--text-color); display: flex; flex-direction: column; align-items: center;
+            font-family: 'Inter', sans-serif; line-height: 1.7; padding: 2rem; margin: 0;
+            background-color: var(--background-color); color: var(--text-color);
+            display: flex; flex-direction: column; align-items: center;
         }
-
         .container { max-width: 800px; width: 100%; }
         h1, h2 { color: var(--heading-color); text-align: center; font-weight: 700; }
         h1 { font-size: 2.25rem; margin-bottom: 0.5rem; }
         h2 { margin-top: 3rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
-
         .description { background-color: var(--card-background); padding: 1.5rem 2rem; border-radius: 8px; margin: 1.5rem 0; border: 1px solid var(--border-color); }
         .description h3 { margin-top: 0; color: var(--heading-color); }
-
         form { background: var(--card-background); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color); }
         label { font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.5rem; }
-        input { display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; background-color: var(--background-color); color: var(--text-color); font-size: 1rem; }
+        input[type="text"], input[type="number"] { display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; background-color: var(--background-color); color: var(--text-color); font-size: 1rem; }
         input:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.3); }
         button { width: 100%; padding: 0.85rem; font-size: 1.1rem; font-weight: 500; color: #fff; background-color: var(--accent-color); border: none; border-radius: 6px; cursor: pointer; margin-top: 2rem; transition: background-color 0.2s ease-in-out; }
         button:hover:not(:disabled) { background-color: var(--accent-hover); }
         button:disabled { opacity: 0.6; cursor: not-allowed; }
-
         pre { background: var(--pre-background); padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 8px; white-space: pre-wrap; word-break: break-word; font-family: "Courier New", Courier, monospace; font-size: 14px; color: var(--text-color); }
-        
         #chart-wheel-container { display: flex; justify-content: center; align-items: center; margin-top: 2rem; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; }
         #chart-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; background-color: var(--pre-background); border-radius: 50%; }
-
         .wheel-circle { stroke: var(--border-color); stroke-width: 2; fill: none; }
         .zodiac-divider { stroke: var(--border-color); stroke-width: 1; }
         .house-cusp { stroke: var(--text-color); stroke-width: 2; }
@@ -62,6 +56,9 @@
         .aspect-opposition, .aspect-square { stroke: var(--aspect-hard); }
         .aspect-trine, .aspect-sextile { stroke: var(--aspect-soft); }
         .aspect-quincunx, .aspect-semisextile, .aspect-semisquare, .aspect-sesquiquadrate, .aspect-quintile, .aspect-biquintile { stroke: var(--border-color); stroke-dasharray: 4 4; }
+        .time-toggle { display: flex; align-items: center; margin-top: 1.5rem; }
+        .time-toggle input { width: auto; margin-right: 0.75rem; }
+        .time-toggle label { margin: 0; }
     </style>
 </head>
 <body>
@@ -73,18 +70,21 @@
         </div>
 
         <form id="chartForm">
-            <!-- FIX: Restored the input fields -->
             <label for="name">Name</label><input type="text" id="name" name="name" required value="Alexander">
             <label for="year">Birth Year</label><input type="number" id="year" name="year" required value="1998">
             <label for="month">Birth Month</label><input type="number" id="month" name="month" required value="8">
             <label for="day">Birth Day</label><input type="number" id="day" name="day" required value="26">
+            <div class="time-toggle">
+                <input type="checkbox" id="unknownTime" name="unknownTime">
+                <label for="unknownTime">I don't know my birth time</label>
+            </div>
             <label for="hour">Birth Hour (e.g., 17 for 5 PM)</label><input type="number" id="hour" name="hour" required value="17">
             <label for="minute">Birth Minute</label><input type="number" id="minute" name="minute" required value="40">
             <label for="location">Birth Location</label><input type="text" id="location" name="location" required value="Boston, MA">
             <button type="submit" id="submitBtn">Calculate Chart</button>
         </form>
 
-        <h2>Chart Wheel</h2>
+        <h2 id="wheel-title">Chart Wheel</h2>
         <div id="chart-wheel-container">
             <svg id="chart-wheel-svg" viewBox="0 0 1000 1000"></svg>
         </div>
@@ -94,11 +94,26 @@
     </div>
 
     <script>
+        const unknownTimeCheckbox = document.getElementById('unknownTime');
+        const hourInput = document.getElementById('hour');
+        const minuteInput = document.getElementById('minute');
+
+        unknownTimeCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            hourInput.disabled = isChecked;
+            minuteInput.disabled = isChecked;
+            if (isChecked) {
+                hourInput.value = '12';
+                minuteInput.value = '00';
+            }
+        });
+        
         document.getElementById("chartForm").addEventListener("submit", async function (e) {
             e.preventDefault();
             const form = e.target, outputEl = document.getElementById("output"), btn = document.getElementById("submitBtn");
             btn.disabled = true; btn.innerText = "Calculating...";
             outputEl.innerText = "Calculating chart...";
+            document.getElementById('chart-wheel-svg').innerHTML = '';
 
             try {
                 const apiRes = await fetch("https://true-sidereal-api.onrender.com/calculate_chart", {
@@ -111,7 +126,8 @@
                         day: parseInt(form.querySelector("[name='day']").value),
                         hour: parseInt(form.querySelector("[name='hour']").value),
                         minute: parseInt(form.querySelector("[name='minute']").value),
-                        location: form.querySelector("[name='location']").value
+                        location: form.querySelector("[name='location']").value,
+                        unknown_time: form.querySelector("[name='unknownTime']").checked
                     }),
                 });
 
@@ -121,7 +137,9 @@
                 }
                 const result = await apiRes.json();
                 renderResults(result);
-                drawChartWheel(result);
+                if (!result.unknown_time) {
+                    drawChartWheel(result);
+                }
             } catch (err) {
                 outputEl.innerText = "Error: " + err.message;
             } finally {
@@ -131,8 +149,17 @@
         });
 
         function renderResults(res) {
+            const wheelContainer = document.getElementById('chart-wheel-container');
+            const wheelTitle = document.getElementById('wheel-title');
+            if (res.unknown_time) {
+                wheelContainer.style.display = 'none';
+                wheelTitle.style.display = 'none';
+            } else {
+                wheelContainer.style.display = 'flex';
+                wheelTitle.style.display = 'block';
+            }
             let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
-            out += `UTC Date & Time: ${res.utc_datetime}\n`;
+            out += `UTC Date & Time: ${res.utc_datetime}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
             out += `Location: ${res.location}\n`;
             out += `Day/Night Determination: ${res.day_night_status}\n\n`;
             out += `-- CHART ANALYSIS --\n`;
@@ -158,16 +185,20 @@
             res.aspects.forEach(a => { out += `${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
             out += `\n--- ASPECT PATTERNS ---\n`;
             (res.aspect_patterns && res.aspect_patterns.length > 0) ? res.aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "No major aspect patterns detected.\n";
-            out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
-            res.additional_points.forEach(p => { out += `${p.name}: ${p.info}\n`; });
-            out += `\n--- HOUSE RULERS ---\n`;
-            for (const [house, info] of Object.entries(res.house_rulers)) { out += `${house}: ${info}\n`; }
-            out += `\n--- HOUSE SIGN DISTRIBUTIONS ---\n`;
-            for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
-                out += `- ${house}\n`;
-                if (segments && segments.length > 0) {
-                    segments.forEach(seg => { out += `     - ${seg}\n`; });
+            if (!res.unknown_time) {
+                out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
+                res.additional_points.forEach(p => { out += `${p.name}: ${p.info}\n`; });
+                out += `\n--- HOUSE RULERS ---\n`;
+                for (const [house, info] of Object.entries(res.house_rulers)) { out += `${house}: ${info}\n`; }
+                out += `\n--- HOUSE SIGN DISTRIBUTIONS ---\n`;
+                for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
+                    out += `- ${house}\n`;
+                    if (segments && segments.length > 0) {
+                        segments.forEach(seg => { out += `     - ${seg}\n`; });
+                    }
                 }
+            } else {
+                 out += `\n(House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n`;
             }
             document.getElementById("output").innerText = out;
         }
@@ -188,31 +219,42 @@
             const innerRadius = 150;
             
             const ascendant = data.major_positions.find(p => p.name === 'Ascendant');
-            if (!ascendant) return; 
+            if (!ascendant || ascendant.degrees === null) {
+                svg.innerHTML = '<text x="500" y="500" class="house-number">Chart wheel requires a known birth time.</text>';
+                return;
+            }
+            
             const rotationAngle = 180 - ascendant.degrees;
 
             function getCoords(radius, angleDegrees) {
                 const rotatedAngle = (angleDegrees + rotationAngle + 360) % 360;
-                const angleRadians = (rotatedAngle - 90) * (Math.PI / 180);
-                return { x: centerX + radius * Math.cos(angleRadians), y: centerY + radius * Math.sin(angleRadians) };
+                const angleRadians = rotatedAngle * (Math.PI / 180);
+                return { 
+                    x: centerX + radius * Math.cos(angleRadians), 
+                    y: centerY + radius * Math.sin(angleRadians) 
+                };
             }
             
-            const aspectGroup = document.createElementNS(SVG_NS, 'g');
+            const mainGroup = document.createElementNS(SVG_NS, 'g');
+            mainGroup.setAttribute('transform', `rotate(${rotationAngle} ${centerX} ${centerY})`);
+            svg.appendChild(mainGroup);
+
+            // Draw aspect lines first
             if (data.aspects) {
                 data.aspects.forEach(aspect => {
                     if (aspect.p1_degrees === null || aspect.p2_degrees === null) return;
-                    const startPoint = getCoords(innerRadius, aspect.p1_degrees);
-                    const endPoint = getCoords(innerRadius, aspect.p2_degrees);
+                    const p1Coords = getCoords(innerRadius, aspect.p1_degrees);
+                    const p2Coords = getCoords(innerRadius, aspect.p2_degrees);
                     const line = document.createElementNS(SVG_NS, 'line');
-                    line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
-                    line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
+                    line.setAttribute('x1', p1Coords.x); line.setAttribute('y1', p1Coords.y);
+                    line.setAttribute('x2', p2Coords.x); line.setAttribute('y2', p2Coords.y);
                     const aspectClass = aspect.type.toLowerCase().replace(' ', '-');
                     line.setAttribute('class', `aspect-line aspect-${aspectClass}`);
-                    aspectGroup.appendChild(line);
+                    svg.insertBefore(line, svg.firstChild);
                 });
             }
-            svg.appendChild(aspectGroup);
 
+            // Draw concentric circles
             [zodiacRadius, houseRingRadius, innerRadius].forEach(r => {
                 const circle = document.createElementNS(SVG_NS, 'circle');
                 circle.setAttribute('cx', centerX); circle.setAttribute('cy', centerY);
@@ -231,11 +273,13 @@
                     line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
                     line.setAttribute('class', 'zodiac-divider');
                     svg.appendChild(line);
-                    const midAngle = start + (end - start) / 2;
+                    const midAngle = start + ((end - start + 360) % 360) / 2;
                     const textCoords = getCoords(glyphRadius, midAngle);
                     const text = document.createElementNS(SVG_NS, 'text');
-                    text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
+                    text.setAttribute('x', textCoords.x);
+                    text.setAttribute('y', textCoords.y);
                     text.setAttribute('class', 'zodiac-glyph');
+                    text.setAttribute('transform', `rotate(${-rotationAngle} ${textCoords.x} ${textCoords.y})`);
                     text.textContent = ZODIAC_GLYPHS[name];
                     svg.appendChild(text);
                 });
@@ -248,18 +292,20 @@
                     const line = document.createElementNS(SVG_NS, 'line');
                     line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
                     line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
-                    line.setAttribute('class', (i === 0 || i === 9) ? 'house-cusp major' : 'house-cusp');
+                    line.setAttribute('class', (i === 0 || i === 6) ? 'house-cusp major' : 'house-cusp');
                     svg.appendChild(line);
                 });
                 for (let i = 0; i < 12; i++) {
                     const startAngle = data.house_cusps[i];
                     const endAngle = data.house_cusps[(i + 1) % 12];
                     let midAngle = (startAngle + endAngle) / 2;
-                    if (endAngle < startAngle) midAngle = (startAngle + endAngle + 360) / 2;
+                    if (endAngle < startAngle) midAngle = ((startAngle + endAngle + 360) / 2) % 360;
                     const textCoords = getCoords(innerRadius + 35, midAngle);
                     const text = document.createElementNS(SVG_NS, 'text');
-                    text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
+                    text.setAttribute('x', textCoords.x);
+                    text.setAttribute('y', textCoords.y);
                     text.setAttribute('class', 'house-number');
+                    text.setAttribute('transform', `rotate(${-rotationAngle} ${textCoords.x} ${textCoords.y})`);
                     text.textContent = i + 1;
                     svg.appendChild(text);
                 }
@@ -272,7 +318,8 @@
                     let currentRadius = planetRingRadius + (i % 3 - 1) * 25;
                     const textCoords = getCoords(currentRadius, planet.degrees);
                     const text = document.createElementNS(SVG_NS, 'text');
-                    text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
+                    text.setAttribute('x', textCoords.x);
+                    text.setAttribute('y', textCoords.y);
                     text.setAttribute('class', 'planet-glyph');
                     text.textContent = PLANET_GLYPHS[planet.name];
                     svg.appendChild(text);
