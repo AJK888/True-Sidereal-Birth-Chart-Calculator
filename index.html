@@ -163,16 +163,16 @@
             out += `Location: ${res.location}\n`;
             out += `Day/Night Determination: ${res.day_night_status}\n\n`;
             out += `-- CHART ANALYSIS --\n`;
-            out += `Chart Ruler: ${res.chart_analysis.chart_ruler}\n`;
-            out += `Dominant Sign: ${res.chart_analysis.dominant_sign}\n`;
-            out += `Dominant Element: ${res.chart_analysis.dominant_element}\n`;
-            out += `Dominant Modality: ${res.chart_analysis.dominant_modality}\n`;
-            out += `Dominant Planet: ${res.chart_analysis.dominant_planet}\n`;
-            out += `Life Path Number: ${res.chart_analysis.life_path_number}\n`;
-            out += `Day Number: ${res.chart_analysis.day_number}\n`;
-            out += `Chinese Zodiac: ${res.chart_analysis.chinese_zodiac}\n\n`;
+            out += `Chart Ruler: ${res.sidereal_chart_analysis.chart_ruler}\n`;
+            out += `Dominant Sign: ${res.sidereal_chart_analysis.dominant_sign}\n`;
+            out += `Dominant Element: ${res.sidereal_chart_analysis.dominant_element}\n`;
+            out += `Dominant Modality: ${res.sidereal_chart_analysis.dominant_modality}\n`;
+            out += `Dominant Planet: ${res.sidereal_chart_analysis.dominant_planet}\n`;
+            out += `Life Path Number: ${res.sidereal_chart_analysis.life_path_number}\n`;
+            out += `Day Number: ${res.sidereal_chart_analysis.day_number}\n`;
+            out += `Chinese Zodiac: ${res.sidereal_chart_analysis.chinese_zodiac}\n\n`;
             out += `--- MAJOR POSITIONS ---\n`;
-            res.major_positions.forEach(p => {
+            res.sidereal_major_positions.forEach(p => {
                 let line = `${p.name}: ${p.position}`;
                 if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
                     line += ` (${p.percentage}%)`;
@@ -182,12 +182,12 @@
                 out += `${line}\n`;
             });
             out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
-            res.aspects.forEach(a => { out += `${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
+            res.sidereal_aspects.forEach(a => { out += `${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
             out += `\n--- ASPECT PATTERNS ---\n`;
-            (res.aspect_patterns && res.aspect_patterns.length > 0) ? res.aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "No major aspect patterns detected.\n";
+            (res.sidereal_aspect_patterns && res.sidereal_aspect_patterns.length > 0) ? res.sidereal_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "No major aspect patterns detected.\n";
             if (!res.unknown_time) {
                 out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
-                res.additional_points.forEach(p => { out += `${p.name}: ${p.info}\n`; });
+                res.sidereal_additional_points.forEach(p => { out += `${p.name}: ${p.info}\n`; });
                 out += `\n--- HOUSE RULERS ---\n`;
                 for (const [house, info] of Object.entries(res.house_rulers)) { out += `${house}: ${info}\n`; }
                 out += `\n--- HOUSE SIGN DISTRIBUTIONS ---\n`;
@@ -201,17 +201,31 @@
                  out += `\n(House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n`;
             }
 
-            // --- NEW: Add the Tropical Chart section ---
-            if (res.tropical_placements && res.tropical_placements.length > 0) {
+            if (res.tropical_major_positions && res.tropical_major_positions.length > 0) {
                 out += `\n\n\n=== TROPICAL CHART ===\n\n`;
-                out += `--- PLANETARY POSITIONS ---\n`;
-                const tropical_order = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn','Uranus', 'Neptune', 'Pluto', 'Chiron', 'True Node', 'Lilith','Ceres', 'Pallas', 'Juno', 'Vesta','Ascendant', 'Midheaven (MC)', 'Descendant', 'Imum Coeli (IC)', 'Vertex'];
-                const sorted_tropical = [...res.tropical_placements].sort((a, b) => tropical_order.indexOf(a.name) - tropical_order.indexOf(b.name));
-                sorted_tropical.forEach(p => {
+                out += `-- CHART ANALYSIS --\n`;
+                out += `Dominant Sign: ${res.tropical_chart_analysis.dominant_sign}\n`;
+                out += `Dominant Element: ${res.tropical_chart_analysis.dominant_element}\n`;
+                out += `Dominant Modality: ${res.tropical_chart_analysis.dominant_modality}\n`;
+                out += `Dominant Planet: ${res.tropical_chart_analysis.dominant_planet}\n\n`;
+                out += `--- MAJOR POSITIONS ---\n`;
+                res.tropical_major_positions.forEach(p => {
                     let line = `${p.name}: ${p.position}`;
+                    if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
+                        line += ` (${p.percentage}%)`;
+                    }
                     if (p.retrograde) { line += " (Rx)"; }
+                    if (p.house_info) { line += ` ${p.house_info}`; }
                     out += `${line}\n`;
                 });
+                out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
+                res.tropical_aspects.forEach(a => { out += `${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
+                out += `\n--- ASPECT PATTERNS ---\n`;
+                (res.tropical_aspect_patterns && res.tropical_aspect_patterns.length > 0) ? res.tropical_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "No major aspect patterns detected.\n";
+                if (!res.unknown_time) {
+                    out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
+                    res.tropical_additional_points.forEach(p => { out += `${p.name}: ${p.info}\n`; });
+                }
             }
 
             document.getElementById("output").innerText = out;
@@ -232,7 +246,7 @@
             const planetGlyphRadius = 320;
             const innerRadius = 150;
             
-            const ascendant = data.major_positions.find(p => p.name === 'Ascendant');
+            const ascendant = data.sidereal_major_positions.find(p => p.name === 'Ascendant');
             if (!ascendant || ascendant.degrees === null) {
                 svg.innerHTML = '<text x="500" y="500" class="house-number">Chart wheel requires a known birth time.</text>';
                 return;
@@ -251,8 +265,8 @@
             mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
             svg.appendChild(mainGroup);
 
-            if (data.aspects) {
-                data.aspects.forEach(aspect => {
+            if (data.sidereal_aspects) {
+                data.sidereal_aspects.forEach(aspect => {
                     if (aspect.p1_degrees === null || aspect.p2_degrees === null) return;
                     const p1Coords = degreeToCartesian(innerRadius, aspect.p1_degrees);
                     const p2Coords = degreeToCartesian(innerRadius, aspect.p2_degrees);
@@ -321,8 +335,8 @@
                 }
             }
             
-            if (data.major_positions) {
-                data.major_positions.forEach(planet => {
+            if (data.sidereal_major_positions) {
+                data.sidereal_major_positions.forEach(planet => {
                     if (planet.degrees === null || !PLANET_GLYPHS[planet.name]) return;
                     const textCoords = degreeToCartesian(planetGlyphRadius, planet.degrees);
                     const text = document.createElementNS(SVG_NS, 'text');
