@@ -1,22 +1,19 @@
-import os
-import traceback
-import pendulum
-import requests
-import swisseph as swe
-import logging
-from logtail import LogtailHandler
+# api.py
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from natal_chart import (
-    NatalChart,
-    PLANETS_CONFIG,
-    TRUE_SIDEREAL_SIGNS,
-    calculate_numerology,
-    format_true_sidereal_placement,
-    get_chinese_zodiac,
-    get_sign_and_ruler,
+    NatalChart, get_sign_and_ruler, format_true_sidereal_placement, PLANETS_CONFIG, 
+    calculate_numerology, get_chinese_zodiac, TRUE_SIDEREAL_SIGNS
 )
+import swisseph as swe
+import traceback
+import requests
+import pendulum
+import os
+import logging
+from logtail import LogtailHandler
 
 # --- SETUP THE LOGGER ---
 handler = None
@@ -29,10 +26,12 @@ logger.setLevel(logging.INFO)
 if handler:
     logger.addHandler(handler)
 
-
 app = FastAPI(title="True Sidereal API", version="1.0")
 
-# --- SECURED CORS ---
+@app.get("/ping")
+def ping():
+    return {"message": "ok"}
+
 origins = [
     "https://true-sidereal-birth-chart.onrender.com",
 ]
@@ -44,7 +43,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 class ChartRequest(BaseModel):
     name: str
     year: int
@@ -55,24 +53,9 @@ class ChartRequest(BaseModel):
     location: str
     unknown_time: bool = False
 
-
-# Helper list for ordering positions
-major_positions_order = [
-    'Ascendant', 'Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn',
-    'Uranus', 'Neptune', 'Pluto', 'Chiron', 'True Node', 'South Node',
-    'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)'
-]
-
-
-@app.get("/ping")
-def ping():
-    return {"message": "ok"}
-
-
 @app.post("/calculate_chart")
 def calculate_chart_endpoint(data: ChartRequest):
     try:
-        # Log the incoming request
         log_data = data.dict()
         if 'name' in log_data:
             log_data['chart_name'] = log_data.pop('name')
@@ -80,13 +63,11 @@ def calculate_chart_endpoint(data: ChartRequest):
 
         swe.set_ephe_path(r".")
 
-        # --- SECURE GEOCODING ON BACKEND ---
         opencage_key = os.getenv("OPENCAGE_KEY")
         if not opencage_key:
             raise HTTPException(status_code=500, detail="Server is missing the geocoding API key.")
         
         geo_url = f"https://api.opencagedata.com/geocode/v1/json?q={data.location}&key={opencage_key}"
-        
         response = requests.get(geo_url, timeout=10)
         response.raise_for_status()
         geo_res = response.json()
@@ -99,13 +80,11 @@ def calculate_chart_endpoint(data: ChartRequest):
         if not all([lat, lng, timezone_name]):
             raise HTTPException(status_code=400, detail="Could not retrieve complete location data.")
 
-        # --- TIMEZONE CONVERSION ON BACKEND using Pendulum ---
         local_time = pendulum.datetime(
             data.year, data.month, data.day, data.hour, data.minute, tz=timezone_name
         )
         utc_time = local_time.in_timezone('UTC')
 
-        # --- MAIN CHART CALCULATION ---
         chart = NatalChart(
             name=data.name, year=utc_time.year, month=utc_time.month, day=utc_time.day,
             hour=utc_time.hour, minute=utc_time.minute, latitude=lat, longitude=lng
@@ -124,12 +103,17 @@ def calculate_chart_endpoint(data: ChartRequest):
                 ruler_pos = f"– {ruler_body.formatted_position} – House {ruler_body.house_num}, {ruler_body.house_degrees}" if ruler_body and ruler_body.degree is not None else ""
                 house_rulers_formatted[f"House {i+1}"] = f"{sign} (Ruler: {ruler_name} {ruler_pos})"
         
+        major_positions_order = [
+            'Ascendant', 'Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn',
+            'Uranus', 'Neptune', 'Pluto', 'Chiron', 'True Node', 'South Node',
+            'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)'
+        ]
+        
         house_cusps = []
         if chart.ascendant_data.get("sidereal_asc") is not None:
             asc = chart.ascendant_data['sidereal_asc']
             house_cusps = [(asc + i * 30) % 360 for i in range(12)]
 
-        # --- FORMAT FINAL JSON RESPONSE ---
         full_response = {
             "name": chart.name, "utc_datetime": chart.utc_datetime_str, "location": chart.location_str,
             "day_night_status": chart.day_night_info.get("status", "N/A"),
@@ -159,7 +143,8 @@ def calculate_chart_endpoint(data: ChartRequest):
             ],
             "house_rulers": house_rulers_formatted,
             "house_sign_distributions": chart.house_sign_distributions,
-            "unknown_time": data.unknown_time
+            "unknown_time": data.unknown_time,
+            "tropical_placements": chart.tropical_placements
         }
         
         if data.unknown_time:
@@ -171,6 +156,7 @@ def calculate_chart_endpoint(data: ChartRequest):
             full_response['house_rulers'] = {}
             full_response['house_sign_distributions'] = {}
             full_response['additional_points'] = [p for p in full_response['additional_points'] if p['name'] != 'Part of Fortune']
+            full_response['tropical_placements'] = [p for p in full_response['tropical_placements'] if p['name'] not in angles]
         
         return full_response
 
