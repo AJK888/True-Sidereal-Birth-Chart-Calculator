@@ -87,17 +87,17 @@
         </div>
 
         <form id="chartForm">
-            <label for="name">Name</label><input type="text" id="name" name="name" required value="Alexander">
-            <label for="year">Birth Year</label><input type="number" id="year" name="year" required value="1998">
-            <label for="month">Birth Month</label><input type="number" id="month" name="month" required value="8">
-            <label for="day">Birth Day</label><input type="number" id="day" name="day" required value="26">
+            <label for="name">Name</label><input type="text" id="name" name="name" required value="">
+            <label for="year">Birth Year</label><input type="number" id="year" name="year" required value="">
+            <label for="month">Birth Month</label><input type="number" id="month" name="month" required value="">
+            <label for="day">Birth Day</label><input type="number" id="day" name="day" required value="">
             <div class="time-toggle">
                 <input type="checkbox" id="unknownTime" name="unknownTime">
                 <label for="unknownTime">I don't know my birth time</label>
             </div>
-            <label for="hour">Birth Hour (e.g., 17 for 5 PM)</label><input type="number" id="hour" name="hour" required value="17">
-            <label for="minute">Birth Minute</label><input type="number" id="minute" name="minute" required value="40">
-            <label for="location">Birth Location</label><input type="text" id="location" name="location" required value="Boston, MA">
+            <label for="hour">Birth Hour 24Hr Format (e.g., 17 for 5 PM)</label><input type="number" id="hour" name="hour" required value="">
+            <label for="minute">Birth Minute</label><input type="number" id="minute" name="minute" required value="">
+            <label for="location">Birth Location</label><input type="text" id="location" name="location" required value="">
             <button type="submit" id="submitBtn">Calculate Chart</button>
         </form>
 
@@ -204,12 +204,16 @@
             (res.sidereal_aspect_patterns && res.sidereal_aspect_patterns.length > 0) ? res.sidereal_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "- No major aspect patterns detected.\n";
             if (!res.unknown_time) {
                 out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
-                res.sidereal_additional_points.forEach(p => { out += `- ${p.name}: ${p.info}\n`; });
+                res.sidereal_additional_points.forEach(p => { 
+                    let line = `- ${p.name}: ${p.info}`;
+                    if (p.retrograde) { line += " (Rx)"; }
+                    out += `${line}\n`; 
+                });
                 out += `\n--- HOUSE RULERS ---\n`;
                 for (const [house, info] of Object.entries(res.house_rulers)) { out += `- ${house}: ${info}\n`; }
                 out += `\n--- HOUSE SIGN DISTRIBUTIONS ---\n`;
                 for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
-                    out += `${house}:\n`; // No dash on the house number itself
+                    out += `${house}:\n`;
                     if (segments && segments.length > 0) {
                         segments.forEach(seg => { out += `     - ${seg}\n`; });
                     }
@@ -241,7 +245,11 @@
                 (res.tropical_aspect_patterns && res.tropical_aspect_patterns.length > 0) ? res.tropical_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "- No major aspect patterns detected.\n";
                 if (!res.unknown_time) {
                     out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
-                    res.tropical_additional_points.forEach(p => { out += `- ${p.name}: ${p.info}\n`; });
+                    res.tropical_additional_points.forEach(p => { 
+                        let line = `- ${p.name}: ${p.info}`;
+                        if (p.retrograde) { line += " (Rx)"; }
+                        out += `${line}\n`; 
+                    });
                 }
             }
 
