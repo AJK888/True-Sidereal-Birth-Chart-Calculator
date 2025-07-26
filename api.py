@@ -133,7 +133,12 @@ def calculate_chart_endpoint(data: ChartRequest):
             ],
             "house_cusps": house_cusps,
             "sidereal_aspects": [
-                {"p1_name": f"{a.p1.name}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}", "p1_degrees": a.p1.degree, "p2_degrees": a.p2.degree} for a in chart.sidereal_aspects
+                {
+                    "p1_name": f"{a.p1.name} in {a.p1.sign}{' (Rx)' if a.p1.retrograde else ''}", 
+                    "p2_name": f"{a.p2.name} in {a.p2.sign}{' (Rx)' if a.p2.retrograde else ''}", 
+                    "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}", 
+                    "p1_degrees": a.p1.degree, "p2_degrees": a.p2.degree
+                } for a in chart.sidereal_aspects
             ],
             "true_sidereal_signs": TRUE_SIDEREAL_SIGNS,
             "sidereal_aspect_patterns": [p['description'] for p in chart.sidereal_aspect_patterns],
@@ -155,7 +160,11 @@ def calculate_chart_endpoint(data: ChartRequest):
                 for p in sorted(chart.all_tropical_points, key=lambda x: major_positions_order.index(x.name) if x.name in major_positions_order else 99) if p.name in major_positions_order
             ],
             "tropical_aspects": [
-                {"p1_name": f"{a.p1.name}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}"} for a in chart.tropical_aspects
+                {
+                    "p1_name": f"{a.p1.name} in {a.p1.sign}{' (Rx)' if a.p1.retrograde else ''}", 
+                    "p2_name": f"{a.p2.name} in {a.p2.sign}{' (Rx)' if a.p2.retrograde else ''}", 
+                    "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}"
+                } for a in chart.tropical_aspects
             ],
             "tropical_aspect_patterns": [p['description'] for p in chart.tropical_aspect_patterns],
             "tropical_additional_points": [
