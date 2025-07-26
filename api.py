@@ -99,7 +99,7 @@ def calculate_chart_endpoint(data: ChartRequest):
             for i in range(12):
                 cusp_deg = (chart.ascendant_data['sidereal_asc'] + i * 30) % 360
                 sign, ruler_name = get_sign_and_ruler(cusp_deg)
-                ruler_body = next((p for p in chart.celestial_bodies if p.name == ruler_name), None)
+                ruler_body = next((p for p in chart.sidereal_bodies if p.name == ruler_name), None)
                 ruler_pos = f"– {ruler_body.formatted_position} – House {ruler_body.house_num}, {ruler_body.house_degrees}" if ruler_body and ruler_body.degree is not None else ""
                 house_rulers_formatted[f"House {i+1}"] = f"{sign} (Ruler: {ruler_name} {ruler_pos})"
         
@@ -117,46 +117,65 @@ def calculate_chart_endpoint(data: ChartRequest):
         full_response = {
             "name": chart.name, "utc_datetime": chart.utc_datetime_str, "location": chart.location_str,
             "day_night_status": chart.day_night_info.get("status", "N/A"),
-            "chart_analysis": {
+            "sidereal_chart_analysis": {
                 "chart_ruler": get_sign_and_ruler(chart.ascendant_data['sidereal_asc'])[1] if chart.ascendant_data.get('sidereal_asc') is not None else "N/A",
-                "dominant_sign": f"{chart.dominance_analysis.get('dominant_sign', 'N/A')} ({chart.dominance_analysis.get('counts', {}).get('sign', {}).get(chart.dominance_analysis.get('dominant_sign'), 0)} placements)",
-                "dominant_element": f"{chart.dominance_analysis.get('dominant_element', 'N/A')} ({chart.dominance_analysis.get('counts', {}).get('element', {}).get(chart.dominance_analysis.get('dominant_element'), 0)})",
-                "dominant_modality": f"{chart.dominance_analysis.get('dominant_modality', 'N/A')} ({chart.dominance_analysis.get('counts', {}).get('modality', {}).get(chart.dominance_analysis.get('dominant_modality'), 0)})",
-                "dominant_planet": f"{chart.dominance_analysis.get('dominant_planet', 'N/A')} (score {chart.dominance_analysis.get('strength', {}).get(chart.dominance_analysis.get('dominant_planet'), 0.0)})",
+                "dominant_sign": f"{chart.sidereal_dominance.get('dominant_sign', 'N/A')} ({chart.sidereal_dominance.get('counts', {}).get('sign', {}).get(chart.sidereal_dominance.get('dominant_sign'), 0)} placements)",
+                "dominant_element": f"{chart.sidereal_dominance.get('dominant_element', 'N/A')} ({chart.sidereal_dominance.get('counts', {}).get('element', {}).get(chart.sidereal_dominance.get('dominant_element'), 0)})",
+                "dominant_modality": f"{chart.sidereal_dominance.get('dominant_modality', 'N/A')} ({chart.sidereal_dominance.get('counts', {}).get('modality', {}).get(chart.sidereal_dominance.get('dominant_modality'), 0)})",
+                "dominant_planet": f"{chart.sidereal_dominance.get('dominant_planet', 'N/A')} (score {chart.sidereal_dominance.get('strength', {}).get(chart.sidereal_dominance.get('dominant_planet'), 0.0)})",
                 "life_path_number": numerology["life_path"],
                 "day_number": numerology["day_number"],
                 "chinese_zodiac": chinese_zodiac
             },
-            "major_positions": [
+            "sidereal_major_positions": [
                 {"name": p.name, "position": p.formatted_position, "degrees": p.degree, "percentage": p.sign_percentage, "retrograde": p.retrograde, "house_info": f"– House {p.house_num}, {p.house_degrees}" if p.house_num > 0 else ""}
-                for p in sorted(chart.all_points, key=lambda x: major_positions_order.index(x.name) if x.name in major_positions_order else 99) if p.name in major_positions_order
+                for p in sorted(chart.all_sidereal_points, key=lambda x: major_positions_order.index(x.name) if x.name in major_positions_order else 99) if p.name in major_positions_order
             ],
             "house_cusps": house_cusps,
-            "aspects": [
-                {"p1_name": f"{a.p1.name}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}", "p1_degrees": a.p1.degree, "p2_degrees": a.p2.degree} for a in chart.aspects
+            "sidereal_aspects": [
+                {"p1_name": f"{a.p1.name}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}", "p1_degrees": a.p1.degree, "p2_degrees": a.p2.degree} for a in chart.sidereal_aspects
             ],
             "true_sidereal_signs": TRUE_SIDEREAL_SIGNS,
-            "aspect_patterns": [p['description'] for p in chart.aspect_patterns],
-            "additional_points": [
+            "sidereal_aspect_patterns": [p['description'] for p in chart.sidereal_aspect_patterns],
+            "sidereal_additional_points": [
                 {"name": p.name, "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}"}
-                for p in sorted(chart.all_points, key=lambda x: x.name) if p.name not in major_positions_order
+                for p in sorted(chart.all_sidereal_points, key=lambda x: x.name) if p.name not in major_positions_order
             ],
             "house_rulers": house_rulers_formatted,
             "house_sign_distributions": chart.house_sign_distributions,
             "unknown_time": data.unknown_time,
-            "tropical_placements": chart.tropical_placements
+            "tropical_chart_analysis": {
+                "dominant_sign": f"{chart.tropical_dominance.get('dominant_sign', 'N/A')} ({chart.tropical_dominance.get('counts', {}).get('sign', {}).get(chart.tropical_dominance.get('dominant_sign'), 0)} placements)",
+                "dominant_element": f"{chart.tropical_dominance.get('dominant_element', 'N/A')} ({chart.tropical_dominance.get('counts', {}).get('element', {}).get(chart.tropical_dominance.get('dominant_element'), 0)})",
+                "dominant_modality": f"{chart.tropical_dominance.get('dominant_modality', 'N/A')} ({chart.tropical_dominance.get('counts', {}).get('modality', {}).get(chart.tropical_dominance.get('dominant_modality'), 0)})",
+                "dominant_planet": f"{chart.tropical_dominance.get('dominant_planet', 'N/A')} (score {chart.tropical_dominance.get('strength', {}).get(chart.tropical_dominance.get('dominant_planet'), 0.0)})",
+            },
+            "tropical_major_positions": [
+                {"name": p.name, "position": p.formatted_position, "percentage": p.sign_percentage, "retrograde": p.retrograde, "house_info": f"– House {p.house_num}, {p.house_degrees}" if p.house_num > 0 else ""}
+                for p in sorted(chart.all_tropical_points, key=lambda x: major_positions_order.index(x.name) if x.name in major_positions_order else 99) if p.name in major_positions_order
+            ],
+            "tropical_aspects": [
+                {"p1_name": f"{a.p1.name}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}"} for a in chart.tropical_aspects
+            ],
+            "tropical_aspect_patterns": [p['description'] for p in chart.tropical_aspect_patterns],
+            "tropical_additional_points": [
+                {"name": p.name, "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}"}
+                for p in sorted(chart.all_tropical_points, key=lambda x: x.name) if p.name not in major_positions_order
+            ],
         }
         
         if data.unknown_time:
-            full_response['chart_analysis']['chart_ruler'] = "Unavailable (Unknown Birth Time)"
+            full_response['sidereal_chart_analysis']['chart_ruler'] = "Unavailable (Unknown Birth Time)"
             angles = ['Ascendant', 'Midheaven (MC)', 'Descendant', 'Imum Coeli (IC)']
-            full_response['major_positions'] = [p for p in full_response['major_positions'] if p['name'] not in angles]
-            for p in full_response['major_positions']: p['house_info'] = ""
+            full_response['sidereal_major_positions'] = [p for p in full_response['sidereal_major_positions'] if p['name'] not in angles]
+            for p in full_response['sidereal_major_positions']: p['house_info'] = ""
             full_response['house_cusps'] = []
             full_response['house_rulers'] = {}
             full_response['house_sign_distributions'] = {}
-            full_response['additional_points'] = [p for p in full_response['additional_points'] if p['name'] != 'Part of Fortune']
-            full_response['tropical_placements'] = [p for p in full_response['tropical_placements'] if p['name'] not in angles]
+            full_response['sidereal_additional_points'] = [p for p in full_response['sidereal_additional_points'] if p['name'] != 'Part of Fortune']
+            full_response['tropical_major_positions'] = [p for p in full_response['tropical_major_positions'] if p['name'] not in angles]
+            for p in full_response['tropical_major_positions']: p['house_info'] = ""
+            full_response['tropical_additional_points'] = [p for p in full_response['tropical_additional_points'] if p['name'] != 'Part of Fortune']
         
         return full_response
 
