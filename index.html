@@ -37,8 +37,8 @@
         .description a:hover { text-decoration: underline; }
         form { background: var(--card-background); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color); }
         label { font-weight: 500; display: block; margin-top: 1rem; margin-bottom: 0.5rem; }
-        input[type="text"], input[type="number"] { display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; background-color: var(--background-color); color: var(--text-color); font-size: 1rem; }
-        input:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.3); }
+        input[type="text"], input[type="number"], select { display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; background-color: var(--background-color); color: var(--text-color); font-size: 1rem; }
+        input:focus, select:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.3); }
         button { width: 100%; padding: 0.85rem; font-size: 1.1rem; font-weight: 500; color: #fff; background-color: var(--accent-color); border: none; border-radius: 6px; cursor: pointer; margin-top: 2rem; transition: background-color 0.2s ease-in-out; }
         button:hover:not(:disabled) { background-color: var(--accent-hover); }
         button:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -69,6 +69,8 @@
         .privacy-section h4 { color: var(--heading-color); margin-top: 1.5rem; margin-bottom: 0.5rem; }
         .privacy-section p, .privacy-section ul { margin-bottom: 1rem; }
         .privacy-section a { color: var(--accent-color); }
+        .time-inputs { display: flex; gap: 1rem; align-items: flex-end; }
+        .time-inputs > div { flex: 1; }
     </style>
 </head>
 <body>
@@ -98,19 +100,37 @@
         </div>
 
         <form id="chartForm">
-            <label for="name">Name (for chart label)</label><input type="text" id="name" name="name" required value="">
-            <label for="fullName">Full Name at Birth (for numerology)</label><input type="text" id="fullName" name="fullName" required value="">
+            <label for="fullName">Full birth name including middle name (For numerological calculations)</label>
+            <input type="text" id="fullName" name="fullName" required value="">
+            
             <label for="year">Birth Year</label><input type="number" id="year" name="year" required value="">
             <label for="month">Birth Month (1-12)</label><input type="number" id="month" name="month" required value="">
             <label for="day">Birth Day</label><input type="number" id="day" name="day" required value="">
             
-            <p class="time-note">For the most accurate results, please use your exact time of birth. If you do not know it within an hour, you can select the checkbox below.</p>
+            <p class="time-note">For the most accurate results, please use your exact time of birth. If you do not know it within an hour, you can select the checkbox below to exclude time sensitive information from the output.</p>
             <div class="time-toggle">
                 <input type="checkbox" id="unknownTime" name="unknownTime">
                 <label for="unknownTime">I don't know my birth time</label>
             </div>
-            <label for="hour">Birth Hour 24Hr Format (e.g., 17 for 5 PM)</label><input type="number" id="hour" name="hour" required value="">
-            <label for="minute">Birth Minute</label><input type="number" id="minute" name="minute" required value="">
+
+            <div class="time-inputs">
+                <div>
+                    <label for="hour">Hour (1-12)</label>
+                    <input type="number" id="hour" name="hour" required value="" min="1" max="12">
+                </div>
+                <div>
+                    <label for="minute">Minute</label>
+                    <input type="number" id="minute" name="minute" required value="" min="0" max="59">
+                </div>
+                <div>
+                    <label for="ampm">AM/PM</label>
+                    <select id="ampm" name="ampm">
+                        <option value="am">AM</option>
+                        <option value="pm">PM</option>
+                    </select>
+                </div>
+            </div>
+            
             <label for="location">Birth Location</label><input type="text" id="location" name="location" required value="">
             <button type="submit" id="submitBtn">Calculate Chart</button>
         </form>
@@ -154,17 +174,17 @@
                     <ul>
                         <li><strong>To Perform Calculations:</strong> The data is sent to our secure server to perform the astrological and numerological calculations and generate your personalized report.</li>
                         <li><strong>Application Monitoring & Debugging:</strong> The input data is sent to a secure, third-party logging service (Better Stack) for the sole purpose of monitoring application performance, identifying bugs, and troubleshooting errors. This helps us ensure the calculator is running smoothly and accurately.</li>
-                        <li><strong>Research and Service Improvement:</strong> To analyze astrological patterns, conduct research, and train artificial intelligence (AI) models designed to improve the accuracy and depth of our astrological readings and to further the study of astrology.</li>
+                        <li><strong>Research and Service Improvement:</strong> May be used to analyze astrological patterns, conduct research, and train artificial intelligence designed to improve the accuracy and depth of our astrological readings and to further the study of astrology.</li>
                     </ul>
                     <h4>3. Data Storage and Sharing</h4>
                     <ul>
-                        <li><strong>Storage:</strong> Your input data is stored securely in our logging system provided by Better Stack.</li>
+                        <li><strong>Storage:</strong> The data that is collected will be stored and may be used to develop artificial intelligence. The data is also stored locally.</li>
                         <li><strong>Sharing:</strong> We are committed to protecting your privacy. <strong>We will not sell, share, or transfer your personal information to any other third parties.</strong></li>
                     </ul>
                     <h4>4. Your Rights and Data Deletion</h4>
                     <p>You have the right to request the deletion of your personal data from our logs. If you would like to have your information removed, please contact us with the details of the data you entered (name, date, location), and we will permanently delete the corresponding log entries.</p>
                     <h4>5. Consent for Research Use</h4>
-                    <p>By using this calculator, you acknowledge and consent that the birth data you provide may be used for the research and AI training purposes described in Section 2. This is essential for helping us learn more about astrology and improve the quality of the service we provide to you and other users.</p>
+                    <p>By using this calculator, you acknowledge and consent that the birth data you provide may be used for the research and potential artificial intelligence training purposes described in Section 2. This is essential for helping us learn more about astrology and improve the quality of the service we provide to you and other users.</p>
                     <h4>6. Contact Us</h4>
                     <p>If you have any questions about this Privacy Policy or wish to request the deletion of your data, please contact us at:</p>
                     <p><a href="mailto:synthesisastrology@outlook.com"><strong>synthesisastrology@outlook.com</strong></a></p>
@@ -208,14 +228,17 @@
         const unknownTimeCheckbox = document.getElementById('unknownTime');
         const hourInput = document.getElementById('hour');
         const minuteInput = document.getElementById('minute');
+        const ampmSelect = document.getElementById('ampm');
 
         unknownTimeCheckbox.addEventListener('change', function() {
             const isChecked = this.checked;
             hourInput.disabled = isChecked;
             minuteInput.disabled = isChecked;
+            ampmSelect.disabled = isChecked;
             if (isChecked) {
                 hourInput.value = '12';
                 minuteInput.value = '00';
+                ampmSelect.value = 'pm';
             }
         });
         
@@ -227,16 +250,27 @@
             document.getElementById('chart-wheel-svg').innerHTML = '';
 
             try {
+                let hour = parseInt(form.querySelector("[name='hour']").value);
+                const ampm = form.querySelector("[name='ampm']").value;
+
+                // Convert 12-hour to 24-hour format
+                if (ampm === 'pm' && hour < 12) {
+                    hour += 12;
+                }
+                if (ampm === 'am' && hour === 12) { // Midnight case
+                    hour = 0;
+                }
+
                 const apiRes = await fetch("https://true-sidereal-api.onrender.com/calculate_chart", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        name: form.querySelector("[name='name']").value,
+                        name: form.querySelector("[name='fullName']").value, // Use full name for both
                         full_name: form.querySelector("[name='fullName']").value,
                         year: parseInt(form.querySelector("[name='year']").value),
                         month: parseInt(form.querySelector("[name='month']").value),
                         day: parseInt(form.querySelector("[name='day']").value),
-                        hour: parseInt(form.querySelector("[name='hour']").value),
+                        hour: hour, // Send the converted 24-hour time
                         minute: parseInt(form.querySelector("[name='minute']").value),
                         location: form.querySelector("[name='location']").value,
                         unknown_time: form.querySelector("[name='unknownTime']").checked
