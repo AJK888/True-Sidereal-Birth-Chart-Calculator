@@ -59,6 +59,12 @@
         .time-toggle { display: flex; align-items: center; margin-top: 1.5rem; }
         .time-toggle input { width: auto; margin-right: 0.75rem; }
         .time-toggle label { margin: 0; }
+        .time-note { font-size: 0.9rem; color: #a0aec0; margin-top: 1.5rem; }
+        .privacy-section { margin-top: 4rem; padding-top: 2rem; border-top: 1px solid var(--border-color); font-size: 0.9rem; color: #a0aec0; }
+        .privacy-section details { background-color: var(--card-background); border-radius: 8px; border: 1px solid var(--border-color); padding: 1rem 1.5rem; }
+        .privacy-section summary { font-weight: 500; cursor: pointer; color: var(--text-color); }
+        .privacy-section h4 { color: var(--heading-color); margin-top: 1.5rem; margin-bottom: 0.5rem; }
+        .privacy-section p, .privacy-section ul { margin-bottom: 1rem; }
     </style>
 </head>
 <body>
@@ -67,7 +73,7 @@
         <div class="description">
             <h3>Your Complete Astrological Blueprint</h3>
             <p>
-                Discover the unique celestial energies that shaped you. This calculator provides a comprehensive analysis using the <strong>True Sidereal</strong> zodiac, which reflects the true, observable size of the constellations, including Ophiuchus.
+                This calculator provides a comprehensive analysis using the <strong>True Sidereal</strong> zodiac, which reflects the true, observable size of the constellations according to the official boundaries defined by the International Astronomical Union (IAU), including Ophiuchus. The sidereal calculations use the astronomically correct placements of your planets.
             </p>
             <p>
                 For a complete perspective, your report also includes a full chart calculated in the standard <strong>Tropical</strong> zodiac, allowing for direct comparison.
@@ -79,7 +85,7 @@
                 <li>A visual chart wheel showing your unique planetary alignment.</li>
                 <li>Detailed Sidereal and Tropical placements for all planets and major points.</li>
                 <li>In-depth analysis of aspects, patterns, and chart dominance.</li>
-                <li>Your personal Numerology and Chinese Zodiac sign.</li>
+                <li>Your personal Numerology (Birth Date and Full Name) and Chinese Zodiac sign.</li>
             </ul>
             <p>
                 Enter your birth details below to generate your complete astrological profile.
@@ -87,10 +93,13 @@
         </div>
 
         <form id="chartForm">
-            <label for="name">Name</label><input type="text" id="name" name="name" required value="">
+            <label for="name">Name (for chart label)</label><input type="text" id="name" name="name" required value="">
+            <label for="fullName">Full Name at Birth (for numerology)</label><input type="text" id="fullName" name="fullName" required value="">
             <label for="year">Birth Year</label><input type="number" id="year" name="year" required value="">
-            <label for="month">Birth Month</label><input type="number" id="month" name="month" required value="">
+            <label for="month">Birth Month (1-12)</label><input type="number" id="month" name="month" required value="">
             <label for="day">Birth Day</label><input type="number" id="day" name="day" required value="">
+            
+            <p class="time-note">For the most accurate results, please use your exact time of birth. If you do not know it within an hour, you can select the checkbox below.</p>
             <div class="time-toggle">
                 <input type="checkbox" id="unknownTime" name="unknownTime">
                 <label for="unknownTime">I don't know my birth time</label>
@@ -108,6 +117,43 @@
 
         <h2>Results</h2>
         <pre id="output">Your personalized report will appear here.</pre>
+
+        <div class="privacy-section">
+            <details>
+                <summary>Privacy Policy</summary>
+                <div>
+                    <h4>Last Updated: July 27, 2025</h4>
+                    <p>Thank you for using the Astrological and Numerological Blueprint Calculator. This Privacy Policy explains what information we collect when you use our service, why we collect it, and how it is handled. Your privacy is important to us, and we are committed to being transparent about our data practices.</p>
+                    <h4>1. Information We Collect</h4>
+                    <p>When you use the calculator, we collect the following information that you voluntarily provide:</p>
+                    <ul>
+                        <li><strong>Name:</strong> The name you enter for the chart calculation.</li>
+                        <li><strong>Birth Information:</strong> The date of birth (year, month, day) and time of birth (hour, minute) you provide.</li>
+                        <li><strong>Location Information:</strong> The birth location (e.g., "Boston, MA") you enter.</li>
+                    </ul>
+                    <p>We <strong>do not</strong> collect your IP address or any other information that is not explicitly entered into the form fields.</p>
+                    <h4>2. How We Use Your Information</h4>
+                    <p>The information you provide is used for the following purposes:</p>
+                    <ul>
+                        <li><strong>To Perform Calculations:</strong> The data is sent to our secure server to perform the astrological and numerological calculations and generate your personalized report.</li>
+                        <li><strong>Application Monitoring & Debugging:</strong> The input data is sent to a secure, third-party logging service (Better Stack) for the sole purpose of monitoring application performance, identifying bugs, and troubleshooting errors. This helps us ensure the calculator is running smoothly and accurately.</li>
+                        <li><strong>Research and Service Improvement:</strong> To analyze astrological patterns, conduct research, and train artificial intelligence (AI) models designed to improve the accuracy and depth of our astrological readings and to further the study of astrology.</li>
+                    </ul>
+                    <h4>3. Data Storage and Sharing</h4>
+                    <ul>
+                        <li><strong>Storage:</strong> Your input data is stored securely in our logging system provided by Better Stack.</li>
+                        <li><strong>Sharing:</strong> We are committed to protecting your privacy. <strong>We will not sell, share, or transfer your personal information to any other third parties.</strong></li>
+                    </ul>
+                    <h4>4. Your Rights and Data Deletion</h4>
+                    <p>You have the right to request the deletion of your personal data from our logs. If you would like to have your information removed, please contact us with the details of the data you entered (name, date, location), and we will permanently delete the corresponding log entries.</p>
+                    <h4>5. Consent for Research Use</h4>
+                    <p>By using this calculator, you acknowledge and consent that the birth data you provide may be used for the research and AI training purposes described in Section 2. This is essential for helping us learn more about astrology and improve the quality of the service we provide to you and other users.</p>
+                    <h4>6. Contact Us</h4>
+                    <p>If you have any questions about this Privacy Policy or wish to request the deletion of your data, please contact us at:</p>
+                    <p><strong>[Your Email Address Here]</strong></p>
+                </div>
+            </details>
+        </div>
     </div>
 
     <script>
@@ -138,6 +184,7 @@
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         name: form.querySelector("[name='name']").value,
+                        full_name: form.querySelector("[name='fullName']").value,
                         year: parseInt(form.querySelector("[name='year']").value),
                         month: parseInt(form.querySelector("[name='month']").value),
                         day: parseInt(form.querySelector("[name='day']").value),
@@ -187,8 +234,14 @@
             out += `- Dominant Planet: ${res.sidereal_chart_analysis.dominant_planet}\n`;
             out += `- Life Path Number: ${res.sidereal_chart_analysis.life_path_number}\n`;
             out += `- Day Number: ${res.sidereal_chart_analysis.day_number}\n`;
-            out += `- Chinese Zodiac: ${res.sidereal_chart_analysis.chinese_zodiac}\n\n`;
-            out += `--- MAJOR POSITIONS ---\n`;
+            out += `- Chinese Zodiac: ${res.sidereal_chart_analysis.chinese_zodiac}\n`;
+            if (res.sidereal_chart_analysis.name_numerology) {
+                out += `\n-- NAME NUMEROLOGY --\n`;
+                out += `- Expression (Destiny) Number: ${res.sidereal_chart_analysis.name_numerology.expression_number}\n`;
+                out += `- Soul Urge Number: ${res.sidereal_chart_analysis.name_numerology.soul_urge_number}\n`;
+                out += `- Personality Number: ${res.sidereal_chart_analysis.name_numerology.personality_number}\n`;
+            }
+            out += `\n--- MAJOR POSITIONS ---\n`;
             res.sidereal_major_positions.forEach(p => {
                 let line = `- ${p.name}: ${p.position}`;
                 if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
