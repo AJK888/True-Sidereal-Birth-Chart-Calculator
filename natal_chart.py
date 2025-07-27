@@ -122,12 +122,9 @@ class NatalChart:
     def calculate_chart(self) -> None:
         self._calculate_ascendant_mc_data();
         if self.ascendant_data.get("sidereal_asc") is None: return
-        self._determine_day_night()
-        self._calculate_all_points()
-        self._calculate_aspects()
-        self._detect_aspect_patterns()
-        self._calculate_house_sign_distributions()
-        self._analyze_dominance()
+        self._determine_day_night(); self._calculate_all_points()
+        self._calculate_aspects(); self._detect_aspect_patterns()
+        self._calculate_house_sign_distributions(); self._analyze_dominance()
     def _calculate_ascendant_mc_data(self) -> None:
         try:
             res = swe.houses(self.jd, self.latitude, self.longitude, b'P'); ayanamsa = 31.38 + ((self.birth_year - 2000) / 72.0)
@@ -150,14 +147,11 @@ class NatalChart:
                 self.tropical_bodies.append(TropicalBody(name, tropical_lon, is_retro, tropical_asc, is_main))
             except Exception as e: print(f"DEBUG: Failed to calculate {name}: {e}"); continue
         self.all_sidereal_points.extend(self.sidereal_bodies); self.all_tropical_points.extend(self.tropical_bodies)
-        # Sidereal Angles
         s_asc = SiderealBody("Ascendant", sidereal_asc, False, sidereal_asc, False)
         s_mc_deg = (self.ascendant_data.get('mc') - ayanamsa + 360) % 360 if self.ascendant_data.get('mc') is not None else None
         s_mc = SiderealBody("Midheaven (MC)", s_mc_deg, False, sidereal_asc, False)
-        # Tropical Angles
         t_asc = TropicalBody("Ascendant", tropical_asc, False, tropical_asc, False)
         t_mc = TropicalBody("Midheaven (MC)", self.ascendant_data.get('mc'), False, tropical_asc, False)
-        # Add all other points for both systems
         points_to_add = [
             (s_asc, t_asc), (s_mc, t_mc),
             (SiderealBody("Descendant", (s_asc.degree + 180)%360, False, sidereal_asc, False), TropicalBody("Descendant", (t_asc.degree + 180)%360, False, tropical_asc, False)),
@@ -177,7 +171,6 @@ class NatalChart:
             if s_point and s_point.degree is not None: self.all_sidereal_points.append(s_point)
             if t_point and t_point.degree is not None: self.all_tropical_points.append(t_point)
     def _calculate_aspects(self) -> None:
-        # Sidereal
         main_s = [b for b in self.sidereal_bodies if b.is_main_planet and b.degree is not None]
         for p1, p2 in combinations(main_s, 2):
             diff = min(abs(p1.degree - p2.degree), 360 - abs(p1.degree - p2.degree))
@@ -186,7 +179,6 @@ class NatalChart:
                 orb_max = ASPECT_LUMINARY_ORBS.get(name, orb) if is_luminary else orb
                 if abs(diff - angle) <= orb_max: self.sidereal_aspects.append(Aspect(p1, p2, name, round(diff - angle, 2), round(ASPECT_SCORES.get(name, 1) / (1 + abs(diff - angle)), 2)))
         self.sidereal_aspects.sort(key=lambda x: -x.strength)
-        # Tropical
         main_t = [b for b in self.tropical_bodies if b.is_main_planet and b.degree is not None]
         for p1, p2 in combinations(main_t, 2):
             diff = min(abs(p1.degree - p2.degree), 360 - abs(p1.degree - p2.degree))
@@ -195,8 +187,9 @@ class NatalChart:
                 orb_max = ASPECT_LUMINARY_ORBS.get(name, orb) if is_luminary else orb
                 if abs(diff - angle) <= orb_max: self.tropical_aspects.append(Aspect(p1, p2, name, round(diff - angle, 2), round(ASPECT_SCORES.get(name, 1) / (1 + abs(diff - angle)), 2)))
         self.tropical_aspects.sort(key=lambda x: -x.strength)
+    
     def _detect_aspect_patterns(self) -> None:
-        # Sidereal
+        # Sidereal Patterns
         planets_s = {b.name: b for b in self.sidereal_bodies if b.is_main_planet and b.degree is not None}; names_s = list(planets_s.keys())
         def find_aspect_s(p1, p2, type): return any(a.type == type and ((a.p1.name == p1 and a.p2.name == p2) or (a.p1.name == p2 and a.p2.name == p1)) for a in self.sidereal_aspects)
         if len(names_s) >= 3:
@@ -210,7 +203,16 @@ class NatalChart:
             if len(members) >= 3:
                 el = ELEMENT_MAPPING.get(sign, ''); mod = MODALITY_MAPPING.get(sign, '')
                 self.sidereal_aspect_patterns.append({"description": f"{len(members)} bodies in {sign} ({el}, {mod} Sign Stellium)"})
-        # Tropical
+        # --- NEW: Sidereal House Stelliums ---
+        house_groups_s = {}
+        for body in self.all_sidereal_points:
+            if body.is_main_planet and body.house_num > 0:
+                house_groups_s.setdefault(body.house_num, []).append(body.name)
+        for house, members in house_groups_s.items():
+            if len(members) >= 3:
+                self.sidereal_aspect_patterns.append({"description": f"{len(members)} bodies in House {house} (House Stellium)"})
+
+        # Tropical Patterns
         planets_t = {b.name: b for b in self.tropical_bodies if b.is_main_planet and b.degree is not None}; names_t = list(planets_t.keys())
         def find_aspect_t(p1, p2, type): return any(a.type == type and ((a.p1.name == p1 and a.p2.name == p2) or (a.p1.name == p2 and a.p2.name == p1)) for a in self.tropical_aspects)
         if len(names_t) >= 3:
@@ -224,6 +226,15 @@ class NatalChart:
             if len(members) >= 3:
                 el = ELEMENT_MAPPING.get(sign, ''); mod = MODALITY_MAPPING.get(sign, '')
                 self.tropical_aspect_patterns.append({"description": f"{len(members)} bodies in {sign} ({el}, {mod} Sign Stellium)"})
+        # --- NEW: Tropical House Stelliums ---
+        house_groups_t = {}
+        for body in self.all_tropical_points:
+            if body.is_main_planet and body.house_num > 0:
+                house_groups_t.setdefault(body.house_num, []).append(body.name)
+        for house, members in house_groups_t.items():
+            if len(members) >= 3:
+                self.tropical_aspect_patterns.append({"description": f"{len(members)} bodies in House {house} (House Stellium)"})
+
     def _calculate_house_sign_distributions(self) -> None:
         asc = self.ascendant_data.get("sidereal_asc")
         if asc is None: return
