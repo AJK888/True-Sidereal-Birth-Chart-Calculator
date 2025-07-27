@@ -58,6 +58,47 @@ def calculate_numerology(day: int, month: int, year: int) -> dict:
     life_path = reduce_number(sum(int(digit) for digit in f"{day}{month}{year}"))
     day_number = reduce_number(sum(int(digit) for digit in str(day)))
     return {"life_path": life_path, "day_number": day_number}
+
+# --- NEW: Name Numerology Function ---
+def calculate_name_numerology(full_name: str) -> dict:
+    letter_values = {
+        'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8, 'i': 9,
+        'j': 1, 'k': 2, 'l': 3, 'm': 4, 'n': 5, 'o': 6, 'p': 7, 'q': 8, 'r': 9,
+        's': 1, 't': 2, 'u': 3, 'v': 4, 'w': 5, 'x': 6, 'y': 7, 'z': 8
+    }
+    vowels = "aeiou"
+    
+    def reduce_number(n: int) -> str:
+        final_num = n
+        while final_num > 9 and final_num not in [11, 22, 33]:
+            final_num = sum(int(digit) for digit in str(final_num))
+        if final_num in [11, 22, 33]:
+            return f"{final_num}/{sum(int(digit) for digit in str(final_num))}"
+        else:
+            while final_num > 9:
+                final_num = sum(int(digit) for digit in str(final_num))
+            return str(final_num)
+
+    clean_name = full_name.lower().replace(" ", "")
+    
+    # Expression / Destiny Number (all letters)
+    expression_sum = sum(letter_values.get(char, 0) for char in clean_name)
+    expression_number = reduce_number(expression_sum)
+
+    # Soul Urge Number (vowels only)
+    soul_urge_sum = sum(letter_values.get(char, 0) for char in clean_name if char in vowels)
+    soul_urge_number = reduce_number(soul_urge_sum)
+
+    # Personality Number (consonants only)
+    personality_sum = sum(letter_values.get(char, 0) for char in clean_name if char not in vowels)
+    personality_number = reduce_number(personality_sum)
+    
+    return {
+        "expression_number": expression_number,
+        "soul_urge_number": soul_urge_number,
+        "personality_number": personality_number
+    }
+
 def get_chinese_zodiac(year: int, month: int, day: int) -> str:
     zodiac_animals = ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"]
     return zodiac_animals[(year - 1924) % 12]
@@ -187,9 +228,7 @@ class NatalChart:
                 orb_max = ASPECT_LUMINARY_ORBS.get(name, orb) if is_luminary else orb
                 if abs(diff - angle) <= orb_max: self.tropical_aspects.append(Aspect(p1, p2, name, round(diff - angle, 2), round(ASPECT_SCORES.get(name, 1) / (1 + abs(diff - angle)), 2)))
         self.tropical_aspects.sort(key=lambda x: -x.strength)
-    
     def _detect_aspect_patterns(self) -> None:
-        # Sidereal Patterns
         planets_s = {b.name: b for b in self.sidereal_bodies if b.is_main_planet and b.degree is not None}; names_s = list(planets_s.keys())
         def find_aspect_s(p1, p2, type): return any(a.type == type and ((a.p1.name == p1 and a.p2.name == p2) or (a.p1.name == p2 and a.p2.name == p1)) for a in self.sidereal_aspects)
         if len(names_s) >= 3:
@@ -203,16 +242,11 @@ class NatalChart:
             if len(members) >= 3:
                 el = ELEMENT_MAPPING.get(sign, ''); mod = MODALITY_MAPPING.get(sign, '')
                 self.sidereal_aspect_patterns.append({"description": f"{len(members)} bodies in {sign} ({el}, {mod} Sign Stellium)"})
-        # --- NEW: Sidereal House Stelliums ---
         house_groups_s = {}
         for body in self.all_sidereal_points:
-            if body.is_main_planet and body.house_num > 0:
-                house_groups_s.setdefault(body.house_num, []).append(body.name)
+            if body.is_main_planet and body.house_num > 0: house_groups_s.setdefault(body.house_num, []).append(body.name)
         for house, members in house_groups_s.items():
-            if len(members) >= 3:
-                self.sidereal_aspect_patterns.append({"description": f"{len(members)} bodies in House {house} (House Stellium)"})
-
-        # Tropical Patterns
+            if len(members) >= 3: self.sidereal_aspect_patterns.append({"description": f"{len(members)} bodies in House {house} (House Stellium)"})
         planets_t = {b.name: b for b in self.tropical_bodies if b.is_main_planet and b.degree is not None}; names_t = list(planets_t.keys())
         def find_aspect_t(p1, p2, type): return any(a.type == type and ((a.p1.name == p1 and a.p2.name == p2) or (a.p1.name == p2 and a.p2.name == p1)) for a in self.tropical_aspects)
         if len(names_t) >= 3:
@@ -226,15 +260,11 @@ class NatalChart:
             if len(members) >= 3:
                 el = ELEMENT_MAPPING.get(sign, ''); mod = MODALITY_MAPPING.get(sign, '')
                 self.tropical_aspect_patterns.append({"description": f"{len(members)} bodies in {sign} ({el}, {mod} Sign Stellium)"})
-        # --- NEW: Tropical House Stelliums ---
         house_groups_t = {}
         for body in self.all_tropical_points:
-            if body.is_main_planet and body.house_num > 0:
-                house_groups_t.setdefault(body.house_num, []).append(body.name)
+            if body.is_main_planet and body.house_num > 0: house_groups_t.setdefault(body.house_num, []).append(body.name)
         for house, members in house_groups_t.items():
-            if len(members) >= 3:
-                self.tropical_aspect_patterns.append({"description": f"{len(members)} bodies in House {house} (House Stellium)"})
-
+            if len(members) >= 3: self.tropical_aspect_patterns.append({"description": f"{len(members)} bodies in House {house} (House Stellium)"})
     def _calculate_house_sign_distributions(self) -> None:
         asc = self.ascendant_data.get("sidereal_asc")
         if asc is None: return
@@ -250,7 +280,6 @@ class NatalChart:
                         else: segments.append(f"{sign_name} {(overlap_start - sign_start):.1f}°–{(overlap_end - sign_start):.1f}°")
             self.house_sign_distributions[f"House {house_num}"] = segments
     def _analyze_dominance(self) -> None:
-        # Sidereal
         counts_s = {'sign': {}, 'element': {}, 'modality': {}}; strength_s = {}
         main_s = [b for b in self.sidereal_bodies if b.is_main_planet and b.degree is not None and b.name != "True Node"]
         for b in main_s:
@@ -262,7 +291,6 @@ class NatalChart:
         self.sidereal_dominance = {f"dominant_{k}": max(v, key=v.get) if v else "N/A" for k, v in counts_s.items()}
         self.sidereal_dominance['dominant_planet'] = max(strength_s, key=strength_s.get) if strength_s else "N/A"
         self.sidereal_dominance['counts'] = counts_s; self.sidereal_dominance['strength'] = {k: round(v, 2) for k, v in strength_s.items()}
-        # Tropical
         counts_t = {'sign': {}, 'element': {}, 'modality': {}}; strength_t = {}
         main_t = [b for b in self.tropical_bodies if b.is_main_planet and b.degree is not None and b.name != "True Node"]
         for b in main_t:
