@@ -6,3 +6,5 @@ a2wsgi
 requests
 pendulum
 logtail-python
+httpx
+google-generativeai
