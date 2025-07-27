@@ -19,7 +19,6 @@ from logtail import LogtailHandler
 handler = None
 logtail_token = os.getenv("LOGTAIL_SOURCE_TOKEN")
 if logtail_token:
-    # FIX: Add the required 'host' parameter with your source-specific URL
     ingesting_host = "https://s1450016.eu-nbg-2.betterstackdata.com"
     handler = LogtailHandler(source_token=logtail_token, host=ingesting_host)
 
@@ -65,27 +64,38 @@ def calculate_chart_endpoint(data: ChartRequest):
 
         swe.set_ephe_path(r".")
 
-        opencage_key = os.getenv("OPENCAGE_KEY")
-        if not opencage_key:
-            raise HTTPException(status_code=500, detail="Server is missing the geocoding API key.")
-        
-        geo_url = f"https://api.opencagedata.com/geocode/v1/json?q={data.location}&key={opencage_key}"
-        response = requests.get(geo_url, timeout=10)
-        response.raise_for_status()
-        geo_res = response.json()
+        # --- SECURE GEOCODING WITH IMPROVED ERROR HANDLING ---
+        lat, lng, timezone_name = None, None, None
+        try:
+            opencage_key = os.getenv("OPENCAGE_KEY")
+            if not opencage_key:
+                raise HTTPException(status_code=500, detail="Server is missing the geocoding API key.")
+            
+            geo_url = f"https://api.opencagedata.com/geocode/v1/json?q={data.location}&key={opencage_key}"
+            response = requests.get(geo_url, timeout=10)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            geo_res = response.json()
 
-        result = geo_res.get("results", [])[0] if geo_res.get("results") else {}
-        geometry = result.get("geometry", {})
-        annotations = result.get("annotations", {}).get("timezone", {})
-        lat, lng, timezone_name = geometry.get("lat"), geometry.get("lng"), annotations.get("name")
+            result = geo_res.get("results", [])[0] if geo_res.get("results") else {}
+            geometry = result.get("geometry", {})
+            annotations = result.get("annotations", {}).get("timezone", {})
+            lat, lng, timezone_name = geometry.get("lat"), geometry.get("lng"), annotations.get("name")
 
-        if not all([lat, lng, timezone_name]):
-            raise HTTPException(status_code=400, detail="Could not retrieve complete location data.")
+            if not all([lat, lng, timezone_name]):
+                raise HTTPException(status_code=400, detail="Could not retrieve complete location data from geocoding service.")
+        except requests.RequestException as e:
+            raise HTTPException(status_code=503, detail=f"Geocoding service is unavailable: {e}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"An error occurred during geocoding: {e}")
 
-        local_time = pendulum.datetime(
-            data.year, data.month, data.day, data.hour, data.minute, tz=timezone_name
-        )
-        utc_time = local_time.in_timezone('UTC')
+        # --- TIMEZONE CONVERSION WITH IMPROVED ERROR HANDLING ---
+        try:
+            local_time = pendulum.datetime(
+                data.year, data.month, data.day, data.hour, data.minute, tz=timezone_name
+            )
+            utc_time = local_time.in_timezone('UTC')
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to process timezone ('{timezone_name}'). Error: {e}")
 
         chart = NatalChart(
             name=data.name, year=utc_time.year, month=utc_time.month, day=utc_time.day,
