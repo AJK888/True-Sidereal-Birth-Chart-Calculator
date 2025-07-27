@@ -124,6 +124,9 @@
         
         <pre id="output">Your personalized report will appear here.</pre>
 
+        <h2>Glyph Legend</h2>
+        <pre id="glyph-legend"></pre>
+
         <div class="privacy-section">
             <details>
                 <summary>Disclaimer</summary>
@@ -168,9 +171,6 @@
                 </div>
             </details>
         </div>
-
-        <h2>Glyph Legend</h2>
-        <pre id="glyph-legend"></pre>
     </div>
 
     <script>
@@ -455,7 +455,6 @@
             }
         }
 
-        // --- NEW: Populate the glyph legend on page load ---
         document.addEventListener('DOMContentLoaded', () => {
             const legendEl = document.getElementById('glyph-legend');
             let legendText = '--- ZODIAC SIGNS ---\n';
