@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from natal_chart import (
     NatalChart, get_sign_and_ruler, format_true_sidereal_placement, PLANETS_CONFIG, 
-    calculate_numerology, get_chinese_zodiac, TRUE_SIDEREAL_SIGNS
+    calculate_numerology, get_chinese_zodiac, TRUE_SIDEREAL_SIGNS,
+    calculate_name_numerology
 )
 import swisseph as swe
 import traceback
@@ -46,6 +47,7 @@ app.add_middleware(
 
 class ChartRequest(BaseModel):
     name: str
+    full_name: str
     year: int
     month: int
     day: int
@@ -64,38 +66,27 @@ def calculate_chart_endpoint(data: ChartRequest):
 
         swe.set_ephe_path(r".")
 
-        # --- SECURE GEOCODING WITH IMPROVED ERROR HANDLING ---
-        lat, lng, timezone_name = None, None, None
-        try:
-            opencage_key = os.getenv("OPENCAGE_KEY")
-            if not opencage_key:
-                raise HTTPException(status_code=500, detail="Server is missing the geocoding API key.")
-            
-            geo_url = f"https://api.opencagedata.com/geocode/v1/json?q={data.location}&key={opencage_key}"
-            response = requests.get(geo_url, timeout=10)
-            response.raise_for_status()  # Raise an exception for HTTP errors
-            geo_res = response.json()
+        opencage_key = os.getenv("OPENCAGE_KEY")
+        if not opencage_key:
+            raise HTTPException(status_code=500, detail="Server is missing the geocoding API key.")
+        
+        geo_url = f"https://api.opencagedata.com/geocode/v1/json?q={data.location}&key={opencage_key}"
+        response = requests.get(geo_url, timeout=10)
+        response.raise_for_status()
+        geo_res = response.json()
 
-            result = geo_res.get("results", [])[0] if geo_res.get("results") else {}
-            geometry = result.get("geometry", {})
-            annotations = result.get("annotations", {}).get("timezone", {})
-            lat, lng, timezone_name = geometry.get("lat"), geometry.get("lng"), annotations.get("name")
+        result = geo_res.get("results", [])[0] if geo_res.get("results") else {}
+        geometry = result.get("geometry", {})
+        annotations = result.get("annotations", {}).get("timezone", {})
+        lat, lng, timezone_name = geometry.get("lat"), geometry.get("lng"), annotations.get("name")
 
-            if not all([lat, lng, timezone_name]):
-                raise HTTPException(status_code=400, detail="Could not retrieve complete location data from geocoding service.")
-        except requests.RequestException as e:
-            raise HTTPException(status_code=503, detail=f"Geocoding service is unavailable: {e}")
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"An error occurred during geocoding: {e}")
+        if not all([lat, lng, timezone_name]):
+            raise HTTPException(status_code=400, detail="Could not retrieve complete location data.")
 
-        # --- TIMEZONE CONVERSION WITH IMPROVED ERROR HANDLING ---
-        try:
-            local_time = pendulum.datetime(
-                data.year, data.month, data.day, data.hour, data.minute, tz=timezone_name
-            )
-            utc_time = local_time.in_timezone('UTC')
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Failed to process timezone ('{timezone_name}'). Error: {e}")
+        local_time = pendulum.datetime(
+            data.year, data.month, data.day, data.hour, data.minute, tz=timezone_name
+        )
+        utc_time = local_time.in_timezone('UTC')
 
         chart = NatalChart(
             name=data.name, year=utc_time.year, month=utc_time.month, day=utc_time.day,
@@ -104,6 +95,7 @@ def calculate_chart_endpoint(data: ChartRequest):
         chart.calculate_chart()
         
         numerology = calculate_numerology(data.day, data.month, data.year)
+        name_numerology = calculate_name_numerology(data.full_name)
         chinese_zodiac = get_chinese_zodiac(data.year, data.month, data.day)
         
         house_rulers_formatted = {}
@@ -137,7 +129,8 @@ def calculate_chart_endpoint(data: ChartRequest):
                 "dominant_planet": f"{chart.sidereal_dominance.get('dominant_planet', 'N/A')} (score {chart.sidereal_dominance.get('strength', {}).get(chart.sidereal_dominance.get('dominant_planet'), 0.0)})",
                 "life_path_number": numerology["life_path"],
                 "day_number": numerology["day_number"],
-                "chinese_zodiac": chinese_zodiac
+                "chinese_zodiac": chinese_zodiac,
+                "name_numerology": name_numerology
             },
             "sidereal_major_positions": [
                 {"name": p.name, "position": p.formatted_position, "degrees": p.degree, "percentage": p.sign_percentage, "retrograde": p.retrograde, "house_info": f"– House {p.house_num}, {p.house_degrees}" if p.house_num > 0 else ""}
