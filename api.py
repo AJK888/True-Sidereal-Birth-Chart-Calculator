@@ -19,7 +19,9 @@ from logtail import LogtailHandler
 handler = None
 logtail_token = os.getenv("LOGTAIL_SOURCE_TOKEN")
 if logtail_token:
-    handler = LogtailHandler(source_token=logtail_token)
+    # FIX: Add the required 'host' parameter with your source-specific URL
+    ingesting_host = "https://s1450016.eu-nbg-2.betterstackdata.com"
+    handler = LogtailHandler(source_token=logtail_token, host=ingesting_host)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -138,11 +140,7 @@ def calculate_chart_endpoint(data: ChartRequest):
             "true_sidereal_signs": TRUE_SIDEREAL_SIGNS,
             "sidereal_aspect_patterns": [p['description'] for p in chart.sidereal_aspect_patterns],
             "sidereal_additional_points": [
-                {
-                    "name": p.name, 
-                    "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}",
-                    "retrograde": p.retrograde # <-- FIX
-                }
+                {"name": p.name, "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}", "retrograde": p.retrograde}
                 for p in sorted(chart.all_sidereal_points, key=lambda x: x.name) if p.name not in major_positions_order
             ],
             "house_rulers": house_rulers_formatted,
@@ -163,11 +161,7 @@ def calculate_chart_endpoint(data: ChartRequest):
             ],
             "tropical_aspect_patterns": [p['description'] for p in chart.tropical_aspect_patterns],
             "tropical_additional_points": [
-                {
-                    "name": p.name, 
-                    "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}",
-                    "retrograde": p.retrograde # <-- FIX
-                }
+                {"name": p.name, "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}", "retrograde": p.retrograde}
                 for p in sorted(chart.all_tropical_points, key=lambda x: x.name) if p.name not in major_positions_order
             ],
         }
