@@ -46,7 +46,6 @@ app.add_middleware(
 )
 
 class ChartRequest(BaseModel):
-    name: str
     full_name: str
     year: int
     month: int
@@ -60,8 +59,8 @@ class ChartRequest(BaseModel):
 def calculate_chart_endpoint(data: ChartRequest):
     try:
         log_data = data.dict()
-        if 'name' in log_data:
-            log_data['chart_name'] = log_data.pop('name')
+        if 'full_name' in log_data:
+            log_data['chart_name'] = log_data.pop('full_name')
         logger.info("New chart request received", extra=log_data)
 
         swe.set_ephe_path(r".")
@@ -89,7 +88,7 @@ def calculate_chart_endpoint(data: ChartRequest):
         utc_time = local_time.in_timezone('UTC')
 
         chart = NatalChart(
-            name=data.name, year=utc_time.year, month=utc_time.month, day=utc_time.day,
+            name=data.full_name, year=utc_time.year, month=utc_time.month, day=utc_time.day,
             hour=utc_time.hour, minute=utc_time.minute, latitude=lat, longitude=lng
         )
         chart.calculate_chart()
