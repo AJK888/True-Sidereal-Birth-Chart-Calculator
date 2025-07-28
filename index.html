@@ -66,10 +66,51 @@
     <div class="container">
         <h1>Astrological and Numerological Blueprint Calculator</h1>
         <div class="description">
-            </div>
+            <h3>Your Complete Astrological Blueprint</h3>
+            <p>
+                This calculator provides a comprehensive analysis using the <strong>True Sidereal</strong> zodiac, which reflects the true, observable size of the constellations according to the official boundaries defined by the International Astronomical Union (IAU), including Ophiuchus.
+            </p>
+            <p>
+                For a complete perspective, your report also includes a full chart calculated in the standard <strong>Tropical</strong> zodiac, allowing for direct comparison.
+            </p>
+            <p>
+                <strong>Your personalized report features:</strong>
+            </p>
+            <ul>
+                <li>An AI-powered astrological synthesis of your chart using Google's Gemini.</li>
+                <li>A visual chart wheel showing your unique planetary alignment.</li>
+                <li>Detailed Sidereal and Tropical placements for all planets and major points.</li>
+                <li>In-depth analysis of aspects, patterns, and chart dominance.</li>
+                <li>Your personal Numerology (Birth Date and Full Name) and Chinese Zodiac sign.</li>
+            </ul>
+            <p>For a full analysis of your chart, or for any questions, please contact: <a href="mailto:synthesisastrology@outlook.com">synthesisastrology@outlook.com</a></p>
+            <p>
+                Enter your birth details below to generate your complete astrological profile.
+            </p>
+        </div>
 
         <form id="chartForm">
-            </form>
+            <label for="fullName">Full Birth Name (including middle name for numerology)</label>
+            <input type="text" id="fullName" name="fullName" required value="">
+            
+            <label for="birthDate">Birth Date (MM/DD/YYYY)</label>
+            <input type="text" id="birthDate" name="birthDate" required value="" placeholder="e.g., 05/15/1992">
+
+            <p class="time-note">For the most accurate results, please use your exact time of birth. If you do not know it, you can select the checkbox below to exclude time-sensitive information from the output.</p>
+            <div class="time-toggle">
+                <input type="checkbox" id="unknownTime" name="unknownTime">
+                <label for="unknownTime">I don't know my birth time</label>
+            </div>
+
+            <div class="time-inputs">
+                <div> <label for="hour">Hour</label> <input type="number" id="hour" name="hour" required value="" min="1" max="12"> </div>
+                <div> <label for="minute">Minute</label> <input type="number" id="minute" name="minute" required value="" min="0" max="59"> </div>
+                <div> <label for="ampm">AM/PM</label> <select id="ampm" name="ampm"><option value="am">AM</option><option value="pm">PM</option></select> </div>
+            </div>
+            
+            <label for="location">Birth Location</label><input type="text" id="location" name="location" required value="">
+            <button type="submit" id="submitBtn">Calculate Chart</button>
+        </form>
 
         <h2 id="gemini-title" style="display: none;">AI Astrological Synthesis</h2>
         <pre id="gemini-output" style="display: none;"></pre>
@@ -84,7 +125,79 @@
         <pre id="glyph-legend" style="display: none;"></pre>
 
         <div class="privacy-section">
-             </div>
+            <details>
+                <summary>Disclaimer</summary>
+                <div>
+                    <p>The information and data provided by the Astrological and Numerological Blueprint Calculator, including any AI-generated text from Google's Gemini model, are for entertainment and informational purposes only. The readings and interpretations are not intended to be a substitute for professional advice from a qualified person in any field, including but not to medical, financial, or legal matters.</p>
+                    <p>By using this service, you agree that you are solely responsible for any actions you take based on the information provided, and you will not hold the website or its creator liable for any decisions or outcomes.</p>
+                </div>
+            </details>
+            <details>
+                <summary>Privacy Policy</summary>
+                <div>
+                    <h4>Last Updated: July 27, 2025</h4>
+                    <p>Thank you for using the Astrological and Numerological Blueprint Calculator. This Privacy Policy explains what information we collect when you use our service, why we collect it, and how it is handled. Your privacy is important to us, and we are committed to being transparent about our data practices.</p>
+                    <h4>1. Information We Collect</h4>
+                    <p>When you use the calculator, we collect the following information that you voluntarily provide:</p>
+                    <ul>
+                        <li><strong>Name:</strong> The name you enter for the chart calculation.</li>
+                        <li><strong>Birth Information:</strong> The date of birth (year, month, day) and time of birth (hour, minute) you provide.</li>
+                        <li><strong>Location Information:</strong> The birth location (e.g., "Boston, MA") you enter.</li>
+                    </ul>
+                    <p>We <strong>do not</strong> collect your IP address or any other information that is not explicitly entered into the form fields.</p>
+                    <h4>2. How We Use Your Information</h4>
+                    <p>The information you provide is used for the following purposes:</p>
+                    <ul>
+                        <li><strong>To Perform Calculations:</strong> The data is sent to our secure server to perform the astrological and numerological calculations and generate your personalized report.</li>
+                        <li><strong>To Generate AI Readings:</strong> Anonymized astrological data (your planetary positions, but not your name, date, time, or location) is sent to the Google Gemini API to generate the "AI Astrological Synthesis" portion of your report.</li>
+                        <li><strong>Application Monitoring & Debugging:</strong> The input data is sent to a secure, third-party logging service (Better Stack) for the sole purpose of monitoring application performance, identifying bugs, and troubleshooting errors. This helps us ensure the calculator is running smoothly and accurately.</li>
+                        <li><strong>Research and Service Improvement:</strong> May be used to analyze astrological patterns, conduct research, and train artificial intelligence designed to improve the accuracy and depth of our astrological readings and to further the study of astrology.</li>
+                    </ul>
+                    <h4>3. Data Storage and Sharing</h4>
+                    <ul>
+                        <li><strong>Storage:</strong> The data that is collected will be stored and may be used to develop artificial intelligence. The data is also stored locally.</li>
+                        <li><strong>Sharing:</strong> We are committed to protecting your privacy. We will not sell or share your personal information with any other third parties. Anonymized astrological data is processed by Google's services to provide the AI reading, subject to their privacy policies.</li>
+                    </ul>
+                    <h4>4. Your Rights and Data Deletion</h4>
+                    <p>You have the right to request the deletion of your personal data from our logs. If you would like to have your information removed, please contact us with the details of the data you entered (name, date, location), and we will permanently delete the corresponding log entries.</p>
+                    <h4>5. Consent for Research Use</h4>
+                    <p>By using this calculator, you acknowledge and consent that the birth data you provide may be used for the research and potential artificial intelligence training purposes described in Section 2. This is essential for helping us learn more about astrology and improve the quality of the service we provide to you and other users.</p>
+                    <h4>6. Contact Us</h4>
+                    <p>If you have any questions about this Privacy Policy or wish to request the deletion of your data, please contact us at:</p>
+                    <p><a href="mailto:synthesisastrology@outlook.com"><strong>synthesisastrology@outlook.com</strong></a></p>
+                </div>
+            </details>
+            <details>
+                <summary>Terms of Service</summary>
+                <div>
+                    <h4>Last Updated: July 27, 2025</h4>
+                    <p>Welcome to the Astrological and Numerological Blueprint Calculator. These Terms of Service ("Terms") govern your use of this website and the services provided. By accessing or using the service, you agree to be bound by these Terms.</p>
+                    <h4>1. Description of Service</h4>
+                    <p>This website provides personalized astrological and numerological reports based on data you provide, including True Sidereal and Tropical zodiac calculations, a visual chart wheel, and numerology reports. The service is provided for informational and entertainment purposes.</p>
+                    <h4>2. Acceptance of Terms</h4>
+                    <p>By using this service, you confirm that you have read, understood, and agree to be bound by these Terms. If you do not agree with the Terms, please do not use the service.</p>
+                    <h4>3. Acceptable Use</h4>
+                    <p>You agree not to use this service for any unlawful purpose or in any way that could damage, disable, or impair the service. This includes, but is not limited to:</p>
+                    <ul>
+                        <li>Submitting data through automated means (e.g., bots, scripts).</li>
+                        <li>Attempting to gain unauthorized access to the server or its data.</li>
+                        <li>Using the service for any commercial purpose without prior written consent.</li>
+                    </ul>
+                    <h4>4. Intellectual Property</h4>
+                    <p>All content on this website, including the design, text, graphics, and the underlying source code of the calculator, are the intellectual property of the site owner. You may use the service for personal, non-commercial use only.</p>
+                    <h4>5. Disclaimer of Warranties</h4>
+                    <p>The information and data provided by this calculator are for <strong>entertainment and informational purposes only</strong>. The service is provided "as is" and "as available" without any warranties, express or implied. We do not warrant that the service will be error-free or that the information provided will be completely accurate. The interpretations are not a substitute for professional advice from a qualified person in any field, including but not limited to medical, financial, or legal matters.</p>
+                    <h4>6. Limitation of Liability</h4>
+                    <p>By using this service, you agree that you are solely responsible for any actions you take based on the information provided. The owner of this website shall not be held liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use this service, or from any decisions or outcomes made in reliance on the information provided.</p>
+                    <h4>7. Privacy Policy</h4>
+                    <p>Your use of this service is also governed by our Privacy Policy, which is available on this website. The Privacy Policy explains how we collect, use, and protect your personal data.</p>
+                    <h4>8. Changes to Terms</h4>
+                    <p>We reserve the right to modify these Terms at any time. We will notify users of any changes by updating the "Last Updated" date at the top of this page. Your continued use of the service after such changes constitutes your acceptance of the new Terms.</p>
+                    <h4>9. Contact Information</h4>
+                    <p>If you have any questions about these Terms, please contact us at:<br><strong>synthesisastrology@outlook.com</strong></p>
+                </div>
+            </details>
+        </div>
     </div>
 
     <script>
@@ -181,10 +294,7 @@
             this.submitBtn.disabled = isLoading;
             this.submitBtn.innerText = isLoading ? "Calculating..." : "Calculate Chart";
 
-            // THIS IS THE FIX: Only hide elements and show the loading message
-            // when isLoading is TRUE.
             if (isLoading) {
-                // Hide all result sections
                 this.geminiTitle.style.display = 'none';
                 this.geminiOutput.style.display = 'none';
                 this.resultsTitle.style.display = 'none';
@@ -195,7 +305,6 @@
                 this.legendEl.style.display = 'none';
                 this.wheelSvg.innerHTML = '';
                 
-                // Show loading message
                 this.resultsTitle.style.display = 'block';
                 this.outputEl.style.display = 'block';
                 this.outputEl.innerText = "Calculating chart, this may take a moment...";
@@ -220,12 +329,9 @@
                 this.drawChartWheel(res);
             }
         },
-        
-        // The renderTextResults, drawChartWheel, and populateGlyphLegend methods
-        // remain unchanged from the previous version. They are omitted here for brevity
-        // but should be included in your final file.
+
         renderTextResults(res) {
-             let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
+            let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
             out += `- UTC Date & Time: ${res.utc_datetime}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
             out += `- Location: ${res.location}\n`;
             out += `- Day/Night Determination: ${res.day_night_status}\n\n`;
