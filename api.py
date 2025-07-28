@@ -69,6 +69,13 @@ async def get_gemini_reading(chart_data: dict) -> str:
         return "Gemini API key not configured. AI reading is unavailable."
 
     try:
+        # --- Prompt Engineering ---
+        prompt_parts = [
+            # 1. The System Role: Framed as a storyteller and synthesist.
+            "You are a wise, insightful, and deeply intuitive astrologer. Your special gift is synthesizing complex chart data into a cohesive and inspiring narrative for individuals who are new to astrology. You don't just list traits; you find the central story and overarching themes in a person's energetic blueprint and explain them with warmth and clarity.",
+        ]
+
+        # 2. Append all the anonymized data for context
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         numerology_analysis = chart_data.get("numerology_analysis", {})
         chinese_zodiac = chart_data.get("chinese_zodiac")
@@ -79,12 +86,8 @@ async def get_gemini_reading(chart_data: dict) -> str:
         sun = next((p for p in s_positions if p['name'] == 'Sun'), None)
         moon = next((p for p in s_positions if p['name'] == 'Moon'), None)
         asc = next((p for p in s_positions if p['name'] == 'Ascendant'), None)
-        
-        prompt_parts = [
-            "You are an expert astrologer and numerologist specializing in the True Sidereal system, which uses the real, observable sizes of the constellations. Your task is to provide a warm, insightful, and comprehensive reading for a beginner based on the following anonymized data. Do not mention the raw data points in your response.",
-            "First, deeply analyze and synthesize all the provided astrological and numerological data to understand the complete picture of the individual.\n"
-        ]
-        
+
+        prompt_parts.append("\n**Full Anonymized Chart Data:**")
         prompt_parts.append("**Astrological Data:**")
         if sun: prompt_parts.append(f"- Sun: {sun['position']}")
         if moon: prompt_parts.append(f"- Moon: {moon['position']}")
@@ -93,7 +96,7 @@ async def get_gemini_reading(chart_data: dict) -> str:
         if s_analysis.get("dominant_planet"): prompt_parts.append(f"- Dominant Planet: {s_analysis['dominant_planet']}")
         if s_analysis.get("dominant_sign"): prompt_parts.append(f"- Dominant Sign: {s_analysis['dominant_sign']}")
         if s_analysis.get("dominant_element"): prompt_parts.append(f"- Dominant Element: {s_analysis['dominant_element']}")
-
+        
         prompt_parts.append("\n**Numerological & Other Data:**")
         if numerology_analysis.get("life_path_number"): prompt_parts.append(f"- Life Path Number: {numerology_analysis['life_path_number']}")
         if numerology_analysis.get("day_number"): prompt_parts.append(f"- Day Number: {numerology_analysis['day_number']}")
@@ -109,31 +112,50 @@ async def get_gemini_reading(chart_data: dict) -> str:
             for pattern in s_patterns:
                 prompt_parts.append(f"- {pattern}")
         
-        top_aspects = s_aspects[:5]
+        top_aspects = s_aspects[:20] # Provide more aspects for better context
         if top_aspects:
-            prompt_parts.append("\n**Top 5 Strongest Aspects:**")
+            prompt_parts.append("\n**Major Aspects:**")
             for aspect in top_aspects:
                 prompt_parts.append(f"- {aspect['p1_name']} {aspect['type']} {aspect['p2_name']}")
-
+        
+        # 3. The Core Task: The new, advanced instructions
         prompt_parts.append("\n**Your Task:**")
-        prompt_parts.append("Now, write a 3-4 paragraph reading that synthesizes this information for a beginner. Follow these steps:")
-        prompt_parts.append("1. Begin by introducing the core identity, blending insights from the Sun, Moon, Ascendant, and the Life Path Number.")
-        prompt_parts.append("2. Identify and explain the most unique or powerful themes in the chart. This could be a dominant element, a stellium pattern, or a particularly strong planet. Weave in the meaning of their Expression and Soul Urge numbers to show how these themes manifest as talents and desires.")
-        prompt_parts.append("3. Briefly touch on how the key aspects create dynamic energy (harmony or tension) that shapes their personality and life experiences.")
-        prompt_parts.append("4. Conclude with an encouraging summary of their overall energetic blueprint and potential path.")
-        prompt_parts.append("Maintain a warm, positive, and educational tone throughout. Do not simply list traits; explain how they connect to form a complete person.")
+        prompt_parts.append("""
+**Step 1: Internal Analysis (Do this silently before writing)**
+First, review ALL the data provided above. Look for the most powerful, repeating themes and patterns that form the 'center of gravity' of this chart.
+-   Is there a powerful **Stellium** (concentration of planets) in a specific house or sign?
+-   Do the **Numerology** numbers (like a Life Path 7 and Soul Urge 7) strongly echo the themes of a planet or house?
+-   Does the **Chart Ruler**, **Dominant Planet**, or **Dominant Element** create an undeniable theme?
+-   Look for powerful combinations. For example, a 9th House Stellium + Life Path 7 is a massive theme of spiritual seeking and higher knowledge. A stellium in Libra + a Venus-ruled chart + an Expression Number 6 is a powerful theme of relationships, art, and harmony.
+-   Identify 1-2 of these most powerful, overarching themes. You will build your entire narrative around them.
+""")
+
+        prompt_parts.append("""
+**Step 2: Write the Narrative Reading**
+Now, write a detailed, multi-paragraph reading for the beginner. **Do not follow a rigid template.** Instead, craft a flowing narrative based on the core themes you identified in your internal analysis.
+
+-   **Introduction - The Central Theme:** Begin by introducing the most powerful theme you discovered. Open with a statement that captures the essence of their chart, such as, "Your chart tells a powerful story about a journey of..." or "If we look at your cosmic blueprint, the central theme that shines brightest is one of..."
+
+-   **Body - Weaving the Evidence:** In the following paragraphs, explain this central theme using the specific astrological and numerological placements as your evidence. Instead of listing them one by one, group them by how they support the narrative.
+    -   **Explain Concepts As You Go:** As you introduce each component (like the Sun, a House, or an Aspect) for the first time, briefly explain its role in simple, relatable terms.
+    -   **Example of Weaving:** If the theme is "Creative Self-Expression," you might say: "This theme of creativity is anchored by your Sun, which represents your core identity, shining brightly in the dramatic sign of Leo. This tells us you're meant to be on a stage, whether literally or figuratively. This is powerfully amplified by a concentration of planets in your 5th House—the area of your chart connected to creativity and play. The fact that your Expression Number from numerology is a 3, the number of communication and artistry, confirms that this is not just a hobby, but a core part of your purpose."
+
+-   **Complexity and Growth - The Aspects:** Weave in the meaning of one or two key **aspects** (the conversations between planets). Explain how they add harmony or dynamic tension to the core themes you're describing. For instance, "...while your creative drive is strong, it might face a challenge from Saturn, the planet of discipline. This tension isn't a weakness; it's a cosmic personal trainer, pushing you to build real, lasting structures for your art."
+
+-   **Conclusion - The Empowering Summary:** Conclude with a warm summary. Reiterate their core strengths and potential, framing their chart not as a fixed destiny, but as a beautiful and powerful toolkit they've been given for their life's journey.
+""")
 
         prompt = "\n".join(prompt_parts)
 
+        # --- API Call ---
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
         response = await model.generate_content_async(prompt)
         
         return response.text
         
     except Exception as e:
-        print(f"Error getting Gemini reading: {e}")
+        logger.error(f"Error during Gemini reading generation: {e}", exc_info=True)
         return "An error occurred while generating the AI reading."
-
 
 @app.post("/calculate_chart")
 async def calculate_chart_endpoint(data: ChartRequest):
