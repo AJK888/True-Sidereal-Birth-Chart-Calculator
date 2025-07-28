@@ -106,10 +106,13 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
 
             prompt_parts.append("\n**Your Task:**")
             prompt_parts.append("""
-1.  **Internal Analysis:** First, silently analyze the user's actual chart data provided. Identify the most powerful themes by considering the dominant element, any sign stelliums, the Life Path and Day numbers, and the three tightest aspects. Notice if a planet is at a very early or late degree.
-2.  **Write the Narrative:** Craft a flowing narrative built around the central theme you discover from the user's data. You MUST integrate the meaning of the **Life Path and Day Numbers** and the **three tightest aspects**. Show how they all tell the same core story from different angles.
-3.  **Explain Concepts:** Briefly explain astrological terms (like the Sun, Moon, an aspect) as you introduce them.
-4.  **Structure:** Start with an introduction to the central theme, develop it in the body paragraphs by showing how the data points connect, and conclude with an empowering summary.
+First, perform a silent internal analysis to identify the most powerful themes from the limited data. Then, structure your final response **exactly as follows, using plain text without any markdown like '#' or '**'.**
+
+Key Themes in Your Chart
+(Under this plain text heading, list the 2-3 most important themes you identified.)
+
+The Story of Your Inner World
+(Under this plain text heading, write a multi-paragraph narrative weaving together the Sun, Moon, numerology, and the three tightest aspects to explain the core themes. Do not use sub-labels like 'Introduction' or 'Body'.)
 """)
 
         else:
@@ -170,20 +173,16 @@ First, perform a deep, holistic review of ALL the data provided for the user to 
 
             prompt_parts.append("""
 **Step 2: Write the Final Reading**
-Now, write the final reading for the user. Structure your entire response **exactly as follows**, using the markdown headings as specified. Do not include headers like "Step 1", "Step 2", or "Primary Narrative".
+Now, write the final reading for the user. Structure your entire response **exactly as follows, using plain text headings without any markdown like '#' or '**'.**
 
-### Key Themes in Your Chart
-(Under this heading, list the 3 to 5 most important and interconnected themes you identified from your internal analysis of the user's chart. Be concise.)
+Key Themes in Your Chart
+(Under this plain text heading, list the 3 to 5 most important and interconnected themes you identified from your internal analysis. Use a simple bulleted list.)
 
-### The Central Story of Your Chart
-(Under this heading, write the full, multi-paragraph narrative reading. Your primary goal here is to **demonstrate how different parts of the user's chart tell the SAME story from different angles.** Avoid discussing any placement in isolation.)
-
--   **Introduction - The Golden Thread:** Begin by stating the central, unifying theme you discovered in the user's chart. Present it as the 'golden thread' or the 'soul's mission statement' for this lifetime.
--   **Body - The Unfolding Narrative:** Dedicate each paragraph to exploring a facet of the central theme.
-    -   **MANDATORY INTEGRATION:** You **must not** have a separate 'numerology paragraph' or 'aspect paragraph.' Instead, when you discuss the user's life purpose (e.g., the Sun), you MUST connect it to their Life Path Number. When you discuss a key challenge (a hard aspect), you MUST connect it to the house it's in and how it affects the overall theme.
-    -   **Make connections explicit.** For example, your explanation should follow this logic: 'Your core identity, represented by your Sun's placement, is fundamentally about X. This is the very mission statement of your soul, which is perfectly echoed by your Life Path Number Y, the number of Z.'
-    -   You are required to seamlessly integrate the meaning of **all stelliums**, the **Chart Ruler**, the **Life Path and Day Numbers**, and the **three tightest aspects** into this single, flowing narrative.
--   **Conclusion - The Tapestry:** Conclude with a summary that presents the user's chart as a beautiful, intricate tapestry. Reiterate that the challenges and strengths are all part of one unified design, perfectly equipping them for their unique purpose.
+The Central Story of Your Chart
+(Under this plain text heading, write the full, multi-paragraph narrative reading. **Begin the first paragraph directly with the introduction of the 'golden thread' or central theme.** Let the subsequent paragraphs flow naturally to unfold the narrative. **Do not use any sub-labels like 'Introduction', 'Body', or 'The Unfolding Narrative' within your response.** Your entire goal is to make this section read like a single, cohesive essay.)
+-   **MANDATORY INTEGRATION:** You must seamlessly integrate the meaning of **all stelliums**, the **Chart Ruler**, the **Life Path and Day Numbers**, and the **three tightest aspects** into this single, flowing narrative, explaining concepts simply as you go.
+-   **Make connections explicit.** Your explanation should follow this logic: 'Your core identity, represented by your Sun's placement, is fundamentally about X. This is the very mission statement of your soul, which is perfectly echoed by your Life Path Number Y, the number of Z.'
+-   **Conclusion:** Conclude the narrative with a final paragraph that serves as a warm, empowering summary, presenting the user's chart as a beautiful, intricate tapestry.
 """)
 
         prompt = "\n".join(prompt_parts)
