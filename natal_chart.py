@@ -106,10 +106,7 @@ def get_chinese_zodiac_and_element(year: int, month: int, day: int) -> Dict[str,
     return {"animal": animal, "element": element}
 
 def _get_sunrise_sunset_jd(jd_ut: float, lat: float, lon: float) -> Tuple[Optional[float], Optional[float]]:
-    """Calculates sunrise and sunset Julian Day using the precise swe.rise_trans function."""
     try:
-        # CORRECTED: The swe.CALC_RISE/SET flags are passed to the `rsmi` parameter,
-        # which is the correct argument for these flags.
         rise_res = swe.rise_trans(jd_ut, swe.SUN, lon, lat, rsmi=swe.CALC_RISE | swe.BIT_DISC_CENTER)
         sunrise_jd = rise_res[1][0] if rise_res[0] == 0 else None
 
