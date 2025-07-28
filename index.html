@@ -43,6 +43,14 @@
         button:hover:not(:disabled) { background-color: var(--accent-hover); }
         button:disabled { opacity: 0.6; cursor: not-allowed; }
         pre { background: var(--pre-background); padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 8px; white-space: pre-wrap; word-break: break-word; font-family: "Courier New", Courier, monospace; font-size: 14px; color: var(--text-color); }
+        
+        /* --- NEW: Style for Gemini output --- */
+        #gemini-output {
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
         #chart-wheel-container { display: flex; justify-content: center; align-items: center; margin-top: 2rem; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; }
         #chart-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; background-color: var(--pre-background); border-radius: 50%; }
         .wheel-circle { stroke: var(--border-color); stroke-width: 2; fill: none; }
