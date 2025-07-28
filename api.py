@@ -73,6 +73,7 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
 
     try:
         # --- Data Extraction (common to both prompts) ---
+        # ... (This part remains the same)
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         numerology_analysis = chart_data.get("numerology_analysis", {})
         chinese_zodiac = chart_data.get("chinese_zodiac")
@@ -87,57 +88,65 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
 
         if unknown_time:
             # --- PROMPT FOR UNKNOWN BIRTH TIME ---
+            # This version is also enhanced for deeper synthesis of the available data.
             prompt_parts.append(
                 "You are a wise astrologer providing a reading for a chart where the exact birth time is unknown. "
-                "This is called a 'Noon Chart'.\n"
-                "**Your most important rule is to completely avoid mentioning the Ascendant, Midheaven (MC), Chart Ruler, or any House placements, as they are unknown and cannot be used.** "
-                "You must focus exclusively on the placement of planets in their signs, the aspects between them, and the numerology."
+                "Your most important rule is to completely avoid mentioning the Ascendant, Midheaven (MC), Chart Ruler, or any House placements, as they are unknown and cannot be used. "
+                "Your goal is to find the central story told by the planets, signs, aspects, and numerology alone."
             )
             # Data Payload for Unknown Time...
             
             prompt_parts.append("\n**Your Task:**")
             prompt_parts.append("""
-First, perform a silent internal analysis to identify the most powerful themes from the limited data. Then, structure your final response exactly as follows, using the specified markdown headers:
-
-### Key Themes in Your Chart
-(List the 2-3 most important themes you can identify from the data.)
-
-### The Story of Your Inner World
-(Write a multi-paragraph narrative weaving together the Sun, Moon, numerology, and the three tightest aspects to explain the core themes.)
+1.  **Internal Analysis:** First, silently identify the most powerful themes. Consider the dominant element, any sign stelliums, the Life Path and Day numbers, and the three tightest aspects. Notice if a planet is at a very early (0-5%) or late (95-100%) degree in a sign. Identify the single most compelling theme.
+2.  **Write the Narrative:** Craft a flowing narrative built around this central theme. You MUST integrate the meaning of the **Life Path and Day Numbers** and the **three tightest aspects**. Show how they all tell the same core story from different angles.
+3.  **Explain Concepts:** Briefly explain astrological terms (like the Sun, Moon, an aspect) as you introduce them.
+4.  **Structure:** Start with an introduction to the central theme, develop it in the body paragraphs by showing how the data points connect, and conclude with an empowering summary.
 """)
 
         else:
-            # --- PROMPT FOR KNOWN BIRTH TIME ---
+            # --- PROMPT FOR KNOWN BIRTH TIME (MASTER SYNTHESIS) ---
             prompt_parts.append(
-                "You are a wise, insightful, and deeply intuitive astrologer. Your special gift is synthesizing complex chart data into a cohesive and inspiring narrative for individuals who are new to astrology. You don't just list traits; you find the central story and overarching themes in a person's energetic blueprint and explain them with warmth and clarity."
+                "You are a master astrologer and esoteric synthesist. Your clients come to you for readings of unparalleled depth. Your unique skill is identifying the 'golden thread'—the central narrative or soul's purpose—that connects every single placement, aspect, and number in a person's blueprint. You see the chart not as a collection of parts, but as a single, cohesive, living story."
             )
             
-            # Full Data Payload...
+            # Full Data Payload (remains the same)...
             
-            # --- The Core Task with New Formatting Instructions ---
+            # --- The Core Task with New, Demanding Instructions ---
             prompt_parts.append("\n**Your Task:**")
             prompt_parts.append("""
-**Step 1: Internal Analysis (Do this silently before writing)**
-First, perform a deep, holistic review of ALL the data provided to find the chart's core narrative.
-1.  **Generate a List of 10 Potential Themes:** Look for powerful, repeating patterns. Consider:
+**Step 1: Thematic Data Grouping (Do this silently before writing)**
+To fully understand the chart, you MUST first perform this deep synthesis. Review all the data and create a structured analysis.
+1.  **Generate a List of 10 Potential Themes:** Brainstorm a comprehensive list of major themes. Look for powerful, repeating patterns. Consider:
     * All **stelliums** (both sign and house).
     * The **Life Path Number** and **Day Number**.
     * The **Chart Ruler**'s sign and house placement.
     * The **Dominant Element** and **Planet**.
     * **Planet Degree Percentages**. A planet at 0-5% is new to its energy; one at 95-99% is mastering it.
     * The meaning of the **three tightest aspects**.
-2.  **Select the Primary Narrative:** From your list of 10, identify the **1 or 2 most powerful and interconnected themes**. This will be the central story you tell.
+2.  **Group the Evidence:** For the top 3-5 themes from your list, group the specific chart placements and numbers that support each theme. This forces you to see the connections.
+    * *Example of Thematic Grouping:*
+        * **Theme: The Public Teacher of Esoteric Truths**
+        * *Supporting Evidence:* Life Path 7 (The Seeker), Sun in 9th House (Identity in Higher Knowledge), Mercury-Jupiter conjunction (Expansive Communication), Stellium in Sagittarius (Focus on Philosophy), Expression Number 11 (The Spiritual Messenger).
+3.  **Select the Primary Narrative:** From your thematic groups, identify the **single most compelling and interconnected theme**. This will be the 'golden thread' of your reading.
 """)
 
             prompt_parts.append("""
-**Step 2: Write the Final Reading**
-Now, write the final reading for the user. Structure your entire response **exactly as follows**, using the markdown headings as specified. Do not include headers like "Step 1", "Step 2", or "Primary Narrative".
+**Step 2: Write the Master Reading**
+Now, write the final, deeply integrated reading for the user. Structure your entire response **exactly as follows**, using the markdown headings as specified.
 
 ### Key Themes in Your Chart
 (Under this heading, list the 3 to 5 most important and interconnected themes you identified from your internal analysis. Be concise.)
 
 ### The Central Story of Your Chart
-(Under this heading, write the full, multi-paragraph narrative reading. This is where you will weave together all the evidence (all stelliums, numerology numbers, the three tightest aspects, etc.) to tell the cohesive story of the chart, built around the primary theme you selected. Explain concepts simply as you go.)
+(Under this heading, write the full, multi-paragraph narrative reading. Your primary goal here is to **demonstrate how different parts of the chart tell the SAME story from different angles.** Avoid discussing any placement in isolation.)
+
+-   **Introduction - The Golden Thread:** Begin by stating the central, unifying theme you discovered. Present it as the 'golden thread' or the 'soul's mission statement' for this lifetime.
+-   **Body - The Unfolding Narrative:** Dedicate each paragraph to exploring a facet of the central theme.
+    -   **MANDATORY INTEGRATION:** You **must not** have a separate 'numerology paragraph' or 'aspect paragraph.' Instead, when you discuss their life's purpose (e.g., the Sun), you MUST connect it to their Life Path Number. When you discuss a key challenge (a hard aspect), you MUST connect it to the house it's in and how it affects the overall theme.
+    -   **Show your work by making connections explicit.** For example: 'Your core identity, represented by your Sun in industrious Virgo, is about bringing order and healing. This isn't just a personality trait; it is the mission statement of your soul, perfectly echoed by your Life Path Number 6, the number of the nurturing healer.'
+    -   You are required to seamlessly integrate the meaning of **all stelliums**, the **Chart Ruler**, the **Life Path and Day Numbers**, and the **three tightest aspects** into this single, flowing narrative.
+-   **Conclusion - The Tapestry:** Conclude with a summary that presents the chart as a beautiful, intricate tapestry. Reiterate that the challenges and strengths are all part of one unified design, perfectly equipping them for their unique purpose.
 """)
 
         prompt = "\n".join(prompt_parts)
@@ -146,11 +155,7 @@ Now, write the final reading for the user. Structure your entire response **exac
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
         response = await model.generate_content_async(prompt)
         
-        # Clean up the response to ensure it starts with the correct header
         cleaned_response = response.text.strip()
-        if "### Key Themes in Your Chart" not in cleaned_response:
-             # Fallback if the model doesn't follow instructions perfectly
-             return cleaned_response
         
         return cleaned_response
         
