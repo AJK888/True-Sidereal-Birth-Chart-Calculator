@@ -63,64 +63,104 @@ class ChartRequest(BaseModel):
     location: str
     unknown_time: bool = False
 
-async def get_gemini_reading(chart_data: dict) -> str:
-    """Formats a detailed, anonymized chart summary and gets a reading from Gemini Pro."""
+async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
+    """
+    Generates a Gemini reading. Switches between a full reading (known time)
+    and a limited, planets-only reading (unknown time).
+    """
     if not GEMINI_API_KEY:
         return "Gemini API key not configured. AI reading is unavailable."
 
     try:
-        # --- Prompt Engineering ---
-        prompt_parts = [
-            # 1. The System Role: Framed as a storyteller and synthesist.
-            "You are a wise, insightful, and deeply intuitive astrologer. Your special gift is synthesizing complex chart data into a cohesive and inspiring narrative for individuals who are new to astrology. You don't just list traits; you find the central story and overarching themes in a person's energetic blueprint and explain them with warmth and clarity.",
-        ]
-
-        # 2. Append all the anonymized data for context
+        # --- Data Extraction (common to both prompts) ---
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         numerology_analysis = chart_data.get("numerology_analysis", {})
         chinese_zodiac = chart_data.get("chinese_zodiac")
         s_positions = chart_data.get("sidereal_major_positions", [])
         s_aspects = chart_data.get("sidereal_aspects", [])
         s_patterns = chart_data.get("sidereal_aspect_patterns", [])
-
+        s_retrogrades = chart_data.get("sidereal_retrogrades", [])
         sun = next((p for p in s_positions if p['name'] == 'Sun'), None)
         moon = next((p for p in s_positions if p['name'] == 'Moon'), None)
-        asc = next((p for p in s_positions if p['name'] == 'Ascendant'), None)
 
-        prompt_parts.append("\n**Full Anonymized Chart Data:**")
-        prompt_parts.append("**Astrological Data:**")
-        if sun: prompt_parts.append(f"- Sun: {sun['position']}")
-        if moon: prompt_parts.append(f"- Moon: {moon['position']}")
-        if asc: prompt_parts.append(f"- Ascendant: {asc['position']}")
-        if s_analysis.get("chart_ruler"): prompt_parts.append(f"- Chart Ruler: {s_analysis['chart_ruler']}")
-        if s_analysis.get("dominant_planet"): prompt_parts.append(f"- Dominant Planet: {s_analysis['dominant_planet']}")
-        if s_analysis.get("dominant_sign"): prompt_parts.append(f"- Dominant Sign: {s_analysis['dominant_sign']}")
-        if s_analysis.get("dominant_element"): prompt_parts.append(f"- Dominant Element: {s_analysis['dominant_element']}")
-        
-        prompt_parts.append("\n**Numerological & Other Data:**")
-        if numerology_analysis.get("life_path_number"): prompt_parts.append(f"- Life Path Number: {numerology_analysis['life_path_number']}")
-        if numerology_analysis.get("day_number"): prompt_parts.append(f"- Day Number: {numerology_analysis['day_number']}")
-        if numerology_analysis.get("name_numerology"):
-            name_nums = numerology_analysis['name_numerology']
-            prompt_parts.append(f"- Expression Number: {name_nums.get('expression_number')}")
-            prompt_parts.append(f"- Soul Urge Number: {name_nums.get('soul_urge_number')}")
-            prompt_parts.append(f"- Personality Number: {name_nums.get('personality_number')}")
-        if chinese_zodiac: prompt_parts.append(f"- Chinese Zodiac: {chinese_zodiac}")
+        prompt_parts = []
 
-        if s_patterns:
-            prompt_parts.append("\n**Key Astrological Patterns:**")
-            for pattern in s_patterns:
-                prompt_parts.append(f"- {pattern}")
-        
-        top_aspects = s_aspects[:20] # Provide more aspects for better context
-        if top_aspects:
-            prompt_parts.append("\n**Major Aspects:**")
-            for aspect in top_aspects:
-                prompt_parts.append(f"- {aspect['p1_name']} {aspect['type']} {aspect['p2_name']}")
-        
-        # 3. The Core Task: The new, advanced instructions
-        prompt_parts.append("\n**Your Task:**")
-        prompt_parts.append("""
+        if unknown_time:
+            # --- PROMPT FOR UNKNOWN BIRTH TIME ---
+            prompt_parts.append(
+                "You are a wise astrologer providing a reading for a chart where the exact birth time is unknown. "
+                "This is called a 'Noon Chart'.\n"
+                "**Your most important rule is to completely avoid mentioning the Ascendant, Midheaven (MC), Chart Ruler, or any House placements, as they are unknown and cannot be used.** "
+                "You must focus exclusively on the placement of planets in their signs, the aspects between them, and the numerology."
+            )
+            # Data Payload for Unknown Time
+            prompt_parts.append("\n**Anonymized Chart Data (Noon Calculation - Time-Sensitive Data Excluded):**")
+            if sun: prompt_parts.append(f"- Sun: {sun['position']}")
+            if moon: prompt_parts.append(f"- Moon: {moon['position']}")
+            if s_analysis.get('dominant_element'): prompt_parts.append(f"- Dominant Element: {s_analysis.get('dominant_element')}")
+            if numerology_analysis.get('life_path_number'): prompt_parts.append(f"- Life Path Number: {numerology_analysis.get('life_path_number')}")
+            if numerology_analysis.get('name_numerology', {}).get('expression_number'): prompt_parts.append(f"- Expression Number: {numerology_analysis.get('name_numerology', {}).get('expression_number')}")
+            if s_retrogrades:
+                retro_list = ", ".join([p['name'] for p in s_retrogrades])
+                prompt_parts.append(f"- Retrograde Planets: {retro_list}")
+            
+            # Core Task for Unknown Time
+            prompt_parts.append("\n**Your Task:**")
+            prompt_parts.append(
+                "Write a slightly shorter but insightful narrative reading based *only* on the data provided.\n"
+                "1.  **Introduction:** Start by explaining that this reading is based on a snapshot of the planets on their birthday, revealing their core personality drivers.\n"
+                "2.  **The Core Self:** Discuss the **Sun** (their fundamental identity) and the **Moon** (their inner emotional world) as the two main characters of their story.\n"
+                "3.  **Personality Flavor:** Weave in the meaning of the **dominant element** and a few other key planets in their signs to describe their overall energy and style.\n"
+                "4.  **Life's Journey:** Incorporate their **Life Path and Expression Numbers** to talk about their natural talents and the path they are here to walk.\n"
+                "5.  **Conclusion:** Summarize their key strengths, emphasizing that this is a powerful map of their inner world, even without the birth time."
+            )
+
+        else:
+            # --- PROMPT FOR KNOWN BIRTH TIME ---
+            prompt_parts.append(
+                "You are a wise, insightful, and deeply intuitive astrologer. Your special gift is synthesizing complex chart data into a cohesive and inspiring narrative for individuals who are new to astrology. You don't just list traits; you find the central story and overarching themes in a person's energetic blueprint and explain them with warmth and clarity."
+            )
+            
+            # Full Data Payload
+            prompt_parts.append("\n**Full Anonymized Chart Data:**")
+            asc = next((p for p in s_positions if p['name'] == 'Ascendant'), None)
+            if sun: prompt_parts.append(f"- Sun: {sun['position']}")
+            if moon: prompt_parts.append(f"- Moon: {moon['position']}")
+            if asc: prompt_parts.append(f"- Ascendant: {asc['position']}")
+            if s_analysis.get("chart_ruler"): prompt_parts.append(f"- Chart Ruler: {s_analysis['chart_ruler']}")
+            if s_analysis.get("dominant_planet"): prompt_parts.append(f"- Dominant Planet: {s_analysis['dominant_planet']}")
+            if s_analysis.get("dominant_sign"): prompt_parts.append(f"- Dominant Sign: {s_analysis['dominant_sign']}")
+            if s_analysis.get("dominant_element"): prompt_parts.append(f"- Dominant Element: {s_analysis['dominant_element']}")
+            
+            prompt_parts.append("\n**Numerological & Other Data:**")
+            if numerology_analysis.get("life_path_number"): prompt_parts.append(f"- Life Path Number: {numerology_analysis['life_path_number']}")
+            if numerology_analysis.get("day_number"): prompt_parts.append(f"- Day Number: {numerology_analysis['day_number']}")
+            if numerology_analysis.get("name_numerology"):
+                name_nums = numerology_analysis['name_numerology']
+                prompt_parts.append(f"- Expression Number: {name_nums.get('expression_number')}")
+                prompt_parts.append(f"- Soul Urge Number: {name_nums.get('soul_urge_number')}")
+                prompt_parts.append(f"- Personality Number: {name_nums.get('personality_number')}")
+            if chinese_zodiac: prompt_parts.append(f"- Chinese Zodiac: {chinese_zodiac}")
+
+            if s_patterns:
+                prompt_parts.append("\n**Key Astrological Patterns:**")
+                for pattern in s_patterns:
+                    prompt_parts.append(f"- {pattern}")
+            
+            if s_retrogrades:
+                prompt_parts.append("\n**Retrograde Planets (Energy turned inward for reflection):**")
+                for planet in s_retrogrades:
+                    prompt_parts.append(f"- {planet['name']}")
+
+            top_aspects = s_aspects[:20]
+            if top_aspects:
+                prompt_parts.append("\n**Major Aspects:**")
+                for aspect in top_aspects:
+                    prompt_parts.append(f"- {aspect['p1_name']} {aspect['type']} {aspect['p2_name']}")
+            
+            # Full Core Task
+            prompt_parts.append("\n**Your Task:**")
+            prompt_parts.append("""
 **Step 1: Internal Analysis (Do this silently before writing)**
 First, review ALL the data provided above. Look for the most powerful, repeating themes and patterns that form the 'center of gravity' of this chart.
 -   Is there a powerful **Stellium** (concentration of planets) in a specific house or sign?
@@ -130,7 +170,7 @@ First, review ALL the data provided above. Look for the most powerful, repeating
 -   Identify 1-2 of these most powerful, overarching themes. You will build your entire narrative around them.
 """)
 
-        prompt_parts.append("""
+            prompt_parts.append("""
 **Step 2: Write the Narrative Reading**
 Now, write a detailed, multi-paragraph reading for the beginner. **Do not follow a rigid template.** Instead, craft a flowing narrative based on the core themes you identified in your internal analysis.
 
@@ -138,11 +178,12 @@ Now, write a detailed, multi-paragraph reading for the beginner. **Do not follow
 
 -   **Body - Weaving the Evidence:** In the following paragraphs, explain this central theme using the specific astrological and numerological placements as your evidence. Instead of listing them one by one, group them by how they support the narrative.
     -   **Explain Concepts As You Go:** As you introduce each component (like the Sun, a House, or an Aspect) for the first time, briefly explain its role in simple, relatable terms.
-    -   **Example of Weaving:** If the theme is "Creative Self-Expression," you might say: "This theme of creativity is anchored by your Sun, which represents your core identity, shining brightly in the dramatic sign of Leo. This tells us you're meant to be on a stage, whether literally or figuratively. This is powerfully amplified by a concentration of planets in your 5th House—the area of your chart connected to creativity and play. The fact that your Expression Number from numerology is a 3, the number of communication and artistry, confirms that this is not just a hobby, but a core part of your purpose."
+    -   **The Chart's Guide - The Ruler:** Make sure to mention the **Chart Ruler** (the planet that rules the Ascendant sign). Explain it as the 'captain of the ship' or the primary energy that guides the individual's life path and how they approach the world. Connect it to the house and sign it's in to add another layer of detail to the story.
+    -   **Inward Energy - Retrogrades:** If there are retrograde planets, explain this concept simply. Describe it as the planet's energy being turned inward for internal processing, review, and a more subjective experience. Weave this into the narrative. For example, 'Your Mercury, the planet of communication, is retrograde, suggesting you might internally rehearse conversations or think deeply before you speak, processing ideas in a very unique way.'
 
 -   **Complexity and Growth - The Aspects:** Weave in the meaning of one or two key **aspects** (the conversations between planets). Explain how they add harmony or dynamic tension to the core themes you're describing. For instance, "...while your creative drive is strong, it might face a challenge from Saturn, the planet of discipline. This tension isn't a weakness; it's a cosmic personal trainer, pushing you to build real, lasting structures for your art."
 
--   **Conclusion - The Empowering Summary:** Conclude with a warm summary. Reiterate their core strengths and potential, framing their chart not as a fixed destiny, but as a beautiful and powerful toolkit they've been given for their life's journey.
+-   **Conclusion - The Empowering Summary:** Conclude with a warm summary. Reiterate their core strengths and potential, framing the chart not as a fixed destiny, but as a beautiful and powerful toolkit they've been given for their life's journey.
 """)
 
         prompt = "\n".join(prompt_parts)
