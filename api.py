@@ -62,12 +62,12 @@ class ChartRequest(BaseModel):
     unknown_time: bool = False
 
 async def get_gemini_reading(chart_data: dict) -> str:
-    """Formats a detailed, anonymized chart summary and gets a reading from Gemini."""
+    """Formats a detailed, anonymized chart summary and gets a reading from Gemini Pro."""
     if not GEMINI_API_KEY:
         return "Gemini API key not configured. AI reading is unavailable."
 
     try:
-        # --- Build a detailed, anonymized prompt ---
+        # --- Build a comprehensive, anonymized prompt ---
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         s_positions = chart_data.get("sidereal_major_positions", [])
         s_aspects = chart_data.get("sidereal_aspects", [])
@@ -78,41 +78,52 @@ async def get_gemini_reading(chart_data: dict) -> str:
         asc = next((p for p in s_positions if p['name'] == 'Ascendant'), None)
         
         prompt_parts = [
-            "You are an expert astrologer specializing in True Sidereal astrology. Your goal is to provide a warm, insightful, and educational reading for a beginner.",
-            "First, comprehensively digest the following anonymized astrological data. Do not mention the raw data in your response.\n"
+            "You are an expert astrologer and numerologist specializing in the True Sidereal system. Your task is to provide a warm, insightful, and comprehensive reading for a beginner based on the following anonymized data. Do not mention the raw data points in your response.",
+            "First, deeply analyze and synthesize all the provided astrological and numerological data to understand the complete picture of the individual.\n"
         ]
         
-        prompt_parts.append("**Core Placements:**")
+        prompt_parts.append("**Astrological Data:**")
         if sun: prompt_parts.append(f"- Sun: {sun['position']}")
         if moon: prompt_parts.append(f"- Moon: {moon['position']}")
         if asc: prompt_parts.append(f"- Ascendant: {asc['position']}")
-
-        prompt_parts.append("\n**Chart Signature:**")
         if s_analysis.get("chart_ruler"): prompt_parts.append(f"- Chart Ruler: {s_analysis['chart_ruler']}")
         if s_analysis.get("dominant_planet"): prompt_parts.append(f"- Dominant Planet: {s_analysis['dominant_planet']}")
         if s_analysis.get("dominant_sign"): prompt_parts.append(f"- Dominant Sign: {s_analysis['dominant_sign']}")
         if s_analysis.get("dominant_element"): prompt_parts.append(f"- Dominant Element: {s_analysis['dominant_element']}")
 
+        prompt_parts.append("\n**Numerological Data:**")
+        if s_analysis.get("life_path_number"): prompt_parts.append(f"- Life Path Number: {s_analysis['life_path_number']}")
+        if s_analysis.get("day_number"): prompt_parts.append(f"- Day Number: {s_analysis['day_number']}")
+        if s_analysis.get("name_numerology"):
+            name_nums = s_analysis['name_numerology']
+            prompt_parts.append(f"- Expression Number: {name_nums.get('expression_number')}")
+            prompt_parts.append(f"- Soul Urge Number: {name_nums.get('soul_urge_number')}")
+            prompt_parts.append(f"- Personality Number: {name_nums.get('personality_number')}")
+        if s_analysis.get("chinese_zodiac"): prompt_parts.append(f"- Chinese Zodiac: {s_analysis['chinese_zodiac']}")
+
         if s_patterns:
-            prompt_parts.append("\n**Key Patterns:**")
+            prompt_parts.append("\n**Key Astrological Patterns:**")
             for pattern in s_patterns:
                 prompt_parts.append(f"- {pattern}")
         
-        top_aspects = s_aspects[:5] # Get up to 5 top aspects
+        top_aspects = s_aspects[:5]
         if top_aspects:
-            prompt_parts.append("\n**Key Aspects:**")
+            prompt_parts.append("\n**Top 5 Strongest Aspects:**")
             for aspect in top_aspects:
                 prompt_parts.append(f"- {aspect['p1_name']} {aspect['type']} {aspect['p2_name']}")
 
-        prompt_parts.append("\nNow, based on your synthesis of this data, write a 3-4 paragraph reading that does the following:")
-        prompt_parts.append("1. Start by introducing the 'big three' (Sun, Moon, Ascendant) and what they represent about the person's core identity, emotional world, and outer personality.")
-        prompt_parts.append("2. Highlight the most unique or powerful features of the chart you identified (like a stellium, a strong chart ruler, or a particularly dominant planet/element).")
-        prompt_parts.append("3. Explain how these unique features weave together with the big three to shape their personality, strengths, and potential challenges.")
-        prompt_parts.append("4. Maintain an encouraging and empowering tone, suitable for someone new to astrology.")
+        prompt_parts.append("\n**Your Task:**")
+        prompt_parts.append("Now, write a 3-4 paragraph reading that synthesizes this information for a beginner. Follow these steps:")
+        prompt_parts.append("1. Begin by introducing the core identity, blending insights from the Sun, Moon, Ascendant, and the Life Path Number.")
+        prompt_parts.append("2. Identify and explain the most unique or powerful themes in the chart. This could be a dominant element, a stellium pattern, or a particularly strong planet. Weave in the meaning of their Expression and Soul Urge numbers to show how these themes manifest as talents and desires.")
+        prompt_parts.append("3. Briefly touch on how the key aspects create dynamic energy (harmony or tension) that shapes their personality and life experiences.")
+        prompt_parts.append("4. Conclude with an encouraging summary of their overall energetic blueprint and potential path.")
+        prompt_parts.append("Maintain a warm, positive, and educational tone throughout. Do not simply list traits; explain how they connect to form a complete person.")
 
         prompt = "\n".join(prompt_parts)
 
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # --- UPDATED MODEL ---
+        model = genai.GenerativeModel('gemini-1.5-pro-latest')
         response = await model.generate_content_async(prompt)
         
         return response.text
