@@ -17,10 +17,10 @@
 			#header.alt {
 				background-color: transparent;
 			}
-			#description-one, #results, #legal {
+			#description-wrapper, #results, #legal {
 				background-color: #24293e;
 			}
-			#transit-chart, #form-section {
+			#form-section {
 				background-color: #202436;
 			}
 
@@ -28,7 +28,7 @@
 			.two-column-container {
 				display: grid;
 				grid-template-columns: 1.5fr 1fr;
-				gap: 2em;
+				gap: 3em;
 				align-items: flex-start;
 			}
 			@media screen and (max-width: 980px) {
@@ -36,12 +36,10 @@
 					grid-template-columns: 1fr;
 				}
 			}
-			/* Increased size for main chart wheel */
 			#chart-wheel-container {
 				max-width: 500px;
 				margin: 0 auto;
 			}
-			/* Sized for its column */
 			#transit-wheel-container {
 				max-width: 100%;
 				margin: 0 auto;
@@ -52,7 +50,7 @@
 				background-color: #2a2f43;
 				border-radius: 4px;
 				border: solid 1px rgba(255, 255, 255, 0.25);
-				font-family: "Source Sans Pro", sans-serif; /* Use theme font */
+				font-family: "Source Sans Pro", sans-serif;
 				padding: 1.5em;
 				white-space: pre-wrap;
 				word-break: break-word;
@@ -70,7 +68,6 @@
 			.time-note { font-size: 0.8rem; }
 			.results-container .major { margin-bottom: 2rem; }
 
-			/* Chart Wheel SVG styles using theme colors */
 			#chart-wheel-svg, #transit-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; }
 			.wheel-circle { stroke: rgba(255, 255, 255, 0.25); stroke-width: 2; fill: none; }
 			.zodiac-divider { stroke: rgba(255, 255, 255, 0.25); stroke-width: 1; }
@@ -86,26 +83,32 @@
 			.aspect-trine, .aspect-sextile { stroke: #3182ce; }
 			.aspect-quincunx, .aspect-semisextile, .aspect-semisquare, .aspect-sesquiquadrate, .aspect-quintile, .aspect-biquintile { stroke: rgba(255, 255, 255, 0.25); stroke-dasharray: 4 4; }
 
-			/* Legal Section Styling to match theme */
-			#legal .inner { padding: 2rem 0; }
+			/* 4. New, cleaner styling for Legal Section */
+			#legal .inner { border-top: solid 2px rgba(255, 255, 255, 0.25); margin-top: 3rem; padding-top: 3rem; }
 			#legal details {
-				background: transparent;
-				border: solid 1px rgba(255, 255, 255, 0.25);
-				border-radius: 4px;
-				margin-bottom: 1rem;
-				padding: 1.5em;
+				background: none;
+				border: none;
+				padding: 0;
+				margin-bottom: 2rem;
 			}
 			#legal summary {
 				font-weight: 600;
 				font-size: 1.2rem;
 				cursor: pointer;
 				color: #ffffff;
+				transition: color 0.2s ease-in-out;
+				list-style: none; /* Hide the default triangle */
 			}
-			#legal h4 {
-				font-size: 1rem;
-				margin: 1.5rem 0 0.5rem 0;
-				color: #ffffff;
+			#legal summary::-webkit-details-marker { display: none; } /* Hide for Chrome/Safari */
+			#legal summary:hover { color: #805ad5; }
+			#legal details div {
+				padding-left: 1rem;
+				border-left: solid 2px rgba(255, 255, 255, 0.15);
+				margin-top: 1rem;
+				font-size: 0.9em;
+				color: rgba(255, 255, 255, 0.75);
 			}
+			#legal h4 { font-size: 1rem; margin: 1.5rem 0 0.5rem 0; color: #ffffff; }
 		</style>
 	</head>
 	<body class="is-preload">
@@ -138,29 +141,25 @@
 
 				<div id="main">
 
-						<div class="two-column-container">
-							<section id="description-one">
-								<div class="inner">
+						<section id="description-wrapper">
+							<div class="inner two-column-container">
+								
+								<div class="description-content">
 									<header class="major">
 										<h2>Your Birth Chart</h2>
 									</header>
 									<p>Astrology is a powerful tool for insight and self-development. This platform combines modern technology with ancient wisdom to provide a comprehensive analysis of your unique birth chart.</p>
 									<h4>What you’ll receive:</h4>
 									<ul>
-										<li>A brief professional reading powered by artificial intelligence, highlighting key themes and insights from your chart.</li>
+										<li>A brief professional reading powered by artificial intelligence.</li>
 										<li>A visual True Sidereal chart wheel displaying your planetary alignments.</li>
-										<li>Full planetary placements using both the <strong>True Sidereal</strong> zodiac—based on the actual sizes and positions of the constellations as defined by the International Astronomical Union (IAU), including Ophiuchus—and the <strong>Tropical</strong> zodiac for comparison.</li>
+										<li>Full planetary placements using both the <strong>True Sidereal</strong> and <strong>Tropical</strong> zodiacs.</li>
 										<li>Analysis of key aspects, planetary patterns, and chart dominance.</li>
-										<li>Your personal Numerology report based on your birth date and full name.</li>
-										<li>Your Chinese Zodiac sign.</li>
+										<li>Your personal Numerology and Chinese Zodiac sign.</li>
 									</ul>
-									<h4>Explore the difference.</h4>
-									<p>The True Sidereal system aligns with the observable night sky, offering a more astronomically accurate perspective. For a well-rounded view, we also include your Tropical placements so you can explore both systems side by side.</p>
 								</div>
-							</section>
 
-							<section id="transit-chart">
-								<div class="inner">
+								<div id="transit-chart">
 									<header class="major">
 										<h2>Current Transits</h2>
 									</header>
@@ -169,8 +168,8 @@
 										 <svg id="transit-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
 									</div>
 								</div>
-							</section>
-						</div>
+							</div>
+						</section>
 
 						<section id="form-section">
 								<div class="inner">
@@ -252,50 +251,29 @@
 								<details>
 									<summary>Disclaimer</summary>
 									<div>
-										<p>The information and data provided by the Astrological and Numerological Blueprint Calculator, including any AI-generated text from Google's Gemini model, are for entertainment and informational purposes only. The readings and interpretations are not intended to be a substitute for professional advice from a qualified person in any field, including but not to medical, financial, or legal matters.</p>
-										<p>By using this service, you agree that you are solely responsible for any actions you take based on the information provided, and you will not hold the website or its creator liable for any decisions or outcomes.</p>
+										<p>The information and data provided by this calculator, including any AI-generated text, are for entertainment and informational purposes only and are not a substitute for professional advice.</p>
+										<p>By using this service, you agree that you are solely responsible for any actions you take based on the information provided.</p>
 									</div>
 								</details>
 								<details>
 									<summary>Privacy Policy</summary>
 									<div>
-										<h4>Last Updated: July 28, 2025</h4>
-										<p>Thank you for using the Astrological and Numerological Blueprint Calculator. This Privacy Policy explains what information we collect when you use our service, why we collect it, and how it is handled. Your privacy is important to us, and we are committed to being transparent about our data practices.</p>
-										<h4>1. Information We Collect</h4>
-										<p>When you use the calculator, we collect the following information that you voluntarily provide:</p>
-										<ul>
-											<li><strong>Name:</strong> The name you enter for the chart calculation.</li>
-											<li><strong>Birth Information:</strong> The date of birth (year, month, day) and time of birth (hour, minute) you provide.</li>
-											<li><strong>Location Information:</strong> The birth location (e.g., "Boston, MA, USA") you enter.</li>
-										</ul>
-										<p>We <strong>do not</strong> collect your IP address or any other information that is not explicitly entered into the form fields.</p>
-										<h4>2. How We Use Your Information</h4>
-										<p>The information you provide is used for the following purposes:</p>
-										<ul>
-											<li><strong>To Perform Calculations...</strong></li>
-											<li><strong>To Generate AI Readings...</strong></li>
-											<li><strong>Application Monitoring & Debugging...</strong></li>
-											<li><strong>Research and Service Improvement...</strong></li>
-										</ul>
-										<h4>3. Data Storage and Sharing</h4>
-										<ul>
-											<li><strong>Storage:</strong> The birth data you provide is stored in two ways: (1) It is logged in our secure, third-party application monitoring service (Better Stack) for the purposes of debugging and ensuring the calculator functions correctly. (2) The data may be exported and stored securely in private documents (e.g., spreadsheets) for the sole purpose of future astrological research, as described in Section 2.</li>
-											<li><strong>Sharing:</strong> We are committed to protecting your privacy. We will not sell or rent your personal information. We only share data with the essential third-party services described in this policy (such as our geocoding, logging, and AI providers) that are required for the calculator to function. Anonymized astrological data is processed by Google's services to provide the AI reading, subject to their privacy policies.</li>
-										</ul>
-										<h4>4. Your Rights and Data Deletion</h4>
-										<p>You have the right to request the deletion of your personal data from our logs and research documents. If you would like to have your information removed, please contact us with the details of the data you entered (name, date, location), and we will permanently delete the corresponding entries.</p>
-										<h4>5. Consent for Research Use</h4>
-										<p>By using this calculator, you acknowledge and consent that the birth data you provide may be stored and used for the research and potential artificial intelligence training purposes described in Section 2 and 3. This is essential for helping us learn more about astrology and improve the quality of the service we provide to you and other users.</p>
-										<h4>6. Contact Us</h4>
-										<p>If you have any questions about this Privacy Policy or wish to request the deletion of your data, please contact us at:</p>
-										<p><a href="mailto:synthesisastrology@outlook.com"><strong>synthesisastrology@outlook.com</strong></a></p>
+										<h4>Information We Collect</h4>
+										<p>We collect the name, birth information, and location you voluntarily provide to perform the calculations. We do not collect your IP address.</p>
+										<h4>How We Use Your Information</h4>
+										<p>Your data is used to calculate your chart, generate an anonymized AI reading, monitor application performance, and for astrological research to improve the service. </p>
+										<h4>Data Storage and Sharing</h4>
+										<p>Data is stored in secure application logs and may be exported for research. We do not sell or rent your information. We only share it with essential third-party services (geocoding, logging, AI) required for the calculator to function. You may request your data be deleted at any time by contacting us.</p>
+										<h4>Consent for Research Use</h4>
+										<p>By using this calculator, you consent that your birth data may be used for the research purposes described above.</p>
+										<h4>Contact Us</h4>
+										<p>For questions or data deletion requests, please contact: <a href="mailto:synthesisastrology@outlook.com"><strong>synthesisastrology@outlook.com</strong></a></p>
 									</div>
 								</details>
 								<details>
 									<summary>Terms of Service</summary>
 									<div>
-										<h4>Last Updated: July 28, 2025</h4>
-										<p>Welcome to the Astrological and Numerological Blueprint Calculator... (Content omitted for brevity but should be included in your file)</p>
+										<p>This service is provided "as is" for informational and entertainment purposes only. By using this service, you agree to be bound by these Terms and our Privacy Policy. You agree not to use this service for any unlawful purpose. The interpretations are not a substitute for professional advice. We shall not be held liable for any damages resulting from the use of this service.</p>
 									</div>
 								</details>
 							</div>
@@ -488,15 +466,283 @@
 					},
 			
 					renderTextResults(res) {
-						// ... (Full renderTextResults function remains unchanged) ...
+						let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
+						out += `- UTC Date & Time: ${res.utc_datetime}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
+						out += `- Location: ${res.location}\n`;
+						out += `- Day/Night Determination: ${res.day_night_status}\n\n`;
+						
+						out += `--- CHINESE ZODIAC ---\n`;
+						out += `- Your sign is the ${res.chinese_zodiac}\n\n`;
+			
+						out += `--- NUMEROLOGY REPORT ---\n`;
+						if (res.numerology_analysis) {
+							out += `- Life Path Number: ${res.numerology_analysis.life_path_number}\n`;
+							out += `- Day Number: ${res.numerology_analysis.day_number}\n`;
+							if (res.numerology_analysis.name_numerology) {
+								out += `\n-- NAME NUMEROLOGY --\n`;
+								out += `- Expression (Destiny) Number: ${res.numerology_analysis.name_numerology.expression_number}\n`;
+								out += `- Soul Urge Number: ${res.numerology_analysis.name_numerology.soul_urge_number}\n`;
+								out += `- Personality Number: ${res.numerology_analysis.name_numerology.personality_number}\n`;
+							}
+						}
+						
+						out += `\n-- SIDEREAL CHART ANALYSIS --\n`;
+						out += `- Chart Ruler: ${res.sidereal_chart_analysis.chart_ruler}\n`;
+						out += `- Dominant Sign: ${res.sidereal_chart_analysis.dominant_sign}\n`;
+						out += `- Dominant Element: ${res.sidereal_chart_analysis.dominant_element}\n`;
+						out += `- Dominant Modality: ${res.sidereal_chart_analysis.dominant_modality}\n`;
+						out += `- Dominant Planet: ${res.sidereal_chart_analysis.dominant_planet}\n\n`;
+						
+						out += `--- MAJOR POSITIONS ---\n`;
+						res.sidereal_major_positions.forEach(p => {
+							let line = `- ${p.name}: ${p.position}`;
+							if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
+								line += ` (${p.percentage}%)`;
+							}
+							if (p.retrograde) { line += " (Rx)"; }
+							if (p.house_info) { line += ` ${p.house_info}`; }
+							out += `${line}\n`;
+						});
+			
+						if (res.sidereal_retrogrades && res.sidereal_retrogrades.length > 0) {
+							out += `\n--- RETROGRADE PLANETS (Energy turned inward) ---\n`;
+							res.sidereal_retrogrades.forEach(p => {
+								out += `- ${p.name}\n`;
+							});
+						}
+			
+						out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
+						res.sidereal_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
+						out += `\n--- ASPECT PATTERNS ---\n`;
+						(res.sidereal_aspect_patterns && res.sidereal_aspect_patterns.length > 0) ? res.sidereal_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "- No major aspect patterns detected.\n";
+						if (!res.unknown_time) {
+							out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
+							res.sidereal_additional_points.forEach(p => { 
+								let line = `- ${p.name}: ${p.info}`;
+								if (p.retrograde) { line += " (Rx)"; }
+								out += `${line}\n`; 
+							});
+							out += `\n--- HOUSE RULERS ---\n`;
+							for (const [house, info] of Object.entries(res.house_rulers)) { out += `- ${house}: ${info}\n`; }
+							out += `\n--- HOUSE SIGN DISTRIBUTIONS ---\n`;
+							for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
+								out += `${house}:\n`;
+								if (segments && segments.length > 0) {
+									segments.forEach(seg => { out += `      - ${seg}\n`; });
+								}
+							}
+						} else {
+							out += `\n- (House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n`;
+						}
+			
+						if (res.tropical_major_positions && res.tropical_major_positions.length > 0) {
+							out += `\n\n\n=== TROPICAL CHART ===\n\n`;
+							out += `-- CHART ANALYSIS --\n`;
+							out += `- Dominant Sign: ${res.tropical_chart_analysis.dominant_sign}\n`;
+							out += `- Dominant Element: ${res.tropical_chart_analysis.dominant_element}\n`;
+							out += `- Dominant Modality: ${res.tropical_chart_analysis.dominant_modality}\n`;
+							out += `- Dominant Planet: ${res.tropical_chart_analysis.dominant_planet}\n\n`;
+							out += `--- MAJOR POSITIONS ---\n`;
+							res.tropical_major_positions.forEach(p => {
+								let line = `- ${p.name}: ${p.position}`;
+								if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
+									line += ` (${p.percentage}%)`;
+								}
+								if (p.retrograde) { line += " (Rx)"; }
+								if (p.house_info) { line += ` ${p.house_info}`; }
+								out += `${line}\n`;
+							});
+			
+							if (res.tropical_retrogrades && res.tropical_retrogrades.length > 0) {
+								out += `\n--- RETROGRADE PLANETS (Energy turned inward) ---\n`;
+								res.tropical_retrogrades.forEach(p => {
+									out += `- ${p.name}\n`;
+								});
+							}
+			
+							out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
+							res.tropical_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
+							out += `\n--- ASPECT PATTERNS ---\n`;
+							(res.tropical_aspect_patterns && res.tropical_aspect_patterns.length > 0) ? res.tropical_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "- No major aspect patterns detected.\n";
+							if (!res.unknown_time) {
+								out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
+								res.tropical_additional_points.forEach(p => { 
+									let line = `- ${p.name}: ${p.info}`;
+									if (p.retrograde) { line += " (Rx)"; }
+									out += `${line}\n`; 
+								});
+							}
+						}
+						this.outputEl.innerText = out;
 					},
 					
 					drawChartWheel(data, svgId) {
-						// ... (Full drawChartWheel function remains unchanged) ...
+						const svg = document.getElementById(svgId);
+						if (!svg) return;
+						svg.innerHTML = ''; 
+			
+						const centerX = 500, centerY = 500;
+						const zodiacRadius = 450, houseRingRadius = 350, innerRadius = 150;
+						
+						const ascendant = data.sidereal_major_positions.find(p => p.name === 'Ascendant');
+						if (!ascendant || ascendant.degrees === null) {
+							svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text>';
+							return;
+						}
+						
+						const rotation = 180 - ascendant.degrees;
+			
+						const mainGroup = document.createElementNS(this.SVG_NS, 'g');
+						mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
+						svg.appendChild(mainGroup);
+			
+						const degreeToCartesian = (radius, angleDegrees) => {
+							const angleRadians = angleDegrees * (Math.PI / 180);
+							return { x: centerX + radius * Math.cos(angleRadians), y: centerY - radius * Math.sin(angleRadians) };
+						};
+			
+						if (data.sidereal_aspects) {
+							data.sidereal_aspects.forEach(aspect => {
+								if (aspect.p1_degrees === null || aspect.p2_degrees === null) return;
+								const p1Coords = degreeToCartesian(innerRadius, aspect.p1_degrees);
+								const p2Coords = degreeToCartesian(innerRadius, aspect.p2_degrees);
+								const line = document.createElementNS(this.SVG_NS, 'line');
+								line.setAttribute('x1', p1Coords.x); line.setAttribute('y1', p1Coords.y);
+								line.setAttribute('x2', p2Coords.x); line.setAttribute('y2', p2Coords.y);
+								const aspectClass = aspect.type.toLowerCase().replace(' ', '-');
+								line.setAttribute('class', `aspect-line aspect-${aspectClass}`);
+								mainGroup.appendChild(line);
+							});
+						}
+			
+						[zodiacRadius, houseRingRadius, innerRadius].forEach(r => {
+							const circle = document.createElementNS(this.SVG_NS, 'circle');
+							circle.setAttribute('cx', centerX); circle.setAttribute('cy', centerY);
+							circle.setAttribute('r', r); circle.setAttribute('class', 'wheel-circle');
+							mainGroup.appendChild(circle);
+						});
+						
+						if (data.true_sidereal_signs) {
+							const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2;
+							data.true_sidereal_signs.forEach(sign => {
+								const [name, start, end] = sign;
+								const p1 = degreeToCartesian(houseRingRadius, start);
+								const p2 = degreeToCartesian(zodiacRadius, start);
+								const line = document.createElementNS(this.SVG_NS, 'line');
+								line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+								line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+								line.setAttribute('class', 'zodiac-divider');
+								mainGroup.appendChild(line);
+			
+								const midAngle = start + ((end - start + 360) % 360) / 2;
+								const textCoords = degreeToCartesian(glyphRadius, midAngle);
+								const text = document.createElementNS(this.SVG_NS, 'text');
+								text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
+								text.setAttribute('class', 'zodiac-glyph');
+								text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
+								text.textContent = this.ZODIAC_GLYPHS[name];
+								mainGroup.appendChild(text);
+							});
+						}
+			
+						if (data.house_cusps && data.house_cusps.length === 12) {
+							data.house_cusps.forEach((cuspDegrees, i) => {
+								const p1 = degreeToCartesian(innerRadius, cuspDegrees);
+								const p2 = degreeToCartesian(houseRingRadius, cuspDegrees);
+								const line = document.createElementNS(this.SVG_NS, 'line');
+								line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+								line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+								line.setAttribute('class', (i % 3 === 0) ? 'house-cusp major' : 'house-cusp');
+								mainGroup.appendChild(line);
+							});
+							for (let i = 0; i < 12; i++) {
+								const startAngle = data.house_cusps[i];
+								const endAngle = data.house_cusps[(i + 1) % 12];
+								let midAngle = (startAngle + endAngle) / 2;
+								if (endAngle < startAngle) midAngle = ((startAngle + endAngle + 360) / 2) % 360;
+								const textCoords = degreeToCartesian(innerRadius + 25, midAngle);
+								const text = document.createElementNS(this.SVG_NS, 'text');
+								text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
+								text.setAttribute('class', 'house-number');
+								text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
+								text.textContent = i + 1;
+								mainGroup.appendChild(text);
+							}
+						}
+						
+						if (data.sidereal_major_positions) {
+							const outerGlyphRadius = zodiacRadius + 35;
+							const glyphConnectorRadius = zodiacRadius;
+							const minGlyphSeparation = 8;
+			
+							let planets = data.sidereal_major_positions
+								.filter(p => p.degrees !== null && this.PLANET_GLYPHS[p.name])
+								.sort((a, b) => a.degrees - b.degrees);
+			
+							if (planets.length > 0) {
+								planets.forEach(p => p.adjustedDegrees = p.degrees);
+								for (let k = 0; k < 2; k++) {
+									let last = planets[planets.length - 1];
+									let first = planets[0];
+									let angleDiffWrap = (first.adjustedDegrees + 360) - last.adjustedDegrees;
+									if (angleDiffWrap < minGlyphSeparation) {
+										let adjustment = (minGlyphSeparation - angleDiffWrap) / 2;
+										first.adjustedDegrees += adjustment;
+										last.adjustedDegrees -= adjustment;
+									}
+									for (let i = 1; i < planets.length; i++) {
+										let prev = planets[i-1];
+										let current = planets[i];
+										let angleDiff = current.adjustedDegrees - prev.adjustedDegrees;
+										if (angleDiff < minGlyphSeparation) {
+											let adjustment = (minGlyphSeparation - angleDiff) / 2;
+											prev.adjustedDegrees -= adjustment;
+											current.adjustedDegrees += adjustment;
+										}
+									}
+								}
+							}
+			
+							planets.forEach(planet => {
+								const lineStartCoords = degreeToCartesian(glyphConnectorRadius, planet.degrees);
+								const lineEndCoords = degreeToCartesian(outerGlyphRadius, planet.adjustedDegrees);
+								const line = document.createElementNS(this.SVG_NS, 'line');
+								line.setAttribute('x1', lineStartCoords.x); line.setAttribute('y1', lineStartCoords.y);
+								line.setAttribute('x2', lineEndCoords.x); line.setAttribute('y2', lineEndCoords.y);
+								line.setAttribute('class', 'zodiac-divider');
+								mainGroup.appendChild(line);
+			
+								const textCoords = degreeToCartesian(outerGlyphRadius + 20, planet.adjustedDegrees);
+								const text = document.createElementNS(this.SVG_NS, 'text');
+								text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
+								text.setAttribute('class', 'planet-glyph');
+								text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
+								text.textContent = this.PLANET_GLYPHS[planet.name];
+								mainGroup.appendChild(text);
+			
+								if (planet.retrograde) {
+									const rxCoords = degreeToCartesian(outerGlyphRadius + 22, planet.adjustedDegrees + 4.5);
+									const rxText = document.createElementNS(this.SVG_NS, 'text');
+									rxText.setAttribute('x', rxCoords.x); rxText.setAttribute('y', rxCoords.y);
+									rxText.setAttribute('class', 'planet-retrograde');
+									rxText.setAttribute('transform', `rotate(${-rotation} ${rxCoords.x} ${rxCoords.y})`);
+									rxText.textContent = '℞';
+									mainGroup.appendChild(rxText);
+								}
+							});
+						}
 					},
 					
 					populateGlyphLegend() {
-						// ... (Full populateGlyphLegend function remains unchanged) ...
+						let legendText = '--- ZODIAC SIGNS ---\n';
+						for (const [name, glyph] of Object.entries(this.ZODIAC_GLYPHS)) {
+							legendText += `${glyph} - ${name}\n`;
+						}
+						legendText += '\n--- PLANETS & POINTS ---\n';
+						for (const [name, glyph] of Object.entries(this.PLANET_GLYPHS)) {
+							legendText += `${glyph} - ${name}\n`;
+						}
+						this.legendEl.innerText = legendText;
 					}
 				};
 			
