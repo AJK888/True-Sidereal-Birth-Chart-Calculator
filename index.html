@@ -43,14 +43,7 @@
         button:hover:not(:disabled) { background-color: var(--accent-hover); }
         button:disabled { opacity: 0.6; cursor: not-allowed; }
         pre { background: var(--pre-background); padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 8px; white-space: pre-wrap; word-break: break-word; font-family: "Courier New", Courier, monospace; font-size: 14px; color: var(--text-color); }
-        
-        /* --- NEW: Style for Gemini output --- */
-        #gemini-output {
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            line-height: 1.7;
-        }
-
+        #gemini-output { font-family: 'Inter', sans-serif; font-size: 1rem; line-height: 1.7; }
         #chart-wheel-container { display: flex; justify-content: center; align-items: center; margin-top: 2rem; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; }
         #chart-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; background-color: var(--pre-background); border-radius: 50%; }
         .wheel-circle { stroke: var(--border-color); stroke-width: 2; fill: none; }
@@ -111,13 +104,16 @@
         <form id="chartForm">
             <label for="fullName">Full Birth Name (including middle name for numerology)</label>
             <input type="text" id="fullName" name="fullName" required value="">
+            
             <label for="birthDate">Birth Date (MM/DD/YYYY)</label>
             <input type="text" id="birthDate" name="birthDate" required value="" placeholder="e.g., 05/15/1992">
+
             <p class="time-note">For the most accurate results, please use your exact time of birth. If you do not know it within an hour, you can select the checkbox below to exclude time sensitive information from the output.</p>
             <div class="time-toggle">
                 <input type="checkbox" id="unknownTime" name="unknownTime">
                 <label for="unknownTime">I don't know my birth time</label>
             </div>
+
             <div class="time-inputs">
                 <div>
                     <label for="hour">Hour</label>
@@ -135,6 +131,7 @@
                     </select>
                 </div>
             </div>
+            
             <label for="location">Birth Location</label><input type="text" id="location" name="location" required value="">
             <button type="submit" id="submitBtn">Calculate Chart</button>
         </form>
@@ -326,22 +323,30 @@
             out += `- UTC Date & Time: ${res.utc_datetime}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
             out += `- Location: ${res.location}\n`;
             out += `- Day/Night Determination: ${res.day_night_status}\n\n`;
-            out += `-- CHART ANALYSIS --\n`;
+            
+            out += `--- CHINESE ZODIAC ---\n`;
+            out += `- Your sign is the ${res.chinese_zodiac}\n\n`;
+
+            out += `--- NUMEROLOGY REPORT ---\n`;
+            if (res.numerology_analysis) {
+                out += `- Life Path Number: ${res.numerology_analysis.life_path_number}\n`;
+                out += `- Day Number: ${res.numerology_analysis.day_number}\n`;
+                if (res.numerology_analysis.name_numerology) {
+                    out += `\n-- NAME NUMEROLOGY --\n`;
+                    out += `- Expression (Destiny) Number: ${res.numerology_analysis.name_numerology.expression_number}\n`;
+                    out += `- Soul Urge Number: ${res.numerology_analysis.name_numerology.soul_urge_number}\n`;
+                    out += `- Personality Number: ${res.numerology_analysis.name_numerology.personality_number}\n`;
+                }
+            }
+            
+            out += `\n-- SIDEREAL CHART ANALYSIS --\n`;
             out += `- Chart Ruler: ${res.sidereal_chart_analysis.chart_ruler}\n`;
             out += `- Dominant Sign: ${res.sidereal_chart_analysis.dominant_sign}\n`;
             out += `- Dominant Element: ${res.sidereal_chart_analysis.dominant_element}\n`;
             out += `- Dominant Modality: ${res.sidereal_chart_analysis.dominant_modality}\n`;
-            out += `- Dominant Planet: ${res.sidereal_chart_analysis.dominant_planet}\n`;
-            out += `- Life Path Number: ${res.sidereal_chart_analysis.life_path_number}\n`;
-            out += `- Day Number: ${res.sidereal_chart_analysis.day_number}\n`;
-            out += `- Chinese Zodiac: ${res.sidereal_chart_analysis.chinese_zodiac}\n`;
-            if (res.sidereal_chart_analysis.name_numerology) {
-                out += `\n-- NAME NUMEROLOGY --\n`;
-                out += `- Expression (Destiny) Number: ${res.sidereal_chart_analysis.name_numerology.expression_number}\n`;
-                out += `- Soul Urge Number: ${res.sidereal_chart_analysis.name_numerology.soul_urge_number}\n`;
-                out += `- Personality Number: ${res.sidereal_chart_analysis.name_numerology.personality_number}\n`;
-            }
-            out += `\n--- MAJOR POSITIONS ---\n`;
+            out += `- Dominant Planet: ${res.sidereal_chart_analysis.dominant_planet}\n\n`;
+            
+            out += `--- MAJOR POSITIONS ---\n`;
             res.sidereal_major_positions.forEach(p => {
                 let line = `- ${p.name}: ${p.position}`;
                 if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
