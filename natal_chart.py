@@ -170,24 +170,17 @@ class NatalChart:
         except Exception as e: print(f"CRITICAL ERROR calculating ascendant: {e}"); self.ascendant_data = {"sidereal_asc": None}
     
     def _determine_day_night(self) -> None:
-        """
-        Determines day/night status by finding the last rise and set events before birth.
-        This is a more robust method than checking a 24-hour window.
-        """
         try:
-            # Search BACKWARDS from the birth time to find the last sunrise
             last_rise_res = swe.rise_trans(self.jd, swe.SUN, self.longitude, self.latitude,
                                            rsmi=swe.CALC_RISE | swe.BACKWARD | swe.BIT_DISC_CENTER)
             last_sunrise_jd = last_rise_res[1][0] if last_rise_res[0] == 0 else -1
 
-            # Search BACKWARDS from the birth time to find the last sunset
             last_set_res = swe.rise_trans(self.jd, swe.SUN, self.longitude, self.latitude,
                                           rsmi=swe.CALC_SET | swe.BACKWARD | swe.BIT_DISC_CENTER)
             last_sunset_jd = last_set_res[1][0] if last_set_res[0] == 0 else -1
 
             is_day = None
             if last_sunrise_jd > 0 and last_sunset_jd > 0:
-                # If the last sunrise happened more recently than the last sunset, we are in the daytime.
                 if last_sunrise_jd > last_sunset_jd:
                     is_day = True
                 else:
