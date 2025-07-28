@@ -141,9 +141,10 @@ class NatalChart:
         'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)'
     ]
     
-    def __init__(self, name: str, year: int, month: int, day: int, hour: int, minute: int, latitude: float, longitude: float):
+    def __init__(self, name: str, year: int, month: int, day: int, hour: int, minute: int, latitude: float, longitude: float, local_hour: int):
         self.name = name; self.latitude, self.longitude = latitude, longitude
         self.birth_year, self.birth_hour, self.birth_minute = year, hour, minute
+        self.local_hour = local_hour
         self.jd = swe.julday(year, month, day, hour + minute / 60.0); self.ut_decimal_hour = hour + minute / 60.0
         self.utc_datetime_str = datetime(year, month, day, hour, minute, tzinfo=timezone.utc).strftime("%Y-%m-%d %H:%M")
         self.location_str = f"{abs(latitude):.4f}° {'N' if latitude >= 0 else 'S'}, {abs(longitude):.4f}° {'E' if longitude >= 0 else 'W'}"
@@ -170,28 +171,10 @@ class NatalChart:
         except Exception as e: print(f"CRITICAL ERROR calculating ascendant: {e}"); self.ascendant_data = {"sidereal_asc": None}
     
     def _determine_day_night(self) -> None:
-        try:
-            last_rise_res = swe.rise_trans(self.jd, swe.SUN, self.longitude, self.latitude,
-                                           rsmi=swe.CALC_RISE | swe.BACKWARD | swe.BIT_DISC_CENTER)
-            last_sunrise_jd = last_rise_res[1][0] if last_rise_res[0] == 0 else -1
-
-            last_set_res = swe.rise_trans(self.jd, swe.SUN, self.longitude, self.latitude,
-                                          rsmi=swe.CALC_SET | swe.BACKWARD | swe.BIT_DISC_CENTER)
-            last_sunset_jd = last_set_res[1][0] if last_set_res[0] == 0 else -1
-
-            is_day = None
-            if last_sunrise_jd > 0 and last_sunset_jd > 0:
-                if last_sunrise_jd > last_sunset_jd:
-                    is_day = True
-                else:
-                    is_day = False
-            
-            self.day_night_info = {
-                "status": "Day Birth" if is_day else "Night Birth" if is_day is not None else "Undetermined"
-            }
-        except Exception as e:
-            print(f"DEBUG: Swiss Ephemeris day/night determination error: {e}")
-            self.day_night_info = {"status": "Undetermined"}
+        is_day = 6 <= self.local_hour < 18
+        self.day_night_info = {
+            "status": "Day Birth (Approx.)" if is_day else "Night Birth (Approx.)"
+        }
 
     def _calculate_all_points(self) -> None:
         sidereal_asc = self.ascendant_data.get("sidereal_asc"); tropical_asc = self.ascendant_data.get("tropical_asc"); ayanamsa = self.ascendant_data.get("ayanamsa")
@@ -218,7 +201,7 @@ class NatalChart:
         sun_s = next((p for p in self.sidereal_bodies if p.name == 'Sun'), None); moon_s = next((p for p in self.sidereal_bodies if p.name == 'Moon'), None)
         sun_t = next((p for p in self.tropical_bodies if p.name == 'Sun'), None); moon_t = next((p for p in self.tropical_bodies if p.name == 'Moon'), None)
         if sun_s and moon_s and sun_s.degree is not None and moon_s.degree is not None and s_asc.degree is not None and t_asc.degree is not None and self.day_night_info.get('status') != 'Undetermined':
-            is_day = self.day_night_info.get('status') == 'Day Birth'
+            is_day = "Day Birth" in self.day_night_info.get('status', "")
             s_pof_deg = (s_asc.degree + moon_s.degree - sun_s.degree + 360) % 360 if is_day else (s_asc.degree + sun_s.degree - moon_s.degree + 360) % 360
             t_pof_deg = (t_asc.degree + moon_t.degree - sun_t.degree + 360) % 360 if is_day else (t_asc.degree + sun_t.degree - moon_t.degree + 360) % 360
             points_to_add.append((SiderealBody("Part of Fortune", s_pof_deg, False, sidereal_asc, False), TropicalBody("Part of Fortune", t_pof_deg, False, tropical_asc, False)))
