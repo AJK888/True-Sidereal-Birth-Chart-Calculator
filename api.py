@@ -66,10 +66,15 @@ class ReadingRequest(BaseModel):
     unknown_time: bool
 
 async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
+    """
+    Generates a Gemini reading. Switches between a full reading (known time)
+    and a limited, planets-only reading (unknown time).
+    """
     if not GEMINI_API_KEY:
         return "Gemini API key not configured. AI reading is unavailable."
 
     try:
+        # --- Data Extraction (common to both prompts) ---
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         numerology_analysis = chart_data.get("numerology_analysis", {})
         chinese_zodiac = chart_data.get("chinese_zodiac")
@@ -83,6 +88,7 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         prompt_parts = []
 
         if unknown_time:
+            # --- PROMPT FOR UNKNOWN BIRTH TIME ---
             prompt_parts.append(
                 "You are a wise astrologer providing a reading for a chart where the exact birth time is unknown. "
                 "This is called a 'Noon Chart'.\n"
@@ -114,6 +120,7 @@ The Story of Your Inner World
 """)
 
         else:
+            # --- PROMPT FOR KNOWN BIRTH TIME (MASTER SYNTHESIS) ---
             prompt_parts.append(
                 "You are a master astrologer and esoteric synthesist. Your clients come to you for readings of unparalleled depth. Your unique skill is identifying the 'golden thread'—the central narrative or soul's purpose—that connects every single placement, aspect, and number in a person's blueprint. You see the chart not as a collection of parts, but as a single, cohesive, living story."
             )
