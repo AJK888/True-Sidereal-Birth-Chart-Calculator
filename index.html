@@ -7,6 +7,23 @@
 		<link rel="stylesheet" href="assets/css/main.css" />
 		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
 		<style>
+			/* Custom Styles to override and enhance the Forty Theme */
+			
+			/* 1. Header Color Update */
+			#banner.major {
+				background-color: #805ad5;
+				background-image: none; /* Remove default image to show color */
+			}
+			#banner.major:after {
+				background-color: rgba(45, 39, 78, 0.65); /* Darker purple overlay */
+				opacity: 1;
+			}
+
+			/* 2. More Colors & Chart Wheel Styling */
+			#chart-wheel-container {
+				max-width: 350px; /* Half the original size */
+				margin: 0 auto;
+			}
 			pre {
 				background-color: #2a2f43;
 				border-radius: 4px;
@@ -17,29 +34,16 @@
 				word-break: break-word;
 				font-size: 14px;
 			}
-		
 			#gemini-output {
-				font-family: "Source Sans Pro", sans-serif; /* Match the theme's font */
+				font-family: "Source Sans Pro", sans-serif;
 				font-size: 1rem;
 				line-height: 1.65;
-				color: #ffffff; /* Brighter text for reading */
+				color: #ffffff;
 			}
-		
-			.time-inputs {
-				display: flex;
-				gap: 1rem;
-				align-items: flex-end;
-			}
-			
-			.time-note {
-				font-size: 0.8rem;
-			}
-		
-			.results-container .major {
-				margin-bottom: 2rem;
-			}
-			
-			/* Chart Wheel SVG styles */
+			.time-inputs { display: flex; gap: 1rem; align-items: flex-end; }
+			.time-note { font-size: 0.8rem; }
+			.results-container .major { margin-bottom: 2rem; }
+
 			#chart-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; }
 			.wheel-circle { stroke: rgba(255, 255, 255, 0.25); stroke-width: 2; fill: none; }
 			.zodiac-divider { stroke: rgba(255, 255, 255, 0.25); stroke-width: 1; }
@@ -49,11 +53,32 @@
 			.zodiac-glyph { fill: #ffffff; font-size: 30px; text-anchor: middle; dominant-baseline: middle; }
 			.planet-glyph { fill: #ffffff; font-size: 35px; text-anchor: middle; dominant-baseline: middle; }
 			.planet-retrograde { fill: #ffffff; font-size: 20px; }
-			.aspect-line { stroke-width: 1.5; opacity: 0.6; }
-			.aspect-conjunction { stroke: #34d399; }
-			.aspect-opposition, .aspect-square { stroke: #f43f5e; }
-			.aspect-trine, .aspect-sextile { stroke: #38bdf8; }
+			.aspect-line { stroke-width: 1.5; opacity: 0.7; }
+			.aspect-conjunction { stroke: #38a169; } /* Green */
+			.aspect-opposition, .aspect-square { stroke: #e53e3e; } /* Red */
+			.aspect-trine, .aspect-sextile { stroke: #3182ce; } /* Blue */
 			.aspect-quincunx, .aspect-semisextile, .aspect-semisquare, .aspect-sesquiquadrate, .aspect-quintile, .aspect-biquintile { stroke: rgba(255, 255, 255, 0.25); stroke-dasharray: 4 4; }
+
+			/* 3. Disclaimer/Privacy/Terms Styling */
+			#legal .inner {
+				padding: 2rem 0;
+			}
+			#legal details {
+				background: #2a2f43;
+				border: solid 1px rgba(255, 255, 255, 0.25);
+				border-radius: 4px;
+				margin-bottom: 1rem;
+				padding: 1.5em;
+			}
+			#legal summary {
+				font-weight: 600;
+				font-size: 1.2rem;
+				cursor: pointer;
+			}
+			#legal h4 {
+				font-size: 1rem;
+				margin: 1.5rem 0 0.5rem 0;
+			}
 		</style>
 	</head>
 	<body class="is-preload">
@@ -76,7 +101,7 @@
 				<section id="banner" class="major">
 						<div class="inner">
 							<header class="major">
-								<h1>Synthesis Astrology V2</h1>
+								<h1>Synthesis Astrology</h1>
 							</header>
 							<div class="content">
 								<p>Welcome to a highly advanced astrology calculator designed for public use. Explore your complete cosmic blueprint below.</p>
@@ -85,6 +110,26 @@
 					</section>
 
 				<div id="main">
+
+						<section id="description-one">
+							<div class="inner">
+								<header class="major">
+									<h2>Your Cosmic Blueprint</h2>
+								</header>
+								<p>Astrology is a powerful tool for insight and self-development. This platform combines modern technology with ancient wisdom to provide a comprehensive analysis of your unique birth chart.</p>
+								<h4>What you’ll receive:</h4>
+								<ul>
+									<li>A brief professional reading powered by artificial intelligence, highlighting key themes and insights from your chart.</li>
+									<li>A visual True Sidereal chart wheel displaying your planetary alignments.</li>
+									<li>Full planetary placements using both the <strong>True Sidereal</strong> zodiac—based on the actual sizes and positions of the constellations as defined by the International Astronomical Union (IAU), including Ophiuchus—and the <strong>Tropical</strong> zodiac for comparison.</li>
+									<li>Analysis of key aspects, planetary patterns, and chart dominance.</li>
+									<li>Your personal Numerology report based on your birth date and full name.</li>
+									<li>Your Chinese Zodiac sign.</li>
+								</ul>
+								<h4>Explore the difference.</h4>
+								<p>The True Sidereal system aligns with the observable night sky, offering a more astronomically accurate perspective. For a well-rounded view, we also include your Tropical placements so you can explore both systems side by side.</p>
+							</div>
+						</section>
 
 						<section id="form-section">
 								<div class="inner">
@@ -161,6 +206,82 @@
 								</div>
 							</section>
 
+						<section id="legal">
+							<div class="inner">
+								<details>
+									<summary>Disclaimer</summary>
+									<div>
+										<p>The information and data provided by the Astrological and Numerological Blueprint Calculator, including any AI-generated text from Google's Gemini model, are for entertainment and informational purposes only. The readings and interpretations are not intended to be a substitute for professional advice from a qualified person in any field, including but not to medical, financial, or legal matters.</p>
+										<p>By using this service, you agree that you are solely responsible for any actions you take based on the information provided, and you will not hold the website or its creator liable for any decisions or outcomes.</p>
+									</div>
+								</details>
+								<details>
+									<summary>Privacy Policy</summary>
+									<div>
+										<h4>Last Updated: July 28, 2025</h4>
+										<p>Thank you for using the Astrological and Numerological Blueprint Calculator. This Privacy Policy explains what information we collect when you use our service, why we collect it, and how it is handled. Your privacy is important to us, and we are committed to being transparent about our data practices.</p>
+										<h4>1. Information We Collect</h4>
+										<p>When you use the calculator, we collect the following information that you voluntarily provide:</p>
+										<ul>
+											<li><strong>Name:</strong> The name you enter for the chart calculation.</li>
+											<li><strong>Birth Information:</strong> The date of birth (year, month, day) and time of birth (hour, minute) you provide.</li>
+											<li><strong>Location Information:</strong> The birth location (e.g., "Boston, MA, USA") you enter.</li>
+										</ul>
+										<p>We <strong>do not</strong> collect your IP address or any other information that is not explicitly entered into the form fields.</p>
+										<h4>2. How We Use Your Information</h4>
+										<p>The information you provide is used for the following purposes:</p>
+										<ul>
+											<li><strong>To Perform Calculations:</strong> The data is sent to our secure server to perform the astrological and numerological calculations and generate your personalized report.</li>
+											<li><strong>To Generate AI Readings:</strong> Anonymized astrological data (your planetary positions, but not your name, date, time, or location) is sent to the Google Gemini API to generate the "AI Astrological Synthesis" portion of your report.</li>
+											<li><strong>Application Monitoring & Debugging:</strong> The input data is sent to a secure, third-party logging service (Better Stack) for the sole purpose of monitoring application performance, identifying bugs, and troubleshooting errors.</li>
+											<li><strong>Research and Service Improvement:</strong> Birth data may be used to analyze astrological patterns, conduct research, and train artificial intelligence designed to improve the accuracy and depth of our astrological readings and to further the study of astrology.</li>
+										</ul>
+										<h4>3. Data Storage and Sharing</h4>
+										<ul>
+											<li><strong>Storage:</strong> The birth data you provide is stored in two ways: (1) It is logged in our secure, third-party application monitoring service (Better Stack) for the purposes of debugging and ensuring the calculator functions correctly. (2) The data may be exported and stored securely in private documents (e.g., spreadsheets) for the sole purpose of future astrological research, as described in Section 2.</li>
+											<li><strong>Sharing:</strong> We are committed to protecting your privacy. We will not sell or rent your personal information. We only share data with the essential third-party services described in this policy (such as our geocoding, logging, and AI providers) that are required for the calculator to function. Anonymized astrological data is processed by Google's services to provide the AI reading, subject to their privacy policies.</li>
+										</ul>
+										<h4>4. Your Rights and Data Deletion</h4>
+										<p>You have the right to request the deletion of your personal data from our logs and research documents. If you would like to have your information removed, please contact us with the details of the data you entered (name, date, location), and we will permanently delete the corresponding entries.</p>
+										<h4>5. Consent for Research Use</h4>
+										<p>By using this calculator, you acknowledge and consent that the birth data you provide may be stored and used for the research and potential artificial intelligence training purposes described in Section 2 and 3. This is essential for helping us learn more about astrology and improve the quality of the service we provide to you and other users.</p>
+										<h4>6. Contact Us</h4>
+										<p>If you have any questions about this Privacy Policy or wish to request the deletion of your data, please contact us at:</p>
+										<p><a href="mailto:synthesisastrology@outlook.com"><strong>synthesisastrology@outlook.com</strong></a></p>
+									</div>
+								</details>
+								<details>
+									<summary>Terms of Service</summary>
+									<div>
+										<h4>Last Updated: July 28, 2025</h4>
+										<p>Welcome to the Astrological and Numerological Blueprint Calculator. These Terms of Service ("Terms") govern your use of this website and the services provided. By accessing or using the service, you agree to be bound by these Terms.</p>
+										<h4>1. Description of Service</h4>
+										<p>This website provides personalized astrological and numerological reports based on data you provide, including True Sidereal and Tropical zodiac calculations, a visual chart wheel, and numerology reports. The service is provided for informational and entertainment purposes.</p>
+										<h4>2. Acceptance of Terms</h4>
+										<p>By using this service, you confirm that you have read, understood, and agree to be bound by these Terms. If you do not agree with the Terms, please do not use the service.</p>
+										<h4>3. Acceptable Use</h4>
+										<p>You agree not to use this service for any unlawful purpose or in any way that could damage, disable, or impair the service. This includes, but is not limited to:</p>
+										<ul>
+											<li>Submitting data through automated means (e.g., bots, scripts).</li>
+											<li>Attempting to gain unauthorized access to the server or its data.</li>
+											<li>Using the service for any commercial purpose without prior written consent.</li>
+										</ul>
+										<h4>4. Intellectual Property</h4>
+										<p>All content on this website, including the design, text, graphics, and the underlying source code of the calculator, are the intellectual property of the site owner. You may use the service for personal, non-commercial use only.</p>
+										<h4>5. Disclaimer of Warranties</h4>
+										<p>The information and data provided by this calculator are for <strong>entertainment and informational purposes only</strong>. The service is provided "as is" and "as available" without any warranties, express or implied. We do not warrant that the service will be error-free or that the information provided will be completely accurate. The interpretations are not a substitute for professional advice from a qualified person in any field, including but not limited to medical, financial, or legal matters.</p>
+										<h4>6. Limitation of Liability</h4>
+										<p>By using this service, you agree that you are solely responsible for any actions you take based on the information provided. The owner of this website shall not be held liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use this service, or from any decisions or outcomes made in reliance on the information provided.</p>
+										<h4>7. Privacy Policy</h4>
+										<p>Your use of this service is also governed by our Privacy Policy, which is available on this website. The Privacy Policy explains how we collect, use, and protect your personal data.</p>
+										<h4>8. Changes to Terms</h4>
+										<p>We reserve the right to modify these Terms at any time. We will notify users of any changes by updating the "Last Updated" date at the top of this page. Your continued use of the service after such changes constitutes your acceptance of the new Terms.</p>
+										<h4>9. Contact Information</h4>
+										<p>If you have any questions about these Terms, please contact us at:<br><strong>synthesisastrology@outlook.com</strong></p>
+									</div>
+								</details>
+							</div>
+						</section>
 					</div>
 
 				<footer id="footer">
@@ -191,7 +312,7 @@
 					PLANET_GLYPHS: {'Sun':'☉','Moon':'☽','Mercury':'☿','Venus':'♀','Mars':'♂','Jupiter':'♃','Saturn':'♄','Uranus':'♅','Neptune':'♆','Pluto':'♇','Chiron':'⚷','True Node':'☊','South Node':'☋','Ascendant':'AC','Midheaven (MC)':'MC','Descendant':'DC','Imum Coeli (IC)':'IC'},
 			
 					form: null, submitBtn: null, outputEl: null, geminiTitle: null, geminiOutput: null,
-					resultsTitle: null, wheelTitle: null, wheelContainer: null, wheelSvg: null,
+					resultsTitle: null, wheelTitle: null, resultsContainer: null, wheelSvg: null,
 					legendTitle: null, legendEl: null,
 					
 					init() {
@@ -204,11 +325,11 @@
 						this.form = document.getElementById("chartForm");
 						this.submitBtn = document.getElementById("submitBtn");
 						this.outputEl = document.getElementById("output");
-						this.geminiTitle = document.getElementById('gemini-title').parentElement; // Get parent for visibility
+						this.geminiTitle = document.getElementById('gemini-title');
 						this.geminiOutput = document.getElementById('gemini-output');
-						this.resultsTitle = document.getElementById('results-title').parentElement;
-						this.wheelTitle = document.getElementById('wheel-title').parentElement;
-						this.legendTitle = document.getElementById('legend-title').parentElement;
+						this.resultsTitle = document.getElementById('results-title');
+						this.wheelTitle = document.getElementById('wheel-title');
+						this.legendTitle = document.getElementById('legend-title');
 						this.wheelSvg = document.getElementById('chart-wheel-svg');
 						this.legendEl = document.getElementById('glyph-legend');
 						this.resultsContainer = document.getElementById('results');
@@ -239,6 +360,7 @@
 						} catch (err) {
 							this.resultsContainer.style.display = 'block';
 							this.resultsTitle.style.display = 'block';
+							this.outputEl.style.display = 'block';
 							this.outputEl.innerText = "Error: " + err.message;
 						} finally {
 							this.setLoadingState(false);
