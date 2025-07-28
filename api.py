@@ -157,6 +157,7 @@ Now, write the final reading for the user. Structure your entire response **exac
     except Exception as e:
         logger.error(f"Error during Gemini reading generation: {e}", exc_info=True)
         return "An error occurred while generating the AI reading."
+        
 @app.post("/calculate_chart")
 async def calculate_chart_endpoint(data: ChartRequest):
     try:
