@@ -90,7 +90,6 @@ def calculate_name_numerology(full_name: str) -> dict:
     return {"expression_number": expression_number, "soul_urge_number": soul_urge_number, "personality_number": personality_number}
 
 def get_chinese_zodiac_and_element(year: int, month: int, day: int) -> Dict[str, str]:
-    """Calculates the Chinese zodiac animal and element, accounting for the Lunar New Year."""
     zodiac_animals = ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"]
     elements = ["Metal", "Water", "Wood", "Fire", "Earth"]
     
@@ -107,14 +106,11 @@ def get_chinese_zodiac_and_element(year: int, month: int, day: int) -> Dict[str,
     return {"animal": animal, "element": element}
 
 def _get_sunrise_sunset_jd(jd_ut: float, lat: float, lon: float) -> Tuple[Optional[float], Optional[float]]:
-    """Calculates sunrise and sunset Julian Day using the precise swe.rise_trans function."""
     try:
-        flags = swe.CALC_RISE | swe.BIT_GEOCTR_NO_ECL_LAT
-        
-        rise_res = swe.rise_trans(jd_ut, swe.SUN, lon, lat, 0.0, 0.0, 0.0, flags)
+        rise_res = swe.rise_trans(jd_ut, swe.SUN, lon, lat, rsmi=swe.CALC_RISE | swe.BIT_DISC_CENTER)
         sunrise_jd = rise_res[1][0] if rise_res[0] == 0 else None
 
-        set_res = swe.rise_trans(jd_ut, swe.SUN, lon, lat, 0.0, 0.0, 0.0, swe.CALC_SET | swe.BIT_GEOCTR_NO_ECL_LAT)
+        set_res = swe.rise_trans(jd_ut, swe.SUN, lon, lat, rsmi=swe.CALC_SET | swe.BIT_DISC_CENTER)
         sunset_jd = set_res[1][0] if set_res[0] == 0 else None
         
         return sunrise_jd, sunset_jd
@@ -229,13 +225,13 @@ class NatalChart:
         ]
         sun_s = next((p for p in self.sidereal_bodies if p.name == 'Sun'), None); moon_s = next((p for p in self.sidereal_bodies if p.name == 'Moon'), None)
         sun_t = next((p for p in self.tropical_bodies if p.name == 'Sun'), None); moon_t = next((p for p in self.tropical_bodies if p.name == 'Moon'), None)
-        if sun_s and moon_s and self.day_night_info.get('status') != 'Undetermined':
+        if sun_s and moon_s and sun_s.degree is not None and moon_s.degree is not None and s_asc.degree is not None and t_asc.degree is not None and self.day_night_info.get('status') != 'Undetermined':
             is_day = self.day_night_info.get('status') == 'Day Birth'
             s_pof_deg = (s_asc.degree + moon_s.degree - sun_s.degree + 360) % 360 if is_day else (s_asc.degree + sun_s.degree - moon_s.degree + 360) % 360
             t_pof_deg = (t_asc.degree + moon_t.degree - sun_t.degree + 360) % 360 if is_day else (t_asc.degree + sun_t.degree - moon_t.degree + 360) % 360
             points_to_add.append((SiderealBody("Part of Fortune", s_pof_deg, False, sidereal_asc, False), TropicalBody("Part of Fortune", t_pof_deg, False, tropical_asc, False)))
         nn_s = next((p for p in self.sidereal_bodies if p.name == 'True Node'), None); nn_t = next((p for p in self.tropical_bodies if p.name == 'True Node'), None)
-        if nn_s and nn_t:
+        if nn_s and nn_t and nn_s.degree is not None and nn_t.degree is not None:
             points_to_add.append((SiderealBody("South Node", (nn_s.degree + 180)%360, False, sidereal_asc, False), TropicalBody("South Node", (nn_t.degree + 180)%360, False, tropical_asc, False)))
         for s_point, t_point in points_to_add:
             if s_point and s_point.degree is not None: self.all_sidereal_points.append(s_point)
@@ -333,8 +329,6 @@ class NatalChart:
         self.tropical_dominance['counts'] = counts_t; self.tropical_dominance['strength'] = {k: round(v, 2) for k, v in strength_t.items()}
 
     def get_full_chart_data(self, numerology: dict, name_numerology: dict, chinese_zodiac: dict, unknown_time: bool) -> dict:
-        """Assembles and returns the complete chart data dictionary for the API response."""
-        
         house_rulers_formatted = {}
         if self.ascendant_data.get("sidereal_asc") is not None:
             for i in range(12):
