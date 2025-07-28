@@ -17,6 +17,9 @@ import logging
 from logtail import LogtailHandler
 import google.generativeai as genai
 
+# --- FINGERPRINT FOR DEBUGGING ---
+print("--- RUNNING LATEST API CODE V3 ---")
+
 # --- SETUP THE LOGGER ---
 handler = None
 logtail_token = os.getenv("LOGTAIL_SOURCE_TOKEN")
@@ -60,6 +63,10 @@ class ChartRequest(BaseModel):
     minute: int
     location: str
     unknown_time: bool = False
+
+class ReadingRequest(BaseModel):
+    chart_data: dict
+    unknown_time: bool
 
 async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
     """
@@ -187,7 +194,6 @@ The Central Story of Your Chart
 
         prompt = "\n".join(prompt_parts)
 
-        # --- API Call ---
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
         response = await model.generate_content_async(prompt)
         
@@ -243,9 +249,6 @@ async def calculate_chart_endpoint(data: ChartRequest):
         
         full_response = chart.get_full_chart_data(numerology, name_numerology, chinese_zodiac, data.unknown_time)
         
-        gemini_reading = await get_gemini_reading(full_response, data.unknown_time)
-        full_response["gemini_reading"] = gemini_reading
-
         return full_response
 
     except HTTPException as e:
@@ -254,3 +257,12 @@ async def calculate_chart_endpoint(data: ChartRequest):
         logger.error(f"An unexpected error occurred: {type(e).__name__} - {e}", exc_info=True)
         print("\n--- AN EXCEPTION WAS CAUGHT ---"); traceback.print_exc(); print("-----------------------------\n")
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {type(e).__name__} - {e}")
+
+@app.post("/generate_reading")
+async def generate_reading_endpoint(request: ReadingRequest):
+    try:
+        gemini_reading = await get_gemini_reading(request.chart_data, request.unknown_time)
+        return {"gemini_reading": gemini_reading}
+    except Exception as e:
+        logger.error(f"Error in /generate_reading endpoint: {type(e).__name__} - {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="An error occurred while generating the AI reading.")
