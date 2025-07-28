@@ -325,6 +325,15 @@ class NatalChart:
     def get_full_chart_data(self, numerology: dict, name_numerology: dict, chinese_zodiac: dict, unknown_time: bool) -> dict:
         """Assembles and returns the complete chart data dictionary for the API response."""
         
+        sidereal_retrogrades = [
+            {"name": p.name}
+            for p in self.all_sidereal_points if p.retrograde
+        ]
+        tropical_retrogrades = [
+            {"name": p.name}
+            for p in self.all_tropical_points if p.retrograde
+        ]
+        
         house_rulers_formatted = {}
         if self.ascendant_data.get("sidereal_asc") is not None:
             for i in range(12):
@@ -394,11 +403,13 @@ class NatalChart:
             "house_sign_distributions": self.house_sign_distributions,
             "sidereal_chart_analysis": sidereal_chart_analysis,
             "sidereal_major_positions": sidereal_major_positions,
+            "sidereal_retrogrades": sidereal_retrogrades,
             "sidereal_aspects": sidereal_aspects,
             "sidereal_aspect_patterns": [p['description'] for p in self.sidereal_aspect_patterns],
             "sidereal_additional_points": sidereal_additional_points,
             "tropical_chart_analysis": tropical_chart_analysis,
             "tropical_major_positions": tropical_major_positions,
+            "tropical_retrogrades": tropical_retrogrades,
             "tropical_aspects": tropical_aspects,
             "tropical_aspect_patterns": [p['description'] for p in self.tropical_aspect_patterns],
             "tropical_additional_points": tropical_additional_points
