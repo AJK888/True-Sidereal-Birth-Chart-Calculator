@@ -4,9 +4,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from natal_chart import (
-    NatalChart, get_sign_and_ruler, format_true_sidereal_placement, PLANETS_CONFIG, 
-    # FIX: The function name is updated here
-    calculate_numerology, get_chinese_zodiac_and_element, TRUE_SIDEREAL_SIGNS,
+    NatalChart,
+    calculate_numerology, get_chinese_zodiac_and_element,
     calculate_name_numerology
 )
 import swisseph as swe
@@ -43,7 +42,6 @@ def ping():
 
 origins = [
     "https://true-sidereal-birth-chart.onrender.com",
-    # "http://127.0.0.1:5500" # Example for local testing
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -72,7 +70,7 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         return "Gemini API key not configured. AI reading is unavailable."
 
     try:
-        # --- Data Extraction (common to both prompts) ---
+        # Data Extraction (common to both prompts)
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         numerology_analysis = chart_data.get("numerology_analysis", {})
         chinese_zodiac = chart_data.get("chinese_zodiac")
@@ -86,14 +84,13 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         prompt_parts = []
 
         if unknown_time:
-            # --- PROMPT FOR UNKNOWN BIRTH TIME ---
+            # PROMPT FOR UNKNOWN BIRTH TIME
             prompt_parts.append(
                 "You are a wise astrologer providing a reading for a chart where the exact birth time is unknown. "
                 "This is called a 'Noon Chart'.\n"
                 "**Your most important rule is to completely avoid mentioning the Ascendant, Midheaven (MC), Chart Ruler, or any House placements, as they are unknown and cannot be used.** "
                 "You must focus exclusively on the placement of planets in their signs, the aspects between them, and the numerology."
             )
-            # Data Payload for Unknown Time
             prompt_parts.append("\n**Anonymized Chart Data (Noon Calculation - Time-Sensitive Data Excluded):**")
             if sun: prompt_parts.append(f"- Sun: {sun['position']}")
             if moon: prompt_parts.append(f"- Moon: {moon['position']}")
@@ -104,7 +101,6 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
                 retro_list = ", ".join([p['name'] for p in s_retrogrades])
                 prompt_parts.append(f"- Retrograde Planets: {retro_list}")
             
-            # Core Task for Unknown Time
             prompt_parts.append("\n**Your Task:**")
             prompt_parts.append(
                 "Write a slightly shorter but insightful narrative reading based *only* on the data provided.\n"
@@ -116,12 +112,10 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
             )
 
         else:
-            # --- PROMPT FOR KNOWN BIRTH TIME ---
+            # PROMPT FOR KNOWN BIRTH TIME
             prompt_parts.append(
                 "You are a wise, insightful, and deeply intuitive astrologer. Your special gift is synthesizing complex chart data into a cohesive and inspiring narrative for individuals who are new to astrology. You don't just list traits; you find the central story and overarching themes in a person's energetic blueprint and explain them with warmth and clarity."
             )
-            
-            # Full Data Payload
             prompt_parts.append("\n**Full Anonymized Chart Data:**")
             asc = next((p for p in s_positions if p['name'] == 'Ascendant'), None)
             if sun: prompt_parts.append(f"- Sun: {sun['position']}")
@@ -133,7 +127,7 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
             if s_analysis.get("dominant_element"): prompt_parts.append(f"- Dominant Element: {s_analysis['dominant_element']}")
             
             prompt_parts.append("\n**Numerological & Other Data:**")
-            if numerology_analysis.get("life_path_number"): prompt_parts.append(f"- Life Path Number: {numerology_analysis['life_path_number']}")
+            if numerology_analysis.get("life_path_number"): prompt_parts.append(f"- Life Path Number: {numerology_analysis.get('life_path_number')}")
             if numerology_analysis.get("day_number"): prompt_parts.append(f"- Day Number: {numerology_analysis['day_number']}")
             if numerology_analysis.get("name_numerology"):
                 name_nums = numerology_analysis['name_numerology']
@@ -158,37 +152,28 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
                 for aspect in top_aspects:
                     prompt_parts.append(f"- {aspect['p1_name']} {aspect['type']} {aspect['p2_name']}")
             
-            # Full Core Task
             prompt_parts.append("\n**Your Task:**")
             prompt_parts.append("""
 **Step 1: Internal Analysis (Do this silently before writing)**
 First, review ALL the data provided above. Look for the most powerful, repeating themes and patterns that form the 'center of gravity' of this chart.
--   Is there a powerful **Stellium** (concentration of planets) in a specific house or sign?
--   Do the **Numerology** numbers (like a Life Path 7 and Soul Urge 7) strongly echo the themes of a planet or house?
--   Does the **Chart Ruler**, **Dominant Planet**, or **Dominant Element** create an undeniable theme?
--   Look for powerful combinations. For example, a 9th House Stellium + Life Path 7 is a massive theme of spiritual seeking and higher knowledge. A stellium in Libra + a Venus-ruled chart + an Expression Number 6 is a powerful theme of relationships, art, and harmony.
 -   Identify 1-2 of these most powerful, overarching themes. You will build your entire narrative around them.
 """)
 
             prompt_parts.append("""
 **Step 2: Write the Narrative Reading**
-Now, write a detailed, multi-paragraph reading for the beginner. **Do not follow a rigid template.** Instead, craft a flowing narrative based on the core themes you identified in your internal analysis.
+Now, write a detailed, multi-paragraph reading for the beginner. **Do not follow a rigid template.** Instead, craft a flowing narrative based on the core themes you identified.
 
--   **Introduction - The Central Theme:** Begin by introducing the most powerful theme you discovered. Open with a statement that captures the essence of their chart, such as, "Your chart tells a powerful story about a journey of..." or "If we look at your cosmic blueprint, the central theme that shines brightest is one of..."
-
--   **Body - Weaving the Evidence:** In the following paragraphs, explain this central theme using the specific astrological and numerological placements as your evidence. Instead of listing them one by one, group them by how they support the narrative.
-    -   **Explain Concepts As You Go:** As you introduce each component (like the Sun, a House, or an Aspect) for the first time, briefly explain its role in simple, relatable terms.
-    -   **The Chart's Guide - The Ruler:** Make sure to mention the **Chart Ruler** (the planet that rules the Ascendant sign). Explain it as the 'captain of the ship' or the primary energy that guides the individual's life path and how they approach the world. Connect it to the house and sign it's in to add another layer of detail to the story.
-    -   **Inward Energy - Retrogrades:** If there are retrograde planets, explain this concept simply. Describe it as the planet's energy being turned inward for internal processing, review, and a more subjective experience. Weave this into the narrative. For example, 'Your Mercury, the planet of communication, is retrograde, suggesting you might internally rehearse conversations or think deeply before you speak, processing ideas in a very unique way.'
-
--   **Complexity and Growth - The Aspects:** Weave in the meaning of one or two key **aspects** (the conversations between planets). Explain how they add harmony or dynamic tension to the core themes you're describing. For instance, "...while your creative drive is strong, it might face a challenge from Saturn, the planet of discipline. This tension isn't a weakness; it's a cosmic personal trainer, pushing you to build real, lasting structures for your art."
-
--   **Conclusion - The Empowering Summary:** Conclude with a warm summary. Reiterate their core strengths and potential, framing the chart not as a fixed destiny, but as a beautiful and powerful toolkit they've been given for their life's journey.
+-   **Introduction - The Central Theme:** Begin by introducing the most powerful theme you discovered.
+-   **Body - Weaving the Evidence:** Explain this central theme using the specific placements as evidence.
+    -   **Explain Concepts As You Go:** As you introduce each component (like the Sun or an Aspect), briefly explain its role in simple terms.
+    -   **The Chart's Guide - The Ruler:** Make sure to mention the **Chart Ruler** and explain it as the 'captain of the ship'.
+    -   **Inward Energy - Retrogrades:** If there are retrograde planets, explain this concept simply as the planet's energy being turned inward.
+-   **Complexity and Growth - The Aspects:** Weave in the meaning of one or two key **aspects**.
+-   **Conclusion - The Empowering Summary:** Conclude with a warm, empowering summary.
 """)
 
         prompt = "\n".join(prompt_parts)
 
-        # --- API Call ---
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
         response = await model.generate_content_async(prompt)
         
@@ -230,25 +215,21 @@ async def calculate_chart_endpoint(data: ChartRequest):
         )
         utc_time = local_time.in_timezone('UTC')
 
-        # 1. Instantiate and calculate the chart
         chart = NatalChart(
             name=data.full_name, year=utc_time.year, month=utc_time.month, day=utc_time.day,
             hour=utc_time.hour, minute=utc_time.minute, latitude=lat, longitude=lng
         )
         chart.calculate_chart()
         
-        # 2. Perform other calculations
         numerology = calculate_numerology(data.day, data.month, data.year)
         name_numerology = calculate_name_numerology(data.full_name)
         chinese_zodiac = get_chinese_zodiac_and_element(data.year, data.month, data.day)
         
-        # 3. Get the formatted response dictionary from the chart object
         full_response = chart.get_full_chart_data(numerology, name_numerology, chinese_zodiac, data.unknown_time)
         
-        # 4. If time is known, get the AI reading
-        if not data.unknown_time:
-            gemini_reading = await get_gemini_reading(full_response)
-            full_response["gemini_reading"] = gemini_reading
+        # <-- FIX: Pass the 'data.unknown_time' boolean here
+        gemini_reading = await get_gemini_reading(full_response, data.unknown_time)
+        full_response["gemini_reading"] = gemini_reading
 
         return full_response
 
