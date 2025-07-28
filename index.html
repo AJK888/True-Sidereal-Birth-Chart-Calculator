@@ -368,6 +368,12 @@
                 if (p.house_info) { line += ` ${p.house_info}`; }
                 out += `${line}\n`;
             });
+            if (res.sidereal_retrogrades && res.sidereal_retrogrades.length > 0) {
+                out += `\n--- RETROGRADE PLANETS (Energy turned inward) ---\n`;
+                res.sidereal_retrogrades.forEach(p => {
+                    out += `- ${p.name}\n`;
+                });
+            }
             out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
             res.sidereal_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
             out += `\n--- ASPECT PATTERNS ---\n`;
@@ -409,6 +415,12 @@
                     if (p.house_info) { line += ` ${p.house_info}`; }
                     out += `${line}\n`;
                 });
+                if (res.tropical_retrogrades && res.tropical_retrogrades.length > 0) {
+                    out += `\n--- RETROGRADE PLANETS (Energy turned inward) ---\n`;
+                    res.tropical_retrogrades.forEach(p => {
+                        out += `- ${p.name}\n`;
+                    });
+                }
                 out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
                 res.tropical_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
                 out += `\n--- ASPECT PATTERNS ---\n`;
