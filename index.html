@@ -9,24 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --background-color: #1a202c;
-            --card-background: #2d3748;
-            --text-color: #e2e8f0;
-            --heading-color: #ffffff;
-            --accent-color: #805ad5;
-            --accent-hover: #6b46c1;
-            --border-color: #4a5568;
-            --pre-background: #171923;
-            --aspect-hard: #e53e3e;
-            --aspect-soft: #3182ce;
-            --aspect-neutral: #38a169;
+            --background-color: #1a202c; --card-background: #2d3748; --text-color: #e2e8f0;
+            --heading-color: #ffffff; --accent-color: #805ad5; --accent-hover: #6b46c1;
+            --border-color: #4a5568; --pre-background: #171923; --aspect-hard: #e53e3e;
+            --aspect-soft: #3182ce; --aspect-neutral: #38a169;
         }
-        
-        body {
-            font-family: 'Inter', sans-serif; line-height: 1.7; padding: 2rem; margin: 0;
-            background-color: var(--background-color); color: var(--text-color);
-            display: flex; flex-direction: column; align-items: center;
-        }
+        body { font-family: 'Inter', sans-serif; line-height: 1.7; padding: 2rem; margin: 0; background-color: var(--background-color); color: var(--text-color); display: flex; flex-direction: column; align-items: center; }
         .container { max-width: 800px; width: 100%; }
         h1, h2 { color: var(--heading-color); text-align: center; font-weight: 700; }
         h1 { font-size: 2.25rem; margin-bottom: 0.5rem; }
@@ -79,15 +67,9 @@
         <h1>Astrological and Numerological Blueprint Calculator</h1>
         <div class="description">
             <h3>Your Complete Astrological Blueprint</h3>
-            <p>
-                This calculator provides a comprehensive analysis using the <strong>True Sidereal</strong> zodiac, which reflects the true, observable size of the constellations according to the official boundaries defined by the International Astronomical Union (IAU), including Ophiuchus.
-            </p>
-            <p>
-                For a complete perspective, your report also includes a full chart calculated in the standard <strong>Tropical</strong> zodiac, allowing for direct comparison.
-            </p>
-            <p>
-                <strong>Your personalized report features:</strong>
-            </p>
+            <p>This calculator provides a comprehensive analysis using the <strong>True Sidereal</strong> zodiac, which reflects the true, observable size of the constellations according to the official boundaries defined by the International Astronomical Union (IAU), including Ophiuchus.</p>
+            <p>For a complete perspective, your report also includes a full chart calculated in the standard <strong>Tropical</strong> zodiac, allowing for direct comparison.</p>
+            <p><strong>Your personalized report features:</strong></p>
             <ul>
                 <li>An AI-powered astrological synthesis of your chart using Google's Gemini.</li>
                 <li>A visual chart wheel showing your unique planetary alignment.</li>
@@ -96,9 +78,7 @@
                 <li>Your personal Numerology (Birth Date and Full Name) and Chinese Zodiac sign.</li>
             </ul>
             <p>For a full analysis of your chart, or for any questions, please contact: <a href="mailto:synthesisastrology@outlook.com">synthesisastrology@outlook.com</a></p>
-            <p>
-                Enter your birth details below to generate your complete astrological profile.
-            </p>
+            <p>Enter your birth details below to generate your complete astrological profile.</p>
         </div>
 
         <form id="chartForm">
@@ -108,28 +88,16 @@
             <label for="birthDate">Birth Date (MM/DD/YYYY)</label>
             <input type="text" id="birthDate" name="birthDate" required value="" placeholder="e.g., 05/15/1992">
 
-            <p class="time-note">For the most accurate results, please use your exact time of birth. If you do not know it within an hour, you can select the checkbox below to exclude time sensitive information from the output.</p>
+            <p class="time-note">For the most accurate results, please use your exact time of birth. If you do not know it, you can select the checkbox below to exclude time-sensitive information from the output.</p>
             <div class="time-toggle">
                 <input type="checkbox" id="unknownTime" name="unknownTime">
                 <label for="unknownTime">I don't know my birth time</label>
             </div>
 
             <div class="time-inputs">
-                <div>
-                    <label for="hour">Hour</label>
-                    <input type="number" id="hour" name="hour" required value="" min="1" max="12">
-                </div>
-                <div>
-                    <label for="minute">Minute</label>
-                    <input type="number" id="minute" name="minute" required value="" min="0" max="59">
-                </div>
-                <div>
-                    <label for="ampm">AM/PM</label>
-                    <select id="ampm" name="ampm">
-                        <option value="am">AM</option>
-                        <option value="pm">PM</option>
-                    </select>
-                </div>
+                <div> <label for="hour">Hour</label> <input type="number" id="hour" name="hour" required value="" min="1" max="12"> </div>
+                <div> <label for="minute">Minute</label> <input type="number" id="minute" name="minute" required value="" min="0" max="59"> </div>
+                <div> <label for="ampm">AM/PM</label> <select id="ampm" name="ampm"><option value="am">AM</option><option value="pm">PM</option></select> </div>
             </div>
             
             <label for="location">Birth Location</label><input type="text" id="location" name="location" required value="">
@@ -139,186 +107,175 @@
         <h2 id="gemini-title" style="display: none;">AI Astrological Synthesis</h2>
         <pre id="gemini-output" style="display: none;"></pre>
 
-        <h2 id="results-title">Results</h2>
-        <pre id="output">Your personalized report will appear here.</pre>
+        <h2 id="results-title" style="display: none;">Results</h2>
+        <pre id="output" style="display: none;"></pre>
 
-        <h2 id="wheel-title">Chart Wheel</h2>
-        <div id="chart-wheel-container">
-            <svg id="chart-wheel-svg" viewBox="0 0 1000 1000"></svg>
-        </div>
+        <h2 id="wheel-title" style="display: none;">Chart Wheel</h2>
+        <div id="chart-wheel-container" style="display: none;"> <svg id="chart-wheel-svg" viewBox="0 0 1000 1000"></svg> </div>
 
-        <h2>Glyph Legend</h2>
-        <pre id="glyph-legend"></pre>
+        <h2 id="legend-title" style="display: none;">Glyph Legend</h2>
+        <pre id="glyph-legend" style="display: none;"></pre>
 
         <div class="privacy-section">
-            <details>
-                <summary>Disclaimer</summary>
-                <div>
-                    <p>The information and data provided by the Astrological and Numerological Blueprint Calculator, including any AI-generated text from Google's Gemini model, are for entertainment and informational purposes only. The readings and interpretations are not intended to be a substitute for professional advice from a qualified person in any field, including but not to medical, financial, or legal matters.</p>
-                    <p>By using this service, you agree that you are solely responsible for any actions you take based on the information provided, and you will not hold the website or its creator liable for any decisions or outcomes.</p>
-                </div>
-            </details>
-
-            <details>
-                <summary>Privacy Policy</summary>
-                <div>
-                    <h4>Last Updated: July 27, 2025</h4>
-                    <p>Thank you for using the Astrological and Numerological Blueprint Calculator. This Privacy Policy explains what information we collect when you use our service, why we collect it, and how it is handled. Your privacy is important to us, and we are committed to being transparent about our data practices.</p>
-                    <h4>1. Information We Collect</h4>
-                    <p>When you use the calculator, we collect the following information that you voluntarily provide:</p>
-                    <ul>
-                        <li><strong>Name:</strong> The name you enter for the chart calculation.</li>
-                        <li><strong>Birth Information:</strong> The date of birth (year, month, day) and time of birth (hour, minute) you provide.</li>
-                        <li><strong>Location Information:</strong> The birth location (e.g., "Boston, MA") you enter.</li>
-                    </ul>
-                    <p>We <strong>do not</strong> collect your IP address or any other information that is not explicitly entered into the form fields.</p>
-                    <h4>2. How We Use Your Information</h4>
-                    <p>The information you provide is used for the following purposes:</p>
-                    <ul>
-                        <li><strong>To Perform Calculations:</strong> The data is sent to our secure server to perform the astrological and numerological calculations and generate your personalized report.</li>
-                        <li><strong>To Generate AI Readings:</strong> Anonymized astrological data (your planetary positions, but not your name, date, time, or location) is sent to the Google Gemini API to generate the "AI Astrological Synthesis" portion of your report.</li>
-                        <li><strong>Application Monitoring & Debugging:</strong> The input data is sent to a secure, third-party logging service (Better Stack) for the sole purpose of monitoring application performance, identifying bugs, and troubleshooting errors. This helps us ensure the calculator is running smoothly and accurately.</li>
-                        <li><strong>Research and Service Improvement:</strong> May be used to analyze astrological patterns, conduct research, and train artificial intelligence designed to improve the accuracy and depth of our astrological readings and to further the study of astrology.</li>
-                    </ul>
-                    <h4>3. Data Storage and Sharing</h4>
-                    <ul>
-                        <li><strong>Storage:</strong> The data that is collected will be stored and may be used to develop artificial intelligence. The data is also stored locally.</li>
-                        <li><strong>Sharing:</strong> We are committed to protecting your privacy. We will not sell or share your personal information with any other third parties. Anonymized astrological data is processed by Google's services to provide the AI reading, subject to their privacy policies.</li>
-                    </ul>
-                    <h4>4. Your Rights and Data Deletion</h4>
-                    <p>You have the right to request the deletion of your personal data from our logs. If you would like to have your information removed, please contact us with the details of the data you entered (name, date, location), and we will permanently delete the corresponding log entries.</p>
-                    <h4>5. Consent for Research Use</h4>
-                    <p>By using this calculator, you acknowledge and consent that the birth data you provide may be used for the research and potential artificial intelligence training purposes described in Section 2. This is essential for helping us learn more about astrology and improve the quality of the service we provide to you and other users.</p>
-                    <h4>6. Contact Us</h4>
-                    <p>If you have any questions about this Privacy Policy or wish to request the deletion of your data, please contact us at:</p>
-                    <p><a href="mailto:synthesisastrology@outlook.com"><strong>synthesisastrology@outlook.com</strong></a></p>
-                </div>
-            </details>
-
-            <details>
-                <summary>Terms of Service</summary>
-                <div>
-                    <h4>Last Updated: July 27, 2025</h4>
-                    <p>Welcome to the Astrological and Numerological Blueprint Calculator. These Terms of Service ("Terms") govern your use of this website and the services provided. By accessing or using the service, you agree to be bound by these Terms.</p>
-                    <h4>1. Description of Service</h4>
-                    <p>This website provides personalized astrological and numerological reports based on data you provide, including True Sidereal and Tropical zodiac calculations, a visual chart wheel, and numerology reports. The service is provided for informational and entertainment purposes.</p>
-                    <h4>2. Acceptance of Terms</h4>
-                    <p>By using this service, you confirm that you have read, understood, and agree to be bound by these Terms. If you do not agree with the Terms, please do not use the service.</p>
-                    <h4>3. Acceptable Use</h4>
-                    <p>You agree not to use this service for any unlawful purpose or in any way that could damage, disable, or impair the service. This includes, but is not limited to:</p>
-                    <ul>
-                        <li>Submitting data through automated means (e.g., bots, scripts).</li>
-                        <li>Attempting to gain unauthorized access to the server or its data.</li>
-                        <li>Using the service for any commercial purpose without prior written consent.</li>
-                    </ul>
-                    <h4>4. Intellectual Property</h4>
-                    <p>All content on this website, including the design, text, graphics, and the underlying source code of the calculator, are the intellectual property of the site owner. You may use the service for personal, non-commercial use only.</p>
-                    <h4>5. Disclaimer of Warranties</h4>
-                    <p>The information and data provided by this calculator are for <strong>entertainment and informational purposes only</strong>. The service is provided "as is" and "as available" without any warranties, express or implied. We do not warrant that the service will be error-free or that the information provided will be completely accurate. The interpretations are not a substitute for professional advice from a qualified person in any field, including but not limited to medical, financial, or legal matters.</p>
-                    <h4>6. Limitation of Liability</h4>
-                    <p>By using this service, you agree that you are solely responsible for any actions you take based on the information provided. The owner of this website shall not be held liable for any direct, indirect, incidental, or consequential damages resulting from the use or inability to use this service, or from any decisions or outcomes made in reliance on the information provided.</p>
-                    <h4>7. Privacy Policy</h4>
-                    <p>Your use of this service is also governed by our Privacy Policy, which is available on this website. The Privacy Policy explains how we collect, use, and protect your personal data.</p>
-                    <h4>8. Changes to Terms</h4>
-                    <p>We reserve the right to modify these Terms at any time. We will notify users of any changes by updating the "Last Updated" date at the top of this page. Your continued use of the service after such changes constitutes your acceptance of the new Terms.</p>
-                    <h4>9. Contact Information</h4>
-                    <p>If you have any questions about these Terms, please contact us at:<br><strong>synthesisastrology@outlook.com</strong></p>
-                </div>
-            </details>
-        </div>
+             </div>
     </div>
 
     <script>
-        const unknownTimeCheckbox = document.getElementById('unknownTime');
-        const hourInput = document.getElementById('hour');
-        const minuteInput = document.getElementById('minute');
-        const ampmSelect = document.getElementById('ampm');
+    const AstrologyCalculator = {
+        // --- CONFIGURATION & CONSTANTS ---
+        API_URL: "https://true-sidereal-api.onrender.com/calculate_chart",
+        SVG_NS: "http://www.w3.org/2000/svg",
+        ZODIAC_GLYPHS: {'Aries':'♈︎','Taurus':'♉︎','Gemini':'♊︎','Cancer':'♋︎','Leo':'♌︎','Virgo':'♍︎','Libra':'♎︎','Scorpio':'♏︎','Ophiuchus':'⛎︎','Sagittarius':'♐︎','Capricorn':'♑︎','Aquarius':'♒︎','Pisces':'♓︎'},
+        PLANET_GLYPHS: {'Sun':'☉','Moon':'☽','Mercury':'☿','Venus':'♀','Mars':'♂','Jupiter':'♃','Saturn':'♄','Uranus':'♅','Neptune':'♆','Pluto':'♇','Chiron':'⚷','True Node':'☊','South Node':'☋','Ascendant':'AC','Midheaven (MC)':'MC','Descendant':'DC','Imum Coeli (IC)':'IC'},
 
-        unknownTimeCheckbox.addEventListener('change', function() {
-            const isChecked = this.checked;
-            hourInput.disabled = isChecked;
-            minuteInput.disabled = isChecked;
-            ampmSelect.disabled = isChecked;
-            if (isChecked) {
-                hourInput.value = '12';
-                minuteInput.value = '00';
-                ampmSelect.value = 'pm';
-            }
-        });
+        // --- DOM ELEMENTS ---
+        form: null,
+        submitBtn: null,
+        outputEl: null,
+        geminiTitle: null,
+        geminiOutput: null,
+        resultsTitle: null,
+        wheelTitle: null,
+        wheelContainer: null,
+        wheelSvg: null,
+        legendTitle: null,
+        legendEl: null,
         
-        document.getElementById("chartForm").addEventListener("submit", async function (e) {
-            e.preventDefault();
-            const form = e.target, outputEl = document.getElementById("output"), btn = document.getElementById("submitBtn");
-            const geminiTitle = document.getElementById('gemini-title');
-            const geminiOutput = document.getElementById('gemini-output');
+        // --- INITIALIZATION ---
+        init() {
+            this.cacheDOMElements();
+            this.addEventListeners();
+            this.populateGlyphLegend();
+        },
 
-            btn.disabled = true; btn.innerText = "Calculating...";
-            outputEl.innerText = "Calculating chart...";
-            geminiTitle.style.display = 'none';
-            geminiOutput.style.display = 'none';
-            document.getElementById('chart-wheel-svg').innerHTML = '';
+        cacheDOMElements() {
+            this.form = document.getElementById("chartForm");
+            this.submitBtn = document.getElementById("submitBtn");
+            this.outputEl = document.getElementById("output");
+            this.geminiTitle = document.getElementById('gemini-title');
+            this.geminiOutput = document.getElementById('gemini-output');
+            this.resultsTitle = document.getElementById('results-title');
+            this.wheelTitle = document.getElementById('wheel-title');
+            this.wheelContainer = document.getElementById('chart-wheel-container');
+            this.wheelSvg = document.getElementById('chart-wheel-svg');
+            this.legendTitle = document.getElementById('legend-title');
+            this.legendEl = document.getElementById('glyph-legend');
+        },
+        
+        addEventListeners() {
+            // "I don't know my time" checkbox logic
+            const unknownTimeCheckbox = document.getElementById('unknownTime');
+            const hourInput = document.getElementById('hour');
+            const minuteInput = document.getElementById('minute');
+            const ampmSelect = document.getElementById('ampm');
+            
+            unknownTimeCheckbox.addEventListener('change', function() {
+                const isChecked = this.checked;
+                hourInput.disabled = isChecked;
+                minuteInput.disabled = isChecked;
+                ampmSelect.disabled = isChecked;
+                if (isChecked) {
+                    hourInput.value = '12';
+                    minuteInput.value = '00';
+                    ampmSelect.value = 'pm'; // Noon
+                }
+            });
+
+            // Form submission
+            this.form.addEventListener("submit", (e) => this.handleFormSubmit(e));
+        },
+
+        // --- CORE LOGIC ---
+        async handleFormSubmit(e) {
+            e.preventDefault();
+            this.setLoadingState(true);
 
             try {
-                const birthDateParts = form.querySelector("[name='birthDate']").value.split('/');
+                const birthDateParts = this.form.querySelector("[name='birthDate']").value.split('/');
                 if (birthDateParts.length !== 3) throw new Error("Please enter the date in MM/DD/YYYY format.");
                 const [month, day, year] = birthDateParts.map(s => parseInt(s));
 
-                let hour = parseInt(form.querySelector("[name='hour']").value);
-                const ampm = form.querySelector("[name='ampm']").value;
+                let hour = parseInt(this.form.querySelector("[name='hour']").value);
+                const ampm = this.form.querySelector("[name='ampm']").value;
 
                 if (ampm === 'pm' && hour < 12) hour += 12;
-                if (ampm === 'am' && hour === 12) hour = 0;
+                if (ampm === 'am' && hour === 12) hour = 0; // Midnight hour
 
-                const apiRes = await fetch("https://true-sidereal-api.onrender.com/calculate_chart", {
+                const apiRes = await fetch(this.API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        full_name: form.querySelector("[name='fullName']").value,
-                        year: year,
-                        month: month,
-                        day: day,
-                        hour: hour,
-                        minute: parseInt(form.querySelector("[name='minute']").value),
-                        location: form.querySelector("[name='location']").value,
-                        unknown_time: form.querySelector("[name='unknownTime']").checked
+                        full_name: this.form.querySelector("[name='fullName']").value,
+                        year: year, month: month, day: day, hour: hour,
+                        minute: parseInt(this.form.querySelector("[name='minute']").value),
+                        location: this.form.querySelector("[name='location']").value,
+                        unknown_time: this.form.querySelector("[name='unknownTime']").checked
                     }),
                 });
 
-                if (!apiRes.ok) { 
+                if (!apiRes.ok) {
                     const errData = await apiRes.json();
-                    throw new Error(`API Error ${apiRes.status}: ${errData.detail}`); 
+                    throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
                 }
                 const result = await apiRes.json();
                 
-                if (result.gemini_reading) {
-                    geminiTitle.style.display = 'block';
-                    geminiOutput.style.display = 'block';
-                    geminiOutput.innerText = result.gemini_reading;
-                }
-                
-                renderResults(result);
-                
-                if (!result.unknown_time) {
-                    drawChartWheel(result);
-                }
-            } catch (err) {
-                outputEl.innerText = "Error: " + err.message;
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Calculate Chart";
-            }
-        });
+                this.displayResults(result);
 
-        function renderResults(res) {
-            const wheelContainer = document.getElementById('chart-wheel-container');
-            const wheelTitle = document.getElementById('wheel-title');
-            if (res.unknown_time) {
-                wheelContainer.style.display = 'none';
-                wheelTitle.style.display = 'none';
-            } else {
-                wheelContainer.style.display = 'flex';
-                wheelTitle.style.display = 'block';
+            } catch (err) {
+                this.outputEl.innerText = "Error: " + err.message;
+                this.resultsTitle.style.display = 'block';
+                this.outputEl.style.display = 'block';
+            } finally {
+                this.setLoadingState(false);
             }
+        },
+
+        setLoadingState(isLoading) {
+            this.submitBtn.disabled = isLoading;
+            this.submitBtn.innerText = isLoading ? "Calculating..." : "Calculate Chart";
+
+            // Hide all result sections when starting a new calculation
+            this.geminiTitle.style.display = 'none';
+            this.geminiOutput.style.display = 'none';
+            this.resultsTitle.style.display = 'none';
+            this.outputEl.style.display = 'none';
+            this.wheelTitle.style.display = 'none';
+            this.wheelContainer.style.display = 'none';
+            this.legendTitle.style.display = 'none';
+            this.legendEl.style.display = 'none';
+            this.wheelSvg.innerHTML = '';
+            
+            if (isLoading) {
+                this.resultsTitle.style.display = 'block';
+                this.outputEl.style.display = 'block';
+                this.outputEl.innerText = "Calculating chart, this may take a moment...";
+            }
+        },
+
+        displayResults(res) {
+            // Show Gemini AI Reading if available
+            if (res.gemini_reading) {
+                this.geminiTitle.style.display = 'block';
+                this.geminiOutput.style.display = 'block';
+                this.geminiOutput.innerText = res.gemini_reading;
+            }
+
+            // Show text results
+            this.resultsTitle.style.display = 'block';
+            this.outputEl.style.display = 'block';
+            this.renderTextResults(res);
+
+            // Show Chart Wheel and Legend if time is known
+            if (!res.unknown_time) {
+                this.wheelTitle.style.display = 'block';
+                this.wheelContainer.style.display = 'flex';
+                this.legendTitle.style.display = 'block';
+                this.legendEl.style.display = 'block';
+                this.drawChartWheel(res);
+            }
+        },
+
+        renderTextResults(res) {
             let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
             out += `- UTC Date & Time: ${res.utc_datetime}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
             out += `- Location: ${res.location}\n`;
@@ -373,11 +330,11 @@
                 for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
                     out += `${house}:\n`;
                     if (segments && segments.length > 0) {
-                        segments.forEach(seg => { out += `     - ${seg}\n`; });
+                        segments.forEach(seg => { out += `      - ${seg}\n`; });
                     }
                 }
             } else {
-                 out += `\n- (House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n`;
+                out += `\n- (House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n`;
             }
 
             if (res.tropical_major_positions && res.tropical_major_positions.length > 0) {
@@ -410,24 +367,16 @@
                     });
                 }
             }
-
-            document.getElementById("output").innerText = out;
-        }
-
-        const SVG_NS = "http://www.w3.org/2000/svg";
-        const ZODIAC_GLYPHS = {'Aries':'♈︎','Taurus':'♉︎','Gemini':'♊︎','Cancer':'♋︎','Leo':'♌︎','Virgo':'♍︎','Libra':'♎︎','Scorpio':'♏︎','Ophiuchus':'⛎︎','Sagittarius':'♐︎','Capricorn':'♑︎','Aquarius':'♒︎','Pisces':'♓︎'};
-        const PLANET_GLYPHS = {'Sun':'☉','Moon':'☽','Mercury':'☿','Venus':'♀','Mars':'♂','Jupiter':'♃','Saturn':'♄','Uranus':'♅','Neptune':'♆','Pluto':'♇','Chiron':'⚷','True Node':'☊','South Node':'☋','Ascendant':'AC','Midheaven (MC)':'MC','Descendant':'DC','Imum Coeli (IC)':'IC'};
-
-        function drawChartWheel(data) {
-            const svg = document.getElementById('chart-wheel-svg');
+            this.outputEl.innerText = out;
+        },
+        
+        // --- SVG DRAWING ---
+        drawChartWheel(data) {
+            const svg = this.wheelSvg;
             svg.innerHTML = ''; 
 
-            const centerX = 500;
-            const centerY = 500;
-            const zodiacRadius = 450;
-            const houseRingRadius = 350;
-            const planetGlyphRadius = 320;
-            const innerRadius = 150;
+            const centerX = 500, centerY = 500;
+            const zodiacRadius = 450, houseRingRadius = 350, planetGlyphRadius = 320, innerRadius = 150;
             
             const ascendant = data.sidereal_major_positions.find(p => p.name === 'Ascendant');
             if (!ascendant || ascendant.degrees === null) {
@@ -435,25 +384,23 @@
                 return;
             }
             
-            function degreeToCartesian(radius, angleDegrees) {
-                const angleRadians = angleDegrees * (Math.PI / 180);
-                return { 
-                    x: centerX + radius * Math.cos(angleRadians), 
-                    y: centerY - radius * Math.sin(angleRadians)
-                };
-            }
-
             const rotation = -ascendant.degrees;
-            const mainGroup = document.createElementNS(SVG_NS, 'g');
+            const mainGroup = document.createElementNS(this.SVG_NS, 'g');
             mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
             svg.appendChild(mainGroup);
 
+            const degreeToCartesian = (radius, angleDegrees) => {
+                const angleRadians = angleDegrees * (Math.PI / 180);
+                return { x: centerX + radius * Math.cos(angleRadians), y: centerY - radius * Math.sin(angleRadians) };
+            };
+
+            // Draw Aspects
             if (data.sidereal_aspects) {
                 data.sidereal_aspects.forEach(aspect => {
                     if (aspect.p1_degrees === null || aspect.p2_degrees === null) return;
                     const p1Coords = degreeToCartesian(innerRadius, aspect.p1_degrees);
                     const p2Coords = degreeToCartesian(innerRadius, aspect.p2_degrees);
-                    const line = document.createElementNS(SVG_NS, 'line');
+                    const line = document.createElementNS(this.SVG_NS, 'line');
                     line.setAttribute('x1', p1Coords.x); line.setAttribute('y1', p1Coords.y);
                     line.setAttribute('x2', p2Coords.x); line.setAttribute('y2', p2Coords.y);
                     const aspectClass = aspect.type.toLowerCase().replace(' ', '-');
@@ -462,44 +409,47 @@
                 });
             }
 
+            // Draw Circles
             [zodiacRadius, houseRingRadius, innerRadius].forEach(r => {
-                const circle = document.createElementNS(SVG_NS, 'circle');
+                const circle = document.createElementNS(this.SVG_NS, 'circle');
                 circle.setAttribute('cx', centerX); circle.setAttribute('cy', centerY);
                 circle.setAttribute('r', r); circle.setAttribute('class', 'wheel-circle');
                 svg.appendChild(circle);
             });
             
+            // Draw Zodiac Signs & Dividers
             if (data.true_sidereal_signs) {
                 const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2;
                 data.true_sidereal_signs.forEach(sign => {
                     const [name, start, end] = sign;
-                    const startPoint = degreeToCartesian(houseRingRadius, start);
-                    const endPoint = degreeToCartesian(zodiacRadius, start);
-                    const line = document.createElementNS(SVG_NS, 'line');
-                    line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
-                    line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
+                    const p1 = degreeToCartesian(houseRingRadius, start);
+                    const p2 = degreeToCartesian(zodiacRadius, start);
+                    const line = document.createElementNS(this.SVG_NS, 'line');
+                    line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+                    line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
                     line.setAttribute('class', 'zodiac-divider');
                     mainGroup.appendChild(line);
+
                     const midAngle = start + ((end - start + 360) % 360) / 2;
                     const textCoords = degreeToCartesian(glyphRadius, midAngle);
-                    const text = document.createElementNS(SVG_NS, 'text');
-                    text.setAttribute('x', textCoords.x);
-                    text.setAttribute('y', textCoords.y);
+                    const text = document.createElementNS(this.SVG_NS, 'text');
+                    text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
                     text.setAttribute('class', 'zodiac-glyph');
                     text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
-                    text.textContent = ZODIAC_GLYPHS[name];
+                    text.textContent = this.ZODIAC_GLYPHS[name];
                     mainGroup.appendChild(text);
                 });
             }
 
+            // Draw House Cusps & Numbers
             if (data.house_cusps && data.house_cusps.length === 12) {
                 data.house_cusps.forEach((cuspDegrees, i) => {
-                    const startPoint = degreeToCartesian(innerRadius, cuspDegrees);
-                    const endPoint = degreeToCartesian(houseRingRadius, cuspDegrees);
-                    const line = document.createElementNS(SVG_NS, 'line');
-                    line.setAttribute('x1', startPoint.x); line.setAttribute('y1', startPoint.y);
-                    line.setAttribute('x2', endPoint.x); line.setAttribute('y2', endPoint.y);
-                    line.setAttribute('class', (i === 0 || i === 3 || i === 6 || i === 9) ? 'house-cusp major' : 'house-cusp');
+                    const p1 = degreeToCartesian(innerRadius, cuspDegrees);
+                    const p2 = degreeToCartesian(houseRingRadius, cuspDegrees);
+                    const line = document.createElementNS(this.SVG_NS, 'line');
+                    line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+                    line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+                    line.setAttribute('class', (i % 3 === 0) ? 'house-cusp major' : 'house-cusp');
                     mainGroup.appendChild(line);
                 });
                 for (let i = 0; i < 12; i++) {
@@ -507,10 +457,9 @@
                     const endAngle = data.house_cusps[(i + 1) % 12];
                     let midAngle = (startAngle + endAngle) / 2;
                     if (endAngle < startAngle) midAngle = ((startAngle + endAngle + 360) / 2) % 360;
-                    const textCoords = degreeToCartesian(innerRadius - 30, midAngle);
-                    const text = document.createElementNS(SVG_NS, 'text');
-                    text.setAttribute('x', textCoords.x);
-                    text.setAttribute('y', textCoords.y);
+                    const textCoords = degreeToCartesian(innerRadius + 25, midAngle);
+                    const text = document.createElementNS(this.SVG_NS, 'text');
+                    text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
                     text.setAttribute('class', 'house-number');
                     text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
                     text.textContent = i + 1;
@@ -518,22 +467,21 @@
                 }
             }
             
+            // Draw Planets
             if (data.sidereal_major_positions) {
                 data.sidereal_major_positions.forEach(planet => {
-                    if (planet.degrees === null || !PLANET_GLYPHS[planet.name]) return;
+                    if (planet.degrees === null || !this.PLANET_GLYPHS[planet.name]) return;
                     const textCoords = degreeToCartesian(planetGlyphRadius, planet.degrees);
-                    const text = document.createElementNS(SVG_NS, 'text');
-                    text.setAttribute('x', textCoords.x);
-                    text.setAttribute('y', textCoords.y);
+                    const text = document.createElementNS(this.SVG_NS, 'text');
+                    text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
                     text.setAttribute('class', 'planet-glyph');
                     text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
-                    text.textContent = PLANET_GLYPHS[planet.name];
+                    text.textContent = this.PLANET_GLYPHS[planet.name];
                     mainGroup.appendChild(text);
                     if (planet.retrograde) {
-                        const rxCoords = degreeToCartesian(planetGlyphRadius, planet.degrees - 4);
-                        const rxText = document.createElementNS(SVG_NS, 'text');
-                        rxText.setAttribute('x', rxCoords.x);
-                        rxText.setAttribute('y', rxCoords.y);
+                        const rxCoords = degreeToCartesian(planetGlyphRadius + 2, planet.degrees - 4.5);
+                        const rxText = document.createElementNS(this.SVG_NS, 'text');
+                        rxText.setAttribute('x', rxCoords.x); rxText.setAttribute('y', rxCoords.y);
                         rxText.setAttribute('class', 'planet-retrograde');
                         rxText.setAttribute('transform', `rotate(${-rotation} ${rxCoords.x} ${rxCoords.y})`);
                         rxText.textContent = '℞';
@@ -541,20 +489,24 @@
                     }
                 });
             }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const legendEl = document.getElementById('glyph-legend');
+        },
+        
+        populateGlyphLegend() {
             let legendText = '--- ZODIAC SIGNS ---\n';
-            for (const [name, glyph] of Object.entries(ZODIAC_GLYPHS)) {
+            for (const [name, glyph] of Object.entries(this.ZODIAC_GLYPHS)) {
                 legendText += `${glyph} - ${name}\n`;
             }
             legendText += '\n--- PLANETS & POINTS ---\n';
-            for (const [name, glyph] of Object.entries(PLANET_GLYPHS)) {
+            for (const [name, glyph] of Object.entries(this.PLANET_GLYPHS)) {
                 legendText += `${glyph} - ${name}\n`;
             }
-            legendEl.innerText = legendText;
-        });
+            this.legendEl.innerText = legendText;
+        }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        AstrologyCalculator.init();
+    });
     </script>
 </body>
 </html>
