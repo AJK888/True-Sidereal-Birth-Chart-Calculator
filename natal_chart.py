@@ -105,19 +105,6 @@ def get_chinese_zodiac_and_element(year: int, month: int, day: int) -> Dict[str,
 
     return {"animal": animal, "element": element}
 
-def _get_sunrise_sunset_jd(jd_ut: float, lat: float, lon: float) -> Tuple[Optional[float], Optional[float]]:
-    try:
-        rise_res = swe.rise_trans(jd_ut, swe.SUN, lon, lat, rsmi=swe.CALC_RISE | swe.BIT_DISC_CENTER)
-        sunrise_jd = rise_res[1][0] if rise_res[0] == 0 else None
-
-        set_res = swe.rise_trans(jd_ut, swe.SUN, lon, lat, rsmi=swe.CALC_SET | swe.BIT_DISC_CENTER)
-        sunset_jd = set_res[1][0] if set_res[0] == 0 else None
-        
-        return sunrise_jd, sunset_jd
-    except Exception as e:
-        print(f"DEBUG: Swiss Ephemeris sunrise/sunset error: {e}")
-        return None, None
-
 # --- Core Classes ---
 class SiderealBody:
     def __init__(self, name: str, degree: Optional[float], retrograde: bool, sidereal_asc: Optional[float], is_main_planet: bool = True):
@@ -183,23 +170,35 @@ class NatalChart:
         except Exception as e: print(f"CRITICAL ERROR calculating ascendant: {e}"); self.ascendant_data = {"sidereal_asc": None}
     
     def _determine_day_night(self) -> None:
-        sunrise_jd, sunset_jd = _get_sunrise_sunset_jd(self.jd, self.latitude, self.longitude)
-        
-        sunrise_hour_ut = ((sunrise_jd % 1) * 24) if sunrise_jd is not None else None
-        sunset_hour_ut = ((sunset_jd % 1) * 24) if sunset_jd is not None else None
-        
-        is_day = None
-        if sunrise_hour_ut is not None and sunset_hour_ut is not None:
-            birth_hour_ut = self.ut_decimal_hour
+        """
+        Determines day/night status by finding the last rise and set events before birth.
+        This is a more robust method than checking a 24-hour window.
+        """
+        try:
+            # Search BACKWARDS from the birth time to find the last sunrise
+            last_rise_res = swe.rise_trans(self.jd, swe.SUN, self.longitude, self.latitude,
+                                           rsmi=swe.CALC_RISE | swe.BACKWARD | swe.BIT_DISC_CENTER)
+            last_sunrise_jd = last_rise_res[1][0] if last_rise_res[0] == 0 else -1
+
+            # Search BACKWARDS from the birth time to find the last sunset
+            last_set_res = swe.rise_trans(self.jd, swe.SUN, self.longitude, self.latitude,
+                                          rsmi=swe.CALC_SET | swe.BACKWARD | swe.BIT_DISC_CENTER)
+            last_sunset_jd = last_set_res[1][0] if last_set_res[0] == 0 else -1
+
+            is_day = None
+            if last_sunrise_jd > 0 and last_sunset_jd > 0:
+                # If the last sunrise happened more recently than the last sunset, we are in the daytime.
+                if last_sunrise_jd > last_sunset_jd:
+                    is_day = True
+                else:
+                    is_day = False
             
-            if sunrise_hour_ut < sunset_hour_ut:
-                is_day = birth_hour_ut >= sunrise_hour_ut and birth_hour_ut < sunset_hour_ut
-            else:
-                is_day = birth_hour_ut >= sunrise_hour_ut or birth_hour_ut < sunset_hour_ut
-                
-        self.day_night_info = {
-            "status": "Day Birth" if is_day else "Night Birth" if is_day is not None else "Undetermined"
-        }
+            self.day_night_info = {
+                "status": "Day Birth" if is_day else "Night Birth" if is_day is not None else "Undetermined"
+            }
+        except Exception as e:
+            print(f"DEBUG: Swiss Ephemeris day/night determination error: {e}")
+            self.day_night_info = {"status": "Undetermined"}
 
     def _calculate_all_points(self) -> None:
         sidereal_asc = self.ascendant_data.get("sidereal_asc"); tropical_asc = self.ascendant_data.get("tropical_asc"); ayanamsa = self.ascendant_data.get("ayanamsa")
