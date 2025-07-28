@@ -67,8 +67,9 @@ async def get_gemini_reading(chart_data: dict) -> str:
         return "Gemini API key not configured. AI reading is unavailable."
 
     try:
-        # --- Build a comprehensive, anonymized prompt ---
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
+        numerology_analysis = chart_data.get("numerology_analysis", {})
+        chinese_zodiac = chart_data.get("chinese_zodiac")
         s_positions = chart_data.get("sidereal_major_positions", [])
         s_aspects = chart_data.get("sidereal_aspects", [])
         s_patterns = chart_data.get("sidereal_aspect_patterns", [])
@@ -92,14 +93,14 @@ async def get_gemini_reading(chart_data: dict) -> str:
         if s_analysis.get("dominant_element"): prompt_parts.append(f"- Dominant Element: {s_analysis['dominant_element']}")
 
         prompt_parts.append("\n**Numerological Data:**")
-        if s_analysis.get("life_path_number"): prompt_parts.append(f"- Life Path Number: {s_analysis['life_path_number']}")
-        if s_analysis.get("day_number"): prompt_parts.append(f"- Day Number: {s_analysis['day_number']}")
-        if s_analysis.get("name_numerology"):
-            name_nums = s_analysis['name_numerology']
+        if numerology_analysis.get("life_path_number"): prompt_parts.append(f"- Life Path Number: {numerology_analysis['life_path_number']}")
+        if numerology_analysis.get("day_number"): prompt_parts.append(f"- Day Number: {numerology_analysis['day_number']}")
+        if numerology_analysis.get("name_numerology"):
+            name_nums = numerology_analysis['name_numerology']
             prompt_parts.append(f"- Expression Number: {name_nums.get('expression_number')}")
             prompt_parts.append(f"- Soul Urge Number: {name_nums.get('soul_urge_number')}")
             prompt_parts.append(f"- Personality Number: {name_nums.get('personality_number')}")
-        if s_analysis.get("chinese_zodiac"): prompt_parts.append(f"- Chinese Zodiac: {s_analysis['chinese_zodiac']}")
+        if chinese_zodiac: prompt_parts.append(f"- Chinese Zodiac: {chinese_zodiac}")
 
         if s_patterns:
             prompt_parts.append("\n**Key Astrological Patterns:**")
@@ -122,7 +123,6 @@ async def get_gemini_reading(chart_data: dict) -> str:
 
         prompt = "\n".join(prompt_parts)
 
-        # --- UPDATED MODEL ---
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
         response = await model.generate_content_async(prompt)
         
@@ -198,16 +198,20 @@ async def calculate_chart_endpoint(data: ChartRequest):
         full_response = {
             "name": chart.name, "utc_datetime": chart.utc_datetime_str, "location": chart.location_str,
             "day_night_status": chart.day_night_info.get("status", "N/A"),
+            
+            "chinese_zodiac": chinese_zodiac,
+            "numerology_analysis": {
+                "life_path_number": numerology["life_path"],
+                "day_number": numerology["day_number"],
+                "name_numerology": name_numerology
+            },
+
             "sidereal_chart_analysis": {
                 "chart_ruler": get_sign_and_ruler(chart.ascendant_data['sidereal_asc'])[1] if chart.ascendant_data.get('sidereal_asc') is not None else "N/A",
                 "dominant_sign": f"{chart.sidereal_dominance.get('dominant_sign', 'N/A')} ({chart.sidereal_dominance.get('counts', {}).get('sign', {}).get(chart.sidereal_dominance.get('dominant_sign'), 0)} placements)",
                 "dominant_element": f"{chart.sidereal_dominance.get('dominant_element', 'N/A')} ({chart.sidereal_dominance.get('counts', {}).get('element', {}).get(chart.sidereal_dominance.get('dominant_element'), 0)})",
                 "dominant_modality": f"{chart.sidereal_dominance.get('dominant_modality', 'N/A')} ({chart.sidereal_dominance.get('counts', {}).get('modality', {}).get(chart.sidereal_dominance.get('dominant_modality'), 0)})",
                 "dominant_planet": f"{chart.sidereal_dominance.get('dominant_planet', 'N/A')} (score {chart.sidereal_dominance.get('strength', {}).get(chart.sidereal_dominance.get('dominant_planet'), 0.0)})",
-                "life_path_number": numerology["life_path"],
-                "day_number": numerology["day_number"],
-                "chinese_zodiac": chinese_zodiac,
-                "name_numerology": name_numerology
             },
             "sidereal_major_positions": [
                 {"name": p.name, "position": p.formatted_position, "degrees": p.degree, "percentage": p.sign_percentage, "retrograde": p.retrograde, "house_info": f"– House {p.house_num}, {p.house_degrees}" if p.house_num > 0 else ""}
