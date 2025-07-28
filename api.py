@@ -70,7 +70,7 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         return "Gemini API key not configured. AI reading is unavailable."
 
     try:
-        # --- Data Extraction (remains the same) ---
+        # --- Data Extraction (common to both prompts) ---
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         numerology_analysis = chart_data.get("numerology_analysis", {})
         chinese_zodiac = chart_data.get("chinese_zodiac")
@@ -84,14 +84,26 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         prompt_parts = []
 
         if unknown_time:
-            # --- PROMPT FOR UNKNOWN BIRTH TIME (Corrected) ---
+            # --- PROMPT FOR UNKNOWN BIRTH TIME ---
             prompt_parts.append(
                 "You are a wise astrologer providing a reading for a chart where the exact birth time is unknown. "
-                "Your most important rule is to completely avoid mentioning the Ascendant, Midheaven (MC), Chart Ruler, or any House placements, as they are unknown and cannot be used. "
-                "Your goal is to find the central story told by the planets, signs, aspects, and numerology alone."
+                "This is called a 'Noon Chart'.\n"
+                "**Your most important rule is to completely avoid mentioning the Ascendant, Midheaven (MC), Chart Ruler, or any House placements, as they are unknown and cannot be used.** "
+                "You must focus exclusively on the placement of planets in their signs, the aspects between them, and the numerology."
             )
-            # Data Payload for Unknown Time... (code to append data is the same)
-            
+            prompt_parts.append("\n**Anonymized Chart Data (Noon Calculation - Time-Sensitive Data Excluded):**")
+            if sun: prompt_parts.append(f"- Sun: {sun['position']} ({sun['percentage']}%)")
+            if moon: prompt_parts.append(f"- Moon: {moon['position']} ({moon['percentage']}%)")
+            if s_analysis.get('dominant_element'): prompt_parts.append(f"- Dominant Element: {s_analysis.get('dominant_element')}")
+            if numerology_analysis.get('life_path_number'): prompt_parts.append(f"- Life Path Number: {numerology_analysis.get('life_path_number')}")
+            if numerology_analysis.get('day_number'): prompt_parts.append(f"- Day Number: {numerology_analysis.get('day_number')}")
+            if numerology_analysis.get('name_numerology', {}).get('expression_number'): prompt_parts.append(f"- Expression Number: {numerology_analysis.get('name_numerology', {}).get('expression_number')}")
+            if s_retrogrades:
+                retro_list = ", ".join([p['name'] for p in s_retrogrades])
+                prompt_parts.append(f"- Retrograde Planets: {retro_list}")
+            if s_aspects and len(s_aspects) >= 3:
+                 prompt_parts.append(f"- Three Tightest Aspects: {s_aspects[0]['p1_name']} {s_aspects[0]['type']} {s_aspects[0]['p2_name']}, {s_aspects[1]['p1_name']} {s_aspects[1]['type']} {s_aspects[1]['p2_name']}, {s_aspects[2]['p1_name']} {s_aspects[2]['type']} {s_aspects[2]['p2_name']}")
+
             prompt_parts.append("\n**Your Task:**")
             prompt_parts.append("""
 1.  **Internal Analysis:** First, silently analyze the user's actual chart data provided. Identify the most powerful themes by considering the dominant element, any sign stelliums, the Life Path and Day numbers, and the three tightest aspects. Notice if a planet is at a very early or late degree.
@@ -101,13 +113,46 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
 """)
 
         else:
-            # --- PROMPT FOR KNOWN BIRTH TIME (Corrected) ---
+            # --- PROMPT FOR KNOWN BIRTH TIME (MASTER SYNTHESIS) ---
             prompt_parts.append(
                 "You are a master astrologer and esoteric synthesist. Your clients come to you for readings of unparalleled depth. Your unique skill is identifying the 'golden thread'—the central narrative or soul's purpose—that connects every single placement, aspect, and number in a person's blueprint. You see the chart not as a collection of parts, but as a single, cohesive, living story."
             )
             
-            # Full Data Payload (code to append data is the same)...
+            prompt_parts.append("\n**Full Anonymized Chart Data:**")
+            asc = next((p for p in s_positions if p['name'] == 'Ascendant'), None)
+            if sun: prompt_parts.append(f"- Sun: {sun['position']} ({sun['percentage']}%)")
+            if moon: prompt_parts.append(f"- Moon: {moon['position']} ({moon['percentage']}%)")
+            if asc: prompt_parts.append(f"- Ascendant: {asc['position']} ({asc['percentage']}%)")
+            if s_analysis.get("chart_ruler"): prompt_parts.append(f"- Chart Ruler: {s_analysis['chart_ruler']}")
+            if s_analysis.get("dominant_planet"): prompt_parts.append(f"- Dominant Planet: {s_analysis['dominant_planet']}")
+            if s_analysis.get("dominant_sign"): prompt_parts.append(f"- Dominant Sign: {s_analysis['dominant_sign']}")
+            if s_analysis.get("dominant_element"): prompt_parts.append(f"- Dominant Element: {s_analysis['dominant_element']}")
             
+            prompt_parts.append("\n**Numerological & Other Data:**")
+            if numerology_analysis.get("life_path_number"): prompt_parts.append(f"- Life Path Number: {numerology_analysis.get('life_path_number')}")
+            if numerology_analysis.get("day_number"): prompt_parts.append(f"- Day Number: {numerology_analysis.get('day_number')}")
+            if numerology_analysis.get("name_numerology"):
+                name_nums = numerology_analysis['name_numerology']
+                prompt_parts.append(f"- Expression Number: {name_nums.get('expression_number')}")
+                prompt_parts.append(f"- Soul Urge Number: {name_nums.get('soul_urge_number')}")
+                prompt_parts.append(f"- Personality Number: {name_nums.get('personality_number')}")
+            if chinese_zodiac: prompt_parts.append(f"- Chinese Zodiac: {chinese_zodiac}")
+
+            if s_patterns:
+                prompt_parts.append("\n**Key Astrological Patterns (Stelliums):**")
+                for pattern in s_patterns:
+                    prompt_parts.append(f"- {pattern}")
+            
+            if s_retrogrades:
+                prompt_parts.append("\n**Retrograde Planets (Energy turned inward for reflection):**")
+                for planet in s_retrogrades:
+                    prompt_parts.append(f"- {planet['name']}")
+
+            if s_aspects and len(s_aspects) >= 3:
+                prompt_parts.append(f"\n**Three Tightest Aspects (Highest Influence):**")
+                for aspect in s_aspects[:3]:
+                    prompt_parts.append(f"- {aspect['p1_name']} {aspect['type']} {aspect['p2_name']} (Orb: {aspect['orb']})")
+
             prompt_parts.append("\n**Your Task:**")
             prompt_parts.append("""
 **Step 1: Internal Analysis (Do this silently before writing, using ONLY the user's real chart data)**
@@ -154,7 +199,7 @@ Now, write the final reading for the user. Structure your entire response **exac
     except Exception as e:
         logger.error(f"Error during Gemini reading generation: {e}", exc_info=True)
         return "An error occurred while generating the AI reading."
-                
+
 @app.post("/calculate_chart")
 async def calculate_chart_endpoint(data: ChartRequest):
     try:
@@ -199,7 +244,6 @@ async def calculate_chart_endpoint(data: ChartRequest):
         
         full_response = chart.get_full_chart_data(numerology, name_numerology, chinese_zodiac, data.unknown_time)
         
-        # <-- FIX: Pass the 'data.unknown_time' boolean here
         gemini_reading = await get_gemini_reading(full_response, data.unknown_time)
         full_response["gemini_reading"] = gemini_reading
 
