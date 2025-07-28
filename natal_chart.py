@@ -17,6 +17,18 @@ ADDITIONAL_BODIES_CONFIG: List[Tuple[str, int]] = [("Lilith",swe.MEAN_APOG),("Ve
 ASPECTS_CONFIG: List[Tuple[str, float, float]] = [("Conjunction",0,8),("Opposition",180,8),("Trine",120,6),("Square",90,6),("Sextile",60,4),("Quincunx",150,3),("Semisextile",30,2),("Semisquare",45,2),("Sesquiquadrate",135,2),("Quintile",72,1),("Biquintile",144,1)]
 ASPECT_LUMINARY_ORBS: Dict[str, float] = {"Conjunction":10,"Opposition":10,"Trine":8,"Square":8,"Sextile":6}
 ASPECT_SCORES: Dict[str, float] = {"Conjunction":5,"Opposition":4,"Trine":3.5,"Square":3,"Sextile":2.5,"Quincunx":2,"Semisextile":1.5,"Semisquare":1.5,"Sesquiquadrate":1.5,"Quintile":1.8,"Biquintile":1.8}
+CHINESE_LUNAR_NEW_YEAR = {
+    1930:(1,30), 1931:(2,17), 1932:(2,6), 1933:(1,26), 1934:(2,14), 1935:(2,4), 1936:(1,24), 1937:(2,11), 1938:(1,31), 1939:(2,19),
+    1940:(2,8), 1941:(1,27), 1942:(2,15), 1943:(2,5), 1944:(1,25), 1945:(2,13), 1946:(2,2), 1947:(1,22), 1948:(2,10), 1949:(1,29),
+    1950:(2,17), 1951:(2,6), 1952:(1,27), 1953:(2,14), 1954:(2,3), 1955:(1,24), 1956:(2,12), 1957:(1,31), 1958:(2,18), 1959:(2,8),
+    1960:(1,28), 1961:(2,15), 1962:(2,5), 1963:(1,25), 1964:(2,13), 1965:(2,2), 1966:(1,21), 1967:(2,9), 1968:(1,30), 1969:(2,17),
+    1970:(2,6), 1971:(1,27), 1972:(2,15), 1973:(2,3), 1974:(1,23), 1975:(2,11), 1976:(1,31), 1977:(2,18), 1978:(2,7), 1979:(1,28),
+    1980:(2,16), 1981:(2,5), 1982:(1,25), 1983:(2,13), 1984:(2,2), 1985:(2,20), 1986:(2,9), 1987:(1,29), 1988:(2,17), 1989:(2,6),
+    1990:(1,27), 1991:(2,15), 1992:(2,4), 1993:(1,23), 1994:(2,10), 1995:(1,31), 1996:(2,19), 1997:(2,7), 1998:(1,28), 1999:(2,16),
+    2000:(2,5), 2001:(1,24), 2002:(2,12), 2003:(2,1), 2004:(1,22), 2005:(2,9), 2006:(1,29), 2007:(2,18), 2008:(2,7), 2009:(1,26),
+    2010:(2,14), 2011:(2,3), 2012:(1,23), 2013:(2,10), 2014:(1,31), 2015:(2,19), 2016:(2,8), 2017:(1,28), 2018:(2,16), 2019:(2,5),
+    2020:(1,25), 2021:(2,12), 2022:(2,1), 2023:(1,22), 2024:(2,10), 2025:(1,29), 2026:(2,17), 2027:(2,6), 2028:(1,26), 2029:(2,13)
+}
 
 # --- Helper Functions ---
 def format_true_sidereal_placement(degrees: float) -> str:
@@ -58,50 +70,44 @@ def calculate_numerology(day: int, month: int, year: int) -> dict:
     life_path = reduce_number(sum(int(digit) for digit in f"{day}{month}{year}"))
     day_number = reduce_number(sum(int(digit) for digit in str(day)))
     return {"life_path": life_path, "day_number": day_number}
-
-# --- NEW: Name Numerology Function ---
 def calculate_name_numerology(full_name: str) -> dict:
-    letter_values = {
-        'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8, 'i': 9,
-        'j': 1, 'k': 2, 'l': 3, 'm': 4, 'n': 5, 'o': 6, 'p': 7, 'q': 8, 'r': 9,
-        's': 1, 't': 2, 'u': 3, 'v': 4, 'w': 5, 'x': 6, 'y': 7, 'z': 8
-    }
+    letter_values = {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8, 'i': 9, 'j': 1, 'k': 2, 'l': 3, 'm': 4, 'n': 5, 'o': 6, 'p': 7, 'q': 8, 'r': 9, 's': 1, 't': 2, 'u': 3, 'v': 4, 'w': 5, 'x': 6, 'y': 7, 'z': 8}
     vowels = "aeiou"
-    
     def reduce_number(n: int) -> str:
         final_num = n
-        while final_num > 9 and final_num not in [11, 22, 33]:
-            final_num = sum(int(digit) for digit in str(final_num))
-        if final_num in [11, 22, 33]:
-            return f"{final_num}/{sum(int(digit) for digit in str(final_num))}"
+        while final_num > 9 and final_num not in [11, 22, 33]: final_num = sum(int(digit) for digit in str(final_num))
+        if final_num in [11, 22, 33]: return f"{final_num}/{sum(int(digit) for digit in str(final_num))}"
         else:
-            while final_num > 9:
-                final_num = sum(int(digit) for digit in str(final_num))
+            while final_num > 9: final_num = sum(int(digit) for digit in str(final_num))
             return str(final_num)
-
     clean_name = full_name.lower().replace(" ", "")
-    
-    # Expression / Destiny Number (all letters)
     expression_sum = sum(letter_values.get(char, 0) for char in clean_name)
     expression_number = reduce_number(expression_sum)
-
-    # Soul Urge Number (vowels only)
     soul_urge_sum = sum(letter_values.get(char, 0) for char in clean_name if char in vowels)
     soul_urge_number = reduce_number(soul_urge_sum)
-
-    # Personality Number (consonants only)
     personality_sum = sum(letter_values.get(char, 0) for char in clean_name if char not in vowels)
     personality_number = reduce_number(personality_sum)
-    
-    return {
-        "expression_number": expression_number,
-        "soul_urge_number": soul_urge_number,
-        "personality_number": personality_number
-    }
+    return {"expression_number": expression_number, "soul_urge_number": soul_urge_number, "personality_number": personality_number}
 
-def get_chinese_zodiac(year: int, month: int, day: int) -> str:
-    zodiac_animals = ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"]
-    return zodiac_animals[(year - 1924) % 12]
+def get_chinese_zodiac_and_element(year: int, month: int, day: int) -> Dict[str, str]:
+    """Calculates the Chinese zodiac animal and element, accounting for the Lunar New Year."""
+    zodiac_animals = ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"]
+    elements = ["Metal", "Water", "Wood", "Fire", "Earth"]
+    
+    # Determine the effective year for the zodiac animal
+    effective_year = year
+    lunar_new_year_month, lunar_new_year_day = CHINESE_LUNAR_NEW_YEAR.get(year, (1, 1))
+    if (month < lunar_new_year_month) or (month == lunar_new_year_month and day < lunar_new_year_day):
+        effective_year -= 1
+
+    animal = zodiac_animals[(effective_year - 1924) % 12]
+    
+    # Element is based on the last digit of the birth year
+    last_digit = year % 10
+    element = elements[(last_digit // 2) - (1 if last_digit < 2 else 0)]
+
+    return {"animal": animal, "element": element}
+
 def _calculate_approximate_sunrise_sunset_math(jd_ut: float, latitude: float, longitude: float) -> Tuple[Optional[float], Optional[float]]:
     try:
         res = swe.calc_ut(jd_ut, swe.SUN); lon = res[0][0]; obl = 23.439
@@ -148,6 +154,12 @@ class Aspect:
     def __init__(self, p1, p2, aspect_type: str, orb: float, strength: float):
         self.p1, self.p2, self.type, self.orb, self.strength = p1, p2, aspect_type, orb, strength
 class NatalChart:
+    MAJOR_POSITIONS_ORDER = [
+        'Ascendant', 'Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn',
+        'Uranus', 'Neptune', 'Pluto', 'Chiron', 'True Node', 'South Node',
+        'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)'
+    ]
+    
     def __init__(self, name: str, year: int, month: int, day: int, hour: int, minute: int, latitude: float, longitude: float):
         self.name = name; self.latitude, self.longitude = latitude, longitude
         self.birth_year, self.birth_hour, self.birth_minute = year, hour, minute
@@ -160,17 +172,24 @@ class NatalChart:
         self.sidereal_aspect_patterns: List[Dict[str, Any]] = []; self.tropical_aspect_patterns: List[Dict[str, Any]] = []
         self.house_sign_distributions: Dict[str, List[str]] = {}; self.sidereal_dominance: Dict[str, Any] = {}; self.tropical_dominance: Dict[str, Any] = {}
         self.ascendant_data: Dict[str, Any] = {}; self.day_night_info: Dict[str, Any] = {}
+
     def calculate_chart(self) -> None:
         self._calculate_ascendant_mc_data();
         if self.ascendant_data.get("sidereal_asc") is None: return
         self._determine_day_night(); self._calculate_all_points()
         self._calculate_aspects(); self._detect_aspect_patterns()
         self._calculate_house_sign_distributions(); self._analyze_dominance()
+    
     def _calculate_ascendant_mc_data(self) -> None:
         try:
-            res = swe.houses(self.jd, self.latitude, self.longitude, b'P'); ayanamsa = 31.38 + ((self.birth_year - 2000) / 72.0)
+            # Using 'E' for Equal house system to match the implementation
+            res = swe.houses(self.jd, self.latitude, self.longitude, b'E')
+            # Custom Ayanamsa calculation is kept as requested
+            ayanamsa = 31.38 + ((self.birth_year - 2000) / 72.0)
             self.ascendant_data = {"tropical_asc": res[1][0], "mc": res[1][1], "ayanamsa": ayanamsa, "sidereal_asc": (res[1][0] - ayanamsa + 360) % 360}
         except Exception as e: print(f"CRITICAL ERROR calculating ascendant: {e}"); self.ascendant_data = {"sidereal_asc": None}
+    
+    # ... all other private calculation methods (_determine_day_night, etc.) remain unchanged ...
     def _determine_day_night(self) -> None:
         sunrise, sunset = _calculate_approximate_sunrise_sunset_math(self.jd, self.latitude, self.longitude)
         is_day = None
@@ -302,3 +321,85 @@ class NatalChart:
         self.tropical_dominance = {f"dominant_{k}": max(v, key=v.get) if v else "N/A" for k, v in counts_t.items()}
         self.tropical_dominance['dominant_planet'] = max(strength_t, key=strength_t.get) if strength_t else "N/A"
         self.tropical_dominance['counts'] = counts_t; self.tropical_dominance['strength'] = {k: round(v, 2) for k, v in strength_t.items()}
+
+    def get_full_chart_data(self, numerology: dict, name_numerology: dict, chinese_zodiac: dict, unknown_time: bool) -> dict:
+        """Assembles and returns the complete chart data dictionary for the API response."""
+        
+        house_rulers_formatted = {}
+        if self.ascendant_data.get("sidereal_asc") is not None:
+            for i in range(12):
+                cusp_deg = (self.ascendant_data['sidereal_asc'] + i * 30) % 360
+                sign, ruler_name = get_sign_and_ruler(cusp_deg)
+                ruler_body = next((p for p in self.sidereal_bodies if p.name == ruler_name), None)
+                ruler_pos = f"– {ruler_body.formatted_position} – House {ruler_body.house_num}, {ruler_body.house_degrees}" if ruler_body and ruler_body.degree is not None else ""
+                house_rulers_formatted[f"House {i+1}"] = f"{sign} (Ruler: {ruler_name} {ruler_pos})"
+        
+        house_cusps = []
+        if self.ascendant_data.get("sidereal_asc") is not None:
+            asc = self.ascendant_data['sidereal_asc']
+            house_cusps = [(asc + i * 30) % 360 for i in range(12)]
+            
+        # --- SIDEREAL ---
+        sidereal_chart_analysis = {
+            "chart_ruler": get_sign_and_ruler(self.ascendant_data['sidereal_asc'])[1] if self.ascendant_data.get('sidereal_asc') is not None else "N/A",
+            "dominant_sign": f"{self.sidereal_dominance.get('dominant_sign', 'N/A')} ({self.sidereal_dominance.get('counts', {}).get('sign', {}).get(self.sidereal_dominance.get('dominant_sign'), 0)} placements)",
+            "dominant_element": f"{self.sidereal_dominance.get('dominant_element', 'N/A')} ({self.sidereal_dominance.get('counts', {}).get('element', {}).get(self.sidereal_dominance.get('dominant_element'), 0)})",
+            "dominant_modality": f"{self.sidereal_dominance.get('dominant_modality', 'N/A')} ({self.sidereal_dominance.get('counts', {}).get('modality', {}).get(self.sidereal_dominance.get('dominant_modality'), 0)})",
+            "dominant_planet": f"{self.sidereal_dominance.get('dominant_planet', 'N/A')} (score {self.sidereal_dominance.get('strength', {}).get(self.sidereal_dominance.get('dominant_planet'), 0.0):.2f})",
+        }
+        sidereal_major_positions = [
+            {"name": p.name, "position": p.formatted_position, "degrees": p.degree, "percentage": p.sign_percentage, "retrograde": p.retrograde, "house_info": f"– House {p.house_num}, {p.house_degrees}" if p.house_num > 0 else ""}
+            for p in sorted(self.all_sidereal_points, key=lambda x: self.MAJOR_POSITIONS_ORDER.index(x.name) if x.name in self.MAJOR_POSITIONS_ORDER else 99) if p.name in self.MAJOR_POSITIONS_ORDER
+        ]
+        sidereal_aspects = [
+            {"p1_name": f"{a.p1.name} in {a.p1.sign}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name} in {a.p2.sign}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}", "p1_degrees": a.p1.degree, "p2_degrees": a.p2.degree} for a in self.sidereal_aspects
+        ]
+        sidereal_additional_points = [
+            {"name": p.name, "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}", "retrograde": p.retrograde}
+            for p in sorted(self.all_sidereal_points, key=lambda x: x.name) if p.name not in self.MAJOR_POSITIONS_ORDER
+        ]
+
+        # --- TROPICAL ---
+        tropical_chart_analysis = {
+            "dominant_sign": f"{self.tropical_dominance.get('dominant_sign', 'N/A')} ({self.tropical_dominance.get('counts', {}).get('sign', {}).get(self.tropical_dominance.get('dominant_sign'), 0)} placements)",
+            "dominant_element": f"{self.tropical_dominance.get('dominant_element', 'N/A')} ({self.tropical_dominance.get('counts', {}).get('element', {}).get(self.tropical_dominance.get('dominant_element'), 0)})",
+            "dominant_modality": f"{self.tropical_dominance.get('dominant_modality', 'N/A')} ({self.tropical_dominance.get('counts', {}).get('modality', {}).get(self.tropical_dominance.get('dominant_modality'), 0)})",
+            "dominant_planet": f"{self.tropical_dominance.get('dominant_planet', 'N/A')} (score {self.tropical_dominance.get('strength', {}).get(self.tropical_dominance.get('dominant_planet'), 0.0):.2f})",
+        }
+        tropical_major_positions = [
+            {"name": p.name, "position": p.formatted_position, "percentage": p.sign_percentage, "retrograde": p.retrograde, "house_info": f"– House {p.house_num}, {p.house_degrees}" if p.house_num > 0 else ""}
+            for p in sorted(self.all_tropical_points, key=lambda x: self.MAJOR_POSITIONS_ORDER.index(x.name) if x.name in self.MAJOR_POSITIONS_ORDER else 99) if p.name in self.MAJOR_POSITIONS_ORDER
+        ]
+        tropical_aspects = [
+            {"p1_name": f"{a.p1.name} in {a.p1.sign}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name} in {a.p2.sign}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}"} for a in self.tropical_aspects
+        ]
+        tropical_additional_points = [
+            {"name": p.name, "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}", "retrograde": p.retrograde}
+            for p in sorted(self.all_tropical_points, key=lambda x: x.name) if p.name not in self.MAJOR_POSITIONS_ORDER
+        ]
+
+        return {
+            "name": self.name, "utc_datetime": self.utc_datetime_str, "location": self.location_str,
+            "day_night_status": self.day_night_info.get("status", "N/A"),
+            "chinese_zodiac": f"{chinese_zodiac['element']} {chinese_zodiac['animal']}",
+            "numerology_analysis": {
+                "life_path_number": numerology["life_path"],
+                "day_number": numerology["day_number"],
+                "name_numerology": name_numerology
+            },
+            "unknown_time": unknown_time,
+            "true_sidereal_signs": TRUE_SIDEREAL_SIGNS,
+            "house_cusps": house_cusps,
+            "house_rulers": house_rulers_formatted,
+            "house_sign_distributions": self.house_sign_distributions,
+            "sidereal_chart_analysis": sidereal_chart_analysis,
+            "sidereal_major_positions": sidereal_major_positions,
+            "sidereal_aspects": sidereal_aspects,
+            "sidereal_aspect_patterns": [p['description'] for p in self.sidereal_aspect_patterns],
+            "sidereal_additional_points": sidereal_additional_points,
+            "tropical_chart_analysis": tropical_chart_analysis,
+            "tropical_major_positions": tropical_major_positions,
+            "tropical_aspects": tropical_aspects,
+            "tropical_aspect_patterns": [p['description'] for p in self.tropical_aspect_patterns],
+            "tropical_additional_points": tropical_additional_points
+        }
