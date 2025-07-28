@@ -6,184 +6,125 @@
     <title>Synthesis Astrology</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Oswald:wght@700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0c0a1a;
-            --glass-bg: rgba(20, 18, 48, 0.5);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --text-color: #e0e0e0;
-            --heading-color: #ffffff;
-            --accent-color: #a78bfa;
-            --accent-hover: #c4b5fd;
-            --shadow-color: rgba(167, 139, 250, 0.3);
+            --bg-color: #fdf6e3;
+            --card-background: #fdf6e3;
+            --text-color: #38332a;
+            --heading-color: #26221b;
+            --accent-color: #b91c1c;
+            --accent-hover: #991b1b;
+            --border-color: #26221b;
+            --pre-background: #f3eade;
+            --aspect-hard: #b91c1c;
+            --aspect-soft: #0b5f8a;
+            --aspect-neutral: #15803d;
         }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes backgroundPan {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
+        
         body {
-            font-family: 'Inter', sans-serif;
-            line-height: 1.7;
+            font-family: 'Lora', serif;
+            line-height: 1.8;
             padding: 2rem;
             margin: 0;
-            color: var(--text-color);
             background-color: var(--bg-color);
-            background-image: linear-gradient(315deg, #1e1b4b 0%, #171339 25%, #0c0a1a 50%, #1c194b 75%, #1e1b4b 100%);
-            background-size: 200% 200%;
-            animation: backgroundPan 30s linear infinite;
+            color: var(--text-color);
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-
-        .container {
-            max-width: 800px;
-            width: 100%;
-            animation: fadeIn 1s ease-out forwards;
-        }
-
-        .glass-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-            margin-top: 1.5rem;
-        }
-
+        .container { max-width: 800px; width: 100%; }
         h1, h2 {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Oswald', sans-serif;
+            text-transform: uppercase;
             color: var(--heading-color);
             text-align: center;
             font-weight: 700;
         }
-
         h1 { font-size: 3rem; margin-bottom: 0.5rem; }
-        h2 { font-size: 1.75rem; margin-top: 3rem; border-bottom: 2px solid var(--glass-border); padding-bottom: 0.5rem; }
-        h3 { color: var(--heading-color); }
-
-        .description p, .description li, .description a {
-            font-size: 1.1rem;
+        h2 { font-size: 1.5rem; margin-top: 3rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
+        .description, form, pre {
+            background-color: var(--card-background);
+            padding: 2rem;
+            border-radius: 4px;
+            margin: 1.5rem 0;
+            border: 2px solid var(--border-color);
+            box-shadow: 6px 6px 0px var(--border-color);
         }
-        .description a { color: var(--accent-color); text-decoration: none; font-weight: 500; transition: color 0.3s ease; }
-        .description a:hover { color: var(--accent-hover); }
-
-        label {
-            font-weight: 500;
-            display: block;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-            color: var(--heading-color);
-        }
-
+        .description h3 { font-family: 'Oswald', sans-serif; text-transform: uppercase; margin-top: 0; color: var(--heading-color); }
+        .description a { color: var(--accent-color); text-decoration: none; font-weight: 700; }
+        .description a:hover { text-decoration: underline; }
+        
+        label { font-weight: 700; display: block; margin-top: 1rem; margin-bottom: 0.5rem; }
         input[type="text"], input[type="number"], select {
             display: block;
             width: 100%;
             padding: 0.75rem;
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
             box-sizing: border-box;
-            background-color: var(--bg-color);
+            background-color: #fff;
             color: var(--text-color);
             font-size: 1rem;
-            transition: all 0.3s ease;
+            font-family: 'Lora', serif;
         }
-
         input:focus, select:focus {
             outline: none;
             border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px var(--shadow-color);
         }
-
         button {
             width: 100%;
             padding: 0.85rem;
             font-size: 1.1rem;
             font-weight: 700;
-            color: #fff;
+            font-family: 'Oswald', sans-serif;
+            text-transform: uppercase;
+            color: var(--bg-color);
             background-color: var(--accent-color);
-            border: none;
-            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
             cursor: pointer;
             margin-top: 2rem;
-            transition: all 0.3s ease;
+            box-shadow: 4px 4px 0px var(--border-color);
+            transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
         }
-
         button:hover:not(:disabled) {
             background-color: var(--accent-hover);
-            box-shadow: 0 0 20px var(--shadow-color);
-            transform: translateY(-2px);
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px var(--border-color);
         }
-
         button:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        pre {
-            background: rgba(0,0,0,0.2);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            white-space: pre-wrap;
-            word-break: break-word;
-            font-family: "Courier New", Courier, monospace;
-            font-size: 14px;
-            color: var(--text-color);
-            padding: 1.5rem;
-        }
+        pre { white-space: pre-wrap; word-break: break-word; font-family: "Courier New", Courier, monospace; font-size: 14px; background-color: var(--pre-background); }
+        #gemini-output { font-family: 'Lora', serif; font-size: 1.1rem; line-height: 1.8; }
         
-        #gemini-output { font-family: 'Inter', sans-serif; font-size: 1.1rem; line-height: 1.8; }
-        
-        .result-section {
-            opacity: 0;
-            transition: opacity 1s ease-out;
-        }
-        .result-section.visible {
-            opacity: 1;
-        }
-
         #chart-wheel-container { display: flex; justify-content: center; align-items: center; margin-top: 2rem; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; }
         #chart-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; }
-        .wheel-circle { stroke: var(--glass-border); stroke-width: 2; fill: none; }
-        .zodiac-divider { stroke: var(--glass-border); stroke-width: 1; }
-        .house-cusp { stroke: var(--text-color); stroke-width: 1.5; }
-        .house-cusp.major { stroke-width: 3; }
-        .house-number { fill: var(--text-color); font-size: 24px; font-family: 'Inter', sans-serif; text-anchor: middle; dominant-baseline: middle; opacity: 0.8;}
-        .zodiac-glyph { fill: var(--text-color); font-size: 30px; text-anchor: middle; dominant-baseline: middle; }
+        .wheel-circle { stroke: var(--border-color); stroke-width: 2; fill: none; }
+        .zodiac-divider { stroke: var(--border-color); stroke-width: 1; }
+        .house-cusp { stroke: var(--text-color); stroke-width: 2; }
+        .house-cusp.major { stroke-width: 4; }
+        .house-number { fill: var(--text-color); font-size: 28px; font-family: 'Lora', serif; text-anchor: middle; dominant-baseline: middle; }
+        .zodiac-glyph { fill: var(--text-color); font-size: 35px; text-anchor: middle; dominant-baseline: middle; }
         .planet-glyph { fill: var(--heading-color); font-size: 35px; text-anchor: middle; dominant-baseline: middle; }
-        .planet-retrograde { fill: var(--accent-color); font-size: 20px; }
-        .aspect-line { stroke-width: 1.5; opacity: 0.6; }
-        .aspect-conjunction { stroke: #4ade80; } /* Green */
-        .aspect-opposition, .aspect-square { stroke: #f87171; } /* Red */
-        .aspect-trine, .aspect-sextile { stroke: #60a5fa; } /* Blue */
-        .aspect-quincunx, .aspect-semisextile, .aspect-semisquare, .aspect-sesquiquadrate, .aspect-quintile, .aspect-biquintile { stroke: var(--glass-border); stroke-dasharray: 4 4; }
+        .planet-retrograde { fill: var(--text-color); font-size: 20px; }
+        .aspect-line { stroke-width: 1.5; opacity: 0.9; }
+        .aspect-conjunction { stroke: var(--aspect-neutral); }
+        .aspect-opposition, .aspect-square { stroke: var(--aspect-hard); }
+        .aspect-trine, .aspect-sextile { stroke: var(--aspect-soft); }
+        .aspect-quincunx, .aspect-semisextile, .aspect-semisquare, .aspect-sesquiquadrate, .aspect-quintile, .aspect-biquintile { stroke: var(--border-color); stroke-dasharray: 4 4; opacity: 0.6; }
         
         .time-toggle { display: flex; align-items: center; margin-top: 1.5rem; }
         .time-toggle input { width: auto; margin-right: 0.75rem; }
         .time-toggle label { margin: 0; }
-        .time-note { font-size: 0.9rem; color: #a0aec0; margin-top: 1.5rem; }
-        
-        .privacy-section { margin-top: 4rem; text-align: center; }
-        .privacy-section details { text-align: left; background-color: transparent; border: none; padding: 0; margin-bottom: 1rem; }
-        .privacy-section summary { font-weight: 500; cursor: pointer; color: var(--accent-color); display: inline-block; }
-        .privacy-section details div {
-            margin-top: 1rem;
-            padding: 1.5rem;
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            background: var(--glass-bg);
-        }
+        .time-note { font-size: 0.9rem; color: #5e5544; margin-top: 1.5rem; }
+        .privacy-section { margin-top: 4rem; padding-top: 2rem; border-top: 2px solid var(--border-color); font-size: 0.9rem; color: #5e5544; }
+        .privacy-section details { background-color: var(--card-background); border-radius: 4px; border: 2px solid var(--border-color); padding: 1rem 1.5rem; margin-bottom: 1rem; }
+        .privacy-section summary { font-weight: 700; cursor: pointer; color: var(--text-color); }
+        .privacy-section h4 { color: var(--heading-color); margin-top: 1.5rem; margin-bottom: 0.5rem; font-family: 'Oswald', sans-serif; }
+        .privacy-section p, .privacy-section ul { margin-bottom: 1rem; }
+        .privacy-section a { color: var(--accent-color); }
         .time-inputs { display: flex; gap: 1rem; align-items: flex-end; }
         .time-inputs > div { flex: 1; }
-
     </style>
 </head>
 <body>
