@@ -17,9 +17,6 @@ import logging
 from logtail import LogtailHandler
 import google.generativeai as genai
 
-# --- FINGERPRINT FOR DEBUGGING ---
-print("--- RUNNING LATEST API CODE V3 ---")
-
 # --- SETUP THE LOGGER ---
 handler = None
 logtail_token = os.getenv("LOGTAIL_SOURCE_TOKEN")
