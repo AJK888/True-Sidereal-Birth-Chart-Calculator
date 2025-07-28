@@ -94,7 +94,6 @@ def get_chinese_zodiac_and_element(year: int, month: int, day: int) -> Dict[str,
     zodiac_animals = ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"]
     elements = ["Metal", "Water", "Wood", "Fire", "Earth"]
     
-    # Determine the effective year for the zodiac animal
     effective_year = year
     lunar_new_year_month, lunar_new_year_day = CHINESE_LUNAR_NEW_YEAR.get(year, (1, 1))
     if (month < lunar_new_year_month) or (month == lunar_new_year_month and day < lunar_new_year_day):
@@ -102,27 +101,26 @@ def get_chinese_zodiac_and_element(year: int, month: int, day: int) -> Dict[str,
 
     animal = zodiac_animals[(effective_year - 1924) % 12]
     
-    # Element is based on the last digit of the birth year
     last_digit = year % 10
     element = elements[(last_digit // 2) - (1 if last_digit < 2 else 0)]
 
     return {"animal": animal, "element": element}
 
-def _calculate_approximate_sunrise_sunset_math(jd_ut: float, latitude: float, longitude: float) -> Tuple[Optional[float], Optional[float]]:
+def _get_sunrise_sunset_jd(jd_ut: float, lat: float, lon: float) -> Tuple[Optional[float], Optional[float]]:
+    """Calculates sunrise and sunset Julian Day using the precise swe.rise_trans function."""
     try:
-        res = swe.calc_ut(jd_ut, swe.SUN); lon = res[0][0]; obl = 23.439
-        lon_rad, obl_rad = map(math.radians, [lon, obl])
-        ra_rad = math.atan2(math.cos(obl_rad) * math.sin(lon_rad), math.cos(lon_rad)); ra_deg = (math.degrees(ra_rad) + 360) % 360
-        dec_rad = math.asin(math.sin(obl_rad) * math.sin(lon_rad))
-        hor_rad, lat_rad = math.radians(-0.833), math.radians(latitude)
-        den = math.cos(lat_rad) * math.cos(dec_rad)
-        if abs(den) < 1e-9: return (None, None)
-        cos_H = (math.sin(hor_rad) - math.sin(lat_rad) * math.sin(dec_rad)) / den
-        if not -1 <= cos_H <= 1: return (None, None) if cos_H > 1 else (0.0, 24.0)
-        h_angle = math.degrees(math.acos(cos_H)); sid_h = swe.sidtime(jd_ut) * 15
-        transit_h = ((ra_deg - sid_h + longitude + 360) % 360) / 15
-        return (transit_h - h_angle / 15 + 24) % 24, (transit_h + h_angle / 15 + 24) % 24
-    except Exception as e: print(f"DEBUG: Sunrise/Sunset math error: {e}"); return None, None
+        flags = swe.CALC_RISE | swe.BIT_GEOCTR_NO_ECL_LAT
+        
+        rise_res = swe.rise_trans(jd_ut, swe.SUN, lon, lat, 0.0, 0.0, 0.0, flags)
+        sunrise_jd = rise_res[1][0] if rise_res[0] == 0 else None
+
+        set_res = swe.rise_trans(jd_ut, swe.SUN, lon, lat, 0.0, 0.0, 0.0, swe.CALC_SET | swe.BIT_GEOCTR_NO_ECL_LAT)
+        sunset_jd = set_res[1][0] if set_res[0] == 0 else None
+        
+        return sunrise_jd, sunset_jd
+    except Exception as e:
+        print(f"DEBUG: Swiss Ephemeris sunrise/sunset error: {e}")
+        return None, None
 
 # --- Core Classes ---
 class SiderealBody:
@@ -176,25 +174,37 @@ class NatalChart:
     def calculate_chart(self) -> None:
         self._calculate_ascendant_mc_data();
         if self.ascendant_data.get("sidereal_asc") is None: return
-        self._determine_day_night(); self._calculate_all_points()
+        self._determine_day_night()
+        self._calculate_all_points()
         self._calculate_aspects(); self._detect_aspect_patterns()
         self._calculate_house_sign_distributions(); self._analyze_dominance()
     
     def _calculate_ascendant_mc_data(self) -> None:
         try:
-            # Using 'E' for Equal house system to match the implementation
             res = swe.houses(self.jd, self.latitude, self.longitude, b'E')
-            # Custom Ayanamsa calculation is kept as requested
             ayanamsa = 31.38 + ((self.birth_year - 2000) / 72.0)
             self.ascendant_data = {"tropical_asc": res[1][0], "mc": res[1][1], "ayanamsa": ayanamsa, "sidereal_asc": (res[1][0] - ayanamsa + 360) % 360}
         except Exception as e: print(f"CRITICAL ERROR calculating ascendant: {e}"); self.ascendant_data = {"sidereal_asc": None}
     
-    # ... all other private calculation methods (_determine_day_night, etc.) remain unchanged ...
     def _determine_day_night(self) -> None:
-        sunrise, sunset = _calculate_approximate_sunrise_sunset_math(self.jd, self.latitude, self.longitude)
+        sunrise_jd, sunset_jd = _get_sunrise_sunset_jd(self.jd, self.latitude, self.longitude)
+        
+        sunrise_hour_ut = ((sunrise_jd % 1) * 24) if sunrise_jd is not None else None
+        sunset_hour_ut = ((sunset_jd % 1) * 24) if sunset_jd is not None else None
+        
         is_day = None
-        if sunrise is not None and sunset is not None: is_day = sunrise < sunset and self.ut_decimal_hour >= sunrise and self.ut_decimal_hour < sunset or sunrise > sunset and (self.ut_decimal_hour >= sunrise or self.ut_decimal_hour < sunset)
-        self.day_night_info = {"sunrise": sunrise, "sunset": sunset, "status": "Day Birth" if is_day else "Night Birth" if is_day is not None else "Undetermined"}
+        if sunrise_hour_ut is not None and sunset_hour_ut is not None:
+            birth_hour_ut = self.ut_decimal_hour
+            
+            if sunrise_hour_ut < sunset_hour_ut:
+                is_day = birth_hour_ut >= sunrise_hour_ut and birth_hour_ut < sunset_hour_ut
+            else:
+                is_day = birth_hour_ut >= sunrise_hour_ut or birth_hour_ut < sunset_hour_ut
+                
+        self.day_night_info = {
+            "status": "Day Birth" if is_day else "Night Birth" if is_day is not None else "Undetermined"
+        }
+
     def _calculate_all_points(self) -> None:
         sidereal_asc = self.ascendant_data.get("sidereal_asc"); tropical_asc = self.ascendant_data.get("tropical_asc"); ayanamsa = self.ascendant_data.get("ayanamsa")
         if sidereal_asc is None or ayanamsa is None: return
@@ -325,15 +335,6 @@ class NatalChart:
     def get_full_chart_data(self, numerology: dict, name_numerology: dict, chinese_zodiac: dict, unknown_time: bool) -> dict:
         """Assembles and returns the complete chart data dictionary for the API response."""
         
-        sidereal_retrogrades = [
-            {"name": p.name}
-            for p in self.all_sidereal_points if p.retrograde
-        ]
-        tropical_retrogrades = [
-            {"name": p.name}
-            for p in self.all_tropical_points if p.retrograde
-        ]
-        
         house_rulers_formatted = {}
         if self.ascendant_data.get("sidereal_asc") is not None:
             for i in range(12):
@@ -348,7 +349,9 @@ class NatalChart:
             asc = self.ascendant_data['sidereal_asc']
             house_cusps = [(asc + i * 30) % 360 for i in range(12)]
             
-        # --- SIDEREAL ---
+        sidereal_retrogrades = [{"name": p.name} for p in self.all_sidereal_points if p.retrograde]
+        tropical_retrogrades = [{"name": p.name} for p in self.all_tropical_points if p.retrograde]
+
         sidereal_chart_analysis = {
             "chart_ruler": get_sign_and_ruler(self.ascendant_data['sidereal_asc'])[1] if self.ascendant_data.get('sidereal_asc') is not None else "N/A",
             "dominant_sign": f"{self.sidereal_dominance.get('dominant_sign', 'N/A')} ({self.sidereal_dominance.get('counts', {}).get('sign', {}).get(self.sidereal_dominance.get('dominant_sign'), 0)} placements)",
@@ -368,7 +371,6 @@ class NatalChart:
             for p in sorted(self.all_sidereal_points, key=lambda x: x.name) if p.name not in self.MAJOR_POSITIONS_ORDER
         ]
 
-        # --- TROPICAL ---
         tropical_chart_analysis = {
             "dominant_sign": f"{self.tropical_dominance.get('dominant_sign', 'N/A')} ({self.tropical_dominance.get('counts', {}).get('sign', {}).get(self.tropical_dominance.get('dominant_sign'), 0)} placements)",
             "dominant_element": f"{self.tropical_dominance.get('dominant_element', 'N/A')} ({self.tropical_dominance.get('counts', {}).get('element', {}).get(self.tropical_dominance.get('dominant_element'), 0)})",
