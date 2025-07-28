@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from natal_chart import (
     NatalChart, get_sign_and_ruler, format_true_sidereal_placement, PLANETS_CONFIG, 
+    # FIX: The function name is updated here
     calculate_numerology, get_chinese_zodiac_and_element, TRUE_SIDEREAL_SIGNS,
     calculate_name_numerology
 )
