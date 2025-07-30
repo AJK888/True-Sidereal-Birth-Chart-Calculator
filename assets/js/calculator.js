@@ -292,18 +292,22 @@ const AstrologyCalculator = {
 	},
 	
 	drawChartWheel(data, svgId) {
-		const svg = document.getElementById(svgId);
-		if (!svg) return;
-		svg.innerHTML = ''; 
-
-		const centerX = 500, centerY = 500;
-		const zodiacRadius = 450, houseRingRadius = 350, innerRadius = 150;
-		
-		const ascendant = data.sidereal_major_positions.find(p => p.name === 'Ascendant');
-		if (!ascendant || ascendant.degrees === null) {
-			svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text>';
-			return;
-		}
+	    const svg = document.getElementById(svgId);
+	    if (!svg) return;
+	    svg.innerHTML = '';
+	
+	    // --- Start of new code ---
+	    try {
+	    // --- End of new code ---
+	
+	        const centerX = 500, centerY = 500;
+	        const zodiacRadius = 450, houseRingRadius = 350, innerRadius = 150;
+	        
+	        const ascendant = data.sidereal_major_positions.find(p => p.name === 'Ascendant');
+	        if (!ascendant || ascendant.degrees === null) {
+	            svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text>';
+	            return;
+	}
 		
 		const rotation = 180 - ascendant.degrees;
 
