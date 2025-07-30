@@ -292,25 +292,25 @@ const AstrologyCalculator = {
 	},
 	
 	drawChartWheel(data, svgId) {
-	    const svg = document.getElementById(svgId);
-	    if (!svg) return;
-	    svg.innerHTML = '';
-	
-	    const centerX = 500, centerY = 500;
-	    const zodiacRadius = 450, houseRingRadius = 350, innerRadius = 150;
-	
-	    // This is the correct logic for all charts
-	    const ascendant = data.sidereal_major_positions.find(p => p.name === 'Ascendant');
-	    if (!ascendant || ascendant.degrees === null) {
-	        svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text>';
-	        return;
-	    }
-	    const rotation = 180 - ascendant.degrees;
-	
-	    const mainGroup = document.createElementNS(this.SVG_NS, 'g');
-	    mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
-	    svg.appendChild(mainGroup);
+		const svg = document.getElementById(svgId);
+		if (!svg) return;
+		svg.innerHTML = ''; 
+
+		const centerX = 500, centerY = 500;
+		const zodiacRadius = 450, houseRingRadius = 350, innerRadius = 150;
 		
+		const ascendant = data.sidereal_major_positions.find(p => p.name === 'Ascendant');
+		if (!ascendant || ascendant.degrees === null) {
+			svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text>';
+			return;
+		}
+		
+		const rotation = 180 - ascendant.degrees;
+
+		const mainGroup = document.createElementNS(this.SVG_NS, 'g');
+		mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
+		svg.appendChild(mainGroup);
+
 		const degreeToCartesian = (radius, angleDegrees) => {
 			const angleRadians = angleDegrees * (Math.PI / 180);
 			return { x: centerX + radius * Math.cos(angleRadians), y: centerY - radius * Math.sin(angleRadians) };
@@ -419,6 +419,11 @@ const AstrologyCalculator = {
 			}
 
 			planets.forEach(planet => {
+				// Only skip the AC and DC, which we place statically. Let the MC and IC rotate.
+				if (planet.name === 'Ascendant' || planet.name === 'Descendant') {
+					return;
+				}
+
 				const lineStartCoords = degreeToCartesian(glyphConnectorRadius, planet.degrees);
 				const lineEndCoords = degreeToCartesian(outerGlyphRadius, planet.adjustedDegrees);
 				const line = document.createElementNS(this.SVG_NS, 'line');
@@ -445,11 +450,24 @@ const AstrologyCalculator = {
 					mainGroup.appendChild(rxText);
 				}
 			});
+
+			// Manually draw ONLY the AC and DC glyphs in their fixed horizontal positions
+			const angleGlyphRadius = houseRingRadius - 20;
+
+			const acGlyph = document.createElementNS(this.SVG_NS, 'text');
+			acGlyph.setAttribute('x', centerX - angleGlyphRadius);
+			acGlyph.setAttribute('y', centerY);
+			acGlyph.setAttribute('class', 'planet-glyph');
+			acGlyph.textContent = this.PLANET_GLYPHS['Ascendant'];
+			svg.appendChild(acGlyph);
+
+			const dcGlyph = document.createElementNS(this.SVG_NS, 'text');
+			dcGlyph.setAttribute('x', centerX + angleGlyphRadius);
+			dcGlyph.setAttribute('y', centerY);
+			dcGlyph.setAttribute('class', 'planet-glyph');
+			dcGlyph.textContent = this.PLANET_GLYPHS['Descendant'];
+			svg.appendChild(dcGlyph);
 		}
-		    } catch (error) {
-        console.error("Error drawing chart wheel:", error);
-        svg.innerHTML = `<text x="500" y="500" font-size="20" fill="red" text-anchor="middle">Chart drawing failed. Check console.</text>`;
-    }
 	},
 	
 	populateGlyphLegend() {
