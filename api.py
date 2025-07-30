@@ -65,6 +65,25 @@ class ReadingRequest(BaseModel):
     chart_data: dict
     unknown_time: bool
 
+Of course. To get a more detailed and thoughtfully paced reading from the AI, we can adjust its instructions to prioritize depth over breadth.
+
+### \#\# How I'm Adjusting the Prompt
+
+I've updated the `get_gemini_reading` function with the following changes to encourage a longer, more explanatory response:
+
+  * **Explicitly Encouraging Length:** I've changed the instructions from "write a detailed reading" to "write a generous, in-depth reading," and added the command, "**Prioritize thorough explanation over brevity.**" This tells the AI that a longer, more descriptive response is preferred.
+
+  * **The "Define, Connect, Explain" Model:** I've instructed the AI to follow a specific pattern for each major point it makes. It must first **define** the astrological piece (e.g., "The Sun represents..."), then **connect** it to another part of the chart (e.g., "...this is echoed by your Life Path number..."), and finally **explain** what that connection means for the person's life in detail. This forces it to slow down and fully unpack its insights rather than just listing them.
+
+  * **Focusing the Persona:** The AI's persona is now described as a "gifted teacher" whose skill is explaining concepts with "depth, patience, and clarity," further reinforcing the goal of a less rushed, more educational reading.
+
+Here is the complete, updated `get_gemini_reading` function for your `api.py` file.
+
+-----
+
+### \#\# `get_gemini_reading` (Updated)
+
+```python
 async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
     """
     Generates a Gemini reading. Switches between a full reading (known time)
@@ -89,6 +108,7 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
 
         if unknown_time:
             # --- PROMPT FOR UNKNOWN BIRTH TIME ---
+            # (This prompt remains the same as it's already designed for a more concise reading)
             prompt_parts.append(
                 "You are a wise astrologer providing a reading for a chart where the exact birth time is unknown. "
                 "This is called a 'Noon Chart'.\n"
@@ -122,7 +142,7 @@ The Story of Your Inner World
         else:
             # --- PROMPT FOR KNOWN BIRTH TIME (MASTER SYNTHESIS) ---
             prompt_parts.append(
-                "You are a master astrologer and esoteric synthesist. Your clients come to you for readings of unparalleled depth. Your unique skill is identifying the 'golden thread'—the central narrative or soul's purpose—that connects every single placement, aspect, and number in a person's blueprint. You see the chart not as a collection of parts, but as a single, cohesive, living story."
+                "You are a master astrologer and gifted teacher. Your skill is not just in seeing the connections in a chart, but in explaining them with depth, patience, and clarity, making complex ideas feel simple and profound. You identify the 'golden thread'—the central narrative or soul's purpose—that connects every single placement, aspect, and number in a person's blueprint."
             )
             
             prompt_parts.append("\n**Full Anonymized Chart Data:**")
@@ -163,30 +183,26 @@ The Story of Your Inner World
             prompt_parts.append("\n**Your Task:**")
             prompt_parts.append("""
 **Step 1: Internal Analysis (Do this silently before writing, using ONLY the user's real chart data)**
-First, perform a deep, holistic review of ALL the data provided for the user to find the chart's core narrative.
-1.  **Generate a List of Potential Themes:** Brainstorm a comprehensive list of major themes based on the user's data. Look for powerful, repeating patterns. Consider:
-    * All **stelliums** (both sign and house).
-    * The **Life Path Number** and **Day Number**.
-    * The **Chart Ruler**'s sign and house placement.
-    * The **Dominant Element** and **Planet**.
-    * **Planet Degree Percentages**.
-    * The meaning of the **three tightest aspects**.
-2.  **Group the Evidence:** For the top themes, internally group the specific chart placements and numbers that support each theme. This is to force you to see the connections within the user's actual chart.
-3.  **Select the Primary Narrative:** From your analysis, identify the **single most compelling and interconnected theme** in the user's chart. This will be the 'golden thread' of your reading.
+First, perform a deep, holistic review of ALL the data provided to find the chart's core narrative.
+1.  **Generate a List of Potential Themes:** Brainstorm a comprehensive list of major themes based on the user's data. Consider all stelliums, numerology, the Chart Ruler, dominants, planet degrees, and the three tightest aspects.
+2.  **Group the Evidence:** For the top themes, internally group the specific chart placements that support each theme to see the connections.
+3.  **Select the Primary Narrative:** Identify the single most compelling and interconnected theme. This will be the 'golden thread' of your reading.
 """)
 
             prompt_parts.append("""
 **Step 2: Write the Final Reading**
-Now, write the final reading for the user. Structure your entire response **exactly as follows, using plain text headings without any markdown like '#' or '**'.**
+Now, write a generous, in-depth, multi-paragraph reading for the user. **Prioritize thorough explanation over brevity.** Structure your response exactly as follows, using plain text headings.
 
 Key Themes in Your Chart
-(Under this plain text heading, list the 3 to 5 most important and interconnected themes you identified from your internal analysis. Use a simple bulleted list.)
+(Under this heading, list the 3 to 5 most important themes you identified.)
 
 The Central Story of Your Chart
-(Under this plain text heading, write the full, multi-paragraph narrative reading. **Begin the first paragraph directly with the introduction of the 'golden thread' or central theme.** Let the subsequent paragraphs flow naturally to unfold the narrative. **Do not use any sub-labels like 'Introduction', 'Body', or 'The Unfolding Narrative' within your response.** Your entire goal is to make this section read like a single, cohesive essay.)
--   **MANDATORY INTEGRATION:** You must seamlessly integrate the meaning of **all stelliums**, the **Chart Ruler**, the **Life Path and Day Numbers**, and the **three tightest aspects** into this single, flowing narrative, explaining concepts simply as you go.
--   **Make connections explicit.** Your explanation should follow this logic: 'Your core identity, represented by your Sun's placement, is fundamentally about X. This is the very mission statement of your soul, which is perfectly echoed by your Life Path Number Y, the number of Z.'
--   **Conclusion:** Conclude the narrative with a final paragraph that serves as a warm, empowering summary, presenting the user's chart as a beautiful, intricate tapestry.
+(Under this heading, write the full narrative. Begin by introducing the 'golden thread' or central theme. For each major point you make, follow a **'define, connect, explain'** model:)
+-   First, **define** the astrological concept simply (e.g., 'The Sun represents your core identity...').
+-   Then, **connect** it to another part of the chart or numerology ('...and this is perfectly echoed by your Life Path number...').
+-   Finally, **explain** the synthesis in detail—what does this connection *mean* for the person's life, their challenges, and their gifts? Dedicate a full paragraph to exploring a single, powerful connection if needed.
+-   You must seamlessly integrate **all stelliums**, the **Chart Ruler**, the **Life Path and Day Numbers**, and the **three tightest aspects** into this single, flowing narrative.
+-   Conclude with a final paragraph that serves as a warm, empowering summary.
 """)
 
         prompt = "\n".join(prompt_parts)
