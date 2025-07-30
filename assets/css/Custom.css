@@ -55,24 +55,8 @@ pre {
     line-height: 1.65;
     color: #ffffff;
 }
-.time-inputs { display: flex; gap: 1rem; align-items: flex-end; }
 .time-note { font-size: 0.8rem; }
 .results-container .major { margin-bottom: 2rem; }
-
-/* FIX for white input boxes */
-.time-inputs-container input[type="number"], .time-inputs-container select {
-    background-color: #ffffff !important; /* Use important to override theme */
-    color: #2e344d !important;
-}
-/* Remove number input spinners for a cleaner look */
-input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button { 
-  -webkit-appearance: none; 
-  margin: 0; 
-}
-input[type=number] {
-  -moz-appearance: textfield;
-}
 
 /* Styling for name numerology checkbox */
 .name-numerology-toggle {
@@ -106,7 +90,7 @@ input[type=number] {
 .aspect-trine, .aspect-sextile { stroke: #3182ce; }
 .aspect-quincunx, .aspect-semisextile, .aspect-semisquare, .aspect-sesquiquadrate, .aspect-quintile, .aspect-biquintile { stroke: rgba(255, 255, 255, 0.25); stroke-dasharray: 4 4; }
 
-/* Cleaner styling for Legal & Spiritual Context Sections */
+/* Legal & Spiritual Context Section Styling */
 #legal .inner, #spiritual-context .inner { 
     border-top: solid 2px rgba(255, 255, 255, 0.25); 
     margin-top: 3rem; 
