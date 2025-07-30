@@ -284,9 +284,6 @@ const AstrologyCalculator = {
 	},
 	
 	drawChartWheel(data, svgId) {
-        // --- ALERT FOR DEBUGGING ---
-        alert("RUNNING LATEST CHART DRAWING CODE");
-        
 		const svg = document.getElementById(svgId);
 		if (!svg) return;
 		svg.innerHTML = ''; 
@@ -295,6 +292,12 @@ const AstrologyCalculator = {
 		const zodiacRadius = 450, houseRingRadius = 350, innerRadius = 150;
 		
 		const ascendant = data.sidereal_major_positions.find(p => p.name === 'Ascendant');
+		
+        	// --- NEW DIAGNOSTIC LOGS ---
+        	console.log(`--- Debugging Chart Wheel: ${svgId} ---`);
+        	console.log('Ascendant Object Found:', ascendant);
+        	// --- END DIAGNOSTIC LOGS ---
+
 		if (!ascendant || ascendant.degrees === null) {
 			svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text>';
 			return;
@@ -302,6 +305,10 @@ const AstrologyCalculator = {
 		
 		const rotation = 180 - ascendant.degrees;
 
+        	// --- NEW DIAGNOSTIC LOG ---
+        	console.log('Calculated Rotation (degrees):', rotation);
+        	// --- END DIAGNOSTIC LOG ---
+		
 		const mainGroup = document.createElementNS(this.SVG_NS, 'g');
 		mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
 		svg.appendChild(mainGroup);
@@ -310,6 +317,7 @@ const AstrologyCalculator = {
 			const angleRadians = angleDegrees * (Math.PI / 180);
 			return { x: centerX + radius * Math.cos(angleRadians), y: centerY - radius * Math.sin(angleRadians) };
 		};
+
 		if (data.sidereal_aspects) {
 			data.sidereal_aspects.forEach(aspect => {
 				if (aspect.p1_degrees === null || aspect.p2_degrees === null) return;
