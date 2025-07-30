@@ -9,7 +9,7 @@ const AstrologyCalculator = {
 	ZODIAC_GLYPHS: {'Aries':'♈︎','Taurus':'♉︎','Gemini':'♊︎','Cancer':'♋︎','Leo':'♌︎','Virgo':'♍︎','Libra':'♎︎','Scorpio':'♏︎','Ophiuchus':'⛎︎','Sagittarius':'♐︎','Capricorn':'♑︎','Aquarius':'♒︎','Pisces':'♓︎'},
 	PLANET_GLYPHS: {'Sun':'☉','Moon':'☽','Mercury':'☿','Venus':'♀','Mars':'♂','Jupiter':'♃','Saturn':'♄','Uranus':'♅','Neptune':'♆','Pluto':'♇','Chiron':'⚷','True Node':'☊','South Node':'☋','Ascendant':'AC','Midheaven (MC)':'MC','Descendant':'DC','Imum Coeli (IC)':'IC'},
 
-	form: null, submitBtn: null, outputEl: null, geminiTitle: null, geminiOutput: null,
+	form: null, submitBtn: null, noFullNameCheckbox: null, outputEl: null, geminiTitle: null, geminiOutput: null,
 	resultsTitle: null, wheelTitle: null, resultsContainer: null, wheelSvg: null,
 	legendTitle: null, legendEl: null,
 	
@@ -23,6 +23,7 @@ const AstrologyCalculator = {
 	cacheDOMElements() {
 		this.form = document.getElementById("chartForm");
 		this.submitBtn = document.getElementById("submitBtn");
+		this.noFullNameCheckbox = document.getElementById("noFullName");
 		this.outputEl = document.getElementById("output");
 		this.geminiTitle = document.getElementById('gemini-title');
 		this.geminiOutput = document.getElementById('gemini-output');
@@ -175,7 +176,7 @@ const AstrologyCalculator = {
 	},
 
 	renderTextResults(res) {
-        let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
+		let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
 		out += `- UTC Date & Time: ${res.utc_datetime}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
 		out += `- Location: ${res.location}\n`;
 		out += `- Day/Night Determination: ${res.day_night_status}\n\n`;
@@ -187,7 +188,8 @@ const AstrologyCalculator = {
 		if (res.numerology_analysis) {
 			out += `- Life Path Number: ${res.numerology_analysis.life_path_number}\n`;
 			out += `- Day Number: ${res.numerology_analysis.day_number}\n`;
-			if (res.numerology_analysis.name_numerology) {
+			
+			if (res.numerology_analysis.name_numerology && !this.noFullNameCheckbox.checked) {
 				out += `\n-- NAME NUMEROLOGY --\n`;
 				out += `- Expression (Destiny) Number: ${res.numerology_analysis.name_numerology.expression_number}\n`;
 				out += `- Soul Urge Number: ${res.numerology_analysis.name_numerology.soul_urge_number}\n`;
@@ -299,86 +301,86 @@ const AstrologyCalculator = {
 			return;
 		}
 		
-		// --- NEW LOGIC: Calculate a single rotation offset and draw everything onto a static wheel ---
-		const rotationOffset = 180 - ascendant.degrees;
+		const rotation = 180 - ascendant.degrees;
+
+		const mainGroup = document.createElementNS(this.SVG_NS, 'g');
+		mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
+		svg.appendChild(mainGroup);
 
 		const degreeToCartesian = (radius, angleDegrees) => {
-			const angleRadians = (angleDegrees * Math.PI) / 180;
+			const angleRadians = angleDegrees * (Math.PI / 180);
 			return { x: centerX + radius * Math.cos(angleRadians), y: centerY - radius * Math.sin(angleRadians) };
 		};
 
-		// Draw aspects
 		if (data.sidereal_aspects) {
 			data.sidereal_aspects.forEach(aspect => {
 				if (aspect.p1_degrees === null || aspect.p2_degrees === null) return;
-				const p1Coords = degreeToCartesian(innerRadius, aspect.p1_degrees + rotationOffset);
-				const p2Coords = degreeToCartesian(innerRadius, aspect.p2_degrees + rotationOffset);
+				const p1Coords = degreeToCartesian(innerRadius, aspect.p1_degrees);
+				const p2Coords = degreeToCartesian(innerRadius, aspect.p2_degrees);
 				const line = document.createElementNS(this.SVG_NS, 'line');
 				line.setAttribute('x1', p1Coords.x); line.setAttribute('y1', p1Coords.y);
 				line.setAttribute('x2', p2Coords.x); line.setAttribute('y2', p2Coords.y);
 				const aspectClass = aspect.type.toLowerCase().replace(' ', '-');
 				line.setAttribute('class', `aspect-line aspect-${aspectClass}`);
-				svg.appendChild(line);
+				mainGroup.appendChild(line);
 			});
 		}
 
-		// Draw circles
 		[zodiacRadius, houseRingRadius, innerRadius].forEach(r => {
 			const circle = document.createElementNS(this.SVG_NS, 'circle');
 			circle.setAttribute('cx', centerX); circle.setAttribute('cy', centerY);
 			circle.setAttribute('r', r); circle.setAttribute('class', 'wheel-circle');
-			svg.appendChild(circle);
+			mainGroup.appendChild(circle);
 		});
 		
-		// Draw zodiac signs & dividers
 		if (data.true_sidereal_signs) {
 			const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2;
 			data.true_sidereal_signs.forEach(sign => {
 				const [name, start, end] = sign;
-				const p1 = degreeToCartesian(houseRingRadius, start + rotationOffset);
-				const p2 = degreeToCartesian(zodiacRadius, start + rotationOffset);
+				const p1 = degreeToCartesian(houseRingRadius, start);
+				const p2 = degreeToCartesian(zodiacRadius, start);
 				const line = document.createElementNS(this.SVG_NS, 'line');
 				line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
 				line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
 				line.setAttribute('class', 'zodiac-divider');
-				svg.appendChild(line);
+				mainGroup.appendChild(line);
 
 				const midAngle = start + ((end - start + 360) % 360) / 2;
-				const textCoords = degreeToCartesian(glyphRadius, midAngle + rotationOffset);
+				const textCoords = degreeToCartesian(glyphRadius, midAngle);
 				const text = document.createElementNS(this.SVG_NS, 'text');
 				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
 				text.setAttribute('class', 'zodiac-glyph');
+				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
 				text.textContent = this.ZODIAC_GLYPHS[name];
-				svg.appendChild(text);
+				mainGroup.appendChild(text);
 			});
 		}
 
-		// Draw house cusps & numbers
 		if (data.house_cusps && data.house_cusps.length === 12) {
 			data.house_cusps.forEach((cuspDegrees, i) => {
-				const p1 = degreeToCartesian(innerRadius, cuspDegrees + rotationOffset);
-				const p2 = degreeToCartesian(houseRingRadius, cuspDegrees + rotationOffset);
+				const p1 = degreeToCartesian(innerRadius, cuspDegrees);
+				const p2 = degreeToCartesian(houseRingRadius, cuspDegrees);
 				const line = document.createElementNS(this.SVG_NS, 'line');
 				line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
 				line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
 				line.setAttribute('class', (i % 3 === 0) ? 'house-cusp major' : 'house-cusp');
-				svg.appendChild(line);
+				mainGroup.appendChild(line);
 			});
 			for (let i = 0; i < 12; i++) {
 				const startAngle = data.house_cusps[i];
 				const endAngle = data.house_cusps[(i + 1) % 12];
 				let midAngle = (startAngle + endAngle) / 2;
 				if (endAngle < startAngle) midAngle = ((startAngle + endAngle + 360) / 2) % 360;
-				const textCoords = degreeToCartesian(innerRadius + 25, midAngle + rotationOffset);
+				const textCoords = degreeToCartesian(innerRadius + 25, midAngle);
 				const text = document.createElementNS(this.SVG_NS, 'text');
 				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
 				text.setAttribute('class', 'house-number');
+				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
 				text.textContent = i + 1;
-				svg.appendChild(text);
+				mainGroup.appendChild(text);
 			}
 		}
 		
-		// Draw planets with collision avoidance
 		if (data.sidereal_major_positions) {
 			const outerGlyphRadius = zodiacRadius + 35;
 			const glyphConnectorRadius = zodiacRadius;
@@ -413,28 +415,30 @@ const AstrologyCalculator = {
 			}
 
 			planets.forEach(planet => {
-				const lineStartCoords = degreeToCartesian(glyphConnectorRadius, planet.degrees + rotationOffset);
-				const lineEndCoords = degreeToCartesian(outerGlyphRadius, planet.adjustedDegrees + rotationOffset);
+				const lineStartCoords = degreeToCartesian(glyphConnectorRadius, planet.degrees);
+				const lineEndCoords = degreeToCartesian(outerGlyphRadius, planet.adjustedDegrees);
 				const line = document.createElementNS(this.SVG_NS, 'line');
 				line.setAttribute('x1', lineStartCoords.x); line.setAttribute('y1', lineStartCoords.y);
 				line.setAttribute('x2', lineEndCoords.x); line.setAttribute('y2', lineEndCoords.y);
 				line.setAttribute('class', 'zodiac-divider');
-				svg.appendChild(line);
+				mainGroup.appendChild(line);
 
-				const textCoords = degreeToCartesian(outerGlyphRadius + 20, planet.adjustedDegrees + rotationOffset);
+				const textCoords = degreeToCartesian(outerGlyphRadius + 20, planet.adjustedDegrees);
 				const text = document.createElementNS(this.SVG_NS, 'text');
 				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
 				text.setAttribute('class', 'planet-glyph');
+				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
 				text.textContent = this.PLANET_GLYPHS[planet.name];
-				svg.appendChild(text);
+				mainGroup.appendChild(text);
 
 				if (planet.retrograde) {
-					const rxCoords = degreeToCartesian(outerGlyphRadius + 22, planet.adjustedDegrees + 4.5 + rotationOffset);
+					const rxCoords = degreeToCartesian(outerGlyphRadius + 22, planet.adjustedDegrees + 4.5);
 					const rxText = document.createElementNS(this.SVG_NS, 'text');
 					rxText.setAttribute('x', rxCoords.x); rxText.setAttribute('y', rxCoords.y);
 					rxText.setAttribute('class', 'planet-retrograde');
+					rxText.setAttribute('transform', `rotate(${-rotation} ${rxCoords.x} ${rxCoords.y})`);
 					rxText.textContent = '℞';
-					svg.appendChild(rxText);
+					mainGroup.appendChild(rxText);
 				}
 			});
 		}
