@@ -41,7 +41,7 @@ const AstrologyCalculator = {
 			const isChecked = this.checked;
 			birthTimeInput.disabled = isChecked;
 			if (isChecked) {
-				birthTimeInput.value = '12:00 PM'; // Noon
+				birthTimeInput.value = '12:00 PM';
 			}
 		});
 		this.form.addEventListener("submit", (e) => this.handleFormSubmit(e));
@@ -76,18 +76,17 @@ const AstrologyCalculator = {
 			year = 2000;
 		}
 
-		// --- NEW TIME PARSING LOGIC ---
 		const timeInput = this.form.querySelector("[name='birthTime']").value;
 		const timeRegex = /(\d{1,2}):(\d{2})\s*(AM|PM)/i;
 		const timeMatch = timeInput.match(timeRegex);
 		if (!timeMatch) throw new Error("Please enter the time in HH:MM AM/PM format (e.g., 02:30 PM).");
 		
-		let hour = parseInt(timeMatch[1]);
-		const minute = parseInt(timeMatch[2]);
+		let hour = parseInt(timeMatch[1], 10);
+		const minute = parseInt(timeMatch[2], 10);
 		const ampm = timeMatch[3].toUpperCase();
 
 		if (ampm === 'PM' && hour < 12) hour += 12;
-		if (ampm === 'AM' && hour === 12) hour = 0; // Midnight case
+		if (ampm === 'AM' && hour === 12) hour = 0;
 
 		const apiRes = await fetch(this.API_URLS.calculate, {
 			method: "POST",
