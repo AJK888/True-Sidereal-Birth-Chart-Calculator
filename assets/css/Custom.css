@@ -8,7 +8,7 @@
 #header.alt {
     background-color: transparent;
 }
-#description-wrapper, #results, #legal {
+#description-wrapper, #results, #legal, #spiritual-context {
     background-color: #24293e;
 }
 #form-section {
@@ -59,7 +59,38 @@ pre {
 .time-note { font-size: 0.8rem; }
 .results-container .major { margin-bottom: 2rem; }
 
-/* Chart Wheel SVG styles using theme colors */
+/* FIX for white input boxes */
+.time-inputs-container input[type="number"], .time-inputs-container select {
+    background-color: #ffffff !important; /* Use important to override theme */
+    color: #2e344d !important;
+}
+/* Remove number input spinners for a cleaner look */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Styling for name numerology checkbox */
+.name-numerology-toggle {
+    display: flex;
+    align-items: center;
+    margin-top: 0.75rem;
+    font-size: 0.8em;
+}
+.name-numerology-toggle input {
+    width: auto;
+    margin-right: 0.5rem;
+}
+.name-numerology-toggle label {
+    margin: 0;
+    font-weight: 400;
+}
+
+/* Chart Wheel SVG styles */
 #chart-wheel-svg, #transit-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; }
 .wheel-circle { stroke: rgba(255, 255, 255, 0.25); stroke-width: 2; fill: none; }
 .zodiac-divider { stroke: rgba(255, 255, 255, 0.25); stroke-width: 1; }
@@ -75,16 +106,25 @@ pre {
 .aspect-trine, .aspect-sextile { stroke: #3182ce; }
 .aspect-quincunx, .aspect-semisextile, .aspect-semisquare, .aspect-sesquiquadrate, .aspect-quintile, .aspect-biquintile { stroke: rgba(255, 255, 255, 0.25); stroke-dasharray: 4 4; }
 
-/* 4. Cleaner styling for Legal Section */
-#legal .inner { border-top: solid 2px rgba(255, 255, 255, 0.25); margin-top: 3rem; padding-top: 3rem; }
-#legal details {
+/* Cleaner styling for Legal & Spiritual Context Sections */
+#legal .inner, #spiritual-context .inner { 
+    border-top: solid 2px rgba(255, 255, 255, 0.25); 
+    margin-top: 3rem; 
+    padding-top: 3rem; 
+}
+#spiritual-context .inner {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+}
+#legal details, #spiritual-context details {
     background: transparent;
     border: solid 1px rgba(255, 255, 255, 0.25);
     border-radius: 4px;
     padding: 1.5em;
     margin-bottom: 1rem;
 }
-#legal summary {
+#legal summary, #spiritual-context summary {
     font-weight: 600;
     font-size: 1.2rem;
     cursor: pointer;
@@ -92,13 +132,17 @@ pre {
     transition: color 0.2s ease-in-out;
     list-style: none;
 }
-#legal summary::-webkit-details-marker { display: none; }
-#legal summary:hover { color: #805ad5; }
-#legal details div {
+#legal summary::-webkit-details-marker, #spiritual-context summary::-webkit-details-marker { display: none; }
+#legal summary:hover, #spiritual-context summary:hover { color: #805ad5; }
+#legal details div, #spiritual-context details div {
     padding-top: 1.5rem;
     margin-top: 1rem;
     border-top: solid 1px rgba(255, 255, 255, 0.25);
     font-size: 0.9em;
     color: rgba(255, 255, 255, 0.75);
 }
-#legal h4 { font-size: 1rem; margin: 1.5rem 0 0.5rem 0; color: #ffffff; }
+#legal h4, #spiritual-context h4 { 
+    font-size: 1rem; 
+    margin: 1.5rem 0 0.5rem 0; 
+    color: #ffffff; 
+}
