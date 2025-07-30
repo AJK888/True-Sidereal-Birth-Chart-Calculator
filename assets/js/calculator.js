@@ -450,6 +450,10 @@ const AstrologyCalculator = {
 				}
 			});
 		}
+		    } catch (error) {
+        console.error("Error drawing chart wheel:", error);
+        svg.innerHTML = `<text x="500" y="500" font-size="20" fill="red" text-anchor="middle">Chart drawing failed. Check console.</text>`;
+    }
 	},
 	
 	populateGlyphLegend() {
