@@ -65,25 +65,6 @@ class ReadingRequest(BaseModel):
     chart_data: dict
     unknown_time: bool
 
-Of course. To get a more detailed and thoughtfully paced reading from the AI, we can adjust its instructions to prioritize depth over breadth.
-
-### \#\# How I'm Adjusting the Prompt
-
-I've updated the `get_gemini_reading` function with the following changes to encourage a longer, more explanatory response:
-
-  * **Explicitly Encouraging Length:** I've changed the instructions from "write a detailed reading" to "write a generous, in-depth reading," and added the command, "**Prioritize thorough explanation over brevity.**" This tells the AI that a longer, more descriptive response is preferred.
-
-  * **The "Define, Connect, Explain" Model:** I've instructed the AI to follow a specific pattern for each major point it makes. It must first **define** the astrological piece (e.g., "The Sun represents..."), then **connect** it to another part of the chart (e.g., "...this is echoed by your Life Path number..."), and finally **explain** what that connection means for the person's life in detail. This forces it to slow down and fully unpack its insights rather than just listing them.
-
-  * **Focusing the Persona:** The AI's persona is now described as a "gifted teacher" whose skill is explaining concepts with "depth, patience, and clarity," further reinforcing the goal of a less rushed, more educational reading.
-
-Here is the complete, updated `get_gemini_reading` function for your `api.py` file.
-
------
-
-### \#\# `get_gemini_reading` (Updated)
-
-```python
 async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
     """
     Generates a Gemini reading. Switches between a full reading (known time)
@@ -93,7 +74,9 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         return "Gemini API key not configured. AI reading is unavailable."
 
     try:
-        # --- Data Extraction (common to both prompts) ---
+        model = genai.GenerativeModel('gemini-1.5-pro-latest')
+        prompt_parts = []
+        
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         numerology_analysis = chart_data.get("numerology_analysis", {})
         chinese_zodiac = chart_data.get("chinese_zodiac")
@@ -104,11 +87,8 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         sun = next((p for p in s_positions if p['name'] == 'Sun'), None)
         moon = next((p for p in s_positions if p['name'] == 'Moon'), None)
 
-        prompt_parts = []
-
         if unknown_time:
             # --- PROMPT FOR UNKNOWN BIRTH TIME ---
-            # (This prompt remains the same as it's already designed for a more concise reading)
             prompt_parts.append(
                 "You are a wise astrologer providing a reading for a chart where the exact birth time is unknown. "
                 "This is called a 'Noon Chart'.\n"
@@ -138,81 +118,65 @@ Key Themes in Your Chart
 The Story of Your Inner World
 (Under this plain text heading, write a multi-paragraph narrative weaving together the Sun, Moon, numerology, and the three tightest aspects to explain the core themes. Do not use sub-labels like 'Introduction' or 'Body'.)
 """)
+            final_response = await model.generate_content_async("\n".join(prompt_parts))
+            return final_response.text.strip()
 
         else:
-            # --- PROMPT FOR KNOWN BIRTH TIME (MASTER SYNTHESIS) ---
-            prompt_parts.append(
-                "You are a master astrologer and gifted teacher. Your skill is not just in seeing the connections in a chart, but in explaining them with depth, patience, and clarity, making complex ideas feel simple and profound. You identify the 'golden thread'—the central narrative or soul's purpose—that connects every single placement, aspect, and number in a person's blueprint."
-            )
+            # --- TWO-STEP PROMPT FOR KNOWN BIRTH TIME (MASTER SYNTHESIS) ---
             
-            prompt_parts.append("\n**Full Anonymized Chart Data:**")
+            # --- STEP 1: THE ANALYST PROMPT ---
+            analyst_prompt_parts = [
+                "You are a master astrological analyst. Your task is to review the provided raw chart data and extract ONLY the most critical, interconnected themes and their corresponding astrological evidence. Be concise and structured. Do not write a narrative."
+            ]
+            analyst_prompt_parts.append("\n**Full Anonymized Chart Data:**")
             asc = next((p for p in s_positions if p['name'] == 'Ascendant'), None)
-            if sun: prompt_parts.append(f"- Sun: {sun['position']} ({sun['percentage']}%)")
-            if moon: prompt_parts.append(f"- Moon: {moon['position']} ({moon['percentage']}%)")
-            if asc: prompt_parts.append(f"- Ascendant: {asc['position']} ({asc['percentage']}%)")
-            if s_analysis.get("chart_ruler"): prompt_parts.append(f"- Chart Ruler: {s_analysis['chart_ruler']}")
-            if s_analysis.get("dominant_planet"): prompt_parts.append(f"- Dominant Planet: {s_analysis['dominant_planet']}")
-            if s_analysis.get("dominant_sign"): prompt_parts.append(f"- Dominant Sign: {s_analysis['dominant_sign']}")
-            if s_analysis.get("dominant_element"): prompt_parts.append(f"- Dominant Element: {s_analysis['dominant_element']}")
-            
-            prompt_parts.append("\n**Numerological & Other Data:**")
-            if numerology_analysis.get("life_path_number"): prompt_parts.append(f"- Life Path Number: {numerology_analysis.get('life_path_number')}")
-            if numerology_analysis.get("day_number"): prompt_parts.append(f"- Day Number: {numerology_analysis.get('day_number')}")
-            if numerology_analysis.get("name_numerology"):
-                name_nums = numerology_analysis['name_numerology']
-                prompt_parts.append(f"- Expression Number: {name_nums.get('expression_number')}")
-                prompt_parts.append(f"- Soul Urge Number: {name_nums.get('soul_urge_number')}")
-                prompt_parts.append(f"- Personality Number: {name_nums.get('personality_number')}")
-            if chinese_zodiac: prompt_parts.append(f"- Chinese Zodiac: {chinese_zodiac}")
-
+            if sun: analyst_prompt_parts.append(f"- Sun: {sun['position']} ({sun['percentage']}%)")
+            if moon: analyst_prompt_parts.append(f"- Moon: {moon['position']} ({moon['percentage']}%)")
+            if asc: analyst_prompt_parts.append(f"- Ascendant: {asc['position']} ({asc['percentage']}%)")
+            if s_analysis.get("chart_ruler"): analyst_prompt_parts.append(f"- Chart Ruler: {s_analysis['chart_ruler']}")
+            if s_analysis.get("dominant_planet"): analyst_prompt_parts.append(f"- Dominant Planet: {s_analysis['dominant_planet']}")
+            if s_analysis.get("dominant_sign"): analyst_prompt_parts.append(f"- Dominant Sign: {s_analysis['dominant_sign']}")
+            if s_analysis.get("dominant_element"): analyst_prompt_parts.append(f"- Dominant Element: {s_analysis['dominant_element']}")
+            if numerology_analysis.get("life_path_number"): analyst_prompt_parts.append(f"- Life Path Number: {numerology_analysis.get('life_path_number')}")
+            if numerology_analysis.get("day_number"): analyst_prompt_parts.append(f"- Day Number: {numerology_analysis.get('day_number')}")
             if s_patterns:
-                prompt_parts.append("\n**Key Astrological Patterns (Stelliums):**")
-                for pattern in s_patterns:
-                    prompt_parts.append(f"- {pattern}")
-            
+                for pattern in s_patterns: analyst_prompt_parts.append(f"- Pattern: {pattern}")
             if s_retrogrades:
-                prompt_parts.append("\n**Retrograde Planets (Energy turned inward for reflection):**")
-                for planet in s_retrogrades:
-                    prompt_parts.append(f"- {planet['name']}")
-
+                for planet in s_retrogrades: analyst_prompt_parts.append(f"- Retrograde: {planet['name']}")
             if s_aspects and len(s_aspects) >= 3:
-                prompt_parts.append(f"\n**Three Tightest Aspects (Highest Influence):**")
-                for aspect in s_aspects[:3]:
-                    prompt_parts.append(f"- {aspect['p1_name']} {aspect['type']} {aspect['p2_name']} (Orb: {aspect['orb']})")
+                for aspect in s_aspects[:3]: analyst_prompt_parts.append(f"- Tight Aspect: {aspect['p1_name']} {aspect['type']} {aspect['p2_name']}")
 
-            prompt_parts.append("\n**Your Task:**")
-            prompt_parts.append("""
-**Step 1: Internal Analysis (Do this silently before writing, using ONLY the user's real chart data)**
-First, perform a deep, holistic review of ALL the data provided to find the chart's core narrative.
-1.  **Generate a List of Potential Themes:** Brainstorm a comprehensive list of major themes based on the user's data. Consider all stelliums, numerology, the Chart Ruler, dominants, planet degrees, and the three tightest aspects.
-2.  **Group the Evidence:** For the top themes, internally group the specific chart placements that support each theme to see the connections.
-3.  **Select the Primary Narrative:** Identify the single most compelling and interconnected theme. This will be the 'golden thread' of your reading.
-""")
+            analyst_prompt_parts.append("\n**Your Task:**")
+            analyst_prompt_parts.append(
+                "1. Identify the 3-5 most powerful and interconnected themes in the chart.\n"
+                "2. For each theme, list the specific data points that support it.\n"
+                "3. Output this information as a structured list."
+            )
+            analysis_response = await model.generate_content_async("\n".join(analyst_prompt_parts))
+            structured_analysis = analysis_response.text
 
-            prompt_parts.append("""
-**Step 2: Write the Final Reading**
-Now, write a generous, in-depth, multi-paragraph reading for the user. **Prioritize thorough explanation over brevity.** Structure your response exactly as follows, using plain text headings.
-
-Key Themes in Your Chart
-(Under this heading, list the 3 to 5 most important themes you identified.)
-
-The Central Story of Your Chart
-(Under this heading, write the full narrative. Begin by introducing the 'golden thread' or central theme. For each major point you make, follow a **'define, connect, explain'** model:)
--   First, **define** the astrological concept simply (e.g., 'The Sun represents your core identity...').
--   Then, **connect** it to another part of the chart or numerology ('...and this is perfectly echoed by your Life Path number...').
--   Finally, **explain** the synthesis in detail—what does this connection *mean* for the person's life, their challenges, and their gifts? Dedicate a full paragraph to exploring a single, powerful connection if needed.
--   You must seamlessly integrate **all stelliums**, the **Chart Ruler**, the **Life Path and Day Numbers**, and the **three tightest aspects** into this single, flowing narrative.
--   Conclude with a final paragraph that serves as a warm, empowering summary.
-""")
-
-        prompt = "\n".join(prompt_parts)
-
-        model = genai.GenerativeModel('gemini-1.5-pro-latest')
-        response = await model.generate_content_async(prompt)
-        
-        cleaned_response = response.text.strip()
-        
-        return cleaned_response
+            # --- STEP 2: THE TEACHER PROMPT ---
+            teacher_prompt_parts = [
+                "You are a master astrologer and gifted teacher. Your skill is not just in seeing the connections in a chart, but in explaining them with depth, patience, and clarity. You identify the 'golden thread'—the central narrative—that connects every placement.",
+                "\nHere is the structured analysis of a user's chart:",
+                "--- ANALYSIS START ---",
+                structured_analysis,
+                "--- ANALYSIS END ---",
+                "\n**Your Task:**",
+                "Write a generous, in-depth, multi-paragraph reading based on the analysis above. **Prioritize thorough explanation over brevity.** Structure your response **exactly as follows**, using plain text headings.",
+                
+                "\nKey Themes in Your Chart",
+                "(Under this heading, list the main themes from the analysis.)",
+                
+                "\nThe Central Story of Your Chart",
+                "(Under this heading, write the full narrative. Do not just repeat the analysis; expand and explain it.)",
+                "- For every astrological term (e.g., Sun, Leo, 9th House, Trine, Stellium), you **must** provide a simple, one-sentence definition.",
+                "- **MANDATORY INTEGRATION:** Seamlessly integrate **all stelliums**, the **Chart Ruler**, the **Life Path and Day Numbers**, and the **three tightest aspects** into a single, flowing narrative.",
+                "- **Make connections explicit.** Your explanation should follow this logic: 'Your core identity, represented by your Sun's placement, is fundamentally about X. This is the very mission statement of your soul, which is perfectly echoed by your Life Path Number Y, the number of Z.'",
+                "- Conclude with a warm, empowering summary."
+            ]
+            final_response = await model.generate_content_async("\n".join(teacher_prompt_parts))
+            return final_response.text.strip()
         
     except Exception as e:
         logger.error(f"Error during Gemini reading generation: {e}", exc_info=True)
