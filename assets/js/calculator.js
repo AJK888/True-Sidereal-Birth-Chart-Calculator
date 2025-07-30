@@ -15,7 +15,7 @@ const AstrologyCalculator = {
 		this.cacheDOMElements();
 		this.addEventListeners();
 		this.populateGlyphLegend();
-		this.loadAndDrawTransitChart();
+		// The call to load the transit chart is now handled by the event listener at the bottom
 	},
 
 	cacheDOMElements() {
@@ -463,4 +463,10 @@ const AstrologyCalculator = {
 
 document.addEventListener('DOMContentLoaded', () => {
 	AstrologyCalculator.init();
+	// FIX: Delay the transit chart drawing until after the theme's scripts have run
+	window.addEventListener('load', () => {
+		setTimeout(() => {
+			AstrologyCalculator.loadAndDrawTransitChart();
+		}, 100);
+	});
 });
