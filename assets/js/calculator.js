@@ -307,7 +307,7 @@ const AstrologyCalculator = {
 		}
 		
 		const ascendantDegrees = parseFloat(ascendantPosition.degrees);
-		const rotation = 180 - ascendantDegrees;
+		const rotation = 270 - ascendantDegrees;
 		
 		const mainGroup = document.createElementNS(this.SVG_NS, 'g');
 		mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
