@@ -1,5 +1,3 @@
-// assets/js/calculator.js
-
 const AstrologyCalculator = {
 	API_URLS: {
 		calculate: "https://true-sidereal-api.onrender.com/calculate_chart",
@@ -37,14 +35,14 @@ const AstrologyCalculator = {
 	
 	addEventListeners() {
 		const unknownTimeCheckbox = document.getElementById('unknownTime');
-		const hourInput = document.getElementById('hour');
-		const minuteInput = document.getElementById('minute');
-		const ampmSelect = document.getElementById('ampm');
+		const birthTimeInput = document.getElementById('birthTime');
 		
 		unknownTimeCheckbox.addEventListener('change', function() {
 			const isChecked = this.checked;
-			hourInput.disabled = isChecked; minuteInput.disabled = isChecked; ampmSelect.disabled = isChecked;
-			if (isChecked) { hourInput.value = '12'; minuteInput.value = '00'; ampmSelect.value = 'pm'; }
+			birthTimeInput.disabled = isChecked;
+			if (isChecked) {
+				birthTimeInput.value = '12:00 PM'; // Noon
+			}
 		});
 		this.form.addEventListener("submit", (e) => this.handleFormSubmit(e));
 	},
@@ -78,18 +76,25 @@ const AstrologyCalculator = {
 			year = 2000;
 		}
 
-		let hour = parseInt(this.form.querySelector("[name='hour']").value);
-		const ampm = this.form.querySelector("[name='ampm']").value;
-		if (ampm === 'pm' && hour < 12) hour += 12;
-		if (ampm === 'am' && hour === 12) hour = 0;
+		// --- NEW TIME PARSING LOGIC ---
+		const timeInput = this.form.querySelector("[name='birthTime']").value;
+		const timeRegex = /(\d{1,2}):(\d{2})\s*(AM|PM)/i;
+		const timeMatch = timeInput.match(timeRegex);
+		if (!timeMatch) throw new Error("Please enter the time in HH:MM AM/PM format (e.g., 02:30 PM).");
+		
+		let hour = parseInt(timeMatch[1]);
+		const minute = parseInt(timeMatch[2]);
+		const ampm = timeMatch[3].toUpperCase();
+
+		if (ampm === 'PM' && hour < 12) hour += 12;
+		if (ampm === 'AM' && hour === 12) hour = 0; // Midnight case
 
 		const apiRes = await fetch(this.API_URLS.calculate, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
 				full_name: this.form.querySelector("[name='fullName']").value,
-				year, month, day, hour,
-				minute: parseInt(this.form.querySelector("[name='minute']").value),
+				year, month, day, hour, minute,
 				location: this.form.querySelector("[name='location']").value,
 				unknown_time: this.form.querySelector("[name='unknownTime']").checked
 			}),
