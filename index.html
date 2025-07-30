@@ -9,7 +9,6 @@
 		<style>
 			/* Custom Styles to fully integrate the calculator with the Forty Theme */
 			
-			/* 1. Header & Section Color Updates */
 			#header {
 				background-color: #805ad5;
 				transition: background-color 0.3s ease-in-out;
@@ -23,8 +22,6 @@
 			#form-section {
 				background-color: #202436;
 			}
-
-			/* 2. Layout & Sizing */
 			.two-column-container {
 				display: grid;
 				grid-template-columns: 1.5fr 1fr;
@@ -44,8 +41,6 @@
 				max-width: 100%;
 				margin: 0 auto;
 			}
-
-			/* 3. Thematic Font and Color Consistency */
 			pre {
 				background-color: #2a2f43;
 				border-radius: 4px;
@@ -67,7 +62,6 @@
 			.time-inputs { display: flex; gap: 1rem; align-items: flex-end; }
 			.time-note { font-size: 0.8rem; }
 			.results-container .major { margin-bottom: 2rem; }
-
 			#chart-wheel-svg, #transit-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; }
 			.wheel-circle { stroke: rgba(255, 255, 255, 0.25); stroke-width: 2; fill: none; }
 			.zodiac-divider { stroke: rgba(255, 255, 255, 0.25); stroke-width: 1; }
@@ -82,8 +76,6 @@
 			.aspect-opposition, .aspect-square { stroke: #e53e3e; }
 			.aspect-trine, .aspect-sextile { stroke: #3182ce; }
 			.aspect-quincunx, .aspect-semisextile, .aspect-semisquare, .aspect-sesquiquadrate, .aspect-quintile, .aspect-biquintile { stroke: rgba(255, 255, 255, 0.25); stroke-dasharray: 4 4; }
-
-			/* 4. Cleaner styling for Legal Section */
 			#legal .inner { border-top: solid 2px rgba(255, 255, 255, 0.25); margin-top: 3rem; padding-top: 3rem; }
 			#legal details {
 				background: transparent;
@@ -143,36 +135,36 @@
 				<div id="main">
 
 						<section id="description-wrapper">
-			<div class="inner two-column-container">
-				
-				<div class="description-content">
-					<header class="major">
-						<h2>Your Birth Chart</h2>
-					</header>
-					<p>Astrology is a powerful tool for insight and self-development. This platform combines modern technology with ancient wisdom to provide a comprehensive analysis of your unique birth chart.</p>
-					<h4>What you’ll receive:</h4>
-					<ul>
-						<li>A brief professional reading powered by artificial intelligence.</li>
-						<li>A visual True Sidereal chart wheel displaying your planetary alignments.</li>
-						<li>Full planetary placements using both the <strong>True Sidereal</strong> and <strong>Tropical</strong> zodiacs.</li>
-						<li>Analysis of key aspects, planetary patterns, and chart dominance.</li>
-						<li>Your personal Numerology and Chinese Zodiac sign.</li>
-					</ul>
-					<h4>Explore the difference.</h4>
-					<p>The True Sidereal system aligns with the observable night sky, offering a more astronomically accurate perspective. For a well-rounded view, we also include your Tropical placements so you can explore both systems side by side.</p>
-				</div>
+							<div class="inner two-column-container">
+								
+								<div class="description-content">
+									<header class="major">
+										<h2>Your Birth Chart</h2>
+									</header>
+									<p>Astrology is a powerful tool for insight and self-development. This platform combines modern technology with ancient wisdom to provide a comprehensive analysis of your unique birth chart.</p>
+									<h4>What you’ll receive:</h4>
+									<ul>
+										<li>A brief professional reading powered by artificial intelligence.</li>
+										<li>A visual True Sidereal chart wheel displaying your planetary alignments.</li>
+										<li>Full planetary placements using both the <strong>True Sidereal</strong> and <strong>Tropical</strong> zodiacs.</li>
+										<li>Analysis of key aspects, planetary patterns, and chart dominance.</li>
+										<li>Your personal Numerology and Chinese Zodiac sign.</li>
+									</ul>
+									<h4>Explore the difference.</h4>
+									<p>The True Sidereal system aligns with the observable night sky, offering a more astronomically accurate perspective. For a well-rounded view, we also include your Tropical placements so you can explore both systems side by side.</p>
+								</div>
 
-				<div id="transit-chart">
-					<header class="major">
-						<h2>Current Transits</h2>
-					</header>
-					<p style="font-size: 0.9em; opacity: 0.8;">Live view of the planets for Boston, MA.</p>
-					<div id="transit-wheel-container">
-						 <svg id="transit-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
-					</div>
-				</div>
-			</div>
-		</section>
+								<div id="transit-chart">
+									<header class="major">
+										<h2>Current Transits</h2>
+									</header>
+									<p style="font-size: 0.9em; opacity: 0.8;">Live view of the planets for Boston, MA.</p>
+									<div id="transit-wheel-container">
+										 <svg id="transit-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
+									</div>
+								</div>
+							</div>
+						</section>
 
 						<section id="form-section">
 								<div class="inner">
