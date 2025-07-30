@@ -355,12 +355,6 @@ const AstrologyCalculator = {
 
 				const midAngle = start + ((end - start + 360) % 360) / 2;
 				const textCoords = degreeToCartesian(glyphRadius, midAngle);
-				const text = document.createElementNS(this.SVG_NS, 'text');
-				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
-				text.setAttribute('class', 'zodiac-glyph');
-				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
-				text.textContent = this.ZODIAC_GLYPHS[name];
-				mainGroup.appendChild(text);
 			});
 		}
 
@@ -380,12 +374,6 @@ const AstrologyCalculator = {
 				let midAngle = (startAngle + endAngle) / 2;
 				if (endAngle < startAngle) midAngle = ((startAngle + endAngle + 360) / 2) % 360;
 				const textCoords = degreeToCartesian(innerRadius + 25, midAngle);
-				const text = document.createElementNS(this.SVG_NS, 'text');
-				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
-				text.setAttribute('class', 'house-number');
-				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
-				text.textContent = i + 1;
-				mainGroup.appendChild(text);
 			}
 		}
 		
@@ -432,12 +420,6 @@ const AstrologyCalculator = {
 				mainGroup.appendChild(line);
 
 				const textCoords = degreeToCartesian(outerGlyphRadius + 20, planet.adjustedDegrees);
-				const text = document.createElementNS(this.SVG_NS, 'text');
-				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
-				text.setAttribute('class', 'planet-glyph');
-				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
-				text.textContent = this.PLANET_GLYPHS[planet.name];
-				mainGroup.appendChild(text);
 
 				if (planet.retrograde) {
 					const rxCoords = degreeToCartesian(outerGlyphRadius + 22, planet.adjustedDegrees + 4.5);
