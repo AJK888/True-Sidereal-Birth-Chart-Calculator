@@ -294,32 +294,23 @@ const AstrologyCalculator = {
 	drawChartWheel(data, svgId) {
 	    const svg = document.getElementById(svgId);
 	    if (!svg) return;
-	    svg.innerHTML = ''; 
+	    svg.innerHTML = '';
 	
 	    const centerX = 500, centerY = 500;
 	    const zodiacRadius = 450, houseRingRadius = 350, innerRadius = 150;
-	    
-	    // --- START: MODIFIED CODE ---
-	    let rotation;
 	
-	    // Check if we are drawing the transit chart
-	    if (svgId === 'transit-wheel-svg') {
-	        // For the generic transit chart, always anchor 0° Aries to the 9 o'clock position.
-	        // This requires a simple 180-degree rotation.
-	        rotation = 180;
-	    } else {
-	        // For personal natal charts, use the original logic to anchor the person's Ascendant.
-	        const ascendant = data.sidereal_major_positions.find(p => p.name === 'Ascendant');
-	        if (!ascendant || ascendant.degrees === null) {
-	            svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text>';
-	            return;
-	        }
-	        rotation = 180 - ascendant.degrees;
+	    // This is the correct logic for all charts
+	    const ascendant = data.sidereal_major_positions.find(p => p.name === 'Ascendant');
+	    if (!ascendant || ascendant.degrees === null) {
+	        svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text>';
+	        return;
 	    }
-		const mainGroup = document.createElementNS(this.SVG_NS, 'g');
-		mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
-		svg.appendChild(mainGroup);
-
+	    const rotation = 180 - ascendant.degrees;
+	
+	    const mainGroup = document.createElementNS(this.SVG_NS, 'g');
+	    mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
+	    svg.appendChild(mainGroup);
+		
 		const degreeToCartesian = (radius, angleDegrees) => {
 			const angleRadians = angleDegrees * (Math.PI / 180);
 			return { x: centerX + radius * Math.cos(angleRadians), y: centerY - radius * Math.sin(angleRadians) };
