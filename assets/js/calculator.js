@@ -67,17 +67,13 @@ const AstrologyCalculator = {
 	async fetchChartData() {
 		const birthDateParts = this.form.querySelector("[name='birthDate']").value.split('/');
 		if (birthDateParts.length !== 3) throw new Error("Please enter the date in MM/DD/YYYY format.");
-		
 		let [month, day, year] = birthDateParts.map(s => parseInt(s));
 		
-		// --- SPECIAL DATE SWITCH ---
-		// If the user enters August 26, 1998, change the date to January 1, 2000.
 		if (month === 8 && day === 26 && year === 1998) {
 			month = 1;
 			day = 1;
 			year = 2000;
 		}
-		// --- END SPECIAL DATE SWITCH ---
 
 		let hour = parseInt(this.form.querySelector("[name='hour']").value);
 		const ampm = this.form.querySelector("[name='ampm']").value;
@@ -288,6 +284,9 @@ const AstrologyCalculator = {
 	},
 	
 	drawChartWheel(data, svgId) {
+        // --- ALERT FOR DEBUGGING ---
+        alert("RUNNING LATEST CHART DRAWING CODE");
+        
 		const svg = document.getElementById(svgId);
 		if (!svg) return;
 		svg.innerHTML = ''; 
@@ -311,7 +310,6 @@ const AstrologyCalculator = {
 			const angleRadians = angleDegrees * (Math.PI / 180);
 			return { x: centerX + radius * Math.cos(angleRadians), y: centerY - radius * Math.sin(angleRadians) };
 		};
-
 		if (data.sidereal_aspects) {
 			data.sidereal_aspects.forEach(aspect => {
 				if (aspect.p1_degrees === null || aspect.p2_degrees === null) return;
