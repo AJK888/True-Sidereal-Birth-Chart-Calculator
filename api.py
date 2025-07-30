@@ -126,7 +126,7 @@ The Story of Your Inner World
             
             # --- STEP 1: THE ANALYST PROMPT ---
             analyst_prompt_parts = [
-                "You are a master astrological analyst. Your task is to review the provided raw chart data and extract ONLY the most critical, interconnected themes and their corresponding astrological evidence. Be concise and structured. Do not write a narrative."
+                "You are a master astrological analyst. Your task is to review the provided raw chart data and extract ONLY the most critical, interconnected themes and their corresponding astrological evidence. Be concise, structured, and use bullet points. **Do not invent any placements.** Your output will be used by another AI to write the final reading."
             ]
             analyst_prompt_parts.append("\n**Full Anonymized Chart Data:**")
             asc = next((p for p in s_positions if p['name'] == 'Ascendant'), None)
@@ -157,7 +157,7 @@ The Story of Your Inner World
 
             # --- STEP 2: THE TEACHER PROMPT ---
             teacher_prompt_parts = [
-                "You are a master astrologer and gifted teacher. Your skill is not just in seeing the connections in a chart, but in explaining them with depth, patience, and clarity. You identify the 'golden thread'—the central narrative—that connects every placement.",
+                "You are a master astrologer and gifted teacher. Your skill is not just in seeing the connections in a chart, but in explaining them with depth, patience, and clarity. You identify the 'golden thread'—the central narrative—that connects every placement. **Crucially, you must base your reading exclusively and entirely on the analysis provided. Do not invent any placements, planets (e.g., 'Earth'), or signs that are not explicitly listed in the analysis.**",
                 "\nHere is the structured analysis of a user's chart:",
                 "--- ANALYSIS START ---",
                 structured_analysis,
