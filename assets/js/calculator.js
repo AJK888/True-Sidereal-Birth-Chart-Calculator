@@ -358,6 +358,7 @@ const AstrologyCalculator = {
 				const text = document.createElementNS(this.SVG_NS, 'text');
 				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
 				text.setAttribute('class', 'zodiac-glyph');
+				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
 				text.textContent = this.ZODIAC_GLYPHS[name];
 				mainGroup.appendChild(text);
 			});
@@ -382,6 +383,7 @@ const AstrologyCalculator = {
 				const text = document.createElementNS(this.SVG_NS, 'text');
 				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
 				text.setAttribute('class', 'house-number');
+				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
 				text.textContent = i + 1;
 				mainGroup.appendChild(text);
 			}
@@ -433,6 +435,7 @@ const AstrologyCalculator = {
 				const text = document.createElementNS(this.SVG_NS, 'text');
 				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
 				text.setAttribute('class', 'planet-glyph');
+				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
 				text.textContent = this.PLANET_GLYPHS[planet.name];
 				mainGroup.appendChild(text);
 
