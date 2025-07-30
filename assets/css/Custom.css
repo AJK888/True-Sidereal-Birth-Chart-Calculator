@@ -90,7 +90,7 @@ pre {
 .aspect-trine, .aspect-sextile { stroke: #3182ce; }
 .aspect-quincunx, .aspect-semisextile, .aspect-semisquare, .aspect-sesquiquadrate, .aspect-quintile, .aspect-biquintile { stroke: rgba(255, 255, 255, 0.25); stroke-dasharray: 4 4; }
 
-/* Legal & Spiritual Context Section Styling */
+/* 4. Cleaner styling for Legal & Spiritual Context Sections */
 #legal .inner, #spiritual-context .inner { 
     border-top: solid 2px rgba(255, 255, 255, 0.25); 
     margin-top: 3rem; 
