@@ -229,21 +229,21 @@ const AstrologyCalculator = {
 	    out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
 	    res.sidereal_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
 	    
-	    out += `\n--- ASPECT PATTERNS ---\n`;
-	    if (res.sidereal_aspect_patterns && res.sidereal_aspect_patterns.length > 0) {
-	        res.sidereal_aspect_patterns.forEach(p => {
-	            let line = `- ${p.description}`;
-	            if (p.orb) { // Check if 'orb' exists
-	                line += ` (avg orb ${p.orb})`;
-	            }
-	            if (p.score) { // Check if 'score' exists
-	                line += ` (score ${p.score})`;
-	            }
-	            out += `${line}\n`;
-	        });
-	    } else {
-	        out += "- No major aspect patterns detected.\n";
-	    }
+		out += `\n--- ASPECT PATTERNS ---\n`;
+		if (res.sidereal_aspect_patterns && res.sidereal_aspect_patterns.length > 0) {
+		    res.sidereal_aspect_patterns.forEach(p => {
+		        let line = `- ${p.description}`;
+		        if (p.orb) {
+		            line += ` (avg orb ${p.orb})`;
+		        }
+		        if (p.score) {
+		            line += ` (score ${p.score})`;
+		        }
+		        out += `${line}\n`;
+		    });
+		} else {
+		    out += "- No major aspect patterns detected.\n";
+		}
 	
 	    if (!res.unknown_time) {
 	        out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
@@ -293,21 +293,21 @@ const AstrologyCalculator = {
 	        out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
 	        res.tropical_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
 	
-	        out += `\n--- ASPECT PATTERNS ---\n`;
-	        if (res.tropical_aspect_patterns && res.tropical_aspect_patterns.length > 0) {
-	            res.tropical_aspect_patterns.forEach(p => {
-	                let line = `- ${p.description}`;
-	                if (p.orb) { // Check if 'orb' exists
-	                    line += ` (avg orb ${p.orb})`;
-	                }
-	                if (p.score) { // Check if 'score' exists
-	                    line += ` (score ${p.score})`;
-	                }
-	                out += `${line}\n`;
-	            });
-	        } else {
-	            out += "- No major aspect patterns detected.\n";
-	        }
+		out += `\n--- ASPECT PATTERNS ---\n`;
+		if (res.tropical_aspect_patterns && res.tropical_aspect_patterns.length > 0) {
+		    res.tropical_aspect_patterns.forEach(p => {
+		        let line = `- ${p.description}`;
+		        if (p.orb) {
+		            line += ` (avg orb ${p.orb})`;
+		        }
+		        if (p.score) {
+		            line += ` (score ${p.score})`;
+		        }
+		        out += `${line}\n`;
+		    });
+		} else {
+		    out += "- No major aspect patterns detected.\n";
+		}
 	
 	        if (!res.unknown_time) {
 	            out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
