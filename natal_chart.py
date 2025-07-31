@@ -229,42 +229,104 @@ class NatalChart:
                 if abs(diff - angle) <= orb_max: self.tropical_aspects.append(Aspect(p1, p2, name, round(diff - angle, 2), round(ASPECT_SCORES.get(name, 1) / (1 + abs(diff - angle)), 2)))
         self.tropical_aspects.sort(key=lambda x: -x.strength)
     def _detect_aspect_patterns(self) -> None:
-        planets_s = {b.name: b for b in self.sidereal_bodies if b.is_main_planet and b.degree is not None}; names_s = list(planets_s.keys())
-        def find_aspect_s(p1, p2, type): return any(a.type == type and ((a.p1.name == p1 and a.p2.name == p2) or (a.p1.name == p2 and a.p2.name == p1)) for a in self.sidereal_aspects)
+        # Helper function to find a specific aspect object between two planets
+        def get_aspect(p1_name: str, p2_name: str, aspect_type: str, aspects_list: List[Aspect]) -> Optional[Aspect]:
+            for aspect in aspects_list:
+                if aspect.type == aspect_type and (
+                    (aspect.p1.name == p1_name and aspect.p2.name == p2_name) or
+                    (aspect.p1.name == p2_name and aspect.p2.name == p1_name)
+                ):
+                    return aspect
+            return None
+
+        # --- Sidereal Patterns ---
+        planets_s = {b.name: b for b in self.sidereal_bodies if b.is_main_planet and b.degree is not None}
+        names_s = list(planets_s.keys())
         if len(names_s) >= 3:
             for p1, p2, p3 in combinations(names_s, 3):
-                if find_aspect_s(p1, p2, 'Opposition') and find_aspect_s(p1, p3, 'Square') and find_aspect_s(p2, p3, 'Square'):
-                    modalities = {MODALITY_MAPPING.get(planets_s[p].sign) for p in [p1, p2, p3]}; modality = modalities.pop() if len(modalities) == 1 else "Mixed"
-                    self.sidereal_aspect_patterns.append({"description": f"{p1} opp {p2}, focal {p3} ({modality} T-Square)"})
-        sign_groups_s = {};
-        for name, p in planets_s.items(): sign_groups_s.setdefault(p.sign, []).append(name)
+                opp = get_aspect(p1, p2, 'Opposition', self.sidereal_aspects)
+                sq1 = get_aspect(p1, p3, 'Square', self.sidereal_aspects)
+                sq2 = get_aspect(p2, p3, 'Square', self.sidereal_aspects)
+                if opp and sq1 and sq2:
+                    modalities = {MODALITY_MAPPING.get(planets_s[p].sign) for p in [p1, p2, p3]}
+                    modality = modalities.pop() if len(modalities) == 1 else "Mixed"
+                    avg_orb = (abs(opp.orb) + abs(sq1.orb) + abs(sq2.orb)) / 3
+                    total_score = opp.strength + sq1.strength + sq2.strength
+                    self.sidereal_aspect_patterns.append({
+                        "description": f"{p1} opp {p2}, focal {p3} ({modality} T-Square)",
+                        "orb": f"{avg_orb:.2f}°",
+                        "score": f"{total_score:.2f}"
+                    })
+
+        sign_groups_s = {}
+        for name, p in planets_s.items():
+            sign_groups_s.setdefault(p.sign, []).append(name)
         for sign, members in sign_groups_s.items():
             if len(members) >= 3:
-                el = ELEMENT_MAPPING.get(sign, ''); mod = MODALITY_MAPPING.get(sign, '')
-                self.sidereal_aspect_patterns.append({"description": f"{len(members)} bodies in {sign} ({el}, {mod} Sign Stellium)"})
+                el = ELEMENT_MAPPING.get(sign, '')
+                mod = MODALITY_MAPPING.get(sign, '')
+                total_score = sum(self.sidereal_dominance['strength'].get(planet_name, 0) for planet_name in members)
+                self.sidereal_aspect_patterns.append({
+                    "description": f"{len(members)} bodies in {sign} ({el}, {mod} Sign Stellium)",
+                    "score": f"{total_score:.2f}"
+                })
+
         house_groups_s = {}
         for body in self.all_sidereal_points:
-            if body.is_main_planet and body.house_num > 0: house_groups_s.setdefault(body.house_num, []).append(body.name)
+            if body.is_main_planet and body.house_num > 0:
+                house_groups_s.setdefault(body.house_num, []).append(body.name)
         for house, members in house_groups_s.items():
-            if len(members) >= 3: self.sidereal_aspect_patterns.append({"description": f"{len(members)} bodies in House {house} (House Stellium)"})
-        planets_t = {b.name: b for b in self.tropical_bodies if b.is_main_planet and b.degree is not None}; names_t = list(planets_t.keys())
-        def find_aspect_t(p1, p2, type): return any(a.type == type and ((a.p1.name == p1 and a.p2.name == p2) or (a.p1.name == p2 and a.p2.name == p1)) for a in self.tropical_aspects)
+            if len(members) >= 3:
+                total_score = sum(self.sidereal_dominance['strength'].get(planet_name, 0) for planet_name in members)
+                self.sidereal_aspect_patterns.append({
+                    "description": f"{len(members)} bodies in House {house} (House Stellium)",
+                    "score": f"{total_score:.2f}"
+                })
+
+        # --- Tropical Patterns ---
+        planets_t = {b.name: b for b in self.tropical_bodies if b.is_main_planet and b.degree is not None}
+        names_t = list(planets_t.keys())
         if len(names_t) >= 3:
             for p1, p2, p3 in combinations(names_t, 3):
-                if find_aspect_t(p1, p2, 'Opposition') and find_aspect_t(p1, p3, 'Square') and find_aspect_t(p2, p3, 'Square'):
-                    modalities = {MODALITY_MAPPING.get(planets_t[p].sign) for p in [p1, p2, p3]}; modality = modalities.pop() if len(modalities) == 1 else "Mixed"
-                    self.tropical_aspect_patterns.append({"description": f"{p1} opp {p2}, focal {p3} ({modality} T-Square)"})
-        sign_groups_t = {};
-        for name, p in planets_t.items(): sign_groups_t.setdefault(p.sign, []).append(name)
+                opp = get_aspect(p1, p2, 'Opposition', self.tropical_aspects)
+                sq1 = get_aspect(p1, p3, 'Square', self.tropical_aspects)
+                sq2 = get_aspect(p2, p3, 'Square', self.tropical_aspects)
+                if opp and sq1 and sq2:
+                    modalities = {MODALITY_MAPPING.get(planets_t[p].sign) for p in [p1, p2, p3]}
+                    modality = modalities.pop() if len(modalities) == 1 else "Mixed"
+                    avg_orb = (abs(opp.orb) + abs(sq1.orb) + abs(sq2.orb)) / 3
+                    total_score = opp.strength + sq1.strength + sq2.strength
+                    self.tropical_aspect_patterns.append({
+                        "description": f"{p1} opp {p2}, focal {p3} ({modality} T-Square)",
+                        "orb": f"{avg_orb:.2f}°",
+                        "score": f"{total_score:.2f}"
+                    })
+
+        sign_groups_t = {}
+        for name, p in planets_t.items():
+            sign_groups_t.setdefault(p.sign, []).append(name)
         for sign, members in sign_groups_t.items():
             if len(members) >= 3:
-                el = ELEMENT_MAPPING.get(sign, ''); mod = MODALITY_MAPPING.get(sign, '')
-                self.tropical_aspect_patterns.append({"description": f"{len(members)} bodies in {sign} ({el}, {mod} Sign Stellium)"})
+                el = ELEMENT_MAPPING.get(sign, '')
+                mod = MODALITY_MAPPING.get(sign, '')
+                total_score = sum(self.tropical_dominance['strength'].get(planet_name, 0) for planet_name in members)
+                self.tropical_aspect_patterns.append({
+                    "description": f"{len(members)} bodies in {sign} ({el}, {mod} Sign Stellium)",
+                    "score": f"{total_score:.2f}"
+                })
+
         house_groups_t = {}
         for body in self.all_tropical_points:
-            if body.is_main_planet and body.house_num > 0: house_groups_t.setdefault(body.house_num, []).append(body.name)
+            if body.is_main_planet and body.house_num > 0:
+                house_groups_t.setdefault(body.house_num, []).append(body.name)
         for house, members in house_groups_t.items():
-            if len(members) >= 3: self.tropical_aspect_patterns.append({"description": f"{len(members)} bodies in House {house} (House Stellium)"})
+            if len(members) >= 3:
+                total_score = sum(self.tropical_dominance['strength'].get(planet_name, 0) for planet_name in members)
+                self.tropical_aspect_patterns.append({
+                    "description": f"{len(members)} bodies in House {house} (House Stellium)",
+                    "score": f"{total_score:.2f}"
+                })
+                
     def _calculate_house_sign_distributions(self) -> None:
         asc = self.ascendant_data.get("sidereal_asc")
         if asc is None: return
