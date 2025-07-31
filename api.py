@@ -47,10 +47,10 @@ origins = [
 ]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],       # Allow all origins
     allow_credentials=True,
-    allow_methods=["POST", "GET", "HEAD", "OPTIONS"], 
-    allow_headers=["*"],
+    allow_methods=["*"],       # Allow all methods
+    allow_headers=["*"],       # Allow all headers
 )
 
 class ChartRequest(BaseModel):
