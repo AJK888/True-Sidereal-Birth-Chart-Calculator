@@ -41,16 +41,17 @@ def ping():
     return {"message": "ok"}
 
 origins = [
-    "https.true-sidereal-birth-chart.onrender.com",
+    "https://true-sidereal-birth-chart.onrender.com", 
     "https://synthesisastrology.org",
     "https://www.synthesisastrology.org",
 ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],       # Allow all origins
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],       # Allow all methods
-    allow_headers=["*"],       # Allow all headers
+    allow_methods=["POST", "GET", "HEAD", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 class ChartRequest(BaseModel):
