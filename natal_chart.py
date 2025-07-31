@@ -438,12 +438,12 @@ class NatalChart:
             "sidereal_major_positions": sidereal_major_positions,
             "sidereal_retrogrades": sidereal_retrogrades,
             "sidereal_aspects": sidereal_aspects,
-            "sidereal_aspect_patterns": [p['description'] for p in self.sidereal_aspect_patterns],
+            "sidereal_aspect_patterns": self.sidereal_aspect_patterns,
             "sidereal_additional_points": sidereal_additional_points,
             "tropical_chart_analysis": tropical_chart_analysis,
             "tropical_major_positions": tropical_major_positions,
             "tropical_retrogrades": tropical_retrogrades,
             "tropical_aspects": tropical_aspects,
-            "tropical_aspect_patterns": [p['description'] for p in self.tropical_aspect_patterns],
+            "tropical_aspect_patterns": self.tropical_aspect_patterns,
             "tropical_additional_points": tropical_additional_points
         }
