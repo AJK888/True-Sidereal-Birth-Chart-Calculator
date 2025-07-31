@@ -156,13 +156,17 @@ class NatalChart:
         self.ascendant_data: Dict[str, Any] = {}; self.day_night_info: Dict[str, Any] = {}
 
     def calculate_chart(self) -> None:
-        self._calculate_ascendant_mc_data();
-        if self.ascendant_data.get("sidereal_asc") is None: return
+        self._calculate_ascendant_mc_data()
+        if self.ascendant_data.get("sidereal_asc") is None:
+            return
+
         self._determine_day_night()
         self._calculate_all_points()
         self._calculate_aspects()
-        self._calculate_house_sign_distributions(); self._analyze_dominance()
+        self._calculate_house_sign_distributions()
+        self._analyze_dominance()
         self._detect_aspect_patterns()
+
     
     def _calculate_ascendant_mc_data(self) -> None:
         try:
