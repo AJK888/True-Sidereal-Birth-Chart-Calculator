@@ -160,8 +160,9 @@ class NatalChart:
         if self.ascendant_data.get("sidereal_asc") is None: return
         self._determine_day_night()
         self._calculate_all_points()
-        self._calculate_aspects(); self._detect_aspect_patterns()
+        self._calculate_aspects()
         self._calculate_house_sign_distributions(); self._analyze_dominance()
+        self._detect_aspect_patterns()
     
     def _calculate_ascendant_mc_data(self) -> None:
         try:
