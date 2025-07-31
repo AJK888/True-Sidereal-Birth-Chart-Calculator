@@ -238,8 +238,24 @@ const AstrologyCalculator = {
 
 		out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
 		res.sidereal_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
+		
+		// MODIFIED SECTION FOR SIDEREAL ASPECT PATTERNS
 		out += `\n--- ASPECT PATTERNS ---\n`;
-		(res.sidereal_aspect_patterns && res.sidereal_aspect_patterns.length > 0) ? res.sidereal_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "- No major aspect patterns detected.\n";
+		if (res.sidereal_aspect_patterns && res.sidereal_aspect_patterns.length > 0) {
+			res.sidereal_aspect_patterns.forEach(p => {
+				let line = `- ${p.description}`;
+				if (p.orb) {
+					line += ` (avg orb ${p.orb})`;
+				}
+				if (p.score) {
+					line += ` (score ${p.score})`;
+				}
+				out += `${line}\n`;
+			});
+		} else {
+			out += "- No major aspect patterns detected.\n";
+		}
+
 		if (!res.unknown_time) {
 			out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
 			res.sidereal_additional_points.forEach(p => { 
@@ -287,8 +303,24 @@ const AstrologyCalculator = {
 
 			out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
 			res.tropical_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
+			
+			// MODIFIED SECTION FOR TROPICAL ASPECT PATTERNS
 			out += `\n--- ASPECT PATTERNS ---\n`;
-			(res.tropical_aspect_patterns && res.tropical_aspect_patterns.length > 0) ? res.tropical_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "- No major aspect patterns detected.\n";
+			if (res.tropical_aspect_patterns && res.tropical_aspect_patterns.length > 0) {
+				res.tropical_aspect_patterns.forEach(p => {
+					let line = `- ${p.description}`;
+					if (p.orb) {
+						line += ` (avg orb ${p.orb})`;
+					}
+					if (p.score) {
+						line += ` (score ${p.score})`;
+					}
+					out += `${line}\n`;
+				});
+			} else {
+				out += "- No major aspect patterns detected.\n";
+			}
+			
 			if (!res.unknown_time) {
 				out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
 				res.tropical_additional_points.forEach(p => { 
@@ -299,7 +331,7 @@ const AstrologyCalculator = {
 			}
 		}
 		this.outputEl.innerText = out;
-	},
+	}
 	
 	drawChartWheel(data, svgId) {
 		const svg = document.getElementById(svgId);
