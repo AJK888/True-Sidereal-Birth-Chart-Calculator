@@ -167,3 +167,9 @@ pre {
     background-color: #2a2f43; /* Match theme pre color */
     border-radius: 4px;
 }
+#banner {
+    background-image: url('../images/star-background.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+}
