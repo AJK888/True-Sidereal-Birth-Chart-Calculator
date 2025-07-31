@@ -27,6 +27,13 @@
         grid-template-columns: 1fr;
     }
 }
+/* MODIFICATION: Force full logo text on mobile */
+@media screen and (max-width: 736px) {
+    #header .logo span {
+        display: inline !important;
+        font-weight: 400; /* Use 400 for normal weight */
+    }
+}
 #chart-wheel-container {
     max-width: 500px;
     margin: 0 auto;
@@ -129,4 +136,34 @@ pre {
     font-size: 1rem; 
     margin: 1.5rem 0 0.5rem 0; 
     color: #ffffff; 
+}
+
+/* MODIFICATION: Styles for the new dropdown glyph legend */
+.glyph-legend-details {
+    background: transparent;
+    border: solid 1px rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    padding: 1.2em;
+    margin-top: 2rem;
+    font-size: 0.9em;
+}
+.glyph-legend-details summary {
+    font-weight: 600;
+    cursor: pointer;
+    color: #ffffff;
+    list-style: none;
+    transition: color 0.2s ease-in-out;
+}
+.glyph-legend-details summary:hover {
+    color: #805ad5;
+}
+.glyph-legend-details summary::-webkit-details-marker {
+    display: none;
+}
+.glyph-legend-details pre {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: none;
+    background-color: #2a2f43; /* Match theme pre color */
+    border-radius: 4px;
 }
