@@ -41,7 +41,9 @@ def ping():
     return {"message": "ok"}
 
 origins = [
-    "https://true-sidereal-birth-chart.onrender.com",
+    "https.true-sidereal-birth-chart.onrender.com",
+    "https://synthesisastrology.org",
+    "https://www.synthesisastrology.org",
 ]
 app.add_middleware(
     CORSMiddleware,
