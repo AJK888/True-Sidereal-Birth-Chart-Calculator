@@ -180,115 +180,145 @@ const AstrologyCalculator = {
 	},
 
 	renderTextResults(res) {
-		let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
-		out += `- UTC Date & Time: ${res.utc_datetime}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
-		out += `- Location: ${res.location}\n`;
-		out += `- Day/Night Determination: ${res.day_night_status}\n\n`;
-		
-		out += `--- CHINESE ZODIAC ---\n`;
-		out += `- Your sign is the ${res.chinese_zodiac}\n\n`;
-
-		out += `--- NUMEROLOGY REPORT ---\n`;
-		if (res.numerology_analysis) {
-			out += `- Life Path Number: ${res.numerology_analysis.life_path_number}\n`;
-			out += `- Day Number: ${res.numerology_analysis.day_number}\n`;
-			
-			if (res.numerology_analysis.name_numerology && !this.noFullNameCheckbox.checked) {
-				out += `\n-- NAME NUMEROLOGY --\n`;
-				out += `- Expression (Destiny) Number: ${res.numerology_analysis.name_numerology.expression_number}\n`;
-				out += `- Soul Urge Number: ${res.numerology_analysis.name_numerology.soul_urge_number}\n`;
-				out += `- Personality Number: ${res.numerology_analysis.name_numerology.personality_number}\n`;
-			}
-		}
-		
-		out += `\n-- SIDEREAL CHART ANALYSIS --\n`;
-		out += `- Chart Ruler: ${res.sidereal_chart_analysis.chart_ruler}\n`;
-		out += `- Dominant Sign: ${res.sidereal_chart_analysis.dominant_sign}\n`;
-		out += `- Dominant Element: ${res.sidereal_chart_analysis.dominant_element}\n`;
-		out += `- Dominant Modality: ${res.sidereal_chart_analysis.dominant_modality}\n`;
-		out += `- Dominant Planet: ${res.sidereal_chart_analysis.dominant_planet}\n\n`;
-		
-		out += `--- MAJOR POSITIONS ---\n`;
-		res.sidereal_major_positions.forEach(p => {
-			let line = `- ${p.name}: ${p.position}`;
-			if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
-				line += ` (${p.percentage}%)`;
-			}
-			if (p.retrograde) { line += " (Rx)"; }
-			if (p.house_info) { line += ` ${p.house_info}`; }
-			out += `${line}\n`;
-		});
-
-		if (res.sidereal_retrogrades && res.sidereal_retrogrades.length > 0) {
-			out += `\n--- RETROGRADE PLANETS (Energy turned inward) ---\n`;
-			res.sidereal_retrogrades.forEach(p => {
-				out += `- ${p.name}\n`;
-			});
-		}
-
-		out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
-		res.sidereal_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
-		out += `\n--- ASPECT PATTERNS ---\n`;
-		(res.sidereal_aspect_patterns && res.sidereal_aspect_patterns.length > 0) ? res.sidereal_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "- No major aspect patterns detected.\n";
-		if (!res.unknown_time) {
-			out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
-			res.sidereal_additional_points.forEach(p => { 
-				let line = `- ${p.name}: ${p.info}`;
-				if (p.retrograde) { line += " (Rx)"; }
-				out += `${line}\n`; 
-			});
-			out += `\n--- HOUSE RULERS ---\n`;
-			for (const [house, info] of Object.entries(res.house_rulers)) { out += `- ${house}: ${info}\n`; }
-			out += `\n--- HOUSE SIGN DISTRIBUTIONS ---\n`;
-			for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
-				out += `${house}:\n`;
-				if (segments && segments.length > 0) {
-					segments.forEach(seg => { out += `      - ${seg}\n`; });
-				}
-			}
-		} else {
-			out += `\n- (House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n`;
-		}
-
-		if (res.tropical_major_positions && res.tropical_major_positions.length > 0) {
-			out += `\n\n\n=== TROPICAL CHART ===\n\n`;
-			out += `-- CHART ANALYSIS --\n`;
-			out += `- Dominant Sign: ${res.tropical_chart_analysis.dominant_sign}\n`;
-			out += `- Dominant Element: ${res.tropical_chart_analysis.dominant_element}\n`;
-			out += `- Dominant Modality: ${res.tropical_chart_analysis.dominant_modality}\n`;
-			out += `- Dominant Planet: ${res.tropical_chart_analysis.dominant_planet}\n\n`;
-			out += `--- MAJOR POSITIONS ---\n`;
-			res.tropical_major_positions.forEach(p => {
-				let line = `- ${p.name}: ${p.position}`;
-				if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
-					line += ` (${p.percentage}%)`;
-				}
-				if (p.retrograde) { line += " (Rx)"; }
-				if (p.house_info) { line += ` ${p.house_info}`; }
-				out += `${line}\n`;
-			});
-
-			if (res.tropical_retrogrades && res.tropical_retrogrades.length > 0) {
-				out += `\n--- RETROGRADE PLANETS (Energy turned inward) ---\n`;
-				res.tropical_retrogrades.forEach(p => {
-					out += `- ${p.name}\n`;
-				});
-			}
-
-			out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
-			res.tropical_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
-			out += `\n--- ASPECT PATTERNS ---\n`;
-			(res.tropical_aspect_patterns && res.tropical_aspect_patterns.length > 0) ? res.tropical_aspect_patterns.forEach(p => { out += `- ${p}\n`; }) : out += "- No major aspect patterns detected.\n";
-			if (!res.unknown_time) {
-				out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
-				res.tropical_additional_points.forEach(p => { 
-					let line = `- ${p.name}: ${p.info}`;
-					if (p.retrograde) { line += " (Rx)"; }
-					out += `${line}\n`; 
-				});
-			}
-		}
-		this.outputEl.innerText = out;
+	    let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
+	    out += `- UTC Date & Time: ${res.utc_datetime}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
+	    out += `- Location: ${res.location}\n`;
+	    out += `- Day/Night Determination: ${res.day_night_status}\n\n`;
+	    
+	    out += `--- CHINESE ZODIAC ---\n`;
+	    out += `- Your sign is the ${res.chinese_zodiac}\n\n`;
+	
+	    out += `--- NUMEROLOGY REPORT ---\n`;
+	    if (res.numerology_analysis) {
+	        out += `- Life Path Number: ${res.numerology_analysis.life_path_number}\n`;
+	        out += `- Day Number: ${res.numerology_analysis.day_number}\n`;
+	        
+	        if (res.numerology_analysis.name_numerology && !this.noFullNameCheckbox.checked) {
+	            out += `\n-- NAME NUMEROLOGY --\n`;
+	            out += `- Expression (Destiny) Number: ${res.numerology_analysis.name_numerology.expression_number}\n`;
+	            out += `- Soul Urge Number: ${res.numerology_analysis.name_numerology.soul_urge_number}\n`;
+	            out += `- Personality Number: ${res.numerology_analysis.name_numerology.personality_number}\n`;
+	        }
+	    }
+	    
+	    out += `\n-- SIDEREAL CHART ANALYSIS --\n`;
+	    out += `- Chart Ruler: ${res.sidereal_chart_analysis.chart_ruler}\n`;
+	    out += `- Dominant Sign: ${res.sidereal_chart_analysis.dominant_sign}\n`;
+	    out += `- Dominant Element: ${res.sidereal_chart_analysis.dominant_element}\n`;
+	    out += `- Dominant Modality: ${res.sidereal_chart_analysis.dominant_modality}\n`;
+	    out += `- Dominant Planet: ${res.sidereal_chart_analysis.dominant_planet}\n\n`;
+	    
+	    out += `--- MAJOR POSITIONS ---\n`;
+	    res.sidereal_major_positions.forEach(p => {
+	        let line = `- ${p.name}: ${p.position}`;
+	        if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
+	            line += ` (${p.percentage}%)`;
+	        }
+	        if (p.retrograde) { line += " (Rx)"; }
+	        if (p.house_info) { line += ` ${p.house_info}`; }
+	        out += `${line}\n`;
+	    });
+	
+	    if (res.sidereal_retrogrades && res.sidereal_retrogrades.length > 0) {
+	        out += `\n--- RETROGRADE PLANETS (Energy turned inward) ---\n`;
+	        res.sidereal_retrogrades.forEach(p => {
+	            out += `- ${p.name}\n`;
+	        });
+	    }
+	
+	    out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
+	    res.sidereal_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
+	    
+	    out += `\n--- ASPECT PATTERNS ---\n`;
+	    if (res.sidereal_aspect_patterns && res.sidereal_aspect_patterns.length > 0) {
+	        res.sidereal_aspect_patterns.forEach(p => {
+	            let line = `- ${p.description}`;
+	            if (p.orb) { // Check if 'orb' exists
+	                line += ` (avg orb ${p.orb})`;
+	            }
+	            if (p.score) { // Check if 'score' exists
+	                line += ` (score ${p.score})`;
+	            }
+	            out += `${line}\n`;
+	        });
+	    } else {
+	        out += "- No major aspect patterns detected.\n";
+	    }
+	
+	    if (!res.unknown_time) {
+	        out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
+	        res.sidereal_additional_points.forEach(p => { 
+	            let line = `- ${p.name}: ${p.info}`;
+	            if (p.retrograde) { line += " (Rx)"; }
+	            out += `${line}\n`; 
+	        });
+	        out += `\n--- HOUSE RULERS ---\n`;
+	        for (const [house, info] of Object.entries(res.house_rulers)) { out += `- ${house}: ${info}\n`; }
+	        out += `\n--- HOUSE SIGN DISTRIBUTIONS ---\n`;
+	        for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
+	            out += `${house}:\n`;
+	            if (segments && segments.length > 0) {
+	                segments.forEach(seg => { out += `      - ${seg}\n`; });
+	            }
+	        }
+	    } else {
+	        out += `\n- (House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n`;
+	    }
+	
+	    if (res.tropical_major_positions && res.tropical_major_positions.length > 0) {
+	        out += `\n\n\n=== TROPICAL CHART ===\n\n`;
+	        out += `-- CHART ANALYSIS --\n`;
+	        out += `- Dominant Sign: ${res.tropical_chart_analysis.dominant_sign}\n`;
+	        out += `- Dominant Element: ${res.tropical_chart_analysis.dominant_element}\n`;
+	        out += `- Dominant Modality: ${res.tropical_chart_analysis.dominant_modality}\n`;
+	        out += `- Dominant Planet: ${res.tropical_chart_analysis.dominant_planet}\n\n`;
+	        out += `--- MAJOR POSITIONS ---\n`;
+	        res.tropical_major_positions.forEach(p => {
+	            let line = `- ${p.name}: ${p.position}`;
+	            if (!['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node'].includes(p.name)) {
+	                line += ` (${p.percentage}%)`;
+	            }
+	            if (p.retrograde) { line += " (Rx)"; }
+	            if (p.house_info) { line += ` ${p.house_info}`; }
+	            out += `${line}\n`;
+	        });
+	
+	        if (res.tropical_retrogrades && res.tropical_retrogrades.length > 0) {
+	            out += `\n--- RETROGRADE PLANETS (Energy turned inward) ---\n`;
+	            res.tropical_retrogrades.forEach(p => {
+	                out += `- ${p.name}\n`;
+	            });
+	        }
+	
+	        out += `\n--- MAJOR ASPECTS (ranked by influence score) ---\n`;
+	        res.tropical_aspects.forEach(a => { out += `- ${a.p1_name} ${a.type} ${a.p2_name} (orb ${a.orb}, score ${a.score})\n`; });
+	
+	        out += `\n--- ASPECT PATTERNS ---\n`;
+	        if (res.tropical_aspect_patterns && res.tropical_aspect_patterns.length > 0) {
+	            res.tropical_aspect_patterns.forEach(p => {
+	                let line = `- ${p.description}`;
+	                if (p.orb) { // Check if 'orb' exists
+	                    line += ` (avg orb ${p.orb})`;
+	                }
+	                if (p.score) { // Check if 'score' exists
+	                    line += ` (score ${p.score})`;
+	                }
+	                out += `${line}\n`;
+	            });
+	        } else {
+	            out += "- No major aspect patterns detected.\n";
+	        }
+	
+	        if (!res.unknown_time) {
+	            out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
+	            res.tropical_additional_points.forEach(p => { 
+	                let line = `- ${p.name}: ${p.info}`;
+	                if (p.retrograde) { line += " (Rx)"; }
+	                out += `${line}\n`; 
+	            });
+	        }
+	    }
+	    this.outputEl.innerText = out;
 	},
 	
 	drawChartWheel(data, svgId) {
