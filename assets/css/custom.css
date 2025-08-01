@@ -67,17 +67,19 @@ pre {
 .field-note {
     font-size: 0.8em;
     font-weight: 400;
-    font-style: italic; /* Changed to italic */
+    font-style: normal; /* Reverted to normal style */
     opacity: 0.8;
     margin-left: 0.75em;
     text-transform: none;
+    letter-spacing: 0.05em; /* Added for consistent spacing */
 }
 .name-numerology-toggle label, .time-inputs-container label {
     font-size: 0.8em;
     font-weight: 400;
-    font-style: italic; /* Changed to italic */
+    font-style: normal; /* Reverted to normal style */
     opacity: 0.8;
     text-transform: none;
+    letter-spacing: 0.05em; /* Added for consistent spacing */
 }
 .name-numerology-toggle {
     display: flex;
