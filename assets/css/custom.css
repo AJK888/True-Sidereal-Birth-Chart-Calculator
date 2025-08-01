@@ -119,10 +119,10 @@ input[type="checkbox"] {
     background-color: transparent;
     margin: 0 0.5em 0 0;
     font: inherit;
-    color: currentColor;
+    color: #ffffff; /* Explicitly set the base color to white */
     width: 1.15em;
     height: 1.15em;
-    border: 0.1em solid #ffffff; /* Changed to solid white */
+    border: 0.1em solid #ffffff; /* Ensure border is solid white */
     border-radius: 0.15em;
     transform: translateY(-0.075em);
     display: inline-grid;
