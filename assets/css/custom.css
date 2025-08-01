@@ -122,7 +122,7 @@ input[type="checkbox"] {
     color: currentColor;
     width: 1.15em;
     height: 1.15em;
-    border: 0.1em solid rgba(255, 255, 255, 0.25);
+    border: 0.1em solid #ffffff; /* Changed to solid white */
     border-radius: 0.15em;
     transform: translateY(-0.075em);
     display: inline-grid;
@@ -225,7 +225,4 @@ input[type="checkbox"]:checked::before {
     border: none;
     background-color: #2a2f43;
     border-radius: 4px;
-}
-input[type="checkbox"]::before {
-    box-shadow: inset 1em 1em #ffffff;
 }
