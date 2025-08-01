@@ -173,3 +173,26 @@ pre {
     background-position: center center;
     background-repeat: no-repeat;
 }
+.field-note {
+    font-size: 0.8em;
+    font-weight: 400;
+    opacity: 0.75;
+    margin-left: 0.75em;
+}
+
+/* Standalone note style for alignment */
+.field-note.standalone {
+    margin-left: 0;
+    margin-bottom: 0.75rem;
+}
+
+/* Update checkbox label font */
+.name-numerology-toggle label, .time-inputs-container label {
+    font-size: 0.9em;
+    font-weight: 400;
+}
+
+/* Custom Checkbox Color */
+input[type="checkbox"] {
+    accent-color: #805ad5;
+}
