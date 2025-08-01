@@ -27,11 +27,10 @@
         grid-template-columns: 1fr;
     }
 }
-/* MODIFICATION: Force full logo text on mobile */
 @media screen and (max-width: 736px) {
     #header .logo span {
         display: inline !important;
-        font-weight: 400; /* Use 400 for normal weight */
+        font-weight: 400;
     }
 }
 #chart-wheel-container {
@@ -62,23 +61,38 @@ pre {
     line-height: 1.65;
     color: #ffffff;
 }
-.time-note { font-size: 0.8rem; }
 .results-container .major { margin-bottom: 2rem; }
 
-/* Styling for name numerology checkbox */
+/* Form Field Note Styling */
+.field-note {
+    font-size: 0.8em;
+    font-weight: 400;
+    opacity: 0.75;
+    margin-left: 0.75em;
+    text-transform: none;
+}
+.name-numerology-toggle label, .time-inputs-container label {
+    font-size: 0.8em;
+    font-weight: 400;
+    opacity: 0.75;
+    text-transform: none;
+}
 .name-numerology-toggle {
     display: flex;
     align-items: center;
     margin-top: 0.75rem;
-    font-size: 0.8em;
 }
 .name-numerology-toggle input {
     width: auto;
     margin-right: 0.5rem;
 }
-.name-numerology-toggle label {
-    margin: 0;
-    font-weight: 400;
+.time-inputs-container {
+    padding-top: 2rem;
+}
+
+/* Custom Checkbox Color */
+input[type="checkbox"] {
+    accent-color: #805ad5;
 }
 
 /* Chart Wheel SVG styles */
@@ -138,7 +152,7 @@ pre {
     color: #ffffff; 
 }
 
-/* MODIFICATION: Styles for the new dropdown glyph legend */
+/* Styles for the dropdown glyph legend */
 .glyph-legend-details {
     background: transparent;
     border: solid 1px rgba(255, 255, 255, 0.25);
@@ -164,38 +178,6 @@ pre {
     margin-top: 1rem;
     padding: 1rem;
     border: none;
-    background-color: #2a2f43; /* Match theme pre color */
+    background-color: #2a2f43;
     border-radius: 4px;
-}
-#banner {
-    background-image: url('../images/star-background.jpg');
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-}
-.field-note {
-    font-size: 0.8em;
-    font-weight: 400;
-    opacity: 0.75;
-    margin-left: 0.75em;
-    text-transform: none; /* Ensures text is not all caps */
-}
-
-/* Standalone note style for alignment */
-.field-note.standalone {
-    margin-left: 0;
-    margin-bottom: 0.75rem;
-}
-
-/* Update checkbox label font */
-.name-numerology-toggle label, .time-inputs-container label {
-    font-size: 0.8em;
-    font-weight: 400;
-    opacity: 0.75;
-    text-transform: none;
-}
-
-/* Custom Checkbox Color */
-input[type="checkbox"] {
-    accent-color: #805ad5;
 }
