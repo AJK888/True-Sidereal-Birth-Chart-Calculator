@@ -90,10 +90,18 @@ const AstrologyCalculator = {
 				full_name: this.form.querySelector("[name='fullName']").value,
 				year, month, day, hour, minute,
 				location: this.form.querySelector("[name='location']").value,
-				unknown_time: this.form.querySelector("[name='unknownTime']").checked
+				unknown_time: this.form.querySelector("[name='unknownTime']").checked,
+				// MODIFICATION: Add the user's email to the request
+				user_email: this.form.querySelector("[name='userEmail']").value
 			}),
 		});
 
+		if (!apiRes.ok) {
+			const errData = await apiRes.json();
+			throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
+		}
+		return await apiRes.json();
+	},
 		if (!apiRes.ok) {
 			const errData = await apiRes.json();
 			throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
