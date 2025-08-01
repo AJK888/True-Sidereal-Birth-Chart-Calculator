@@ -197,3 +197,7 @@ input[type="checkbox"] {
     background-position: center center;
     background-repeat: no-repeat;
 }
+/* Remove the dark overlay from the banner image */
+#banner:before {
+    background-color: transparent;
+}
