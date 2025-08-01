@@ -63,35 +63,41 @@ pre {
 }
 .results-container .major { margin-bottom: 2rem; }
 
-/* Form Field Note Styling */
+/* Styling for notes next to field labels */
 .field-note {
-    font-size: 0.8em;
+    font-size: 0.85rem; /* Increased font size */
     font-weight: 400;
-    font-style: normal; /* Reverted to normal style */
+    font-style: normal;
     opacity: 0.8;
     margin-left: 0.75em;
     text-transform: none;
-    letter-spacing: 0.05em; /* Added for consistent spacing */
+    letter-spacing: 0.05em;
 }
+
+/* Update checkbox label font to match notes */
 .name-numerology-toggle label, .time-inputs-container label {
-    font-size: 0.8em;
+    font-size: 0.85rem; /* Increased font size */
     font-weight: 400;
-    font-style: normal; /* Reverted to normal style */
+    font-style: normal;
     opacity: 0.8;
     text-transform: none;
-    letter-spacing: 0.05em; /* Added for consistent spacing */
+    letter-spacing: 0.05em;
 }
+
 .name-numerology-toggle {
     display: flex;
     align-items: center;
     margin-top: 0.75rem;
 }
+
 .name-numerology-toggle input {
     width: auto;
     margin-right: 0.5rem;
 }
+
+/* Align birth time checkbox by removing top padding */
 .time-inputs-container {
-    padding-top: 2rem;
+    padding-top: 0; 
 }
 
 /* Custom Checkbox Color */
