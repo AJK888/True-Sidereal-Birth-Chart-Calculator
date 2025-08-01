@@ -226,3 +226,6 @@ input[type="checkbox"]:checked::before {
     background-color: #2a2f43;
     border-radius: 4px;
 }
+input[type="checkbox"]::before {
+    box-shadow: inset 1em 1em #ffffff;
+}
