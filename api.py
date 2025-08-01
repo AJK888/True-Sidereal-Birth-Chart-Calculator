@@ -3,6 +3,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from typing import Optional
 from natal_chart import (
     NatalChart,
     calculate_numerology, get_chinese_zodiac_and_element,
@@ -16,6 +17,8 @@ import os
 import logging
 from logtail import LogtailHandler
 import google.generativeai as genai
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 # --- SETUP THE LOGGER ---
 handler = None
@@ -34,6 +37,10 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
+# --- SETUP SENDGRID ---
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+
 app = FastAPI(title="True Sidereal API", version="1.0")
 
 @app.get("/ping")
@@ -41,11 +48,10 @@ def ping():
     return {"message": "ok"}
 
 origins = [
-    "https://true-sidereal-birth-chart.onrender.com", 
+    "https://true-sidereal-birth-chart.onrender.com",
     "https://synthesisastrology.org",
     "https://www.synthesisastrology.org",
 ]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -63,10 +69,53 @@ class ChartRequest(BaseModel):
     minute: int
     location: str
     unknown_time: bool = False
+    user_email: Optional[str] = None
 
 class ReadingRequest(BaseModel):
     chart_data: dict
     unknown_time: bool
+
+def format_report_for_email(chart_data: dict) -> str:
+    """Formats the full text report into an HTML string for email."""
+    # This is a placeholder for the logic from calculator.js's renderTextResults
+    # For now, we'll just use a simple representation of the data.
+    # A more robust solution would replicate the text report generation here.
+    
+    # Using a simple pre-formatted text block for the email
+    text_content = f"Natal Chart Report for: {chart_data.get('name', 'N/A')}\n\n"
+    text_content += f"UTC Time: {chart_data.get('utc_datetime', 'N/A')}\n"
+    text_content += f"Location: {chart_data.get('location', 'N/A')}\n\n"
+    
+    text_content += "--- Major Sidereal Positions ---\n"
+    for pos in chart_data.get('sidereal_major_positions', []):
+        text_content += f"- {pos['name']}: {pos['position']}\n"
+        
+    html_content = f"<html><body><h2>Natal Chart Report</h2><pre>{text_content}</pre></body></html>"
+    return html_content
+
+def send_chart_email(chart_data: dict, recipient_email: str, is_admin_copy: bool = False):
+    if not SENDGRID_API_KEY or not ADMIN_EMAIL:
+        logger.warning("SendGrid API Key or Admin Email not configured. Skipping email.")
+        return
+
+    subject = f"Your Astrology Chart Report for {chart_data.get('name', '')}"
+    if is_admin_copy:
+        subject = f"New Chart Generated: {chart_data.get('name', '')}"
+
+    html_content = format_report_for_email(chart_data)
+
+    message = Mail(
+        from_email=ADMIN_EMAIL,
+        to_emails=recipient_email,
+        subject=subject,
+        html_content=html_content)
+    try:
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        logger.info(f"Email sent to {recipient_email}, status code: {response.status_code}")
+    except Exception as e:
+        logger.error(f"Error sending email to {recipient_email}: {e}", exc_info=True)
+
 
 async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
     """
@@ -77,9 +126,7 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         return "Gemini API key not configured. AI reading is unavailable."
 
     try:
-        model = genai.GenerativeModel('gemini-1.5-pro-latest')
-        prompt_parts = []
-        
+        # --- Data Extraction (common to both prompts) ---
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         numerology_analysis = chart_data.get("numerology_analysis", {})
         chinese_zodiac = chart_data.get("chinese_zodiac")
@@ -89,6 +136,8 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         s_retrogrades = chart_data.get("sidereal_retrogrades", [])
         sun = next((p for p in s_positions if p['name'] == 'Sun'), None)
         moon = next((p for p in s_positions if p['name'] == 'Moon'), None)
+
+        prompt_parts = []
 
         if unknown_time:
             # --- PROMPT FOR UNKNOWN BIRTH TIME ---
@@ -121,65 +170,85 @@ Key Themes in Your Chart
 The Story of Your Inner World
 (Under this plain text heading, write a multi-paragraph narrative weaving together the Sun, Moon, numerology, and the three tightest aspects to explain the core themes. Do not use sub-labels like 'Introduction' or 'Body'.)
 """)
-            final_response = await model.generate_content_async("\n".join(prompt_parts))
-            return final_response.text.strip()
 
         else:
-            # --- TWO-STEP PROMPT FOR KNOWN BIRTH TIME (MASTER SYNTHESIS) ---
-            
-            # --- STEP 1: THE ANALYST PROMPT ---
-            analyst_prompt_parts = [
-                "You are a master astrological analyst. Your task is to review the provided raw chart data and extract ONLY the most critical, interconnected themes and their corresponding astrological evidence. Be concise, structured, and use bullet points. **Do not invent any placements.** Your output will be used by another AI to write the final reading."
-            ]
-            analyst_prompt_parts.append("\n**Full Anonymized Chart Data:**")
-            asc = next((p for p in s_positions if p['name'] == 'Ascendant'), None)
-            if sun: analyst_prompt_parts.append(f"- Sun: {sun['position']} ({sun['percentage']}%)")
-            if moon: analyst_prompt_parts.append(f"- Moon: {moon['position']} ({moon['percentage']}%)")
-            if asc: analyst_prompt_parts.append(f"- Ascendant: {asc['position']} ({asc['percentage']}%)")
-            if s_analysis.get("chart_ruler"): analyst_prompt_parts.append(f"- Chart Ruler: {s_analysis['chart_ruler']}")
-            if s_analysis.get("dominant_planet"): analyst_prompt_parts.append(f"- Dominant Planet: {s_analysis['dominant_planet']}")
-            if s_analysis.get("dominant_sign"): analyst_prompt_parts.append(f"- Dominant Sign: {s_analysis['dominant_sign']}")
-            if s_analysis.get("dominant_element"): analyst_prompt_parts.append(f"- Dominant Element: {s_analysis['dominant_element']}")
-            if numerology_analysis.get("life_path_number"): analyst_prompt_parts.append(f"- Life Path Number: {numerology_analysis.get('life_path_number')}")
-            if numerology_analysis.get("day_number"): analyst_prompt_parts.append(f"- Day Number: {numerology_analysis.get('day_number')}")
-            if s_patterns:
-                for pattern in s_patterns: analyst_prompt_parts.append(f"- Pattern: {pattern}")
-            if s_retrogrades:
-                for planet in s_retrogrades: analyst_prompt_parts.append(f"- Retrograde: {planet['name']}")
-            if s_aspects and len(s_aspects) >= 3:
-                for aspect in s_aspects[:3]: analyst_prompt_parts.append(f"- Tight Aspect: {aspect['p1_name']} {aspect['type']} {aspect['p2_name']}")
-
-            analyst_prompt_parts.append("\n**Your Task:**")
-            analyst_prompt_parts.append(
-                "1. Identify the 3-5 most powerful and interconnected themes in the chart.\n"
-                "2. For each theme, list the specific data points that support it.\n"
-                "3. Output this information as a structured list."
+            # --- PROMPT FOR KNOWN BIRTH TIME (MASTER SYNTHESIS) ---
+            prompt_parts.append(
+                "You are a master astrologer and esoteric synthesist. Your clients come to you for readings of unparalleled depth. Your unique skill is identifying the 'golden thread'—the central narrative or soul's purpose—that connects every single placement, aspect, and number in a person's blueprint. You see the chart not as a collection of parts, but as a single, cohesive, living story."
             )
-            analysis_response = await model.generate_content_async("\n".join(analyst_prompt_parts))
-            structured_analysis = analysis_response.text
+            
+            prompt_parts.append("\n**Full Anonymized Chart Data:**")
+            asc = next((p for p in s_positions if p['name'] == 'Ascendant'), None)
+            if sun: prompt_parts.append(f"- Sun: {sun['position']} ({sun['percentage']}%)")
+            if moon: prompt_parts.append(f"- Moon: {moon['position']} ({moon['percentage']}%)")
+            if asc: prompt_parts.append(f"- Ascendant: {asc['position']} ({asc['percentage']}%)")
+            if s_analysis.get("chart_ruler"): prompt_parts.append(f"- Chart Ruler: {s_analysis['chart_ruler']}")
+            if s_analysis.get("dominant_planet"): prompt_parts.append(f"- Dominant Planet: {s_analysis['dominant_planet']}")
+            if s_analysis.get("dominant_sign"): prompt_parts.append(f"- Dominant Sign: {s_analysis['dominant_sign']}")
+            if s_analysis.get("dominant_element"): prompt_parts.append(f"- Dominant Element: {s_analysis['dominant_element']}")
+            
+            prompt_parts.append("\n**Numerological & Other Data:**")
+            if numerology_analysis.get("life_path_number"): prompt_parts.append(f"- Life Path Number: {numerology_analysis.get('life_path_number')}")
+            if numerology_analysis.get("day_number"): prompt_parts.append(f"- Day Number: {numerology_analysis.get('day_number')}")
+            if numerology_analysis.get("name_numerology"):
+                name_nums = numerology_analysis['name_numerology']
+                prompt_parts.append(f"- Expression Number: {name_nums.get('expression_number')}")
+                prompt_parts.append(f"- Soul Urge Number: {name_nums.get('soul_urge_number')}")
+                prompt_parts.append(f"- Personality Number: {name_nums.get('personality_number')}")
+            if chinese_zodiac: prompt_parts.append(f"- Chinese Zodiac: {chinese_zodiac}")
 
-            # --- STEP 2: THE TEACHER PROMPT ---
-            teacher_prompt_parts = [
-                "You are a master astrologer and gifted teacher. Your skill is not just in seeing the connections in a chart, but in explaining them with depth, patience, and clarity. You identify the 'golden thread'—the central narrative—that connects every placement. **Crucially, you must base your reading exclusively and entirely on the analysis provided. Do not invent any placements, planets (e.g., 'Earth'), or signs that are not explicitly listed in the analysis.**",
-                "\nHere is the structured analysis of a user's chart:",
-                "--- ANALYSIS START ---",
-                structured_analysis,
-                "--- ANALYSIS END ---",
-                "\n**Your Task:**",
-                "Write a generous, in-depth, multi-paragraph reading based on the analysis above. **Prioritize thorough explanation over brevity.** Structure your response **exactly as follows**, using plain text headings.",
-                
-                "\nKey Themes in Your Chart",
-                "(Under this heading, list the main themes from the analysis.)",
-                
-                "\nThe Central Story of Your Chart",
-                "(Under this heading, write the full narrative. Do not just repeat the analysis; expand and explain it.)",
-                "- For every astrological term (e.g., Sun, Leo, 9th House, Trine, Stellium), you **must** provide a simple, one-sentence definition.",
-                "- **MANDATORY INTEGRATION:** Seamlessly integrate **all stelliums**, the **Chart Ruler**, the **Life Path and Day Numbers**, and the **three tightest aspects** into a single, flowing narrative.",
-                "- **Make connections explicit.** Your explanation should follow this logic: 'Your core identity, represented by your Sun's placement, is fundamentally about X. This is the very mission statement of your soul, which is perfectly echoed by your Life Path Number Y, the number of Z.'",
-                "- Conclude with a warm, empowering summary."
-            ]
-            final_response = await model.generate_content_async("\n".join(teacher_prompt_parts))
-            return final_response.text.strip()
+            if s_patterns:
+                prompt_parts.append("\n**Key Astrological Patterns (Stelliums):**")
+                for pattern in s_patterns:
+                    prompt_parts.append(f"- {pattern}")
+            
+            if s_retrogrades:
+                prompt_parts.append("\n**Retrograde Planets (Energy turned inward for reflection):**")
+                for planet in s_retrogrades:
+                    prompt_parts.append(f"- {planet['name']}")
+
+            if s_aspects and len(s_aspects) >= 3:
+                prompt_parts.append(f"\n**Three Tightest Aspects (Highest Influence):**")
+                for aspect in s_aspects[:3]:
+                    prompt_parts.append(f"- {aspect['p1_name']} {aspect['type']} {aspect['p2_name']} (Orb: {aspect['orb']})")
+
+            prompt_parts.append("\n**Your Task:**")
+            prompt_parts.append("""
+**Step 1: Internal Analysis (Do this silently before writing, using ONLY the user's real chart data)**
+First, perform a deep, holistic review of ALL the data provided for the user to find the chart's core narrative.
+1.  **Generate a List of Potential Themes:** Brainstorm a comprehensive list of major themes based on the user's data. Look for powerful, repeating patterns. Consider:
+    * All **stelliums** (both sign and house).
+    * The **Life Path Number** and **Day Number**.
+    * The **Chart Ruler**'s sign and house placement.
+    * The **Dominant Element** and **Planet**.
+    * **Planet Degree Percentages**.
+    * The meaning of the **three tightest aspects**.
+2.  **Group the Evidence:** For the top themes, internally group the specific chart placements and numbers that support each theme. This is to force you to see the connections within the user's actual chart.
+3.  **Select the Primary Narrative:** From your analysis, identify the **single most compelling and interconnected theme** in the user's chart. This will be the 'golden thread' of your reading.
+""")
+
+            prompt_parts.append("""
+**Step 2: Write the Final Reading**
+Now, write the final reading for the user. Structure your entire response **exactly as follows, using plain text headings without any markdown like '#' or '**'.**
+
+Key Themes in Your Chart
+(Under this plain text heading, list the 3 to 5 most important and interconnected themes you identified from your internal analysis. Use a simple bulleted list.)
+
+The Central Story of Your Chart
+(Under this plain text heading, write the full, multi-paragraph narrative reading. **Begin the first paragraph directly with the introduction of the 'golden thread' or central theme.** Let the subsequent paragraphs flow naturally to unfold the narrative. **Do not use any sub-labels like 'Introduction', 'Body', or 'The Unfolding Narrative' within your response.** Your entire goal is to make this section read like a single, cohesive essay.)
+-   **MANDATORY INTEGRATION:** You must seamlessly integrate the meaning of **all stelliums**, the **Chart Ruler**, the **Life Path and Day Numbers**, and the **three tightest aspects** into this single, flowing narrative, explaining concepts simply as you go.
+-   **Make connections explicit.** Your explanation should follow this logic: 'Your core identity, represented by your Sun's placement, is fundamentally about X. This is the very mission statement of your soul, which is perfectly echoed by your Life Path Number Y, the number of Z.'
+-   **Conclusion:** Conclude the narrative with a final paragraph that serves as a warm, empowering summary, presenting the user's chart as a beautiful, intricate tapestry.
+""")
+
+        prompt = "\n".join(prompt_parts)
+
+        model = genai.GenerativeModel('gemini-1.5-pro-latest')
+        response = await model.generate_content_async(prompt)
+        
+        cleaned_response = response.text.strip()
+        
+        return cleaned_response
         
     except Exception as e:
         logger.error(f"Error during Gemini reading generation: {e}", exc_info=True)
@@ -230,6 +299,11 @@ async def calculate_chart_endpoint(data: ChartRequest):
         
         full_response = chart.get_full_chart_data(numerology, name_numerology, chinese_zodiac, data.unknown_time)
         
+        # Send emails after successful chart generation
+        send_chart_email(full_response, ADMIN_EMAIL, is_admin_copy=True)
+        if data.user_email:
+            send_chart_email(full_response, data.user_email)
+            
         return full_response
 
     except HTTPException as e:
