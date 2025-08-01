@@ -47,10 +47,13 @@ app = FastAPI(title="True Sidereal API", version="1.0")
 def ping():
     return {"message": "ok"}
 
+# MODIFICATION: Added origins with trailing slashes for robust CORS
 origins = [
     "https://true-sidereal-birth-chart.onrender.com",
     "https://synthesisastrology.org",
     "https://www.synthesisastrology.org",
+    "https://synthesisastrology.org/",
+    "https://www.synthesisastrology.org/",
 ]
 app.add_middleware(
     CORSMiddleware,
