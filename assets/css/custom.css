@@ -21,9 +21,11 @@
     box-shadow: none !important;
 }
 /* This rule removes the vignette/shadow effect from the main banner */
+/* This rule removes the vignette/shadow effect from the main banner */
 #banner:before {
 	background: none !important;
     box-shadow: none !important;
+    opacity: 0 !important;
 }
 
 
