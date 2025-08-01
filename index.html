@@ -91,50 +91,56 @@
 						</section>
 
 						<section id="form-section">
-								<div class="inner">
-									<header class="major">
-										<h2>Generate Your Chart</h2>
-									</header>
-									<form id="chartForm">
-										<div class="fields">
-											<div class="field">
-												<label for="fullName">Full Birth Name</label>
-												<input type="text" id="fullName" name="fullName" required placeholder="Including middle name for numerology">
-												<div class="name-numerology-toggle">
-													<input type="checkbox" id="noFullName" name="noFullName">
-													<label for="noFullName">Check this box if this is NOT your full birth name (disables name numerology).</label>
-												</div>
-											</div>
-											<div class="field half">
-												<label for="birthDate">Birth Date</label>
-												<input type="text" id="birthDate" name="birthDate" required placeholder="MM/DD/YYYY">
-											</div>
-											<div class="field half">
-												<label for="location">Birth Location</label>
-												<input type="text" id="location" name="location" required placeholder="City, State, Country">
-											</div>
-											<div class="field">
-										        	<label for="userEmail">Your Email</label>
-										        	<input type="email" id="userEmail" name="userEmail" placeholder="example@domain.com">
-										        	<p style="font-size: 0.8em; margin-top: 0.5em; opacity: 0.8;">Optional: To receive a copy of your chart via email.</p>
-										    	</div>
-											<div class="field half">
-												<label for="birthTime">Birth Time</label>
-												<input type="text" id="birthTime" name="birthTime" required placeholder="e.g., 02:30 PM">
-											</div>
-											<div class="field half time-inputs-container">
-												<p class="time-note">For the most accurate results, please enter your exact birth time.</p>
-												<input type="checkbox" id="unknownTime" name="unknownTime">
-												<label for="unknownTime">I don't know my birth time (within 15 minutes)</label>
-											</div>
-										</div>
-										<ul class="actions">
-											<li><button type="submit" id="submitBtn" class="primary">Calculate Chart</button></li>
-										</ul>
-									</form>
-								</div>
-							</section>
-
+						    <div class="inner">
+						        <header class="major">
+						            <h2>Generate Your Chart</h2>
+						        </header>
+						        <form id="chartForm">
+						            <div class="fields">
+						                <div class="field">
+						                    <label for="fullName">Full Birth Name <span class="field-note">including middle name for numerology calculations</span></label>
+						                    <input type="text" id="fullName" name="fullName" required>
+						                    <div class="name-numerology-toggle">
+						                        <input type="checkbox" id="noFullName" name="noFullName">
+						                        <label for="noFullName">Check this box if this is NOT your full birth name (disables name numerology).</label>
+						                    </div>
+						                </div>
+						
+						                <div class="field">
+						                    <label for="userEmail">Your Email <span class="field-note">Optional: To receive a copy of your chart via email.</span></label>
+						                    <input type="email" id="userEmail" name="userEmail">
+						                </div>
+						
+						                <div class="field half">
+						                    <label for="birthDate">Birth Date <span class="field-note">MM/DD/YYYY</span></label>
+						                    <input type="text" id="birthDate" name="birthDate" required>
+						                </div>
+						
+						                <div class="field half">
+						                    <label for="location">Birth Location <span class="field-note">City, State, Country</span></label>
+						                    <input type="text" id="location" name="location" required>
+						                </div>
+						
+						                <div class="field half">
+						                    <label for="birthTime">Birth Time <span class="field-note">HH:MM AM/PM</span></label>
+						                    <input type="text" id="birthTime" name="birthTime" required>
+						                </div>
+						
+						                <div class="field half">
+						                    <label>&nbsp;</label> <div class="time-inputs-container">
+						                        <p class="field-note standalone">For the most accurate results, please enter your exact birth time.</p>
+						                        <input type="checkbox" id="unknownTime" name="unknownTime">
+						                        <label for="unknownTime">I don't know my birth time</label>
+						                    </div>
+						                </div>
+						            </div>
+						            <ul class="actions">
+						                <li><button type="submit" id="submitBtn" class="primary">Calculate Chart</button></li>
+						            </ul>
+						        </form>
+						    </div>
+						</section>
+					
 						<section id="results" class="results-container" style="display: none;">
 								<div class="inner">
 									<div id="wheel-title" class="result-section">
