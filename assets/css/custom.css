@@ -15,6 +15,18 @@
     background-color: #202436;
 }
 
+/* Force header and banner to be fully transparent at the top of the page */
+#header.alt {
+    background: none !important;
+    box-shadow: none !important;
+}
+/* This rule removes the vignette/shadow effect from the main banner */
+#banner:before {
+	background: none !important;
+    box-shadow: none !important;
+}
+
+
 /* 2. Layout & Sizing */
 .two-column-container {
     display: grid;
@@ -63,9 +75,9 @@ pre {
 }
 .results-container .major { margin-bottom: 2rem; }
 
-/* Styling for notes next to field labels */
+/* Form Field Note Styling */
 .field-note {
-    font-size: 0.85rem; /* Increased font size */
+    font-size: 0.85rem;
     font-weight: 400;
     font-style: normal;
     opacity: 0.8;
@@ -74,30 +86,25 @@ pre {
     letter-spacing: 0.05em;
 }
 
-/* Update checkbox label font to match notes */
 .name-numerology-toggle label, .time-inputs-container label {
-    font-size: 0.85rem; /* Increased font size */
+    font-size: 0.85rem;
     font-weight: 400;
     font-style: normal;
     opacity: 0.8;
     text-transform: none;
     letter-spacing: 0.05em;
 }
-
 .name-numerology-toggle {
     display: flex;
     align-items: center;
     margin-top: 0.75rem;
 }
-
 .name-numerology-toggle input {
     width: auto;
     margin-right: 0.5rem;
 }
-
-/* Align birth time checkbox by removing top padding */
 .time-inputs-container {
-    padding-top: 0; 
+    padding-top: 0;
 }
 
 /* Custom Checkbox Color */
@@ -190,15 +197,4 @@ input[type="checkbox"] {
     border: none;
     background-color: #2a2f43;
     border-radius: 4px;
-}
-#banner {
-    background-image: url('../images/star-background.jpg');
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-}
-
-#header.alt {
-    background-color: transparent !important;
-    box-shadow: none !important;
 }
