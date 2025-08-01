@@ -67,14 +67,16 @@ pre {
 .field-note {
     font-size: 0.8em;
     font-weight: 400;
-    opacity: 0.75;
+    font-style: italic; /* Changed to italic */
+    opacity: 0.8;
     margin-left: 0.75em;
     text-transform: none;
 }
 .name-numerology-toggle label, .time-inputs-container label {
     font-size: 0.8em;
     font-weight: 400;
-    opacity: 0.75;
+    font-style: italic; /* Changed to italic */
+    opacity: 0.8;
     text-transform: none;
 }
 .name-numerology-toggle {
