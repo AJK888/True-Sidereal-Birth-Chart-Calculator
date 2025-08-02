@@ -49,6 +49,7 @@ const AstrologyCalculator = {
 		try {
 			const chartData = await this.fetchChartData();
 			this.displayInitialResults(chartData);
+			// The email is now sent from the backend after the AI reading is generated.
 			this.fetchAndDisplayAIReading(chartData);
 		} catch (err) {
 			this.resultsContainer.style.display = 'block';
@@ -112,12 +113,22 @@ const AstrologyCalculator = {
 
 	async fetchAndDisplayAIReading(chartData) {
 		try {
+			// Collect user inputs to send to the backend for the email report
+			const userInputs = {
+				full_name: this.form.querySelector("[name='fullName']").value,
+				birth_date: this.form.querySelector("[name='birthDate']").value,
+				birth_time: this.form.querySelector("[name='birthTime']").value,
+				location: this.form.querySelector("[name='location']").value,
+				user_email: this.form.querySelector("[name='userEmail']").value
+			};
+
 			const readingRes = await fetch(this.API_URLS.reading, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					chart_data: chartData,
-					unknown_time: chartData.unknown_time
+					unknown_time: chartData.unknown_time,
+					user_inputs: userInputs // Pass original inputs for the email
 				})
 			});
 
@@ -375,7 +386,6 @@ const AstrologyCalculator = {
 			return;
 		}
 		
-		// FINAL FIX: This formula correctly accounts for the clockwise SVG transform.
 		const rotation = ascendant.degrees - 180;
 
 		const mainGroup = document.createElementNS(this.SVG_NS, 'g');
@@ -383,8 +393,6 @@ const AstrologyCalculator = {
 		svg.appendChild(mainGroup);
 
 		const degreeToCartesian = (radius, angleDegrees) => {
-			// SVG transform rotates clockwise, but math functions are counter-clockwise.
-			// To compensate, we make the angle negative here.
 			const angleRadians = -angleDegrees * (Math.PI / 180);
 			return { x: centerX + radius * Math.cos(angleRadians), y: centerY + radius * Math.sin(angleRadians) };
 		};
