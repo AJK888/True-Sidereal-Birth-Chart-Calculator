@@ -59,12 +59,12 @@
 								</div>
 
 								<div id="transit-chart">
-								    <header class="major">
-								        <h2>Current Transits at Boston, MA</h2>
-								    </header>
-								    <div id="transit-wheel-container">
-								         <svg id="transit-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
-								    </div>
+									<header class="major">
+										<h2>Current Transits at Boston, MA</h2>
+									</header>
+									<div id="transit-wheel-container">
+										<svg id="transit-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
+									</div>
 								</div>
 							</div>
 						</section>
@@ -91,69 +91,69 @@
 						</section>
 
 						<section id="form-section">
-						    <div class="inner">
-						        <header class="major">
-						            <h2>Generate Your Chart</h2>
-						        </header>
-						        <form id="chartForm">
-						            <div class="fields">
-						                <div class="field">
-						                    <label for="fullName">Full Birth Name <span class="field-note">including middle name for numerology calculations</span></label>
-						                    <input type="text" id="fullName" name="fullName" required>
-						                    <div class="name-numerology-toggle">
-						                        <input type="checkbox" id="noFullName" name="noFullName">
-						                        <label for="noFullName">Check this box if this is NOT your full birth name (disables name numerology).</label>
-						                    </div>
-						                </div>
+							<div class="inner">
+								<header class="major">
+									<h2>Generate Your Chart</h2>
+								</header>
+								<form id="chartForm">
+									<div class="fields">
+										<div class="field">
+											<label for="fullName">Full Birth Name <span class="field-note">including middle name for numerology calculations</span></label>
+											<input type="text" id="fullName" name="fullName" required>
+											<div class="name-numerology-toggle">
+												<input type="checkbox" id="noFullName" name="noFullName">
+												<label for="noFullName">Check this box if this is NOT your full birth name (disables name numerology).</label>
+											</div>
+										</div>
 						
-						                <div class="field">
-						                    <label for="userEmail">Your Email <span class="field-note">Optional: To receive a copy of your chart via email.</span></label>
-						                    <input type="email" id="userEmail" name="userEmail">
-						                </div>
+										<div class="field">
+											<label for="userEmail">Your Email <span class="field-note">Optional: To receive a copy of your chart via email.</span></label>
+											<input type="email" id="userEmail" name="userEmail">
+										</div>
 						
-						                <div class="field half">
-						                    <label for="birthDate">Birth Date <span class="field-note">MM/DD/YYYY</span></label>
-						                    <input type="text" id="birthDate" name="birthDate" required>
-						                </div>
+										<div class="field half">
+											<label for="birthDate">Birth Date <span class="field-note">MM/DD/YYYY</span></label>
+											<input type="text" id="birthDate" name="birthDate" required>
+										</div>
 						
-						                <div class="field half">
-						                    <label for="location">Birth Location <span class="field-note">City, State, Country</span></label>
-						                    <input type="text" id="location" name="location" required>
-						                </div>
+										<div class="field half">
+											<label for="location">Birth Location <span class="field-note">City, State, Country</span></label>
+											<input type="text" id="location" name="location" required>
+										</div>
 						
-								<div class="field half">
-								    <label for="birthTime">Birth Time <span class="field-note">HH:MM AM/PM | For the most accurate results, please enter your exact birth time.</span></label>
-								    <input type="text" id="birthTime" name="birthTime" required>
-								</div>
+										<div class="field half">
+											<label for="birthTime">Birth Time <span class="field-note">HH:MM AM/PM | For the most accurate results, please enter your exact birth time.</span></label>
+											<input type="text" id="birthTime" name="birthTime" required>
+										</div>
 								
-								<div class="field half time-checkbox-container">
-								    <div class="time-inputs-container">
-								        <input type="checkbox" id="unknownTime" name="unknownTime">
-								        <label for="unknownTime">I don't know my exact birth time (Excludes time sensitive output)</label>
-								    </div>
-								</div>
-						            </div>
-						            <ul class="actions">
-						                <li><button type="submit" id="submitBtn" class="primary">Calculate Chart</button></li>
-						            </ul>
-						        </form>
-						    </div>
+										<div class="field half time-checkbox-container">
+											<div class="time-inputs-container">
+												<input type="checkbox" id="unknownTime" name="unknownTime">
+												<label for="unknownTime">I don't know my exact birth time (Excludes time sensitive output)</label>
+											</div>
+										</div>
+									</div>
+									<ul class="actions">
+										<li><button type="submit" id="submitBtn" class="primary">Calculate Chart</button></li>
+									</ul>
+								</form>
+							</div>
 						</section>
 					
-						<section id="results" class="results-container" style="display: none;">
+						<section id="results" class="results-container" aria-live="polite">
 								<div class="inner">
 									<div id="wheel-title" class="result-section">
-										<header class="major"><h2 style="text-align: left;">Your Natal Chart</h2></header>
+										<header class="major"><h2>Your Natal Chart</h2></header>
 										<div id="chart-wheel-container"><svg id="chart-wheel-svg" viewBox="-100 -100 1200 1200"></svg></div>
 									</div>
 							
 									<div id="gemini-title" class="result-section">
-										<header class="major"><h2 style="text-align: left;">AI Astrological Synthesis</h2></header>
+										<header class="major"><h2>AI Astrological Synthesis</h2></header>
 										<div id="gemini-output" class="content"></div>
 									</div>
 							
 									<div id="results-title" class="result-section">
-										<header class="major"><h2 style="text-align: left;">Full Report</h2></header>
+										<header class="major"><h2>Full Report</h2></header>
 										<pre id="output"></pre>
 									</div>
 							
@@ -172,7 +172,7 @@
 								<details>
 									<summary>Privacy Policy</summary>
 									<div>
-										<h4>Last Updated: July 29, 2025</h4>
+										<h4>Last Updated: August 2, 2025</h4>
 										<p>Thank you for using the Astrological and Numerological Blueprint Calculator. This Privacy Policy explains what information we collect when you use our service, why we collect it, and how it is handled. Your privacy is important to us, and we are committed to being transparent about our data practices.</p>
 										<h4>1. Information We Collect</h4>
 										<p>When you use the calculator, we collect the following information that you voluntarily provide:</p>
@@ -206,7 +206,7 @@
 								<details>
 									<summary>Terms of Service</summary>
 									<div>
-										<h4>Last Updated: July 29, 2025</h4>
+										<h4>Last Updated: August 2, 2025</h4>
 										<p>Welcome to the Astrological and Numerological Blueprint Calculator. These Terms of Service ("Terms") govern your use of this website and the services provided. By accessing or using the service, you agree to be bound by these Terms.</p>
 										<h4>1. Description of Service</h4>
 										<p>This website provides personalized astrological and numerological reports based on data you provide, including True Sidereal and Tropical zodiac calculations, a visual chart wheel, and numerology reports. The service is provided for informational and entertainment purposes.</p>
