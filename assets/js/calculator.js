@@ -466,7 +466,7 @@ const AstrologyCalculator = {
 
 			planets.forEach(planet => {
 				const lineStartCoords = degreeToCartesian(glyphConnectorRadius, planet.degrees);
-				const lineEndCoords = degreeToCartesian(outerGlygphRadius, planet.adjustedDegrees);
+				const lineEndCoords = degreeToCartesian(outerGlyphRadius, planet.adjustedDegrees);
 				const line = document.createElementNS(this.SVG_NS, 'line');
 				line.setAttribute('x1', lineStartCoords.x); line.setAttribute('y1', lineStartCoords.y);
 				line.setAttribute('x2', lineEndCoords.x); line.setAttribute('y2', lineEndCoords.y);
