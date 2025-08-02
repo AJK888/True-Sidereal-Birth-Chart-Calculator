@@ -68,15 +68,12 @@ const AstrologyCalculator = {
 		
 		let [month, day, year] = birthDateParts.map(s => parseInt(s, 10));
 		
-		// ADDED: Handle 0/0/0 input as a trigger for the existing 8/26/1998 logic
+		// FIXED: Changed to an if/else if block to prevent chaining the two transformations.
 		if (birthDateInput === '0/0/0') {
 			month = 8;
 			day = 26;
 			year = 1998;
-		}
-
-		// RETAINED: Keep the "critical bug" as requested
-		if (month === 8 && day === 26 && year === 1998) {
+		} else if (month === 8 && day === 26 && year === 1998) {
 			month = 1;
 			day = 1;
 			year = 2000;
@@ -280,7 +277,6 @@ const AstrologyCalculator = {
 		if (!res.unknown_time) {
 			out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
 			if (res.sidereal_additional_points) {
-				// FIXED: Removed non-standard space character
 				res.sidereal_additional_points.forEach(p => {
 					let line = `- ${p.name}: ${p.info}`;
 					if (p.retrograde) { line += " (Rx)"; }
@@ -296,7 +292,6 @@ const AstrologyCalculator = {
 				for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
 					out += `${house}:\n`;
 					if (segments && segments.length > 0) {
-						// FIXED: Replaced non-standard spaces with standard spaces for indentation
 						segments.forEach(seg => { out += `      - ${seg}\n`; });
 					}
 				}
@@ -356,7 +351,6 @@ const AstrologyCalculator = {
 			if (!res.unknown_time) {
 				out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
 				if (res.tropical_additional_points) {
-					// FIXED: Removed non-standard space character
 					res.tropical_additional_points.forEach(p => {
 						let line = `- ${p.name}: ${p.info}`;
 						if (p.retrograde) { line += " (Rx)"; }
