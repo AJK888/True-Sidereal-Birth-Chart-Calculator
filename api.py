@@ -209,10 +209,8 @@ def get_full_text_report(res: dict) -> str:
     return out
 
 def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inputs: dict, chart_image_base64: Optional[str], include_inputs: bool = True) -> str:
-    """Formats the complete report into an HTML string for email."""
     html = "<h1>Synthesis Astrology Report</h1>"
     
-    # Conditionally include the user inputs section
     if include_inputs:
         html += "<h2>Chart Inputs</h2>"
         html += f"<p><b>Name:</b> {user_inputs.get('full_name', 'N/A')}</p>"
@@ -221,18 +219,15 @@ def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inp
         html += f"<p><b>Location:</b> {user_inputs.get('location', 'N/A')}</p>"
         html += "<hr>"
 
-    # Add the chart image if it exists
     if chart_image_base64:
         html += "<h2>Natal Chart Wheel</h2>"
         html += f'<img src="data:image/svg+xml;base64,{chart_image_base64}" alt="Natal Chart Wheel" width="600">'
         html += "<hr>"
 
-    # AI Synthesis with proper paragraph breaks
     html += "<h2>AI Astrological Synthesis</h2>"
     html += f"<p>{gemini_reading.replace('/n', '<br><br>')}</p>"
     html += "<hr>"
 
-    # Full Text Report
     full_text_report = get_full_text_report(chart_data)
     html += "<h2>Full Astrological Data</h2>"
     html += f"<pre>{full_text_report}</pre>"
@@ -339,7 +334,7 @@ The Story of Your Inner World
             structured_analysis = analysis_response.text
 
             teacher_prompt_parts = [
-                "You are a master astrologer and gifted teacher. Your skill is not just in seeing the connections in a chart, but in explaining them with depth, patience, and clarity. You identify the 'golden thread'—the central narrative—that connects every placement. **Crucially, you must base your reading exclusively and entirely on the analysis provided. Do not invent any placements, planets (e.g., 'Earth'), or signs that are not explicitly listed in the analysis.**",
+                "You are a master astrological analyst. Your skill is not just in seeing the connections in a chart, but in explaining them with depth, patience, and clarity. You identify the 'golden thread'—the central narrative—that connects every placement. **Crucially, you must base your reading exclusively and entirely on the analysis provided. Do not invent any placements, planets (e.g., 'Earth'), or signs that are not explicitly listed in the analysis.**",
                 "\nHere is the structured analysis of a user's chart:",
                 "--- ANALYSIS START ---",
                 structured_analysis,
@@ -394,7 +389,7 @@ async def calculate_chart_endpoint(data: ChartRequest):
                 data.year, data.month, data.day, data.hour, data.minute, tz=timezone_name
             )
         except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid date provided: {data.month}/{data.day}/{year}")
+            raise HTTPException(status_code=400, detail=f"Invalid date provided: {data.month}/{data.day}/{data.year}")
 
         utc_time = local_time.in_timezone('UTC')
 
@@ -403,7 +398,7 @@ async def calculate_chart_endpoint(data: ChartRequest):
             hour=utc_time.hour, minute=utc_time.minute, latitude=lat, longitude=lng,
             local_hour=data.hour
         )
-        chart.calculate_chart()
+        chart.calculate_chart(unknown_time=data.unknown_time)
         
         numerology = calculate_numerology(data.day, data.month, data.year)
         
@@ -435,12 +430,10 @@ async def generate_reading_endpoint(request: ReadingRequest):
         chart_name = user_inputs.get('full_name', 'N/A')
         chart_image = request.chart_image_base64
 
-        # Send to user if they provided an email (without the inputs section)
         if user_email:
             user_html_content = format_full_report_for_email(request.chart_data, gemini_reading, user_inputs, chart_image, include_inputs=False)
             send_chart_email(user_html_content, user_email, f"Your Astrology Chart Report for {chart_name}")
             
-        # ALWAYS send to admin (with the inputs section)
         if ADMIN_EMAIL:
             admin_html_content = format_full_report_for_email(request.chart_data, gemini_reading, user_inputs, chart_image, include_inputs=True)
             send_chart_email(admin_html_content, ADMIN_EMAIL, f"New Chart Generated: {chart_name}")
