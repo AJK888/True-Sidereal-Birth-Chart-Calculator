@@ -119,12 +119,11 @@ pre {
     letter-spacing: 0.05em;
 }
 
-/* NEW: Styles to align the name input and its checkbox horizontally */
+/* Styles to align the name input and its checkbox horizontally */
 #form-section .field:has(#fullName) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 1em;
 }
 #form-section .field:has(#fullName) > label {
     width: 100%; /* Keep label on its own line */
@@ -138,11 +137,12 @@ pre {
     display: flex;
     align-items: center;
     margin-top: 0; /* Reset margin for flex layout */
+    /* FIXED: Added margin to match spacing of other fields */
+    margin-left: 2em;
 }
 
 .time-checkbox-container {
     display: flex;
-    /* REVERTED: Changed back to flex-end */
     align-items: flex-end;
     padding-bottom: 0.8em;
 }
@@ -156,6 +156,11 @@ pre {
     background-color: rgba(255, 255, 255, 0.15);
     border: 2px solid #ffffff;
     border-radius: 4px;
+}
+
+/* FIXED: Added rule to make checkmark visible */
+#form-section input[type="checkbox"]:checked + label::before {
+    background-color: #ffffff; /* Set background to white when checked */
 }
 
 #form-section input[type="checkbox"]:checked + label::after {
