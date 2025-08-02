@@ -278,11 +278,12 @@ async def calculate_chart_endpoint(data: ChartRequest):
         
         full_response = chart.get_full_chart_data(numerology, name_numerology, chinese_zodiac, data.unknown_time)
         
-        # Send emails after successful chart generation
-        if ADMIN_EMAIL:
-            send_chart_email(full_response, ADMIN_EMAIL, is_admin_copy=True)
-        if data.user_email:
-            send_chart_email(full_response, data.user_email)
+        # MODIFICATION: Only send emails if the chart name is NOT "Current Transits"
+        if data.full_name != "Current Transits":
+            if ADMIN_EMAIL:
+                send_chart_email(full_response, ADMIN_EMAIL, is_admin_copy=True)
+            if data.user_email:
+                send_chart_email(full_response, data.user_email)
             
         return full_response
 
@@ -292,7 +293,7 @@ async def calculate_chart_endpoint(data: ChartRequest):
         logger.error(f"An unexpected error occurred: {type(e).__name__} - {e}", exc_info=True)
         print("\n--- AN EXCEPTION WAS CAUGHT ---"); traceback.print_exc(); print("-----------------------------\n")
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {type(e).__name__} - {e}")
-
+        
 @app.post("/generate_reading")
 async def generate_reading_endpoint(request: ReadingRequest):
     try:
