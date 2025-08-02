@@ -221,7 +221,11 @@ const AstrologyCalculator = {
 		this.resultsContainer.style.display = 'block';
 		
 		// Finally, trigger a resize event to force the theme's scripts to recalculate the layout.
-		setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+		setTimeout(() => {
+			// This forces the browser to recalculate the layout before the resize event
+			this.resultsContainer.getBoundingClientRect(); 
+			window.dispatchEvent(new Event('resize'));
+		}, 100);
 	},
 
 	renderTextResults(res) {
