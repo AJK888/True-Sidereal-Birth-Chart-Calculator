@@ -49,7 +49,6 @@ const AstrologyCalculator = {
 		try {
 			const chartData = await this.fetchChartData();
 			this.displayInitialResults(chartData);
-			// The email is now sent from the backend after the AI reading is generated.
 			this.fetchAndDisplayAIReading(chartData);
 		} catch (err) {
 			this.resultsContainer.style.display = 'block';
@@ -113,7 +112,6 @@ const AstrologyCalculator = {
 
 	async fetchAndDisplayAIReading(chartData) {
 		try {
-			// Collect user inputs to send to the backend for the email report
 			const userInputs = {
 				full_name: this.form.querySelector("[name='fullName']").value,
 				birth_date: this.form.querySelector("[name='birthDate']").value,
@@ -122,13 +120,21 @@ const AstrologyCalculator = {
 				user_email: this.form.querySelector("[name='userEmail']").value
 			};
 
+			// Convert the generated SVG chart wheel to a Base64 string to be sent in the email
+			let chartImageBase64 = null;
+			if (this.wheelSvg.innerHTML.trim() !== '') {
+				const svgString = new XMLSerializer().serializeToString(this.wheelSvg);
+				chartImageBase64 = btoa(svgString);
+			}
+
 			const readingRes = await fetch(this.API_URLS.reading, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					chart_data: chartData,
 					unknown_time: chartData.unknown_time,
-					user_inputs: userInputs // Pass original inputs for the email
+					user_inputs: userInputs,
+					chart_image_base64: chartImageBase64 // NEW: Send the image data
 				})
 			});
 
@@ -550,7 +556,6 @@ const AstrologyCalculator = {
 
 document.addEventListener('DOMContentLoaded', () => {
 	AstrologyCalculator.init();
-	// FIX: Delay the transit chart drawing until after the theme's scripts have run
 	window.addEventListener('load', () => {
 		setTimeout(() => {
 			AstrologyCalculator.loadAndDrawTransitChart();
