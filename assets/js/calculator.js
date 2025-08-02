@@ -220,12 +220,13 @@ const AstrologyCalculator = {
 		// Now that all content is rendered, make the main results container visible.
 		this.resultsContainer.style.display = 'block';
 		
-		// Finally, trigger a resize event to force the theme's scripts to recalculate the layout.
-		setTimeout(() => {
-			// This forces the browser to recalculate the layout before the resize event
-			this.resultsContainer.getBoundingClientRect(); 
-			window.dispatchEvent(new Event('resize'));
-		}, 100);
+		// FIXED: Use requestAnimationFrame for a more reliable way to sync with the browser's rendering,
+		// ensuring the theme's layout scripts see the updated content size.
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				window.dispatchEvent(new Event('resize'));
+			});
+		});
 	},
 
 	renderTextResults(res) {
@@ -576,4 +577,3 @@ document.addEventListener('DOMContentLoaded', () => {
 		}, 100);
 	});
 });
-
