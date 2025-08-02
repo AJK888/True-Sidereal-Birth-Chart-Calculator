@@ -2,8 +2,8 @@
 
 /* 1. Header & Section Color Updates */
 #header {
-    /* FIXED: Changed to an RGBA value for 50% opacity */
-    background-color: rgba(128, 90, 213, 0.5); 
+    /* REVERTED: Changed back to a solid color */
+    background-color: #805ad5; 
     transition: background-color 0.3s ease-in-out;
 }
 #header.alt {
@@ -26,8 +26,8 @@
     box-shadow: none !important;
 }
 #banner:before {
-    /* MODIFIED: Changed from transparent to a semi-transparent overlay */
-    background: rgba(36, 41, 62, 0.5) !important; /* Dark overlay with 50% opacity */
+    /* MODIFIED: Reduced opacity of the overlay to 25% */
+    background: rgba(36, 41, 62, 0.25) !important; /* Dark overlay with 25% opacity */
     box-shadow: none !important;
     opacity: 1 !important; /* Ensure the overlay is visible */
 }
