@@ -173,16 +173,17 @@ class NatalChart:
         self.ascendant_data: Dict[str, Any] = {}; self.day_night_info: Dict[str, Any] = {}
 
     def calculate_chart(self, unknown_time: bool = False) -> None:
-        self._calculate_ascendant_mc_data()
-        if self.ascendant_data.get("sidereal_asc") is None and not unknown_time:
-            return
-
+        if not unknown_time:
+            self._calculate_ascendant_mc_data()
+            if self.ascendant_data.get("sidereal_asc") is None:
+                return
+        
         self._determine_day_night()
         self._calculate_all_points(unknown_time)
         self._calculate_aspects(unknown_time)
         if not unknown_time:
             self._calculate_house_sign_distributions()
-        self._analyze_dominance()
+        self._analyze_dominance(unknown_time)
         self._detect_aspect_patterns(unknown_time)
     
     def _calculate_ascendant_mc_data(self) -> None:
@@ -201,13 +202,14 @@ class NatalChart:
     def _calculate_all_points(self, unknown_time: bool) -> None:
         sidereal_asc = self.ascendant_data.get("sidereal_asc") if not unknown_time else None
         tropical_asc = self.ascendant_data.get("tropical_asc") if not unknown_time else None
-        ayanamsa = self.ascendant_data.get("ayanamsa")
+        ayanamsa = 31.38 + ((self.birth_year - 2000) / 72.0) # Calculate ayanamsa even for unknown time
         
-        if ayanamsa is None: return
-
         configs = PLANETS_CONFIG + ADDITIONAL_BODIES_CONFIG
         for name, code in configs:
             try:
+                # Exclude Vertex for unknown time as it's time-sensitive
+                if unknown_time and name == 'Vertex':
+                    continue
                 res = swe.calc_ut(self.jd, code); is_retro = res[0][3] < 0; tropical_lon = res[0][0]; sidereal_lon = (tropical_lon - ayanamsa + 360) % 360
                 is_main = any(name == p[0] for p in PLANETS_CONFIG)
                 self.sidereal_bodies.append(SiderealBody(name, sidereal_lon, is_retro, sidereal_asc, is_main))
@@ -342,8 +344,12 @@ class NatalChart:
                         else: segments.append(f"{sign_name} {(overlap_start - sign_start):.1f}°–{(overlap_end - sign_start):.1f}°")
             self.house_sign_distributions[f"House {house_num}"] = segments
 
-    def _analyze_dominance(self) -> None:
-        points_for_dominance_s = [p for p in self.all_sidereal_points if p.name in ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Ascendant']]
+    def _analyze_dominance(self, unknown_time: bool) -> None:
+        dominance_points = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
+        if not unknown_time:
+            dominance_points.append('Ascendant')
+
+        points_for_dominance_s = [p for p in self.all_sidereal_points if p.name in dominance_points]
         counts_s = {'sign': {}, 'element': {}, 'modality': {}}; strength_s = {}
         for b in points_for_dominance_s:
             if b.sign != "Unknown":
@@ -357,7 +363,7 @@ class NatalChart:
         self.sidereal_dominance['dominant_planet'] = max(strength_s, key=strength_s.get) if strength_s else "N/A"
         self.sidereal_dominance['counts'] = counts_s; self.sidereal_dominance['strength'] = {k: round(v, 2) for k, v in strength_s.items()}
         
-        points_for_dominance_t = [p for p in self.all_tropical_points if p.name in ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Ascendant']]
+        points_for_dominance_t = [p for p in self.all_tropical_points if p.name in dominance_points]
         counts_t = {'sign': {}, 'element': {}, 'modality': {}}; strength_t = {}
         for b in points_for_dominance_t:
             if b.sign != "Unknown":
