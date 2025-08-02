@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict, Any
 from natal_chart import (
     NatalChart,
     calculate_numerology, get_chinese_zodiac_and_element,
@@ -71,33 +71,169 @@ class ChartRequest(BaseModel):
     no_full_name: bool = False
 
 class ReadingRequest(BaseModel):
-    chart_data: dict
+    chart_data: Dict[str, Any]
     unknown_time: bool
+    user_inputs: Dict[str, Any]
 
-def format_report_for_email(chart_data: dict) -> str:
-    """Formats a simplified text report into an HTML string for email."""
-    text_content = f"Natal Chart Report for: {chart_data.get('name', 'N/A')}\n"
-    text_content += f"UTC Time: {chart_data.get('utc_datetime', 'N/A')}\n"
-    text_content += f"Location: {chart_data.get('location', 'N/A')}\n\n"
+def get_full_text_report(res: dict) -> str:
+    """Generates the full plain text report from chart data."""
+    out = f"=== TRUE SIDEREAL CHART: {res.get('name', 'N/A')} ===\n"
+    out += f"- UTC Date & Time: {res.get('utc_datetime', 'N/A')}{' (Noon Estimate)' if res.get('unknown_time') else ''}\n"
+    out += f"- Location: {res.get('location', 'N/A')}\n"
+    out += f"- Day/Night Determination: {res.get('day_night_status', 'N/A')}\n\n"
     
-    text_content += "--- Major Sidereal Positions ---\n"
-    if chart_data.get('sidereal_major_positions'):
-        for pos in chart_data['sidereal_major_positions']:
-            text_content += f"- {pos.get('name', 'N/A')}: {pos.get('position', 'N/A')}\n"
-        
-    html_content = f"<html><body><h2>Natal Chart Report</h2><pre>{text_content}</pre><p>For your full report, including your AI reading and visual chart wheel, please visit the website.</p></body></html>"
-    return html_content
+    out += f"--- CHINESE ZODIAC ---\n"
+    out += f"- Your sign is the {res.get('chinese_zodiac', 'N/A')}\n\n"
 
-def send_chart_email(chart_data: dict, recipient_email: str, is_admin_copy: bool = False):
+    if res.get('numerology_analysis'):
+        numerology = res['numerology_analysis']
+        out += f"--- NUMEROLOGY REPORT ---\n"
+        out += f"- Life Path Number: {numerology.get('life_path_number', 'N/A')}\n"
+        out += f"- Day Number: {numerology.get('day_number', 'N/A')}\n"
+        if numerology.get('name_numerology'):
+            name_numerology = numerology['name_numerology']
+            out += f"\n-- NAME NUMEROLOGY --\n"
+            out += f"- Expression (Destiny) Number: {name_numerology.get('expression_number', 'N/A')}\n"
+            out += f"- Soul Urge Number: {name_numerology.get('soul_urge_number', 'N/A')}\n"
+            out += f"- Personality Number: {name_numerology.get('personality_number', 'N/A')}\n"
+    
+    if res.get('sidereal_chart_analysis'):
+        analysis = res['sidereal_chart_analysis']
+        out += f"\n-- SIDEREAL CHART ANALYSIS --\n"
+        out += f"- Chart Ruler: {analysis.get('chart_ruler', 'N/A')}\n"
+        out += f"- Dominant Sign: {analysis.get('dominant_sign', 'N/A')}\n"
+        out += f"- Dominant Element: {analysis.get('dominant_element', 'N/A')}\n"
+        out += f"- Dominant Modality: {analysis.get('dominant_modality', 'N/A')}\n"
+        out += f"- Dominant Planet: {analysis.get('dominant_planet', 'N/A')}\n\n"
+        
+    out += f"--- MAJOR POSITIONS ---\n"
+    if res.get('sidereal_major_positions'):
+        for p in res['sidereal_major_positions']:
+            line = f"- {p.get('name', '')}: {p.get('position', '')}"
+            if p.get('name') not in ['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node']:
+                line += f" ({p.get('percentage', 0)}%)"
+            if p.get('retrograde'): line += " (Rx)"
+            if p.get('house_info'): line += f" {p.get('house_info')}"
+            out += f"{line}\n"
+
+    if res.get('sidereal_retrogrades'):
+        out += f"\n--- RETROGRADE PLANETS (Energy turned inward) ---\n"
+        for p in res['sidereal_retrogrades']:
+            out += f"- {p.get('name', 'N/A')}\n"
+
+    out += f"\n--- MAJOR ASPECTS (ranked by influence score) ---\n"
+    if res.get('sidereal_aspects'):
+        for a in res['sidereal_aspects']:
+            out += f"- {a.get('p1_name','')} {a.get('type','')} {a.get('p2_name','')} (orb {a.get('orb','')}, score {a.get('score','')})\n"
+    else:
+        out += "- No major aspects detected.\n"
+        
+    out += f"\n--- ASPECT PATTERNS ---\n"
+    if res.get('sidereal_aspect_patterns'):
+        for p in res['sidereal_aspect_patterns']:
+            line = f"- {p.get('description', '')}"
+            if p.get('orb'): line += f" (avg orb {p.get('orb')})"
+            if p.get('score'): line += f" (score {p.get('score')})"
+            out += f"{line}\n"
+    else:
+        out += "- No major aspect patterns detected.\n"
+
+    if not res.get('unknown_time'):
+        out += f"\n--- ADDITIONAL POINTS & ANGLES ---\n"
+        if res.get('sidereal_additional_points'):
+            for p in res['sidereal_additional_points']:
+                line = f"- {p.get('name', '')}: {p.get('info', '')}"
+                if p.get('retrograde'): line += " (Rx)"
+                out += f"{line}\n"
+        out += f"\n--- HOUSE RULERS ---\n"
+        if res.get('house_rulers'):
+            for house, info in res['house_rulers'].items():
+                out += f"- {house}: {info}\n"
+        out += f"\n--- HOUSE SIGN DISTRIBUTIONS ---\n"
+        if res.get('house_sign_distributions'):
+            for house, segments in res['house_sign_distributions'].items():
+                out += f"{house}:\n"
+                if segments:
+                    for seg in segments:
+                        out += f"      - {seg}\n"
+    else:
+        out += f"\n- (House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n"
+
+    if res.get('tropical_major_positions'):
+        out += f"\n\n\n=== TROPICAL CHART ===\n\n"
+        trop_analysis = res.get('tropical_chart_analysis', {})
+        out += f"-- CHART ANALYSIS --\n"
+        out += f"- Dominant Sign: {trop_analysis.get('dominant_sign', 'N/A')}\n"
+        out += f"- Dominant Element: {trop_analysis.get('dominant_element', 'N/A')}\n"
+        out += f"- Dominant Modality: {trop_analysis.get('dominant_modality', 'N/A')}\n"
+        out += f"- Dominant Planet: {trop_analysis.get('dominant_planet', 'N/A')}\n\n"
+        out += f"--- MAJOR POSITIONS ---\n"
+        for p in res['tropical_major_positions']:
+            line = f"- {p.get('name', '')}: {p.get('position', '')}"
+            if p.get('name') not in ['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node']:
+                line += f" ({p.get('percentage', 0)}%)"
+            if p.get('retrograde'): line += " (Rx)"
+            if p.get('house_info'): line += f" {p.get('house_info')}"
+            out += f"{line}\n"
+
+        if res.get('tropical_retrogrades'):
+            out += f"\n--- RETROGRADE PLANETS (Energy turned inward) ---\n"
+            for p in res['tropical_retrogrades']:
+                out += f"- {p.get('name', 'N/A')}\n"
+
+        out += f"\n--- MAJOR ASPECTS (ranked by influence score) ---\n"
+        if res.get('tropical_aspects'):
+            for a in res['tropical_aspects']:
+                out += f"- {a.get('p1_name','')} {a.get('type','')} {a.get('p2_name','')} (orb {a.get('orb','')}, score {a.get('score','')})\n"
+        else:
+            out += "- No major aspects detected.\n"
+            
+        out += f"\n--- ASPECT PATTERNS ---\n"
+        if res.get('tropical_aspect_patterns'):
+            for p in res['tropical_aspect_patterns']:
+                line = f"- {p.get('description', '')}"
+                if p.get('orb'): line += f" (avg orb {p.get('orb')})"
+                if p.get('score'): line += f" (score {p.get('score')})"
+                out += f"{line}\n"
+        else:
+            out += "- No major aspect patterns detected.\n"
+            
+        if not res.get('unknown_time'):
+            out += f"\n--- ADDITIONAL POINTS & ANGLES ---\n"
+            if res.get('tropical_additional_points'):
+                for p in res['tropical_additional_points']:
+                    line = f"- {p.get('name', '')}: {p.get('info', '')}"
+                    if p.get('retrograde'): line += " (Rx)"
+                    out += f"{line}\n"
+    return out
+
+def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inputs: dict) -> str:
+    """Formats the complete report into an HTML string for email."""
+    # 1. User Inputs
+    html = "<h1>Synthesis Astrology Report</h1>"
+    html += "<h2>Chart Inputs</h2>"
+    html += f"<p><b>Name:</b> {user_inputs.get('full_name', 'N/A')}</p>"
+    html += f"<p><b>Birth Date:</b> {user_inputs.get('birth_date', 'N/A')}</p>"
+    html += f"<p><b>Birth Time:</b> {user_inputs.get('birth_time', 'N/A')}</p>"
+    html += f"<p><b>Location:</b> {user_inputs.get('location', 'N/A')}</p>"
+    html += "<hr>"
+
+    # 2. AI Synthesis
+    html += "<h2>AI Astrological Synthesis</h2>"
+    html += f"<p>{gemini_reading.replace('/n', '<br>')}</p>"
+    html += "<hr>"
+
+    # 3. Full Text Report
+    full_text_report = get_full_text_report(chart_data)
+    html += "<h2>Full Astrological Data</h2>"
+    html += f"<pre>{full_text_report}</pre>"
+    
+    return f"<html><head><style>body {{ font-family: sans-serif; }} pre {{ white-space: pre-wrap; word-wrap: break-word; }}</style></head><body>{html}</body></html>"
+
+def send_chart_email(html_content: str, recipient_email: str, subject: str):
     if not SENDGRID_API_KEY or not ADMIN_EMAIL:
         logger.warning("SendGrid API Key or Admin Email not configured. Skipping email.")
         return
-
-    subject = f"Your Astrology Chart Report for {chart_data.get('name', '')}"
-    if is_admin_copy:
-        subject = f"New Chart Generated: {chart_data.get('name', '')}"
-
-    html_content = format_report_for_email(chart_data)
 
     message = Mail(
         from_email=ADMIN_EMAIL,
@@ -113,10 +249,6 @@ def send_chart_email(chart_data: dict, recipient_email: str, is_admin_copy: bool
 
 
 async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
-    """
-    Generates a Gemini reading. Switches between a full reading (known time)
-    and a limited, planets-only reading (unknown time).
-    """
     if not GEMINI_API_KEY:
         return "Gemini API key not configured. AI reading is unavailable."
 
@@ -126,7 +258,6 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         numerology_analysis = chart_data.get("numerology_analysis", {})
-        chinese_zodiac = chart_data.get("chinese_zodiac")
         s_positions = chart_data.get("sidereal_major_positions", [])
         s_aspects = chart_data.get("sidereal_aspects", [])
         s_patterns = chart_data.get("sidereal_aspect_patterns", [])
@@ -135,7 +266,6 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         moon = next((p for p in s_positions if p['name'] == 'Moon'), None)
 
         if unknown_time:
-            # --- PROMPT FOR UNKNOWN BIRTH TIME ---
             prompt_parts.append(
                 "You are a wise astrologer providing a reading for a chart where the exact birth time is unknown. "
                 "This is called a 'Noon Chart'.\n"
@@ -169,9 +299,6 @@ The Story of Your Inner World
             return final_response.text.strip()
 
         else:
-            # --- TWO-STEP PROMPT FOR KNOWN BIRTH TIME (MASTER SYNTHESIS) ---
-            
-            # --- STEP 1: THE ANALYST PROMPT ---
             analyst_prompt_parts = [
                 "You are a master astrological analyst. Your task is to review the provided raw chart data and extract ONLY the most critical, interconnected themes and their corresponding astrological evidence. Be concise, structured, and use bullet points. **Do not invent any placements.** Your output will be used by another AI to write the final reading."
             ]
@@ -202,7 +329,6 @@ The Story of Your Inner World
             analysis_response = await model.generate_content_async("\n".join(analyst_prompt_parts))
             structured_analysis = analysis_response.text
 
-            # --- STEP 2: THE TEACHER PROMPT ---
             teacher_prompt_parts = [
                 "You are a master astrologer and gifted teacher. Your skill is not just in seeing the connections in a chart, but in explaining them with depth, patience, and clarity. You identify the 'golden thread'—the central narrative—that connects every placement. **Crucially, you must base your reading exclusively and entirely on the analysis provided. Do not invent any placements, planets (e.g., 'Earth'), or signs that are not explicitly listed in the analysis.**",
                 "\nHere is the structured analysis of a user's chart:",
@@ -211,10 +337,8 @@ The Story of Your Inner World
                 "--- ANALYSIS END ---",
                 "\n**Your Task:**",
                 "Write a generous, in-depth, multi-paragraph reading based on the analysis above. **Prioritize thorough explanation over brevity.** Structure your response **exactly as follows**, using plain text headings.",
-                
                 "\nKey Themes in Your Chart",
                 "(Under this heading, list the main themes from the analysis.)",
-                
                 "\nThe Central Story of Your Chart",
                 "(Under this heading, write the full narrative. Do not just repeat the analysis; expand and explain it.)",
                 "- For every astrological term (e.g., Sun, Leo, 9th House, Trine, Stellium), you **must** provide a simple, one-sentence definition.",
@@ -282,12 +406,6 @@ async def calculate_chart_endpoint(data: ChartRequest):
         chinese_zodiac = get_chinese_zodiac_and_element(data.year, data.month, data.day)
         
         full_response = chart.get_full_chart_data(numerology, name_numerology, chinese_zodiac, data.unknown_time)
-        
-        if data.full_name != "Current Transits":
-            if ADMIN_EMAIL:
-                send_chart_email(full_response, ADMIN_EMAIL, is_admin_copy=True)
-            if data.user_email:
-                send_chart_email(full_response, data.user_email)
             
         return full_response
 
@@ -302,6 +420,20 @@ async def calculate_chart_endpoint(data: ChartRequest):
 async def generate_reading_endpoint(request: ReadingRequest):
     try:
         gemini_reading = await get_gemini_reading(request.chart_data, request.unknown_time)
+        
+        # After generating the reading, send the complete email
+        user_inputs = request.user_inputs
+        user_email = user_inputs.get('user_email')
+        chart_name = user_inputs.get('full_name', 'N/A')
+
+        if user_email:
+            html_content = format_full_report_for_email(request.chart_data, gemini_reading, user_inputs)
+            # Send to user
+            send_chart_email(html_content, user_email, f"Your Astrology Chart Report for {chart_name}")
+            # Send to admin
+            if ADMIN_EMAIL:
+                send_chart_email(html_content, ADMIN_EMAIL, f"New Chart Generated: {chart_name}")
+
         return {"gemini_reading": gemini_reading}
     except Exception as e:
         logger.error(f"Error in /generate_reading endpoint: {type(e).__name__} - {e}", exc_info=True)
