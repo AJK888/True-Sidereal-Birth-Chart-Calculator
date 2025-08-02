@@ -83,6 +83,15 @@ const AstrologyCalculator = {
 		if (ampm === 'PM' && hour < 12) hour += 12;
 		if (ampm === 'AM' && hour === 12) hour = 0;
 
+		body: JSON.stringify({
+		    full_name: this.form.querySelector("[name='fullName']").value,
+		    year, month, day, hour, minute,
+		    location: this.form.querySelector("[name='location']").value,
+		    unknown_time: this.form.querySelector("[name='unknownTime']").checked,
+		    user_email: this.form.querySelector("[name='userEmail']").value,
+		    no_full_name: this.form.querySelector("[name='noFullName']").checked // Add this line
+		}),
+
 		const apiRes = await fetch(this.API_URLS.calculate, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
