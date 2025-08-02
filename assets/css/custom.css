@@ -12,7 +12,10 @@
     background-color: #24293e;
 }
 #form-section {
-    background-color: #202436;
+    background-color: #202436; /* Fallback color */
+    background-image: url('../images/star-background.jpg');
+    background-size: cover;
+    background-position: center center;
 }
 
 /* Header/Banner Overrides */
