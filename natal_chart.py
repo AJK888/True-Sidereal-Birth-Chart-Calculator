@@ -19,23 +19,15 @@ ASPECT_SCORES: Dict[str, float] = {"Conjunction":5,"Opposition":4,"Trine":3.5,"S
 # --- Helper Functions ---
 
 def _reduce_numerology_number(n: int) -> str:
-    """
-    Reduces a number to a single digit or a master number (11, 22, 33)
-    or special case (28), following numerological rules.
-    """
     if n == 20: return "11/2"
     if n == 28: return "28/1"
-
     if n in [11, 22, 33]:
         return f"{n}/{sum(int(digit) for digit in str(n))}"
-
     final_num = n
     while final_num > 9 and final_num not in [11, 22, 33]:
         final_num = sum(int(digit) for digit in str(final_num))
-
     if final_num in [11, 22, 33]:
          return f"{final_num}/{sum(int(digit) for digit in str(final_num))}"
-
     return str(final_num)
 
 def format_true_sidereal_placement(degrees: float) -> str:
@@ -109,10 +101,6 @@ def calculate_name_numerology(full_name: str) -> dict:
     return {"expression_number": expression_number, "soul_urge_number": soul_urge_number, "personality_number": personality_number}
 
 def get_chinese_zodiac_and_element(year: int, month: int, day: int) -> Dict[str, str]:
-    """
-    Calculates the Chinese Zodiac animal and element based on the traditional 60-year cycle.
-    This is more accurate than simple year-based calculations.
-    """
     effective_year = year
     if month == 1 or (month == 2 and day < 4):
         effective_year -= 1
@@ -120,8 +108,6 @@ def get_chinese_zodiac_and_element(year: int, month: int, day: int) -> Dict[str,
     zodiac_animals = ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"]
     elements = ["Wood", "Fire", "Earth", "Metal", "Water"]
     
-    stems = ["Yang Wood", "Yin Wood", "Yang Fire", "Yin Fire", "Yang Earth", "Yin Earth", "Yang Metal", "Yin Metal", "Yang Water", "Yin Water"]
-
     start_year = 4 
     year_diff = effective_year - start_year
     
@@ -186,34 +172,39 @@ class NatalChart:
         self.house_sign_distributions: Dict[str, List[str]] = {}; self.sidereal_dominance: Dict[str, Any] = {}; self.tropical_dominance: Dict[str, Any] = {}
         self.ascendant_data: Dict[str, Any] = {}; self.day_night_info: Dict[str, Any] = {}
 
-    def calculate_chart(self) -> None:
+    def calculate_chart(self, unknown_time: bool = False) -> None:
         self._calculate_ascendant_mc_data()
-        if self.ascendant_data.get("sidereal_asc") is None:
+        if self.ascendant_data.get("sidereal_asc") is None and not unknown_time:
             return
 
         self._determine_day_night()
-        self._calculate_all_points()
-        self._calculate_aspects()
-        self._calculate_house_sign_distributions()
+        self._calculate_all_points(unknown_time)
+        self._calculate_aspects(unknown_time)
+        if not unknown_time:
+            self._calculate_house_sign_distributions()
         self._analyze_dominance()
-        self._detect_aspect_patterns()
+        self._detect_aspect_patterns(unknown_time)
     
     def _calculate_ascendant_mc_data(self) -> None:
         try:
             res = swe.houses(self.jd, self.latitude, self.longitude, b'E')
             ayanamsa = 31.38 + ((self.birth_year - 2000) / 72.0)
             self.ascendant_data = {"tropical_asc": res[1][0], "mc": res[1][1], "ayanamsa": ayanamsa, "sidereal_asc": (res[1][0] - ayanamsa + 360) % 360}
-        except Exception as e: print(f"CRITICAL ERROR calculating ascendant: {e}"); self.ascendant_data = {"sidereal_asc": None}
+        except Exception as e: 
+            print(f"CRITICAL ERROR calculating ascendant: {e}")
+            self.ascendant_data = {"sidereal_asc": None}
     
     def _determine_day_night(self) -> None:
         is_day = 6 <= self.local_hour < 18
-        self.day_night_info = {
-            "status": "Day Birth (Approx.)" if is_day else "Night Birth (Approx.)"
-        }
+        self.day_night_info = {"status": "Day Birth (Approx.)" if is_day else "Night Birth (Approx.)"}
 
-    def _calculate_all_points(self) -> None:
-        sidereal_asc = self.ascendant_data.get("sidereal_asc"); tropical_asc = self.ascendant_data.get("tropical_asc"); ayanamsa = self.ascendant_data.get("ayanamsa")
-        if sidereal_asc is None or ayanamsa is None: return
+    def _calculate_all_points(self, unknown_time: bool) -> None:
+        sidereal_asc = self.ascendant_data.get("sidereal_asc") if not unknown_time else None
+        tropical_asc = self.ascendant_data.get("tropical_asc") if not unknown_time else None
+        ayanamsa = self.ascendant_data.get("ayanamsa")
+        
+        if ayanamsa is None: return
+
         configs = PLANETS_CONFIG + ADDITIONAL_BODIES_CONFIG
         for name, code in configs:
             try:
@@ -221,39 +212,51 @@ class NatalChart:
                 is_main = any(name == p[0] for p in PLANETS_CONFIG)
                 self.sidereal_bodies.append(SiderealBody(name, sidereal_lon, is_retro, sidereal_asc, is_main))
                 self.tropical_bodies.append(TropicalBody(name, tropical_lon, is_retro, tropical_asc, is_main))
-            except Exception as e: print(f"DEBUG: Failed to calculate {name}: {e}"); continue
-        self.all_sidereal_points.extend(self.sidereal_bodies); self.all_tropical_points.extend(self.tropical_bodies)
-        s_asc = SiderealBody("Ascendant", sidereal_asc, False, sidereal_asc, False)
-        s_mc_deg = (self.ascendant_data.get('mc') - ayanamsa + 360) % 360 if self.ascendant_data.get('mc') is not None else None
-        s_mc = SiderealBody("Midheaven (MC)", s_mc_deg, False, sidereal_asc, False)
-        t_asc = TropicalBody("Ascendant", tropical_asc, False, tropical_asc, False)
-        t_mc = TropicalBody("Midheaven (MC)", self.ascendant_data.get('mc'), False, tropical_asc, False)
-        points_to_add = [
-            (s_asc, t_asc), (s_mc, t_mc),
-            (SiderealBody("Descendant", (s_asc.degree + 180)%360, False, sidereal_asc, False), TropicalBody("Descendant", (t_asc.degree + 180)%360, False, tropical_asc, False)),
-            (SiderealBody("Imum Coeli (IC)", (s_mc.degree + 180)%360, False, sidereal_asc, False), TropicalBody("Imum Coeli (IC)", (t_mc.degree + 180)%360, False, tropical_asc, False)),
-        ]
-        sun_s = next((p for p in self.sidereal_bodies if p.name == 'Sun'), None); moon_s = next((p for p in self.sidereal_bodies if p.name == 'Moon'), None)
-        sun_t = next((p for p in self.tropical_bodies if p.name == 'Sun'), None); moon_t = next((p for p in self.tropical_bodies if p.name == 'Moon'), None)
-        if sun_s and moon_s and sun_s.degree is not None and moon_s.degree is not None and s_asc.degree is not None and t_asc.degree is not None and self.day_night_info.get('status') != 'Undetermined':
-            is_day = "Day Birth" in self.day_night_info.get('status', "")
-            s_pof_deg = (s_asc.degree + moon_s.degree - sun_s.degree + 360) % 360 if is_day else (s_asc.degree + sun_s.degree - moon_s.degree + 360) % 360
-            t_pof_deg = (t_asc.degree + moon_t.degree - sun_t.degree + 360) % 360 if is_day else (t_asc.degree + sun_t.degree - moon_t.degree + 360) % 360
-            points_to_add.append((SiderealBody("Part of Fortune", s_pof_deg, False, sidereal_asc, False), TropicalBody("Part of Fortune", t_pof_deg, False, tropical_asc, False)))
+            except Exception as e: 
+                print(f"DEBUG: Failed to calculate {name}: {e}")
+                continue
+        
+        self.all_sidereal_points.extend(self.sidereal_bodies)
+        self.all_tropical_points.extend(self.tropical_bodies)
+
+        if not unknown_time and sidereal_asc is not None:
+            s_asc = SiderealBody("Ascendant", sidereal_asc, False, sidereal_asc, False)
+            s_mc_deg = (self.ascendant_data.get('mc') - ayanamsa + 360) % 360 if self.ascendant_data.get('mc') is not None else None
+            s_mc = SiderealBody("Midheaven (MC)", s_mc_deg, False, sidereal_asc, False)
+            t_asc = TropicalBody("Ascendant", tropical_asc, False, tropical_asc, False)
+            t_mc = TropicalBody("Midheaven (MC)", self.ascendant_data.get('mc'), False, tropical_asc, False)
+            points_to_add = [
+                (s_asc, t_asc), (s_mc, t_mc),
+                (SiderealBody("Descendant", (s_asc.degree + 180)%360, False, sidereal_asc, False), TropicalBody("Descendant", (t_asc.degree + 180)%360, False, tropical_asc, False)),
+                (SiderealBody("Imum Coeli (IC)", (s_mc.degree + 180)%360, False, sidereal_asc, False), TropicalBody("Imum Coeli (IC)", (t_mc.degree + 180)%360, False, tropical_asc, False)),
+            ]
+            sun_s = next((p for p in self.sidereal_bodies if p.name == 'Sun'), None); moon_s = next((p for p in self.sidereal_bodies if p.name == 'Moon'), None)
+            sun_t = next((p for p in self.tropical_bodies if p.name == 'Sun'), None); moon_t = next((p for p in self.tropical_bodies if p.name == 'Moon'), None)
+            if sun_s and moon_s and sun_s.degree is not None and moon_s.degree is not None and s_asc.degree is not None and t_asc.degree is not None and self.day_night_info.get('status') != 'Undetermined':
+                is_day = "Day Birth" in self.day_night_info.get('status', "")
+                s_pof_deg = (s_asc.degree + moon_s.degree - sun_s.degree + 360) % 360 if is_day else (s_asc.degree + sun_s.degree - moon_s.degree + 360) % 360
+                t_pof_deg = (t_asc.degree + moon_t.degree - sun_t.degree + 360) % 360 if is_day else (t_asc.degree + sun_t.degree - moon_t.degree + 360) % 360
+                points_to_add.append((SiderealBody("Part of Fortune", s_pof_deg, False, sidereal_asc, False), TropicalBody("Part of Fortune", t_pof_deg, False, tropical_asc, False)))
+            
+            for s_point, t_point in points_to_add:
+                if s_point and s_point.degree is not None: self.all_sidereal_points.append(s_point)
+                if t_point and t_point.degree is not None: self.all_tropical_points.append(t_point)
+
         nn_s = next((p for p in self.sidereal_bodies if p.name == 'True Node'), None); nn_t = next((p for p in self.tropical_bodies if p.name == 'True Node'), None)
         if nn_s and nn_t and nn_s.degree is not None and nn_t.degree is not None:
-            points_to_add.append((SiderealBody("South Node", (nn_s.degree + 180)%360, False, sidereal_asc, False), TropicalBody("South Node", (nn_t.degree + 180)%360, False, tropical_asc, False)))
-        for s_point, t_point in points_to_add:
-            if s_point and s_point.degree is not None: self.all_sidereal_points.append(s_point)
-            if t_point and t_point.degree is not None: self.all_tropical_points.append(t_point)
-            
-    def _calculate_aspects(self) -> None:
+            s_sn = SiderealBody("South Node", (nn_s.degree + 180)%360, False, sidereal_asc, False)
+            t_sn = TropicalBody("South Node", (nn_t.degree + 180)%360, False, tropical_asc, False)
+            self.all_sidereal_points.append(s_sn)
+            self.all_tropical_points.append(t_sn)
+
+    def _calculate_aspects(self, unknown_time: bool) -> None:
         self.sidereal_aspects = []
         self.tropical_aspects = []
     
-        aspect_points = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Ascendant', 'Midheaven (MC)']
+        aspect_points = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
+        if not unknown_time:
+            aspect_points.extend(['Ascendant', 'Midheaven (MC)'])
     
-        # Sidereal Aspects
         main_s = [p for p in self.all_sidereal_points if p.name in aspect_points and p.degree is not None]
         for p1, p2 in combinations(main_s, 2):
             diff = min(abs(p1.degree - p2.degree), 360 - abs(p1.degree - p2.degree))
@@ -264,7 +267,6 @@ class NatalChart:
                     self.sidereal_aspects.append(Aspect(p1, p2, name, round(diff - angle, 2), round(ASPECT_SCORES.get(name, 1) / (1 + abs(diff - angle)), 2)))
         self.sidereal_aspects.sort(key=lambda x: -x.strength)
         
-        # Tropical Aspects
         main_t = [p for p in self.all_tropical_points if p.name in aspect_points and p.degree is not None]
         for p1, p2 in combinations(main_t, 2):
             diff = min(abs(p1.degree - p2.degree), 360 - abs(p1.degree - p2.degree))
@@ -276,22 +278,17 @@ class NatalChart:
         self.tropical_aspects.sort(key=lambda x: -x.strength)
 
     def _detect_patterns_for_zodiac(self, all_points, aspects, dominance_data, unknown_time: bool):
-        """Helper function to detect aspect patterns for a given zodiac type."""
         patterns = []
         
         def get_aspect(p1_name: str, p2_name: str, aspect_type: str, aspects_list: List[Aspect]) -> Optional[Aspect]:
             for aspect in aspects_list:
-                if aspect.type == aspect_type and (
-                    (aspect.p1.name == p1_name and aspect.p2.name == p2_name) or
-                    (aspect.p1.name == p2_name and aspect.p2.name == p1_name)
-                ):
+                if aspect.type == aspect_type and ((aspect.p1.name == p1_name and aspect.p2.name == p2_name) or (aspect.p1.name == p2_name and aspect.p2.name == p1_name)):
                     return aspect
             return None
 
         planets = {b.name: b for b in all_points if b.degree is not None and b.is_main_planet}
         names = list(planets.keys())
 
-        # T-Square Detection
         if len(names) >= 3 and not unknown_time:
             for p1, p2, p3 in combinations(names, 3):
                 opp = get_aspect(p1, p2, 'Opposition', aspects)
@@ -302,13 +299,8 @@ class NatalChart:
                     modality = modalities.pop() if len(modalities) == 1 else "Mixed"
                     avg_orb = (abs(opp.orb) + abs(sq1.orb) + abs(sq2.orb)) / 3
                     total_score = opp.strength + sq1.strength + sq2.strength
-                    patterns.append({
-                        "description": f"{p1} opp {p2}, focal {p3} ({modality} T-Square)",
-                        "orb": f"{avg_orb:.2f}°",
-                        "score": f"{total_score:.2f}"
-                    })
+                    patterns.append({"description": f"{p1} opp {p2}, focal {p3} ({modality} T-Square)", "orb": f"{avg_orb:.2f}°", "score": f"{total_score:.2f}"})
 
-        # Sign Stellium Detection
         sign_groups = {}
         for name, p in planets.items():
             sign_groups.setdefault(p.sign, []).append(name)
@@ -317,12 +309,8 @@ class NatalChart:
                 el = ELEMENT_MAPPING.get(sign, '')
                 mod = MODALITY_MAPPING.get(sign, '')
                 total_score = sum(dominance_data['strength'].get(planet_name, 0) for planet_name in members)
-                patterns.append({
-                    "description": f"{len(members)} bodies in {sign} ({el}, {mod} Sign Stellium)",
-                    "score": f"{total_score:.2f}"
-                })
+                patterns.append({"description": f"{len(members)} bodies in {sign} ({el}, {mod} Sign Stellium)", "score": f"{total_score:.2f}"})
 
-        # House Stellium Detection
         if not unknown_time:
             house_groups = {}
             for body in all_points:
@@ -331,10 +319,7 @@ class NatalChart:
             for house, members in house_groups.items():
                 if len(members) >= 3:
                     total_score = sum(dominance_data['strength'].get(planet_name, 0) for planet_name in members)
-                    patterns.append({
-                        "description": f"{len(members)} bodies in House {house} (House Stellium)",
-                        "score": f"{total_score:.2f}"
-                    })
+                    patterns.append({"description": f"{len(members)} bodies in House {house} (House Stellium)", "score": f"{total_score:.2f}"})
         
         return patterns
 
@@ -358,38 +343,30 @@ class NatalChart:
             self.house_sign_distributions[f"House {house_num}"] = segments
 
     def _analyze_dominance(self) -> None:
-        # --- Sidereal Dominance ---
-        counts_s = {'sign': {}, 'element': {}, 'modality': {}}; strength_s = {}
         points_for_dominance_s = [p for p in self.all_sidereal_points if p.name in ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Ascendant']]
-        
+        counts_s = {'sign': {}, 'element': {}, 'modality': {}}; strength_s = {}
         for b in points_for_dominance_s:
             if b.sign != "Unknown":
                 counts_s['sign'][b.sign] = counts_s['sign'].get(b.sign, 0) + 1
                 el = ELEMENT_MAPPING.get(b.sign); counts_s['element'][el] = counts_s['element'].get(el, 0) + 1
                 mod = MODALITY_MAPPING.get(b.sign); counts_s['modality'][mod] = counts_s['modality'].get(mod, 0) + 1
-        
         for a in self.sidereal_aspects:
             strength_s[a.p1.name] = strength_s.get(a.p1.name, 0) + a.strength
             strength_s[a.p2.name] = strength_s.get(a.p2.name, 0) + a.strength
-
         self.sidereal_dominance = {f"dominant_{k}": max(v, key=v.get) if v else "N/A" for k, v in counts_s.items()}
         self.sidereal_dominance['dominant_planet'] = max(strength_s, key=strength_s.get) if strength_s else "N/A"
         self.sidereal_dominance['counts'] = counts_s; self.sidereal_dominance['strength'] = {k: round(v, 2) for k, v in strength_s.items()}
         
-        # --- Tropical Dominance ---
-        counts_t = {'sign': {}, 'element': {}, 'modality': {}}; strength_t = {}
         points_for_dominance_t = [p for p in self.all_tropical_points if p.name in ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Ascendant']]
-
+        counts_t = {'sign': {}, 'element': {}, 'modality': {}}; strength_t = {}
         for b in points_for_dominance_t:
             if b.sign != "Unknown":
                 counts_t['sign'][b.sign] = counts_t['sign'].get(b.sign, 0) + 1
                 el = ELEMENT_MAPPING.get(b.sign); counts_t['element'][el] = counts_t['element'].get(el, 0) + 1
                 mod = MODALITY_MAPPING.get(b.sign); counts_t['modality'][mod] = counts_t['modality'].get(mod, 0) + 1
-        
         for a in self.tropical_aspects:
             strength_t[a.p1.name] = strength_t.get(a.p1.name, 0) + a.strength
             strength_t[a.p2.name] = strength_t.get(a.p2.name, 0) + a.strength
-            
         self.tropical_dominance = {f"dominant_{k}": max(v, key=v.get) if v else "N/A" for k, v in counts_t.items()}
         self.tropical_dominance['dominant_planet'] = max(strength_t, key=strength_t.get) if strength_t else "N/A"
         self.tropical_dominance['counts'] = counts_t; self.tropical_dominance['strength'] = {k: round(v, 2) for k, v in strength_t.items()}
@@ -397,25 +374,17 @@ class NatalChart:
     def get_full_chart_data(self, numerology: dict, name_numerology: Optional[dict], chinese_zodiac: dict, unknown_time: bool) -> dict:
         TIME_SENSITIVE_POINTS = ['Ascendant', 'Midheaven (MC)', 'Descendant', 'Imum Coeli (IC)', 'Part of Fortune', 'Vertex']
         
-        # Filter points based on whether the birth time is known
-        sidereal_points_to_process = [p for p in self.all_sidereal_points if unknown_time is False or p.name not in TIME_SENSITIVE_POINTS]
-        tropical_points_to_process = [p for p in self.all_tropical_points if unknown_time is False or p.name not in TIME_SENSITIVE_POINTS]
+        sidereal_points_to_process = [p for p in self.all_sidereal_points if not unknown_time or p.name not in TIME_SENSITIVE_POINTS]
+        tropical_points_to_process = [p for p in self.all_tropical_points if not unknown_time or p.name not in TIME_SENSITIVE_POINTS]
 
-        # Prepare sections that are only valid with a known birth time
         house_rulers_formatted = {}
         house_sign_distributions_data = {}
         sidereal_additional_points_data = []
         tropical_additional_points_data = []
         
         if not unknown_time:
-            sidereal_additional_points_data = [
-                {"name": p.name, "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}", "retrograde": p.retrograde}
-                for p in sorted(self.all_sidereal_points, key=lambda x: x.name) if p.name not in self.MAJOR_POSITIONS_ORDER
-            ]
-            tropical_additional_points_data = [
-                {"name": p.name, "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}", "retrograde": p.retrograde}
-                for p in sorted(self.all_tropical_points, key=lambda x: x.name) if p.name not in self.MAJOR_POSITIONS_ORDER
-            ]
+            sidereal_additional_points_data = [{"name": p.name, "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}", "retrograde": p.retrograde} for p in sorted(self.all_sidereal_points, key=lambda x: x.name) if p.name not in self.MAJOR_POSITIONS_ORDER]
+            tropical_additional_points_data = [{"name": p.name, "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}", "retrograde": p.retrograde} for p in sorted(self.all_tropical_points, key=lambda x: x.name) if p.name not in self.MAJOR_POSITIONS_ORDER]
             if self.ascendant_data.get("sidereal_asc") is not None:
                 for i in range(12):
                     cusp_deg = (self.ascendant_data['sidereal_asc'] + i * 30) % 360
@@ -430,8 +399,8 @@ class NatalChart:
             asc = self.ascendant_data['sidereal_asc']
             house_cusps = [(asc + i * 30) % 360 for i in range(12)]
             
-        sidereal_retrogrades = [{"name": p.name} for p in self.all_sidereal_points if p.retrograde]
-        tropical_retrogrades = [{"name": p.name} for p in self.all_tropical_points if p.retrograde]
+        sidereal_retrogrades = [{"name": p.name} for p in self.all_sidereal_points if p.retrograde and p.name in [pc[0] for pc in PLANETS_CONFIG]]
+        tropical_retrogrades = [{"name": p.name} for p in self.all_tropical_points if p.retrograde and p.name in [pc[0] for pc in PLANETS_CONFIG]]
 
         sidereal_chart_analysis = {
             "chart_ruler": "N/A (Unknown Birth Time)" if unknown_time else get_sign_and_ruler(self.ascendant_data['sidereal_asc'])[1] if self.ascendant_data.get('sidereal_asc') is not None else "N/A",
@@ -441,40 +410,22 @@ class NatalChart:
             "dominant_planet": f"{self.sidereal_dominance.get('dominant_planet', 'N/A')} (score {self.sidereal_dominance.get('strength', {}).get(self.sidereal_dominance.get('dominant_planet'), 0.0):.2f})",
         }
         
-        sidereal_major_positions = [
-            {"name": p.name, "position": p.formatted_position, "degrees": p.degree, "percentage": p.sign_percentage, "retrograde": p.retrograde, "house_info": f"– House {p.house_num}, {p.house_degrees}" if p.house_num > 0 and not unknown_time else ""}
-            for p in sorted(sidereal_points_to_process, key=lambda x: self.MAJOR_POSITIONS_ORDER.index(x.name) if x.name in self.MAJOR_POSITIONS_ORDER else 99) if p.name in self.MAJOR_POSITIONS_ORDER
-        ]
-        
-        sidereal_aspects_data = [
-            {"p1_name": f"{a.p1.name} in {a.p1.sign}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name} in {a.p2.sign}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}", "p1_degrees": a.p1.degree, "p2_degrees": a.p2.degree} for a in self.sidereal_aspects
-        ]
-
+        sidereal_major_positions = [{"name": p.name, "position": p.formatted_position, "degrees": p.degree, "percentage": p.sign_percentage, "retrograde": p.retrograde, "house_info": f"– House {p.house_num}, {p.house_degrees}" if p.house_num > 0 and not unknown_time else ""} for p in sorted(sidereal_points_to_process, key=lambda x: self.MAJOR_POSITIONS_ORDER.index(x.name) if x.name in self.MAJOR_POSITIONS_ORDER else 99) if p.name in self.MAJOR_POSITIONS_ORDER]
+        sidereal_aspects_data = [{"p1_name": f"{a.p1.name} in {a.p1.sign}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name} in {a.p2.sign}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}", "p1_degrees": a.p1.degree, "p2_degrees": a.p2.degree} for a in self.sidereal_aspects]
         tropical_chart_analysis = {
             "dominant_sign": f"{self.tropical_dominance.get('dominant_sign', 'N/A')} ({self.tropical_dominance.get('counts', {}).get('sign', {}).get(self.tropical_dominance.get('dominant_sign'), 0)} placements)",
             "dominant_element": f"{self.tropical_dominance.get('dominant_element', 'N/A')} ({self.tropical_dominance.get('counts', {}).get('element', {}).get(self.tropical_dominance.get('dominant_element'), 0)})",
             "dominant_modality": f"{self.tropical_dominance.get('dominant_modality', 'N/A')} ({self.tropical_dominance.get('counts', {}).get('modality', {}).get(self.tropical_dominance.get('dominant_modality'), 0)})",
             "dominant_planet": f"{self.tropical_dominance.get('dominant_planet', 'N/A')} (score {self.tropical_dominance.get('strength', {}).get(self.tropical_dominance.get('dominant_planet'), 0.0):.2f})",
         }
-        
-        tropical_major_positions = [
-            {"name": p.name, "position": p.formatted_position, "percentage": p.sign_percentage, "retrograde": p.retrograde, "house_info": f"– House {p.house_num}, {p.house_degrees}" if p.house_num > 0 and not unknown_time else ""}
-            for p in sorted(tropical_points_to_process, key=lambda x: self.MAJOR_POSITIONS_ORDER.index(x.name) if x.name in self.MAJOR_POSITIONS_ORDER else 99) if p.name in self.MAJOR_POSITIONS_ORDER
-        ]
-        
-        tropical_aspects_data = [
-            {"p1_name": f"{a.p1.name} in {a.p1.sign}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name} in {a.p2.sign}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}"} for a in self.tropical_aspects
-        ]
+        tropical_major_positions = [{"name": p.name, "position": p.formatted_position, "percentage": p.sign_percentage, "retrograde": p.retrograde, "house_info": f"– House {p.house_num}, {p.house_degrees}" if p.house_num > 0 and not unknown_time else ""} for p in sorted(tropical_points_to_process, key=lambda x: self.MAJOR_POSITIONS_ORDER.index(x.name) if x.name in self.MAJOR_POSITIONS_ORDER else 99) if p.name in self.MAJOR_POSITIONS_ORDER]
+        tropical_aspects_data = [{"p1_name": f"{a.p1.name} in {a.p1.sign}{' (Rx)' if a.p1.retrograde else ''}", "p2_name": f"{a.p2.name} in {a.p2.sign}{' (Rx)' if a.p2.retrograde else ''}", "type": a.type, "orb": f"{abs(a.orb):.2f}°", "score": f"{a.strength:.2f}"} for a in self.tropical_aspects]
 
         return {
             "name": self.name, "utc_datetime": self.utc_datetime_str, "location": self.location_str,
             "day_night_status": self.day_night_info.get("status", "N/A"),
             "chinese_zodiac": f"{chinese_zodiac['element']} {chinese_zodiac['animal']}",
-            "numerology_analysis": {
-                "life_path_number": numerology["life_path"],
-                "day_number": numerology["day_number"],
-                "name_numerology": name_numerology
-            },
+            "numerology_analysis": {"life_path_number": numerology["life_path"], "day_number": numerology["day_number"], "name_numerology": name_numerology},
             "unknown_time": unknown_time,
             "true_sidereal_signs": TRUE_SIDEREAL_SIGNS,
             "house_cusps": house_cusps,
