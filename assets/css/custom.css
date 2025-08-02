@@ -117,33 +117,17 @@ pre {
 .time-inputs-container {
     padding-top: 0;
 }
-#form-section input[type="checkbox"] {
-    -webkit-appearance: none;
-    appearance: none;
-    background-color: rgba(255, 255, 255, 0.15) !important; /* Force light grey fill */
-    margin: 0 0.5em 0 0;
-    font: inherit;
-    color: #ffffff;
-    width: 1.15em;
-    height: 1.15em;
-    border: 2px solid #ffffff !important; /* Force solid white border */
-    border-radius: 0.15em;
-    transform: translateY(-0.075em);
-    display: inline-grid;
-    place-content: center;
-}
-input[type="checkbox"]::before {
-    content: "";
-    width: 0.65em;
-    height: 0.65em;
-    transform: scale(0);
-    transition: 120ms transform ease-in-out;
-    box-shadow: inset 1em 1em #ffffff !important;
-}
-input[type="checkbox"]:checked::before {
-    transform: scale(1);
+#form-section input[type="checkbox"] + label::before {
+    content: '';
+    background-color: rgba(255, 255, 255, 0.15); /* Light grey fill */
+    border: 2px solid #ffffff; /* Solid white border */
+    border-radius: 4px;
 }
 
+#form-section input[type="checkbox"]:checked + label::after {
+    /* This targets the checkmark itself */
+    color: #24293e; /* Dark color for the checkmark */
+}
 /* 5. Chart Wheel SVG styles */
 #chart-wheel-svg, #transit-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; }
 .wheel-circle { stroke: rgba(255, 255, 255, 0.25); stroke-width: 2; fill: none; }
