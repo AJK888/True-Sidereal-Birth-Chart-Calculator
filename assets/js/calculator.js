@@ -83,15 +83,6 @@ const AstrologyCalculator = {
 		if (ampm === 'PM' && hour < 12) hour += 12;
 		if (ampm === 'AM' && hour === 12) hour = 0;
 
-		body: JSON.stringify({
-		    full_name: this.form.querySelector("[name='fullName']").value,
-		    year, month, day, hour, minute,
-		    location: this.form.querySelector("[name='location']").value,
-		    unknown_time: this.form.querySelector("[name='unknownTime']").checked,
-		    user_email: this.form.querySelector("[name='userEmail']").value,
-		    no_full_name: this.form.querySelector("[name='noFullName']").checked // Add this line
-		}),
-
 		const apiRes = await fetch(this.API_URLS.calculate, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
@@ -100,7 +91,8 @@ const AstrologyCalculator = {
 				year, month, day, hour, minute,
 				location: this.form.querySelector("[name='location']").value,
 				unknown_time: this.form.querySelector("[name='unknownTime']").checked,
-				user_email: this.form.querySelector("[name='userEmail']").value
+				user_email: this.form.querySelector("[name='userEmail']").value,
+				no_full_name: this.form.querySelector("[name='noFullName']").checked
 			}),
 		});
 
@@ -148,7 +140,10 @@ const AstrologyCalculator = {
 					unknown_time: false
 				}),
 			});
-			if (!apiRes.ok) return;
+			if (!apiRes.ok) {
+				const errData = await apiRes.json();
+				throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
+			}
 			const transitData = await apiRes.json();
 			this.drawChartWheel(transitData, 'transit-wheel-svg');
 
@@ -213,7 +208,7 @@ const AstrologyCalculator = {
 			out += `- Life Path Number: ${res.numerology_analysis.life_path_number}\n`;
 			out += `- Day Number: ${res.numerology_analysis.day_number}\n`;
 			
-			if (res.numerology_analysis.name_numerology && !this.noFullNameCheckbox.checked) {
+			if (res.numerology_analysis.name_numerology) {
 				out += `\n-- NAME NUMEROLOGY --\n`;
 				out += `- Expression (Destiny) Number: ${res.numerology_analysis.name_numerology.expression_number}\n`;
 				out += `- Soul Urge Number: ${res.numerology_analysis.name_numerology.soul_urge_number}\n`;
@@ -471,7 +466,7 @@ const AstrologyCalculator = {
 
 			planets.forEach(planet => {
 				const lineStartCoords = degreeToCartesian(glyphConnectorRadius, planet.degrees);
-				const lineEndCoords = degreeToCartesian(outerGlyphRadius, planet.adjustedDegrees);
+				const lineEndCoords = degreeToCartesian(outerGlygphRadius, planet.adjustedDegrees);
 				const line = document.createElementNS(this.SVG_NS, 'line');
 				line.setAttribute('x1', lineStartCoords.x); line.setAttribute('y1', lineStartCoords.y);
 				line.setAttribute('x2', lineEndCoords.x); line.setAttribute('y2', lineEndCoords.y);
