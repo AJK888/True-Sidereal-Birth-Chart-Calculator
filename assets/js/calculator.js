@@ -194,12 +194,14 @@ const AstrologyCalculator = {
 	},
 
 	displayInitialResults(chartData) {
-		this.resultsContainer.style.display = 'block';
-		this.geminiTitle.parentElement.style.display = 'block';
+		// FIXED: Changed order of operations to prevent theme layout race condition.
+		// 1. First, render all the text content into the elements while the main container is hidden.
 		this.geminiOutput.innerText = "Generating AI Synthesis...";
-		
-		this.resultsTitle.parentElement.style.display = 'block';
 		this.renderTextResults(chartData);
+
+		// 2. Show/hide the relevant sections based on whether a birth time was provided.
+		this.geminiTitle.parentElement.style.display = 'block';
+		this.resultsTitle.parentElement.style.display = 'block';
 
 		if (!chartData.unknown_time) {
 			this.wheelTitle.parentElement.style.display = 'block';
@@ -215,8 +217,11 @@ const AstrologyCalculator = {
 		} else {
 			this.wheelTitle.parentElement.style.display = 'none';
 		}
+
+		// 3. Now that all content is rendered, make the main results container visible.
+		this.resultsContainer.style.display = 'block';
 		
-		// Trigger a resize event to force the theme's layout scripts to update.
+		// 4. Finally, trigger a resize event to force the theme's scripts to recalculate the layout.
 		setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
 	},
 
