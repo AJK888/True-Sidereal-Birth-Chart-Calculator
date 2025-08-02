@@ -12,7 +12,8 @@
     background-color: #24293e;
 }
 #form-section {
-    background-color: #202436; /* Fallback color */
+    position: relative; /* Add this line */
+    background-color: #202436;
     background-image: url('../images/star-background.jpg');
     background-size: cover;
     background-position: center center;
@@ -228,4 +229,16 @@ input[type="checkbox"]:checked::before {
     border: none;
     background-color: #2a2f43;
     border-radius: 4px;
+}
+#form-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(36, 41, 62, 0.75); /* Dark blue overlay with 75% opacity */
+}
+#form-section .inner {
+    position: relative;
 }
