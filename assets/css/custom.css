@@ -118,15 +118,32 @@ pre {
     text-transform: none;
     letter-spacing: 0.05em;
 }
+
+/* NEW: Styles to align the name input and its checkbox horizontally */
+#form-section .field:has(#fullName) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1em;
+}
+#form-section .field:has(#fullName) > label {
+    width: 100%; /* Keep label on its own line */
+    margin-bottom: 0.5em;
+}
+#form-section .field:has(#fullName) > input {
+    flex: 1; /* Make input take up available space */
+    min-width: 200px;
+}
 .name-numerology-toggle {
     display: flex;
     align-items: center;
-    margin-top: 0.75rem;
+    margin-top: 0; /* Reset margin for flex layout */
 }
+
 .time-checkbox-container {
     display: flex;
-    /* FIXED: Changed from flex-end to center to vertically align the checkbox */
-    align-items: center;
+    /* REVERTED: Changed back to flex-end */
+    align-items: flex-end;
     padding-bottom: 0.8em;
 }
 .time-inputs-container {
