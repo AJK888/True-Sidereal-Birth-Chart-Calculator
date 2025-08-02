@@ -120,13 +120,13 @@ pre {
 input[type="checkbox"] {
     -webkit-appearance: none;
     appearance: none;
-    background-color: transparent;
+    background-color: #2a2f43; /* Added solid background to stand out */
     margin: 0 0.5em 0 0;
     font: inherit;
     color: #ffffff;
     width: 1.15em;
     height: 1.15em;
-    border: 0.1em solid rgba(255, 255, 255, 0.25); 
+    border: 0.1em solid #ffffff; /* Changed to solid white for max contrast */
     border-radius: 0.15em;
     transform: translateY(-0.075em);
     display: inline-grid;
@@ -237,7 +237,7 @@ input[type="checkbox"]:checked::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(36, 41, 62, 0.75); /* Dark blue overlay with 75% opacity */
+    background-color: rgba(36, 41, 62, 0.85); /* Opacity increased to 85% */
 }
 #form-section .inner {
     position: relative;
