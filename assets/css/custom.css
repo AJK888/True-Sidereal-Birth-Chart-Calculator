@@ -117,10 +117,10 @@ pre {
 .time-inputs-container {
     padding-top: 0;
 }
-input[type="checkbox"] {
+#form-section input[type="checkbox"] {
     -webkit-appearance: none;
     appearance: none;
-    background-color: rgba(255, 255, 255, 0.15); /* Adds a light grey fill */
+    background-color: rgba(255, 255, 255, 0.15); /* Light grey fill */
     margin: 0 0.5em 0 0;
     font: inherit;
     color: #ffffff;
