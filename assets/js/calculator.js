@@ -120,9 +120,8 @@ const AstrologyCalculator = {
 				user_email: this.form.querySelector("[name='userEmail']").value
 			};
 
-			// Convert the generated SVG chart wheel to a Base64 string to be sent in the email
 			let chartImageBase64 = null;
-			if (this.wheelSvg.innerHTML.trim() !== '') {
+			if (this.wheelSvg.innerHTML.trim() !== '' && !chartData.unknown_time) {
 				const svgString = new XMLSerializer().serializeToString(this.wheelSvg);
 				chartImageBase64 = btoa(svgString);
 			}
@@ -134,7 +133,7 @@ const AstrologyCalculator = {
 					chart_data: chartData,
 					unknown_time: chartData.unknown_time,
 					user_inputs: userInputs,
-					chart_image_base64: chartImageBase64 // NEW: Send the image data
+					chart_image_base64: chartImageBase64
 				})
 			});
 
@@ -219,33 +218,36 @@ const AstrologyCalculator = {
 	},
 
 	renderTextResults(res) {
-		let out = `=== TRUE SIDEREAL CHART: ${res.name} ===\n`;
-		out += `- UTC Date & Time: ${res.utc_datetime}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
-		out += `- Location: ${res.location}\n`;
-		out += `- Day/Night Determination: ${res.day_night_status}\n\n`;
+		// FIXED: Added checks to ensure data exists before trying to display it.
+		let out = `=== TRUE SIDEREAL CHART: ${res.name || 'N/A'} ===\n`;
+		out += `- UTC Date & Time: ${res.utc_datetime || 'N/A'}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
+		out += `- Location: ${res.location || 'N/A'}\n`;
+		out += `- Day/Night Determination: ${res.day_night_status || 'N/A'}\n\n`;
 		
 		out += `--- CHINESE ZODIAC ---\n`;
-		out += `- Your sign is the ${res.chinese_zodiac}\n\n`;
+		out += `- Your sign is the ${res.chinese_zodiac || 'N/A'}\n\n`;
 
 		out += `--- NUMEROLOGY REPORT ---\n`;
 		if (res.numerology_analysis) {
-			out += `- Life Path Number: ${res.numerology_analysis.life_path_number}\n`;
-			out += `- Day Number: ${res.numerology_analysis.day_number}\n`;
+			out += `- Life Path Number: ${res.numerology_analysis.life_path_number || 'N/A'}\n`;
+			out += `- Day Number: ${res.numerology_analysis.day_number || 'N/A'}\n`;
 			
 			if (res.numerology_analysis.name_numerology) {
 				out += `\n-- NAME NUMEROLOGY --\n`;
-				out += `- Expression (Destiny) Number: ${res.numerology_analysis.name_numerology.expression_number}\n`;
-				out += `- Soul Urge Number: ${res.numerology_analysis.name_numerology.soul_urge_number}\n`;
-				out += `- Personality Number: ${res.numerology_analysis.name_numerology.personality_number}\n`;
+				out += `- Expression (Destiny) Number: ${res.numerology_analysis.name_numerology.expression_number || 'N/A'}\n`;
+				out += `- Soul Urge Number: ${res.numerology_analysis.name_numerology.soul_urge_number || 'N/A'}\n`;
+				out += `- Personality Number: ${res.numerology_analysis.name_numerology.personality_number || 'N/A'}\n`;
 			}
 		}
 		
-		out += `\n-- SIDEREAL CHART ANALYSIS --\n`;
-		out += `- Chart Ruler: ${res.sidereal_chart_analysis.chart_ruler}\n`;
-		out += `- Dominant Sign: ${res.sidereal_chart_analysis.dominant_sign}\n`;
-		out += `- Dominant Element: ${res.sidereal_chart_analysis.dominant_element}\n`;
-		out += `- Dominant Modality: ${res.sidereal_chart_analysis.dominant_modality}\n`;
-		out += `- Dominant Planet: ${res.sidereal_chart_analysis.dominant_planet}\n\n`;
+		if (res.sidereal_chart_analysis) {
+			out += `\n-- SIDEREAL CHART ANALYSIS --\n`;
+			out += `- Chart Ruler: ${res.sidereal_chart_analysis.chart_ruler || 'N/A'}\n`;
+			out += `- Dominant Sign: ${res.sidereal_chart_analysis.dominant_sign || 'N/A'}\n`;
+			out += `- Dominant Element: ${res.sidereal_chart_analysis.dominant_element || 'N/A'}\n`;
+			out += `- Dominant Modality: ${res.sidereal_chart_analysis.dominant_modality || 'N/A'}\n`;
+			out += `- Dominant Planet: ${res.sidereal_chart_analysis.dominant_planet || 'N/A'}\n\n`;
+		}
 		
 		out += `--- MAJOR POSITIONS ---\n`;
 		if (res.sidereal_major_positions) {
@@ -318,11 +320,13 @@ const AstrologyCalculator = {
 
 		if (res.tropical_major_positions && res.tropical_major_positions.length > 0) {
 			out += `\n\n\n=== TROPICAL CHART ===\n\n`;
-			out += `-- CHART ANALYSIS --\n`;
-			out += `- Dominant Sign: ${res.tropical_chart_analysis.dominant_sign}\n`;
-			out += `- Dominant Element: ${res.tropical_chart_analysis.dominant_element}\n`;
-			out += `- Dominant Modality: ${res.tropical_chart_analysis.dominant_modality}\n`;
-			out += `- Dominant Planet: ${res.tropical_chart_analysis.dominant_planet}\n\n`;
+			if (res.tropical_chart_analysis) {
+				out += `-- CHART ANALYSIS --\n`;
+				out += `- Dominant Sign: ${res.tropical_chart_analysis.dominant_sign || 'N/A'}\n`;
+				out += `- Dominant Element: ${res.tropical_chart_analysis.dominant_element || 'N/A'}\n`;
+				out += `- Dominant Modality: ${res.tropical_chart_analysis.dominant_modality || 'N/A'}\n`;
+				out += `- Dominant Planet: ${res.tropical_chart_analysis.dominant_planet || 'N/A'}\n\n`;
+			}
 			out += `--- MAJOR POSITIONS ---\n`;
 			res.tropical_major_positions.forEach(p => {
 				let line = `- ${p.name}: ${p.position}`;
