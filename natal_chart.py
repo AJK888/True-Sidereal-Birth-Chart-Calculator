@@ -34,12 +34,26 @@ CHINESE_LUNAR_NEW_YEAR = {
 def format_true_sidereal_placement(degrees: float) -> str:
     for sign, start, end in TRUE_SIDEREAL_SIGNS:
         if start <= degrees < end:
-            deg_into_sign = degrees - start; d = int(deg_into_sign); m = int(round((deg_into_sign - d) * 60))
+            deg_into_sign = degrees - start
+            d = int(deg_into_sign)
+            m = int(round((deg_into_sign - d) * 60))
+            if m == 60:
+                d += 1
+                m = 0
             return f"{d}°{m:02d}′ {sign}"
     return "Out of Bounds"
 def format_tropical_placement(degrees: float) -> str:
     sign_index = int(degrees / 30); sign = TROPICAL_SIGNS[sign_index][0]
-    deg_into_sign = degrees % 30; d = int(deg_into_sign); m = int(round((deg_into_sign - d) * 60))
+    deg_into_sign = degrees % 30
+    d = int(deg_into_sign)
+    m = int(round((deg_into_sign - d) * 60))
+    if m == 60:
+        d += 1
+        m = 0
+        if d == 30:
+            d = 0
+            sign_index = (sign_index + 1) % 12
+            sign = TROPICAL_SIGNS[sign_index][0]
     return f"{d}°{m:02d}′ {sign}"
 def get_sign_and_ruler(degrees: float) -> Tuple[str, str]:
     for sign, start, end in TRUE_SIDEREAL_SIGNS:
@@ -64,14 +78,18 @@ def calculate_numerology(day: int, month: int, year: int) -> dict:
         if n == 20:
             return "11/2"
 
-        final_num = n
-        while final_num > 9 and final_num not in [11, 22, 28, 33]:
-            final_num = sum(int(digit) for digit in str(final_num))
+        initial_sum = n
+        if n in [11, 22, 33, 28]:
+             final_num = n
+        else:
+            final_num = sum(int(digit) for digit in str(n))
+            while final_num > 9 and final_num not in [11, 22, 33, 28]:
+                final_num = sum(int(digit) for digit in str(final_num))
         
-        if final_num in [11, 22, 28, 33]:
-            if final_num == 28:
-                return "28/1"
+        if final_num in [11, 22, 33]:
             return f"{final_num}/{sum(int(digit) for digit in str(final_num))}"
+        elif final_num == 28:
+            return "28/1"
         else:
             while final_num > 9:
                 final_num = sum(int(digit) for digit in str(final_num))
@@ -88,14 +106,18 @@ def calculate_name_numerology(full_name: str) -> dict:
         if n == 20:
             return "11/2"
 
-        final_num = n
-        while final_num > 9 and final_num not in [11, 22, 28, 33]:
-            final_num = sum(int(digit) for digit in str(final_num))
+        initial_sum = n
+        if n in [11, 22, 33, 28]:
+             final_num = n
+        else:
+            final_num = sum(int(digit) for digit in str(n))
+            while final_num > 9 and final_num not in [11, 22, 33, 28]:
+                final_num = sum(int(digit) for digit in str(final_num))
 
-        if final_num in [11, 22, 28, 33]:
-            if final_num == 28:
-                return "28/1"
+        if final_num in [11, 22, 33]:
             return f"{final_num}/{sum(int(digit) for digit in str(final_num))}"
+        elif final_num == 28:
+            return "28/1"
         else:
             while final_num > 9:
                 final_num = sum(int(digit) for digit in str(final_num))
@@ -237,24 +259,29 @@ class NatalChart:
             if s_point and s_point.degree is not None: self.all_sidereal_points.append(s_point)
             if t_point and t_point.degree is not None: self.all_tropical_points.append(t_point)
     def _calculate_aspects(self) -> None:
-        main_s = [b for b in self.sidereal_bodies if b.is_main_planet and b.degree is not None]
+        self.sidereal_aspects = []
+        self.tropical_aspects = []
+        main_s = [b for b in self.all_sidereal_points if b.is_main_planet and b.degree is not None]
         for p1, p2 in combinations(main_s, 2):
             diff = min(abs(p1.degree - p2.degree), 360 - abs(p1.degree - p2.degree))
             is_luminary = p1.is_luminary or p2.is_luminary
             for name, angle, orb in ASPECTS_CONFIG:
                 orb_max = ASPECT_LUMINARY_ORBS.get(name, orb) if is_luminary else orb
-                if abs(diff - angle) <= orb_max: self.sidereal_aspects.append(Aspect(p1, p2, name, round(diff - angle, 2), round(ASPECT_SCORES.get(name, 1) / (1 + abs(diff - angle)), 2)))
+                if abs(diff - angle) <= orb_max:
+                    self.sidereal_aspects.append(Aspect(p1, p2, name, round(diff - angle, 2), round(ASPECT_SCORES.get(name, 1) / (1 + abs(diff - angle)), 2)))
         self.sidereal_aspects.sort(key=lambda x: -x.strength)
-        main_t = [b for b in self.tropical_bodies if b.is_main_planet and b.degree is not None]
+        
+        main_t = [b for b in self.all_tropical_points if b.is_main_planet and b.degree is not None]
         for p1, p2 in combinations(main_t, 2):
             diff = min(abs(p1.degree - p2.degree), 360 - abs(p1.degree - p2.degree))
             is_luminary = p1.is_luminary or p2.is_luminary
             for name, angle, orb in ASPECTS_CONFIG:
                 orb_max = ASPECT_LUMINARY_ORBS.get(name, orb) if is_luminary else orb
-                if abs(diff - angle) <= orb_max: self.tropical_aspects.append(Aspect(p1, p2, name, round(diff - angle, 2), round(ASPECT_SCORES.get(name, 1) / (1 + abs(diff - angle)), 2)))
+                if abs(diff - angle) <= orb_max:
+                    self.tropical_aspects.append(Aspect(p1, p2, name, round(diff - angle, 2), round(ASPECT_SCORES.get(name, 1) / (1 + abs(diff - angle)), 2)))
         self.tropical_aspects.sort(key=lambda x: -x.strength)
+
     def _detect_aspect_patterns(self) -> None:
-        # Helper function to find a specific aspect object between two planets
         def get_aspect(p1_name: str, p2_name: str, aspect_type: str, aspects_list: List[Aspect]) -> Optional[Aspect]:
             for aspect in aspects_list:
                 if aspect.type == aspect_type and (
@@ -265,7 +292,7 @@ class NatalChart:
             return None
 
         # --- Sidereal Patterns ---
-        planets_s = {b.name: b for b in self.sidereal_bodies if b.is_main_planet and b.degree is not None}
+        planets_s = {b.name: b for b in self.all_sidereal_points if b.degree is not None and b.is_main_planet}
         names_s = list(planets_s.keys())
         if len(names_s) >= 3:
             for p1, p2, p3 in combinations(names_s, 3):
@@ -309,7 +336,7 @@ class NatalChart:
                 })
 
         # --- Tropical Patterns ---
-        planets_t = {b.name: b for b in self.tropical_bodies if b.is_main_planet and b.degree is not None}
+        planets_t = {b.name: b for b in self.all_tropical_points if b.degree is not None and b.is_main_planet}
         names_t = list(planets_t.keys())
         if len(names_t) >= 3:
             for p1, p2, p3 in combinations(names_t, 3):
@@ -367,24 +394,38 @@ class NatalChart:
             self.house_sign_distributions[f"House {house_num}"] = segments
     def _analyze_dominance(self) -> None:
         counts_s = {'sign': {}, 'element': {}, 'modality': {}}; strength_s = {}
-        main_s = [b for b in self.sidereal_bodies if b.is_main_planet and b.degree is not None and b.name != "True Node"]
-        for b in main_s:
+        
+        points_for_dominance = [p for p in self.all_sidereal_points if p.name in ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Ascendant']]
+        
+        for b in points_for_dominance:
             if b.sign != "Unknown":
                 counts_s['sign'][b.sign] = counts_s['sign'].get(b.sign, 0) + 1
                 el = ELEMENT_MAPPING.get(b.sign); counts_s['element'][el] = counts_s['element'].get(el, 0) + 1
                 mod = MODALITY_MAPPING.get(b.sign); counts_s['modality'][mod] = counts_s['modality'].get(mod, 0) + 1
-        for a in self.sidereal_aspects: strength_s[a.p1.name] = strength_s.get(a.p1.name, 0) + a.strength; strength_s[a.p2.name] = strength_s.get(a.p2.name, 0) + a.strength
+        
+        for a in self.sidereal_aspects:
+            if a.p1.name in strength_s or a.p2.name in strength_s:
+                 strength_s[a.p1.name] = strength_s.get(a.p1.name, 0) + a.strength
+                 strength_s[a.p2.name] = strength_s.get(a.p2.name, 0) + a.strength
+
         self.sidereal_dominance = {f"dominant_{k}": max(v, key=v.get) if v else "N/A" for k, v in counts_s.items()}
         self.sidereal_dominance['dominant_planet'] = max(strength_s, key=strength_s.get) if strength_s else "N/A"
         self.sidereal_dominance['counts'] = counts_s; self.sidereal_dominance['strength'] = {k: round(v, 2) for k, v in strength_s.items()}
+        
         counts_t = {'sign': {}, 'element': {}, 'modality': {}}; strength_t = {}
-        main_t = [b for b in self.tropical_bodies if b.is_main_planet and b.degree is not None and b.name != "True Node"]
-        for b in main_t:
+        points_for_dominance_t = [p for p in self.all_tropical_points if p.name in ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Ascendant']]
+
+        for b in points_for_dominance_t:
             if b.sign != "Unknown":
                 counts_t['sign'][b.sign] = counts_t['sign'].get(b.sign, 0) + 1
                 el = ELEMENT_MAPPING.get(b.sign); counts_t['element'][el] = counts_t['element'].get(el, 0) + 1
                 mod = MODALITY_MAPPING.get(b.sign); counts_t['modality'][mod] = counts_t['modality'].get(mod, 0) + 1
-        for a in self.tropical_aspects: strength_t[a.p1.name] = strength_t.get(a.p1.name, 0) + a.strength; strength_t[a.p2.name] = strength_t.get(a.p2.name, 0) + a.strength
+        
+        for a in self.tropical_aspects:
+            if a.p1.name in strength_t or a.p2.name in strength_t:
+                strength_t[a.p1.name] = strength_t.get(a.p1.name, 0) + a.strength
+                strength_t[a.p2.name] = strength_t.get(a.p2.name, 0) + a.strength
+                
         self.tropical_dominance = {f"dominant_{k}": max(v, key=v.get) if v else "N/A" for k, v in counts_t.items()}
         self.tropical_dominance['dominant_planet'] = max(strength_t, key=strength_t.get) if strength_t else "N/A"
         self.tropical_dominance['counts'] = counts_t; self.tropical_dominance['strength'] = {k: round(v, 2) for k, v in strength_t.items()}
