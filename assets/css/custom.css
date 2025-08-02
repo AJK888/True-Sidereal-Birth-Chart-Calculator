@@ -12,7 +12,7 @@
     background-color: #24293e;
 }
 #form-section {
-    position: relative; /* Add this line */
+    position: relative;
     background-color: #202436;
     background-image: url('../images/star-background.jpg');
     background-size: cover;
@@ -25,7 +25,7 @@
     box-shadow: none !important;
 }
 #banner:before {
-	background: none !important;
+    background: none !important;
     box-shadow: none !important;
     opacity: 0 !important;
 }
@@ -84,6 +84,15 @@ pre {
 }
 .results-container .major { margin-bottom: 2rem; }
 
+/* Styles moved from index.html for better maintainability */
+.results-container {
+    display: none; /* Initially hidden, controlled by JS */
+}
+.results-container .result-section h2 {
+    text-align: left;
+}
+
+
 /* 4. Form Styling */
 #form-section .field > label {
     font-size: 1rem;
@@ -117,17 +126,17 @@ pre {
 .time-checkbox-container {
     display: flex;
     align-items: flex-end;
-    padding-bottom: 0.8em; 
+    padding-bottom: 0.8em;
 }
 .time-inputs-container {
     padding-top: 0;
     display: flex;
-    align-items: center; 
+    align-items: center;
 }
 #form-section input[type="checkbox"] + label::before {
     content: '';
-    background-color: rgba(255, 255, 255, 0.15); 
-    border: 2px solid #ffffff; 
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 2px solid #ffffff;
     border-radius: 4px;
 }
 
@@ -152,10 +161,11 @@ pre {
 .aspect-quincunx, .aspect-semisextile, .aspect-semisquare, .aspect-sesquiquadrate, .aspect-quintile, .aspect-biquintile { stroke: rgba(255, 255, 255, 0.25); stroke-dasharray: 4 4; }
 
 /* 6. Cleaner styling for Legal & Spiritual Context Sections */
-#legal .inner, #spiritual-context .inner { 
-    border-top: solid 2px rgba(255, 255, 255, 0.25); 
-    margin-top: 3rem; 
-    padding-top: 3rem; 
+/* FIXED: Removed redundant rule for #spiritual-context */
+#legal .inner {
+    border-top: solid 2px rgba(255, 255, 255, 0.25);
+    margin-top: 3rem;
+    padding-top: 3rem;
 }
 #spiritual-context .inner {
     border-top: none;
@@ -186,10 +196,11 @@ pre {
     font-size: 0.9em;
     color: rgba(255, 255, 255, 0.75);
 }
-#legal h4, #spiritual-context h4 { 
-    font-size: 1rem; 
-    margin: 1.5rem 0 0.5rem 0; 
-    color: #ffffff; 
+/* FIXED: Removed trailing non-standard spaces */
+#legal h4, #spiritual-context h4 {
+    font-size: 1rem;
+    margin: 1.5rem 0 0.5rem 0;
+    color: #ffffff;
 }
 
 /* 7. Styles for the dropdown glyph legend */
