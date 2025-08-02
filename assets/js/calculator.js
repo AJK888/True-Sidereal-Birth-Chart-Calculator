@@ -68,7 +68,6 @@ const AstrologyCalculator = {
 		
 		let [month, day, year] = birthDateParts.map(s => parseInt(s, 10));
 		
-		// FIXED: Changed to an if/else if block to prevent chaining the two transformations.
 		if (birthDateInput === '0/0/0') {
 			month = 8;
 			day = 26;
@@ -376,7 +375,8 @@ const AstrologyCalculator = {
 			return;
 		}
 		
-		const rotation = 270 - ascendant.degrees;
+		// FIXED: Changed rotation from 270 to 180 to anchor the Ascendant horizontally.
+		const rotation = 180 - ascendant.degrees;
 
 		const mainGroup = document.createElementNS(this.SVG_NS, 'g');
 		mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
