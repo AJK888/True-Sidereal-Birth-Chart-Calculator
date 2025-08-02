@@ -216,8 +216,8 @@ const AstrologyCalculator = {
 			this.wheelTitle.parentElement.style.display = 'none';
 		}
 		
-		// FIXED: Trigger a resize event to force the theme's layout scripts to update.
-		window.dispatchEvent(new Event('resize'));
+		// Trigger a resize event to force the theme's layout scripts to update.
+		setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
 	},
 
 	renderTextResults(res) {
