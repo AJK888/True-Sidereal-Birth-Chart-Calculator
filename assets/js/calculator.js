@@ -380,17 +380,24 @@ const AstrologyCalculator = {
 		};
 
 		if (data.sidereal_aspects) {
-			data.sidereal_aspects.forEach(aspect => {
-				if (aspect.p1_degrees === null || aspect.p2_degrees === null) return;
-				const p1Coords = degreeToCartesian(innerRadius, aspect.p1_degrees);
-				const p2Coords = degreeToCartesian(innerRadius, aspect.p2_degrees);
-				const line = document.createElementNS(this.SVG_NS, 'line');
-				line.setAttribute('x1', p1Coords.x); line.setAttribute('y1', p1Coords.y);
-				line.setAttribute('x2', p2Coords.x); line.setAttribute('y2', p2Coords.y);
-				const aspectClass = aspect.type.toLowerCase().replace(' ', '-');
-				line.setAttribute('class', `aspect-line aspect-${aspectClass}`);
-				mainGroup.appendChild(line);
-			});
+		    console.log("Attempting to draw", data.sidereal_aspects.length, "aspects.");
+		
+		    data.sidereal_aspects.forEach(aspect => {
+		        console.log("Processing aspect:", aspect); // This will show us the data for each aspect
+		
+		        if (aspect.p1_degrees === null || aspect.p2_degrees === null) return;
+		        const p1Coords = degreeToCartesian(innerRadius, aspect.p1_degrees);
+		        const p2Coords = degreeToCartesian(innerRadius, aspect.p2_degrees);
+		        
+		        console.log("Calculated Coords:", p1Coords, p2Coords); // This will show us the calculated coordinates
+		
+		        const line = document.createElementNS(this.SVG_NS, 'line');
+		        line.setAttribute('x1', p1Coords.x); line.setAttribute('y1', p1Coords.y);
+		        line.setAttribute('x2', p2Coords.x); line.setAttribute('y2', p2Coords.y);
+		        const aspectClass = aspect.type.toLowerCase().replace(' ', '-');
+		        line.setAttribute('class', `aspect-line aspect-${aspectClass}`);
+		        mainGroup.appendChild(line);
+		    });
 		}
 
 		[zodiacRadius, houseRingRadius, innerRadius].forEach(r => {
