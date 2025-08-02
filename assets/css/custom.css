@@ -26,9 +26,10 @@
     box-shadow: none !important;
 }
 #banner:before {
-    background: none !important;
+    /* MODIFIED: Changed from transparent to a semi-transparent overlay */
+    background: rgba(36, 41, 62, 0.5) !important; /* Dark overlay with 50% opacity */
     box-shadow: none !important;
-    opacity: 0 !important;
+    opacity: 1 !important; /* Ensure the overlay is visible */
 }
 #banner {
     background-image: url('../images/star-background.jpg');
