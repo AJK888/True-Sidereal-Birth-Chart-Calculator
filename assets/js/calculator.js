@@ -215,10 +215,12 @@ const AstrologyCalculator = {
 		} else {
 			this.wheelTitle.parentElement.style.display = 'none';
 		}
+		
+		// FIXED: Trigger a resize event to force the theme's layout scripts to update.
+		window.dispatchEvent(new Event('resize'));
 	},
 
 	renderTextResults(res) {
-		// FIXED: Added checks to ensure data exists before trying to display it.
 		let out = `=== TRUE SIDEREAL CHART: ${res.name || 'N/A'} ===\n`;
 		out += `- UTC Date & Time: ${res.utc_datetime || 'N/A'}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
 		out += `- Location: ${res.location || 'N/A'}\n`;
