@@ -61,16 +61,13 @@ def find_house_equal(deg: float, asc: float) -> Tuple[int, float]:
     return -1, 0
 def calculate_numerology(day: int, month: int, year: int) -> dict:
     def reduce_number(n: int) -> str:
-        # MODIFICATION: Add special case for 20
         if n == 20:
             return "11/2"
 
         final_num = n
-        # MODIFICATION: Add 28 to the list of master numbers to check for
         while final_num > 9 and final_num not in [11, 22, 28, 33]:
             final_num = sum(int(digit) for digit in str(final_num))
         
-        # MODIFICATION: Add handling for 28/1
         if final_num in [11, 22, 28, 33]:
             if final_num == 28:
                 return "28/1"
@@ -88,16 +85,13 @@ def calculate_name_numerology(full_name: str) -> dict:
     letter_values = {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8, 'i': 9, 'j': 1, 'k': 2, 'l': 3, 'm': 4, 'n': 5, 'o': 6, 'p': 7, 'q': 8, 'r': 9, 's': 1, 't': 2, 'u': 3, 'v': 4, 'w': 5, 'x': 6, 'y': 7, 'z': 8}
     vowels = "aeiou"
     def reduce_number(n: int) -> str:
-        # MODIFICATION: Add special case for 20
         if n == 20:
             return "11/2"
 
         final_num = n
-        # MODIFICATION: Add 28 to the list of master numbers to check for
         while final_num > 9 and final_num not in [11, 22, 28, 33]:
             final_num = sum(int(digit) for digit in str(final_num))
 
-        # MODIFICATION: Add handling for 28/1
         if final_num in [11, 22, 28, 33]:
             if final_num == 28:
                 return "28/1"
