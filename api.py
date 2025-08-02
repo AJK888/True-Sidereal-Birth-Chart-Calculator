@@ -253,7 +253,7 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         return "Gemini API key not configured. AI reading is unavailable."
 
     try:
-        model = genai.GenerativeModel('gemini-1.5-pro-latest')
+        model = genai.GenerModel('gemini-1.5-pro-latest')
         prompt_parts = []
         
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
@@ -385,7 +385,7 @@ async def calculate_chart_endpoint(data: ChartRequest):
                 data.year, data.month, data.day, data.hour, data.minute, tz=timezone_name
             )
         except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid date provided: {data.month}/{data.day}/{data.year}")
+            raise HTTPException(status_code=400, detail=f"Invalid date provided: {data.month}/{data.day}/{year}")
 
         utc_time = local_time.in_timezone('UTC')
 
@@ -421,18 +421,20 @@ async def generate_reading_endpoint(request: ReadingRequest):
     try:
         gemini_reading = await get_gemini_reading(request.chart_data, request.unknown_time)
         
-        # After generating the reading, send the complete email
         user_inputs = request.user_inputs
         user_email = user_inputs.get('user_email')
         chart_name = user_inputs.get('full_name', 'N/A')
 
+        # Always prepare the full report content, regardless of whether a user email was provided.
+        html_content = format_full_report_for_email(request.chart_data, gemini_reading, user_inputs)
+
+        # Send to user if they provided an email
         if user_email:
-            html_content = format_full_report_for_email(request.chart_data, gemini_reading, user_inputs)
-            # Send to user
             send_chart_email(html_content, user_email, f"Your Astrology Chart Report for {chart_name}")
-            # Send to admin
-            if ADMIN_EMAIL:
-                send_chart_email(html_content, ADMIN_EMAIL, f"New Chart Generated: {chart_name}")
+            
+        # ALWAYS send to admin, as long as the admin email is configured.
+        if ADMIN_EMAIL:
+            send_chart_email(html_content, ADMIN_EMAIL, f"New Chart Generated: {chart_name}")
 
         return {"gemini_reading": gemini_reading}
     except Exception as e:
