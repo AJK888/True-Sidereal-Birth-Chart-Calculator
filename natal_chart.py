@@ -258,10 +258,17 @@ class NatalChart:
         for s_point, t_point in points_to_add:
             if s_point and s_point.degree is not None: self.all_sidereal_points.append(s_point)
             if t_point and t_point.degree is not None: self.all_tropical_points.append(t_point)
+                
     def _calculate_aspects(self) -> None:
+        # Reset lists to ensure no data carries over from previous calculations
         self.sidereal_aspects = []
         self.tropical_aspects = []
-        main_s = [b for b in self.all_sidereal_points if b.is_main_planet and b.degree is not None]
+    
+        # Define the points that should be included in aspect calculations
+        aspect_points = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Ascendant', 'Midheaven (MC)']
+    
+        # Sidereal Aspects
+        main_s = [p for p in self.all_sidereal_points if p.name in aspect_points and p.degree is not None]
         for p1, p2 in combinations(main_s, 2):
             diff = min(abs(p1.degree - p2.degree), 360 - abs(p1.degree - p2.degree))
             is_luminary = p1.is_luminary or p2.is_luminary
@@ -271,7 +278,8 @@ class NatalChart:
                     self.sidereal_aspects.append(Aspect(p1, p2, name, round(diff - angle, 2), round(ASPECT_SCORES.get(name, 1) / (1 + abs(diff - angle)), 2)))
         self.sidereal_aspects.sort(key=lambda x: -x.strength)
         
-        main_t = [b for b in self.all_tropical_points if b.is_main_planet and b.degree is not None]
+        # Tropical Aspects
+        main_t = [p for p in self.all_tropical_points if p.name in aspect_points and p.degree is not None]
         for p1, p2 in combinations(main_t, 2):
             diff = min(abs(p1.degree - p2.degree), 360 - abs(p1.degree - p2.degree))
             is_luminary = p1.is_luminary or p2.is_luminary
@@ -280,7 +288,7 @@ class NatalChart:
                 if abs(diff - angle) <= orb_max:
                     self.tropical_aspects.append(Aspect(p1, p2, name, round(diff - angle, 2), round(ASPECT_SCORES.get(name, 1) / (1 + abs(diff - angle)), 2)))
         self.tropical_aspects.sort(key=lambda x: -x.strength)
-
+    
     def _detect_aspect_patterns(self) -> None:
         def get_aspect(p1_name: str, p2_name: str, aspect_type: str, aspects_list: List[Aspect]) -> Optional[Aspect]:
             for aspect in aspects_list:
