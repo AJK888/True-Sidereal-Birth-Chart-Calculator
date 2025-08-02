@@ -73,6 +73,7 @@ class ChartRequest(BaseModel):
     location: str
     unknown_time: bool = False
     user_email: Optional[str] = None
+    no_full_name: bool = False # Add this line
 
 class ReadingRequest(BaseModel):
     chart_data: dict
@@ -260,9 +261,14 @@ async def calculate_chart_endpoint(data: ChartRequest):
         if not all([lat, lng, timezone_name]):
             raise HTTPException(status_code=400, detail="Could not retrieve complete location data.")
 
-        local_time = pendulum.datetime(
-            data.year, data.month, data.day, data.hour, data.minute, tz=timezone_name
-        )
+        # MODIFICATION: Add a try/except block to validate the date
+        try:
+            local_time = pendulum.datetime(
+                data.year, data.month, data.day, data.hour, data.minute, tz=timezone_name
+            )
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid date provided: {data.month}/{data.day}/{data.year}")
+
         utc_time = local_time.in_timezone('UTC')
 
         chart = NatalChart(
@@ -273,12 +279,17 @@ async def calculate_chart_endpoint(data: ChartRequest):
         chart.calculate_chart()
         
         numerology = calculate_numerology(data.day, data.month, data.year)
-        name_numerology = calculate_name_numerology(data.full_name)
+        
+        # MODIFICATION: Check for middle name before calculating name numerology
+        name_numerology = None
+        name_parts = data.full_name.strip().split()
+        if not data.no_full_name and len(name_parts) >= 3:
+            name_numerology = calculate_name_numerology(data.full_name)
+            
         chinese_zodiac = get_chinese_zodiac_and_element(data.year, data.month, data.day)
         
         full_response = chart.get_full_chart_data(numerology, name_numerology, chinese_zodiac, data.unknown_time)
         
-        # MODIFICATION: Only send emails if the chart name is NOT "Current Transits"
         if data.full_name != "Current Transits":
             if ADMIN_EMAIL:
                 send_chart_email(full_response, ADMIN_EMAIL, is_admin_copy=True)
