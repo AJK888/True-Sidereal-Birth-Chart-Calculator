@@ -120,13 +120,13 @@ pre {
 input[type="checkbox"] {
     -webkit-appearance: none;
     appearance: none;
-    background-color: #2a2f43; /* Added solid background to stand out */
+    background-color: rgba(255, 255, 255, 0.15); /* Adds a light grey fill */
     margin: 0 0.5em 0 0;
     font: inherit;
     color: #ffffff;
     width: 1.15em;
     height: 1.15em;
-    border: 0.1em solid #ffffff; /* Changed to solid white for max contrast */
+    border: 2px solid #ffffff;
     border-radius: 0.15em;
     transform: translateY(-0.075em);
     display: inline-grid;
