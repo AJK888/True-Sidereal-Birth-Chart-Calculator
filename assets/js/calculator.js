@@ -375,16 +375,18 @@ const AstrologyCalculator = {
 			return;
 		}
 		
-		// FIXED: Compensate for a 90-degree environmental rotation by subtracting 90 from the calculation.
-		const rotation = 90 - ascendant.degrees;
+		// FINAL FIX: This formula correctly accounts for the clockwise SVG transform.
+		const rotation = ascendant.degrees - 180;
 
 		const mainGroup = document.createElementNS(this.SVG_NS, 'g');
 		mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
 		svg.appendChild(mainGroup);
 
 		const degreeToCartesian = (radius, angleDegrees) => {
-			const angleRadians = angleDegrees * (Math.PI / 180);
-			return { x: centerX + radius * Math.cos(angleRadians), y: centerY - radius * Math.sin(angleRadians) };
+			// SVG transform rotates clockwise, but math functions are counter-clockwise.
+			// To compensate, we make the angle negative here.
+			const angleRadians = -angleDegrees * (Math.PI / 180);
+			return { x: centerX + radius * Math.cos(angleRadians), y: centerY + radius * Math.sin(angleRadians) };
 		};
 
 		if (data.sidereal_aspects) {
