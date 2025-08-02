@@ -30,7 +30,6 @@ CHINESE_LUNAR_NEW_YEAR = {
     2020:(1,25), 2021:(2,12), 2022:(2,1), 2023:(1,22), 2024:(2,10), 2025:(1,29), 2026:(2,17), 2027:(2,6), 2028:(1,26), 2029:(2,13)
 }
 
-# --- Helper Functions ---
 def format_true_sidereal_placement(degrees: float) -> str:
     for sign, start, end in TRUE_SIDEREAL_SIGNS:
         if start <= degrees < end:
@@ -42,8 +41,10 @@ def format_true_sidereal_placement(degrees: float) -> str:
                 m = 0
             return f"{d}°{m:02d}′ {sign}"
     return "Out of Bounds"
+
 def format_tropical_placement(degrees: float) -> str:
-    sign_index = int(degrees / 30); sign = TROPICAL_SIGNS[sign_index][0]
+    sign_index = int(degrees / 30)
+    sign = TROPICAL_SIGNS[sign_index][0]
     deg_into_sign = degrees % 30
     d = int(deg_into_sign)
     m = int(round((deg_into_sign - d) * 60))
@@ -55,6 +56,7 @@ def format_tropical_placement(degrees: float) -> str:
             sign_index = (sign_index + 1) % 12
             sign = TROPICAL_SIGNS[sign_index][0]
     return f"{d}°{m:02d}′ {sign}"
+    
 def get_sign_and_ruler(degrees: float) -> Tuple[str, str]:
     for sign, start, end in TRUE_SIDEREAL_SIGNS:
         if start <= degrees < end: return sign, SIGN_RULERS.get(sign, "Unknown")
