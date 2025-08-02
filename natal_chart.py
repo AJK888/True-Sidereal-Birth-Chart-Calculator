@@ -389,7 +389,7 @@ class NatalChart:
         self.tropical_dominance['dominant_planet'] = max(strength_t, key=strength_t.get) if strength_t else "N/A"
         self.tropical_dominance['counts'] = counts_t; self.tropical_dominance['strength'] = {k: round(v, 2) for k, v in strength_t.items()}
 
-    def get_full_chart_data(self, numerology: dict, name_numerology: dict, chinese_zodiac: dict, unknown_time: bool) -> dict:
+    def get_full_chart_data(self, numerology: dict, name_numerology: Optional[dict], chinese_zodiac: dict, unknown_time: bool) -> dict:
         house_rulers_formatted = {}
         if self.ascendant_data.get("sidereal_asc") is not None:
             for i in range(12):
