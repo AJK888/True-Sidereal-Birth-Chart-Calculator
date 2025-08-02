@@ -125,7 +125,8 @@ pre {
 }
 .time-checkbox-container {
     display: flex;
-    align-items: flex-end;
+    /* FIXED: Changed from flex-end to center to vertically align the checkbox */
+    align-items: center;
     padding-bottom: 0.8em;
 }
 .time-inputs-container {
@@ -161,7 +162,6 @@ pre {
 .aspect-quincunx, .aspect-semisextile, .aspect-semisquare, .aspect-sesquiquadrate, .aspect-quintile, .aspect-biquintile { stroke: rgba(255, 255, 255, 0.25); stroke-dasharray: 4 4; }
 
 /* 6. Cleaner styling for Legal & Spiritual Context Sections */
-/* FIXED: Removed redundant rule for #spiritual-context */
 #legal .inner {
     border-top: solid 2px rgba(255, 255, 255, 0.25);
     margin-top: 3rem;
@@ -196,7 +196,6 @@ pre {
     font-size: 0.9em;
     color: rgba(255, 255, 255, 0.75);
 }
-/* FIXED: Removed trailing non-standard spaces */
 #legal h4, #spiritual-context h4 {
     font-size: 1rem;
     margin: 1.5rem 0 0.5rem 0;
