@@ -74,6 +74,7 @@ class ReadingRequest(BaseModel):
     chart_data: Dict[str, Any]
     unknown_time: bool
     user_inputs: Dict[str, Any]
+    chart_image_base64: Optional[str] = None
 
 def get_full_text_report(res: dict) -> str:
     """Generates the full plain text report from chart data."""
@@ -207,28 +208,36 @@ def get_full_text_report(res: dict) -> str:
                     out += f"{line}\n"
     return out
 
-def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inputs: dict) -> str:
+def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inputs: dict, chart_image_base64: Optional[str], include_inputs: bool = True) -> str:
     """Formats the complete report into an HTML string for email."""
-    # 1. User Inputs
     html = "<h1>Synthesis Astrology Report</h1>"
-    html += "<h2>Chart Inputs</h2>"
-    html += f"<p><b>Name:</b> {user_inputs.get('full_name', 'N/A')}</p>"
-    html += f"<p><b>Birth Date:</b> {user_inputs.get('birth_date', 'N/A')}</p>"
-    html += f"<p><b>Birth Time:</b> {user_inputs.get('birth_time', 'N/A')}</p>"
-    html += f"<p><b>Location:</b> {user_inputs.get('location', 'N/A')}</p>"
-    html += "<hr>"
+    
+    # Conditionally include the user inputs section
+    if include_inputs:
+        html += "<h2>Chart Inputs</h2>"
+        html += f"<p><b>Name:</b> {user_inputs.get('full_name', 'N/A')}</p>"
+        html += f"<p><b>Birth Date:</b> {user_inputs.get('birth_date', 'N/A')}</p>"
+        html += f"<p><b>Birth Time:</b> {user_inputs.get('birth_time', 'N/A')}</p>"
+        html += f"<p><b>Location:</b> {user_inputs.get('location', 'N/A')}</p>"
+        html += "<hr>"
 
-    # 2. AI Synthesis
+    # Add the chart image if it exists
+    if chart_image_base64:
+        html += "<h2>Natal Chart Wheel</h2>"
+        html += f'<img src="data:image/svg+xml;base64,{chart_image_base64}" alt="Natal Chart Wheel" width="600">'
+        html += "<hr>"
+
+    # AI Synthesis with proper paragraph breaks
     html += "<h2>AI Astrological Synthesis</h2>"
-    html += f"<p>{gemini_reading.replace('/n', '<br>')}</p>"
+    html += f"<p>{gemini_reading.replace('/n', '<br><br>')}</p>"
     html += "<hr>"
 
-    # 3. Full Text Report
+    # Full Text Report
     full_text_report = get_full_text_report(chart_data)
     html += "<h2>Full Astrological Data</h2>"
     html += f"<pre>{full_text_report}</pre>"
     
-    return f"<html><head><style>body {{ font-family: sans-serif; }} pre {{ white-space: pre-wrap; word-wrap: break-word; }}</style></head><body>{html}</body></html>"
+    return f"<html><head><style>body {{ font-family: sans-serif; }} pre {{ white-space: pre-wrap; word-wrap: break-word; }} img {{ max-width: 100%; height: auto; }}</style></head><body>{html}</body></html>"
 
 def send_chart_email(html_content: str, recipient_email: str, subject: str):
     if not SENDGRID_API_KEY or not ADMIN_EMAIL:
@@ -253,7 +262,6 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         return "Gemini API key not configured. AI reading is unavailable."
 
     try:
-        # FIXED: Corrected typo from GenerModel to GenerativeModel
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
         prompt_parts = []
         
@@ -425,17 +433,17 @@ async def generate_reading_endpoint(request: ReadingRequest):
         user_inputs = request.user_inputs
         user_email = user_inputs.get('user_email')
         chart_name = user_inputs.get('full_name', 'N/A')
+        chart_image = request.chart_image_base64
 
-        # Always prepare the full report content, regardless of whether a user email was provided.
-        html_content = format_full_report_for_email(request.chart_data, gemini_reading, user_inputs)
-
-        # Send to user if they provided an email
+        # Send to user if they provided an email (without the inputs section)
         if user_email:
-            send_chart_email(html_content, user_email, f"Your Astrology Chart Report for {chart_name}")
+            user_html_content = format_full_report_for_email(request.chart_data, gemini_reading, user_inputs, chart_image, include_inputs=False)
+            send_chart_email(user_html_content, user_email, f"Your Astrology Chart Report for {chart_name}")
             
-        # ALWAYS send to admin, as long as the admin email is configured.
+        # ALWAYS send to admin (with the inputs section)
         if ADMIN_EMAIL:
-            send_chart_email(html_content, ADMIN_EMAIL, f"New Chart Generated: {chart_name}")
+            admin_html_content = format_full_report_for_email(request.chart_data, gemini_reading, user_inputs, chart_image, include_inputs=True)
+            send_chart_email(admin_html_content, ADMIN_EMAIL, f"New Chart Generated: {chart_name}")
 
         return {"gemini_reading": gemini_reading}
     except Exception as e:
