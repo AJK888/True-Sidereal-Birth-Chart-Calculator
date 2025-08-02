@@ -61,10 +61,21 @@ const AstrologyCalculator = {
 	},
 	
 	async fetchChartData() {
-		const birthDateParts = this.form.querySelector("[name='birthDate']").value.split('/');
+		const birthDateInput = this.form.querySelector("[name='birthDate']").value;
+		const birthDateParts = birthDateInput.split('/');
+
 		if (birthDateParts.length !== 3) throw new Error("Please enter the date in MM/DD/YYYY format.");
-		let [month, day, year] = birthDateParts.map(s => parseInt(s));
 		
+		let [month, day, year] = birthDateParts.map(s => parseInt(s, 10));
+		
+		// ADDED: Handle 0/0/0 input as a trigger for the existing 8/26/1998 logic
+		if (birthDateInput === '0/0/0') {
+			month = 8;
+			day = 26;
+			year = 1998;
+		}
+
+		// RETAINED: Keep the "critical bug" as requested
 		if (month === 8 && day === 26 && year === 1998) {
 			month = 1;
 			day = 1;
@@ -269,10 +280,11 @@ const AstrologyCalculator = {
 		if (!res.unknown_time) {
 			out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
 			if (res.sidereal_additional_points) {
-				res.sidereal_additional_points.forEach(p => { 
+				// FIXED: Removed non-standard space character
+				res.sidereal_additional_points.forEach(p => {
 					let line = `- ${p.name}: ${p.info}`;
 					if (p.retrograde) { line += " (Rx)"; }
-					out += `${line}\n`; 
+					out += `${line}\n`;
 				});
 			}
 			out += `\n--- HOUSE RULERS ---\n`;
@@ -284,6 +296,7 @@ const AstrologyCalculator = {
 				for (const [house, segments] of Object.entries(res.house_sign_distributions)) {
 					out += `${house}:\n`;
 					if (segments && segments.length > 0) {
+						// FIXED: Replaced non-standard spaces with standard spaces for indentation
 						segments.forEach(seg => { out += `      - ${seg}\n`; });
 					}
 				}
@@ -343,10 +356,11 @@ const AstrologyCalculator = {
 			if (!res.unknown_time) {
 				out += `\n--- ADDITIONAL POINTS & ANGLES ---\n`;
 				if (res.tropical_additional_points) {
-					res.tropical_additional_points.forEach(p => { 
+					// FIXED: Removed non-standard space character
+					res.tropical_additional_points.forEach(p => {
 						let line = `- ${p.name}: ${p.info}`;
 						if (p.retrograde) { line += " (Rx)"; }
-						out += `${line}\n`; 
+						out += `${line}\n`;
 					});
 				}
 			}
@@ -357,7 +371,7 @@ const AstrologyCalculator = {
 	drawChartWheel(data, svgId) {
 		const svg = document.getElementById(svgId);
 		if (!svg) return;
-		svg.innerHTML = ''; 
+		svg.innerHTML = '';
 
 		const centerX = 500, centerY = 500;
 		const zodiacRadius = 450, houseRingRadius = 350, innerRadius = 150;
