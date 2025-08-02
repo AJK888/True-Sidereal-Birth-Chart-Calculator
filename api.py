@@ -1,5 +1,3 @@
-# api.py
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -51,8 +49,6 @@ origins = [
     "https://true-sidereal-birth-chart.onrender.com",
     "https://synthesisastrology.org",
     "https://www.synthesisastrology.org",
-    "https://synthesisastrology.org/",
-    "https://www.synthesisastrology.org/",
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -157,7 +153,7 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
                 retro_list = ", ".join([p['name'] for p in s_retrogrades])
                 prompt_parts.append(f"- Retrograde Planets: {retro_list}")
             if s_aspects and len(s_aspects) >= 3:
-                 prompt_parts.append(f"- Three Tightest Aspects: {s_aspects[0]['p1_name']} {s_aspects[0]['type']} {s_aspects[0]['p2_name']}, {s_aspects[1]['p1_name']} {s_aspects[1]['type']} {s_aspects[1]['p2_name']}, {s_aspects[2]['p1_name']} {s_aspects[2]['type']} {s_aspects[2]['p2_name']}")
+                prompt_parts.append(f"- Three Tightest Aspects: {s_aspects[0]['p1_name']} {s_aspects[0]['type']} {s_aspects[0]['p2_name']}, {s_aspects[1]['p1_name']} {s_aspects[1]['type']} {s_aspects[1]['p2_name']}, {s_aspects[2]['p1_name']} {s_aspects[2]['type']} {s_aspects[2]['p2_name']}")
 
             prompt_parts.append("\n**Your Task:**")
             prompt_parts.append("""
