@@ -375,8 +375,8 @@ const AstrologyCalculator = {
 			return;
 		}
 		
-		// FIXED: Changed rotation from 270 to 180 to anchor the Ascendant horizontally.
-		const rotation = 180 - ascendant.degrees;
+		// FIXED: Compensate for a 90-degree environmental rotation by subtracting 90 from the calculation.
+		const rotation = 90 - ascendant.degrees;
 
 		const mainGroup = document.createElementNS(this.SVG_NS, 'g');
 		mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
