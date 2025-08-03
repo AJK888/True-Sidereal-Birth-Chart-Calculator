@@ -54,7 +54,7 @@
         font-weight: 400;
     }
 }
-#chart-wheel-container {
+#chart-wheel-container, #sidereal-wheel-container, #tropical-wheel-container {
     max-width: 500px;
     margin: 0 auto;
 }
@@ -101,6 +101,23 @@ pre {
 
 @media screen and (max-width: 980px) {
     .report-columns {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* NEW: Styles for the side-by-side chart wheels */
+.chart-wheels-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2em;
+    align-items: center;
+}
+.chart-wheels-wrapper h3 {
+    text-align: center;
+    margin-bottom: 1em;
+}
+@media screen and (max-width: 980px) {
+    .chart-wheels-wrapper {
         grid-template-columns: 1fr;
     }
 }
@@ -177,7 +194,7 @@ pre {
     color: #24293e; 
 }
 /* 5. Chart Wheel SVG styles */
-#chart-wheel-svg, #transit-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+#sidereal-wheel-svg, #tropical-wheel-svg, #transit-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; }
 .wheel-circle { stroke: rgba(255, 255, 255, 0.25); stroke-width: 2; fill: none; }
 .zodiac-divider { stroke: rgba(255, 255, 255, 0.25); stroke-width: 1; }
 .house-cusp { stroke: #ffffff; stroke-width: 1.5; }
