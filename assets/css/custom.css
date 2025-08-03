@@ -54,8 +54,9 @@
         font-weight: 400;
     }
 }
+/* MODIFIED: Increased max-width to make charts larger */
 #chart-wheel-container, #sidereal-wheel-container, #tropical-wheel-container {
-    max-width: 500px;
+    max-width: 550px;
     margin: 0 auto;
 }
 #transit-wheel-container {
@@ -91,7 +92,6 @@ pre {
     text-align: left;
 }
 
-/* NEW: Styles for the side-by-side report layout */
 .report-columns {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -105,7 +105,6 @@ pre {
     }
 }
 
-/* NEW: Styles for the side-by-side chart wheels */
 .chart-wheels-wrapper {
     display: grid;
     grid-template-columns: 1fr 1fr;
