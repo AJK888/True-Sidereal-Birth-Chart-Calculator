@@ -7,8 +7,10 @@ const AstrologyCalculator = {
 	ZODIAC_GLYPHS: {'Aries':'♈︎','Taurus':'♉︎','Gemini':'♊︎','Cancer':'♋︎','Leo':'♌︎','Virgo':'♍︎','Libra':'♎︎','Scorpio':'♏︎','Ophiuchus':'⛎︎','Sagittarius':'♐︎','Capricorn':'♑︎','Aquarius':'♒︎','Pisces':'♓︎'},
 	PLANET_GLYPHS: {'Sun':'☉','Moon':'☽','Mercury':'☿','Venus':'♀','Mars':'♂','Jupiter':'♃','Saturn':'♄','Uranus':'♅','Neptune':'♆','Pluto':'♇','Chiron':'⚷','True Node':'☊','South Node':'☋','Ascendant':'AC','Midheaven (MC)':'MC','Descendant':'DC','Imum Coeli (IC)':'IC'},
 
-	form: null, submitBtn: null, noFullNameCheckbox: null, outputEl: null, geminiTitle: null, geminiOutput: null,
-	resultsTitle: null, wheelTitle: null, resultsContainer: null, wheelSvg: null,
+	form: null, submitBtn: null, noFullNameCheckbox: null,
+	geminiTitle: null, geminiOutput: null,
+	resultsTitle: null, wheelTitle: null, resultsContainer: null, 
+	siderealWheelSvg: null, tropicalWheelSvg: null,
 	
 	init() {
 		this.cacheDOMElements();
@@ -23,8 +25,10 @@ const AstrologyCalculator = {
 		this.geminiOutput = document.getElementById('gemini-output');
 		this.resultsTitle = document.getElementById('results-title');
 		this.wheelTitle = document.getElementById('wheel-title');
-		this.wheelSvg = document.getElementById('chart-wheel-svg');
 		this.resultsContainer = document.getElementById('results');
+		// NEW: Cache both SVG elements
+		this.siderealWheelSvg = document.getElementById('sidereal-wheel-svg');
+		this.tropicalWheelSvg = document.getElementById('tropical-wheel-svg');
 	},
 	
 	addEventListeners() {
@@ -122,8 +126,8 @@ const AstrologyCalculator = {
 			};
 
 			let chartImageBase64 = null;
-			if (this.wheelSvg.innerHTML.trim() !== '' && !chartData.unknown_time) {
-				const svgString = new XMLSerializer().serializeToString(this.wheelSvg);
+			if (this.siderealWheelSvg.innerHTML.trim() !== '' && !chartData.unknown_time) {
+				const svgString = new XMLSerializer().serializeToString(this.siderealWheelSvg);
 				chartImageBase64 = btoa(svgString);
 			}
 
@@ -169,7 +173,8 @@ const AstrologyCalculator = {
 				throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
 			}
 			const transitData = await apiRes.json();
-			this.drawChartWheel(transitData, 'transit-wheel-svg');
+			// For transits, we'll just draw the sidereal wheel
+			this.drawChartWheel(transitData, 'transit-wheel-svg', 'sidereal');
 
 			const legendHtml = this.getLegendHtml();
 			const container = document.getElementById('transit-wheel-container');
@@ -203,10 +208,12 @@ const AstrologyCalculator = {
 
 		if (!chartData.unknown_time) {
 			this.wheelTitle.parentElement.style.display = 'block';
-			this.drawChartWheel(chartData, 'chart-wheel-svg');
+			// NEW: Draw both charts
+			this.drawChartWheel(chartData, 'sidereal-wheel-svg', 'sidereal');
+			this.drawChartWheel(chartData, 'tropical-wheel-svg', 'tropical');
 			
 			const legendHtml = this.getLegendHtml();
-			const container = document.getElementById('chart-wheel-container');
+			const container = document.querySelector('.chart-wheels-wrapper');
 			const oldLegend = container.nextElementSibling;
 			if (oldLegend && oldLegend.classList.contains('glyph-legend-details')) {
 				oldLegend.remove();
@@ -394,7 +401,7 @@ const AstrologyCalculator = {
 		document.getElementById('tropical-output').innerText = tropicalOut;
 	},
 	
-	drawChartWheel(data, svgId) {
+	drawChartWheel(data, svgId, chartType) {
 		const svg = document.getElementById(svgId);
 		if (!svg) return;
 		svg.innerHTML = '';
@@ -402,7 +409,11 @@ const AstrologyCalculator = {
 		const centerX = 500, centerY = 500;
 		const zodiacRadius = 450, houseRingRadius = 350, innerRadius = 150;
 		
-		const ascendant = data.sidereal_major_positions.find(p => p.name === 'Ascendant');
+		const positions = data[`${chartType}_major_positions`];
+		const aspects = data[`${chartType}_aspects`];
+		const houseCusps = data.house_cusps; // House cusps are the same for both
+
+		const ascendant = positions.find(p => p.name === 'Ascendant');
 		if (!ascendant || ascendant.degrees === null) {
 			svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text>';
 			return;
@@ -419,8 +430,8 @@ const AstrologyCalculator = {
 			return { x: centerX + radius * Math.cos(angleRadians), y: centerY + radius * Math.sin(angleRadians) };
 		};
 
-		if (data.sidereal_aspects) {
-			data.sidereal_aspects.forEach(aspect => {
+		if (aspects) {
+			aspects.forEach(aspect => {
 				if (aspect.p1_degrees === null || aspect.p2_degrees === null) return;
 				const p1Coords = degreeToCartesian(innerRadius, aspect.p1_degrees);
 				const p2Coords = degreeToCartesian(innerRadius, aspect.p2_degrees);
@@ -441,8 +452,9 @@ const AstrologyCalculator = {
 			mainGroup.appendChild(circle);
 		});
 		
-		if (data.true_sidereal_signs) {
-			const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2;
+		// Zodiac Signs
+		const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2;
+		if (chartType === 'sidereal' && data.true_sidereal_signs) {
 			data.true_sidereal_signs.forEach(sign => {
 				const [name, start, end] = sign;
 				const p1 = degreeToCartesian(houseRingRadius, start);
@@ -462,10 +474,31 @@ const AstrologyCalculator = {
 				text.textContent = this.ZODIAC_GLYPHS[name];
 				mainGroup.appendChild(text);
 			});
+		} else { // Tropical Signs
+			for (let i = 0; i < 12; i++) {
+				const start = i * 30;
+				const p1 = degreeToCartesian(houseRingRadius, start);
+				const p2 = degreeToCartesian(zodiacRadius, start);
+				const line = document.createElementNS(this.SVG_NS, 'line');
+				line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+				line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+				line.setAttribute('class', 'zodiac-divider');
+				mainGroup.appendChild(line);
+
+				const midAngle = start + 15;
+				const textCoords = degreeToCartesian(glyphRadius, midAngle);
+				const text = document.createElementNS(this.SVG_NS, 'text');
+				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
+				text.setAttribute('class', 'zodiac-glyph');
+				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
+				text.textContent = this.ZODIAC_GLYPHS[Object.keys(this.ZODIAC_GLYPHS)[i]];
+				mainGroup.appendChild(text);
+			}
 		}
 
-		if (data.house_cusps && data.house_cusps.length === 12) {
-			data.house_cusps.forEach((cuspDegrees, i) => {
+
+		if (houseCusps && houseCusps.length === 12) {
+			houseCusps.forEach((cuspDegrees, i) => {
 				const p1 = degreeToCartesian(innerRadius, cuspDegrees);
 				const p2 = degreeToCartesian(houseRingRadius, cuspDegrees);
 				const line = document.createElementNS(this.SVG_NS, 'line');
@@ -475,8 +508,8 @@ const AstrologyCalculator = {
 				mainGroup.appendChild(line);
 			});
 			for (let i = 0; i < 12; i++) {
-				const startAngle = data.house_cusps[i];
-				const endAngle = data.house_cusps[(i + 1) % 12];
+				const startAngle = houseCusps[i];
+				const endAngle = houseCusps[(i + 1) % 12];
 				let midAngle = (startAngle + endAngle) / 2;
 				if (endAngle < startAngle) midAngle = ((startAngle + endAngle + 360) / 2) % 360;
 				const textCoords = degreeToCartesian(innerRadius + 25, midAngle);
@@ -489,12 +522,12 @@ const AstrologyCalculator = {
 			}
 		}
 		
-		if (data.sidereal_major_positions) {
+		if (positions) {
 			const outerGlyphRadius = zodiacRadius + 35;
 			const glyphConnectorRadius = zodiacRadius;
 			const minGlyphSeparation = 8;
 
-			let planets = data.sidereal_major_positions
+			let planets = positions
 				.filter(p => p.degrees !== null && this.PLANET_GLYPHS[p.name])
 				.sort((a, b) => a.degrees - b.degrees);
 
