@@ -144,7 +144,17 @@
 								<div class="inner">
 									<div id="wheel-title" class="result-section">
 										<header class="major"><h2>Your Natal Chart</h2></header>
-										<div id="chart-wheel-container"><svg id="chart-wheel-svg" viewBox="-100 -100 1200 1200"></svg></div>
+										<!-- NEW: Wrapper for side-by-side charts -->
+										<div class="chart-wheels-wrapper">
+											<div id="sidereal-wheel-container">
+												<h3>True Sidereal</h3>
+												<svg id="sidereal-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
+											</div>
+											<div id="tropical-wheel-container">
+												<h3>Tropical</h3>
+												<svg id="tropical-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
+											</div>
+										</div>
 									</div>
 							
 									<div id="gemini-title" class="result-section">
