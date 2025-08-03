@@ -1,276 +1,273 @@
-/* Custom Styles to fully integrate the calculator with the Forty Theme */
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Synthesis Astrology</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="stylesheet" href="assets/css/custom.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
 
-/* 1. Header & Section Color Updates */
-#header {
-    background-color: #805ad5; 
-    transition: background-color 0.3s ease-in-out;
-}
-#header.alt {
-    background-color: transparent;
-}
-#description-wrapper, #results, #legal, #spiritual-context {
-    background-color: #24293e;
-}
-#form-section {
-    position: relative;
-    background-color: #202436;
-    background-image: url('../images/star-background.jpg');
-    background-size: cover;
-    background-position: center center;
-}
+		<div id="wrapper">
 
-/* Header/Banner Overrides */
-#header.alt {
-    background: none !important;
-    box-shadow: none !important;
-}
-#banner:before {
-    background: rgba(36, 41, 62, 0.25) !important; 
-    box-shadow: none !important;
-    opacity: 1 !important; 
-}
-#banner {
-    background-image: url('../images/star-background.jpg');
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
-}
+				<header id="header" class="alt">
+						<a href="index.html" class="logo"><strong>Synthesis</strong> <span>Astrology</span></a>
+						<nav>
+							<a href="#menu">Menu</a>
+						</nav>
+					</header>
 
-/* 2. Layout & Sizing */
-.two-column-container {
-    display: grid;
-    grid-template-columns: 1.5fr 1fr;
-    gap: 3em;
-    align-items: flex-start;
-}
-@media screen and (max-width: 980px) {
-    .two-column-container {
-        grid-template-columns: 1fr;
-    }
-}
-@media screen and (max-width: 736px) {
-    #header .logo span {
-        display: inline !important;
-        font-weight: 400;
-    }
-}
-#chart-wheel-container {
-    max-width: 500px;
-    margin: 0 auto;
-}
-#transit-wheel-container {
-    max-width: 100%;
-    margin: 0 auto;
-}
+				<nav id="menu">
+						<ul class="links">
+							<li><a href="index.html">Home</a></li>
+						</ul>
+					</nav>
 
-/* 3. Thematic Font and Color Consistency */
-pre {
-    background-color: #2a2f43;
-    border-radius: 4px;
-    border: solid 1px rgba(255, 255, 255, 0.25);
-    font-family: "Source Sans Pro", sans-serif;
-    padding: 1.5em;
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-size: 0.9em;
-    letter-spacing: 0.05em;
-    color: rgba(255, 255, 255, 0.75);
-}
-#gemini-output {
-    font-family: "Source Sans Pro", sans-serif;
-    font-size: 1rem;
-    line-height: 1.65;
-    color: #ffffff;
-}
-.results-container .major { margin-bottom: 2rem; }
+				<section id="banner" class="major">
+						<div class="inner">
+							<header class="major">
+								<h1>Synthesis Astrology</h1>
+							</header>
+							<div class="content">
+								<p>Combining the timeless wisdom of astrology with modern analytical methods to provide deep insights into your personality, life patterns, and spiritual growth.</p>
+							</div>
+						</div>
+					</section>
 
-.results-container {
-    display: none; 
-}
-.results-container .result-section h2 {
-    text-align: left;
-}
+				<div id="main">
 
-/* NEW: Styles for the side-by-side report layout */
-.report-columns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2em;
-    align-items: start;
-}
+						<section id="description-wrapper">
+							<div class="inner two-column-container">
+								
+								<div class="description-content">
+									<header class="major">
+										<h2>Your Birth Chart</h2>
+									</header>
+									<p>Astrology is a powerful tool for insight and self-development. This platform combines modern technology with ancient wisdom to provide a comprehensive analysis of your unique birth chart.</p>
+									<h4>What you’ll receive:</h4>
+									<ul>
+										<li>A brief professional reading powered by artificial intelligence.</li>
+										<li>A visual True Sidereal chart wheel displaying your planetary alignments.</li>
+										<li>Full planetary placements using both the <strong>True Sidereal</strong> and <strong>Tropical</strong> zodiacs.</li>
+										<li>Analysis of key aspects, planetary patterns, and chart dominance.</li>
+										<li>Your personal Numerology and Chinese Zodiac sign.</li>
+									</ul>
+									<h4>Explore the difference:</h4>
+									<p>The True Sidereal system aligns with the observable night sky, offering a more astronomically accurate perspective. For a well-rounded view, we also include your Tropical placements so you can explore both systems side by side.</p>
+								</div>
 
-@media screen and (max-width: 980px) {
-    .report-columns {
-        grid-template-columns: 1fr;
-    }
-}
+								<div id="transit-chart">
+									<header class="major">
+										<h2>Current Transits - Boston, MA</h2>
+									</header>
+									<div id="transit-wheel-container">
+										<svg id="transit-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
+									</div>
+								</div>
+							</div>
+						</section>
 
+						<section id="spiritual-context">
+							<div class="inner">
+								<details>
+									<summary>Please use your Personal Discernment while Exploring Occult Divination Practices:</summary>
+									<div>
+										<h4>Religious Perspectives on Divination:</h4>
+										<p>The Catholic Church, Islam, and Judaism all strongly discourage or reject divination, viewing it as an attempt to divert trust away from God. These faiths emphasize that seeking knowledge of the future through supernatural means is contrary to divine providence. Instead, they advocate for believers to place their trust in God’s plan, seeking guidance through prayer, faith, and divine revelation.</p>
+										<h4>A Warning on the Occult:</h4>
+										<p>Many occult practices, such as tarot readings, psychic readings, crystal gazing, and Ouija boards, provide accurate information. However, I believe that this knowledge does not originate from divine sources. Instead, it may be influenced by spiritual forces that are not aligned with God’s will. These forces can lead individuals toward spiritual confusion, inner turmoil, and a detour from a path of peace and fulfillment.</p>
+										<h4>Astrology and Numerology:</h4>
+										<p>Astrology and numerology, are distinct from other occult practices. They are grounded in the observation of natural patterns in God’s creation. Because they focus on natural phenomena, astrology and numerology do not appear to invite harmful spiritual influences, as they are rooted in the study of God's design and order in the universe.</p>
+										<h4>Why I Practice Astrology:</h4>
+										<p>I believe astrology, when practiced responsibly and with respect, can be a valuable tool for personal growth and spiritual development. By gaining insight from our natal charts, astrology helps us understand our tendencies, strengths, and challenges. This understanding encourages us to align our actions with God’s will and guide us toward a life of greater peace, purpose, and fulfillment.</p>
+										<p>Astrology also offers a path to recognizing the divine gifts we’ve been given, helping us identify and nurture them to serve others with authenticity and grace. By understanding our astrological chart, we can become more attuned to our purpose in life, cultivating virtues such as love, patience, humility, and wisdom, which draw us closer to God and help us live more fully in accordance with His plan.</p>
+										<h4>Commitment to Integrity:</h4>
+										<p>I am deeply committed to God and remain open to reevaluating my views on astrology with careful reflection. If I ever receive new insights that challenge my approach or feel uncomfortable with how this website is being used, I will take the necessary steps to ensure it aligns with my values and beliefs.</p>
+									</div>
+								</details>
+							</div>
+						</section>
 
-/* 4. Form Styling */
-#form-section .field > label {
-    font-size: 1rem;
-}
-#form-section input[type="text"],
-#form-section input[type="email"] {
-    border: solid 1px rgba(255, 255, 255, 0.25);
-}
-.field-note {
-    font-size: 0.85rem;
-    font-weight: 400;
-    font-style: normal;
-    opacity: 0.8;
-    margin-left: 0.75em;
-    text-transform: none;
-    letter-spacing: 0.05em;
-}
-.name-numerology-toggle label, .time-inputs-container label {
-    font-size: 0.85rem;
-    font-weight: 400;
-    font-style: normal;
-    opacity: 0.8;
-    text-transform: none;
-    letter-spacing: 0.05em;
-}
+						<section id="form-section">
+							<div class="inner">
+								<header class="major">
+									<h2>Generate Your Chart</h2>
+								</header>
+								<form id="chartForm">
+									<div class="fields">
+										<div class="field">
+											<label for="fullName">Full Birth Name <span class="field-note">including middle name for numerology calculations</span></label>
+											<input type="text" id="fullName" name="fullName" required>
+											<div class="name-numerology-toggle">
+												<input type="checkbox" id="noFullName" name="noFullName">
+												<label for="noFullName">Check this box if this is NOT your full birth name (disables name numerology).</label>
+											</div>
+										</div>
+						
+										<div class="field">
+											<label for="userEmail">Your Email <span class="field-note">Optional: To receive a copy of your chart via email.</span></label>
+											<input type="email" id="userEmail" name="userEmail">
+										</div>
+						
+										<div class="field half">
+											<label for="birthDate">Birth Date <span class="field-note">MM/DD/YYYY</span></label>
+											<input type="text" id="birthDate" name="birthDate" required>
+										</div>
+						
+										<div class="field half">
+											<label for="location">Birth Location <span class="field-note">City, State, Country</span></label>
+											<input type="text" id="location" name="location" required>
+										</div>
+						
+										<div class="field half">
+											<label for="birthTime">Birth Time <span class="field-note">HH:MM AM/PM | For the most accurate results, please enter your exact birth time.</span></label>
+											<input type="text" id="birthTime" name="birthTime" required>
+										</div>
+								
+										<div class="field half time-checkbox-container">
+											<div class="time-inputs-container">
+												<input type="checkbox" id="unknownTime" name="unknownTime">
+												<label for="unknownTime">I don't know my exact birth time (Excludes time sensitive output)</label>
+											</div>
+										</div>
+									</div>
+									<ul class="actions">
+										<li><button type="submit" id="submitBtn" class="primary">Calculate Chart</button></li>
+									</ul>
+								</form>
+							</div>
+						</section>
+					
+						<section id="results" class="results-container" aria-live="polite">
+								<div class="inner">
+									<div id="wheel-title" class="result-section">
+										<header class="major"><h2>Your Natal Chart</h2></header>
+										<div id="chart-wheel-container"><svg id="chart-wheel-svg" viewBox="-100 -100 1200 1200"></svg></div>
+									</div>
+							
+									<div id="gemini-title" class="result-section">
+										<header class="major"><h2>AI Astrological Synthesis</h2></header>
+										<div id="gemini-output" class="content"></div>
+									</div>
+							
+									<div id="results-title" class="result-section">
+										<header class="major"><h2>Full Report</h2></header>
+										<div class="report-columns">
+											<div class="report-column">
+												<pre id="sidereal-output"></pre>
+											</div>
+											<div class="report-column">
+												<pre id="tropical-output"></pre>
+											</div>
+										</div>
+									</div>
+							
+								</div>
+							</section>
 
-#form-section .field:has(#fullName) {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-}
-#form-section .field:has(#fullName) > label {
-    width: 100%; 
-    margin-bottom: 0.5em;
-}
-#form-section .field:has(#fullName) > input {
-    flex: 1; 
-    min-width: 200px;
-}
-.name-numerology-toggle {
-    display: flex;
-    align-items: center;
-    margin-top: 0; 
-    margin-left: 2em;
-}
+						<section id="legal">
+							<div class="inner">
+								<details>
+									<summary>Disclaimer</summary>
+									<div>
+										<p>The astrological and numerological interpretations provided by this calculator, including any AI-generated text from Google's Gemini model, are for entertainment and informational purposes only. The readings are not intended to be a substitute for professional advice from a qualified person in any field, including but not limited to medical, financial, or legal matters.</p>
+										<p>By using this service, you agree that you are solely responsible for any actions you take based on the information provided, and you will not hold the website or its creator liable for any decisions or outcomes.</p>
+									</div>
+								</details>
+								<details>
+									<summary>Privacy Policy</summary>
+									<div>
+										<h4>Last Updated: August 3, 2025</h4>
+										<p>Thank you for using the Astrological and Numerological Blueprint Calculator. This Privacy Policy explains what information we collect when you use our service, why we collect it, and how it is handled. Your privacy is important to us, and we are committed to being transparent about our data practices.</p>
+										<h4>1. Information We Collect</h4>
+										<p>When you use the calculator, we collect the following information that you voluntarily provide:</p>
+										<ul>
+											<li><strong>Name:</strong> The name you enter for the chart calculation.</li>
+											<li><strong>Birth Information:</strong> The date of birth (year, month, day) and time of birth (hour, minute) you provide.</li>
+											<li><strong>Location Information:</strong> The birth location (e.g., "Boston, MA, USA") you enter.</li>
+											<li><strong>Email Address (Optional):</strong> If you choose to receive a copy of your report, we collect the email address you provide.</li>
+										</ul>
+										<p>We <strong>do not</strong> collect your IP address or any other information that is not explicitly entered into the form fields.</p>
+										<h4>2. How We Use Your Information</h4>
+										<p>The information you provide is used for the following purposes:</p>
+										<ul>
+											<li><strong>To Perform Calculations:</strong> The birth data is sent to our secure server to perform the astrological and numerological calculations and generate your personalized report.</li>
+											<li><strong>To Deliver Your Report via Email:</strong> If you provide your email address, it is used for the sole purpose of sending you a copy of your complete astrological report.</li>
+											<li><strong>To Generate AI Readings:</strong> Anonymized astrological data (your planetary positions, but not your name, date, time, or location) is sent to the Google Gemini API to generate the "AI Astrological Synthesis" portion of your report.</li>
+											<li><strong>Application Monitoring & Debugging:</strong> The input data, including your email if provided, is sent to a secure, third-party logging service (Better Stack) for the sole purpose of monitoring application performance, identifying bugs, and troubleshooting errors.</li>
+											<li><strong>To Maintain and Improve the Service:</strong> A complete copy of the generated report, including your inputs and the final output, is sent to an administrative email address. This allows us to verify that the service is functioning correctly, troubleshoot any errors, and ensure the quality of the reports.</li>
+											<li><strong>Research and Service Improvement:</strong> Birth data may be used to analyze astrological patterns, conduct research, and train artificial intelligence designed to improve the accuracy and depth of our astrological readings and to further the study of astrology.</li>
+										</ul>
+										<h4>3. Data Storage and Sharing</h4>
+										<ul>
+											<li><strong>Storage:</strong> The data you provide is stored in two ways: (1) It is logged in our secure, third-party application monitoring service (Better Stack) for the purposes of debugging and ensuring the calculator functions correctly. (2) The data may be exported and stored securely in private documents (e.g., spreadsheets) for the sole purpose of future astrological research, as described in Section 2.</li>
+											<li><strong>Sharing:</strong> We are committed to protecting your privacy. We will not sell or rent your personal information. We only share data with the essential third-party services described in this policy that are required for the calculator to function.
+												<ul>
+													<li><strong>SendGrid:</strong> If you provide your email address, it is shared with our email delivery provider, SendGrid, to send you your report. This is subject to SendGrid's privacy policy.</li>
+													<li><strong>Google Gemini:</strong> Anonymized astrological data is processed by Google's services to provide the AI reading, subject to their privacy policies.</li>
+													<li><strong>Other Services:</strong> We also share data with our geocoding and logging providers as required for the calculator to function.</li>
+												</ul>
+											</li>
+										</ul>
+										<h4>4. Your Rights and Data Deletion</h4>
+										<p>You have the right to request the deletion of your personal data from our logs and research documents. If you would like to have your information removed, please contact us with the details of the data you entered (name, date, location), and we will permanently delete the corresponding entries.</p>
+										<h4>5. Consent for Research Use</h4>
+										<p>By using this calculator, you acknowledge and consent that the birth data you provide may be stored and used for the research and potential artificial intelligence training purposes described in Section 2 and 3. This is essential for helping us learn more about astrology and improve the quality of the service we provide to you and other users.</p>
+										<h4>6. Contact Us</h4>
+										<p>If you have any questions about this Privacy Policy or wish to request the deletion of your data, please contact us at: <a href="mailto:synthesisastrology@outlook.com"><strong>synthesisastrology@outlook.com</strong></a></p>
+									</div>
+								</details>
+								<details>
+									<summary>Terms of Service</summary>
+									<div>
+										<h4>Last Updated: August 3, 2025</h4>
+										<p>Welcome to the Astrological and Numerological Blueprint Calculator. These Terms of Service ("Terms") govern your use of this website and the services provided. By accessing or using the service, you agree to be bound by these Terms.</p>
+										<h4>1. Description of Service</h4>
+										<p>This website provides personalized astrological and numerological reports based on data you provide, including True Sidereal and Tropical zodiac calculations, a visual chart wheel, and numerology reports. The service is provided for informational and entertainment purposes.</p>
+										<h4>2. Acceptance of Terms</h4>
+										<p>By using this service, you confirm that you have read, understood, and agree to be bound by these Terms. If you do not agree with the Terms, please do not use the service.</p>
+										<h4>3. User-Provided Data</h4>
+										<p>The accuracy of the astrological and numerological reports generated by this service is entirely dependent on the accuracy of the birth data (name, date, time, and location) you provide. You are solely responsible for providing correct information. The service cannot be held liable for an inaccurate report resulting from incorrect user input.</p>
+										<h4>4. Acceptable Use</h4>
+										<p>You agree not to use this service for any unlawful purpose or in any way that could damage, disable, or impair the service. This includes, but is not limited to: Submitting data through automated means (e.g., bots, scripts), attempting to gain unauthorized access to the server or its data, or using the service for any commercial purpose without prior written consent.</p>
+										<h4>5. Intellectual Property</h4>
+										<p>All content on this website, including the design, text, graphics, and the underlying source code, is the intellectual property of the site owner. The astrological and numerological reports generated by this service are for your <strong>personal, non-commercial use only</strong>. You may not resell, redistribute, or use the reports for any commercial purpose without prior written consent.</p>
+										<h4>6. Disclaimer of Warranties</h4>
+										<p>The information and data provided by this calculator are for <strong>entertainment and informational purposes only</strong>. The service is provided "as is" and "as available" without any warranties, express or implied. We do not warrant that the service will be error-free or that the information provided will be completely accurate. The interpretations are not a substitute for professional advice.</p>
+										<h4>7. Limitation of Liability</h4>
+										<p>By using this service, you agree that you are solely responsible for any actions you take based on the information provided. The owner of this website shall not be held liable for any damages resulting from the use or inability to use this service.</p>
+										<h4>8. Privacy Policy</h4>
+										<p>Your use of this service is also governed by our Privacy Policy, which explains how we collect, use, and protect your personal data.</p>
+										<h4>9. Changes to Terms</h4>
+										<p>We reserve the right to modify these Terms at any time. Your continued use of the service after such changes constitutes your acceptance of the new Terms.</p>
+										<h4>10. Contact Information</h4>
+										<p>If you have any questions about these Terms, please contact us at: <strong>synthesisastrology@outlook.com</strong></p>
+									</div>
+								</details>
+							</div>
+						</section>
+					</div>
 
-.time-checkbox-container {
-    display: flex;
-    align-items: flex-end;
-    padding-bottom: 0.8em;
-}
-.time-inputs-container {
-    padding-top: 0;
-    display: flex;
-    align-items: center;
-}
-#form-section input[type="checkbox"] + label::before {
-    content: '';
-    background-color: rgba(255, 255, 255, 0.15);
-    border: 2px solid #ffffff;
-    border-radius: 4px;
-}
+				<footer id="footer">
+						<div class="inner">
+							<ul class="copyright">
+								<li>&copy; Synthesis Astrology</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li>
+							</ul>
+						</div>
+					</footer>
 
-#form-section input[type="checkbox"]:checked + label::before {
-    background-color: #ffffff; 
-}
+			</div>
 
-#form-section input[type="checkbox"]:checked + label::after {
-    color: #24293e; 
-}
-/* 5. Chart Wheel SVG styles */
-#chart-wheel-svg, #transit-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; }
-.wheel-circle { stroke: rgba(255, 255, 255, 0.25); stroke-width: 2; fill: none; }
-.zodiac-divider { stroke: rgba(255, 255, 255, 0.25); stroke-width: 1; }
-.house-cusp { stroke: #ffffff; stroke-width: 1.5; }
-.house-cusp.major { stroke-width: 3; }
-.house-number { fill: #ffffff; font-size: 24px; text-anchor: middle; dominant-baseline: middle; opacity: 0.8;}
-.zodiac-glyph { fill: #ffffff; font-size: 30px; text-anchor: middle; dominant-baseline: middle; }
-.planet-glyph { fill: #ffffff; font-size: 35px; text-anchor: middle; dominant-baseline: middle; }
-.planet-retrograde { fill: #ffffff; font-size: 20px; }
-.aspect-line { stroke-width: 1.5; opacity: 0.7; }
-.aspect-conjunction { stroke: #38a169; }
-.aspect-opposition, .aspect-square { stroke: #e53e3e; }
-.aspect-trine, .aspect-sextile { stroke: #3182ce; }
-.aspect-quincunx, .aspect-semisextile, .aspect-semisquare, .aspect-sesquiquadrate, .aspect-quintile, .aspect-biquintile { stroke: rgba(255, 255, 255, 0.25); stroke-dasharray: 4 4; }
+		<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+			<script src="assets/js/calculator.js"></script>
 
-/* 6. Cleaner styling for Legal & Spiritual Context Sections */
-#legal .inner {
-    border-top: solid 2px rgba(255, 255, 255, 0.25);
-    margin-top: 3rem;
-    padding-top: 3rem;
-}
-#spiritual-context .inner {
-    border-top: none;
-    margin-top: 0;
-    padding-top: 0;
-}
-#legal details, #spiritual-context details {
-    background: transparent;
-    border: solid 1px rgba(255, 255, 255, 0.25);
-    border-radius: 4px;
-    padding: 1.5em;
-    margin-bottom: 1rem;
-}
-#legal summary, #spiritual-context summary {
-    font-weight: 600;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: #ffffff;
-    transition: color 0.2s ease-in-out;
-    list-style: none;
-}
-#legal summary::-webkit-details-marker, #spiritual-context summary::-webkit-details-marker { display: none; }
-#legal summary:hover, #spiritual-context summary:hover { color: #805ad5; }
-#legal details div, #spiritual-context details div {
-    padding-top: 1.5rem;
-    margin-top: 1rem;
-    border-top: solid 1px rgba(255, 255, 255, 0.25);
-    font-size: 0.9em;
-    color: rgba(255, 255, 255, 0.75);
-}
-#legal h4, #spiritual-context h4 {
-    font-size: 1rem;
-    margin: 1.5rem 0 0.5rem 0;
-    color: #ffffff;
-}
-
-/* 7. Styles for the dropdown glyph legend */
-.glyph-legend-details {
-    background: transparent;
-    border: solid 1px rgba(255, 255, 255, 0.25);
-    border-radius: 4px;
-    padding: 1.2em;
-    margin-top: 2rem;
-    font-size: 0.9em;
-}
-.glyph-legend-details summary {
-    font-weight: 600;
-    cursor: pointer;
-    color: #ffffff;
-    list-style: none;
-    transition: color 0.2s ease-in-out;
-}
-.glyph-legend-details summary:hover {
-    color: #805ad5;
-}
-.glyph-legend-details summary::-webkit-details-marker {
-    display: none;
-}
-.glyph-legend-details pre {
-    margin-top: 1rem;
-    padding: 1rem;
-    border: none;
-    background-color: #2a2f43;
-    border-radius: 4px;
-}
-#form-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(36, 41, 62, 0.85); 
-}
-#form-section .inner {
-    position: relative;
-}
+	</body>
+</html>
