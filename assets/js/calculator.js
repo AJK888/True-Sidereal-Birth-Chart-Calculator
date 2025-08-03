@@ -5,6 +5,7 @@ const AstrologyCalculator = {
 	},
 	SVG_NS: "http://www.w3.org/2000/svg",
 	ZODIAC_GLYPHS: {'Aries':'♈︎','Taurus':'♉︎','Gemini':'♊︎','Cancer':'♋︎','Leo':'♌︎','Virgo':'♍︎','Libra':'♎︎','Scorpio':'♏︎','Ophiuchus':'⛎︎','Sagittarius':'♐︎','Capricorn':'♑︎','Aquarius':'♒︎','Pisces':'♓︎'},
+	TROPICAL_ZODIAC_ORDER: ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'],
 	PLANET_GLYPHS: {'Sun':'☉','Moon':'☽','Mercury':'☿','Venus':'♀','Mars':'♂','Jupiter':'♃','Saturn':'♄','Uranus':'♅','Neptune':'♆','Pluto':'♇','Chiron':'⚷','True Node':'☊','South Node':'☋','Ascendant':'AC','Midheaven (MC)':'MC','Descendant':'DC','Imum Coeli (IC)':'IC'},
 
 	form: null, submitBtn: null, noFullNameCheckbox: null,
@@ -26,7 +27,6 @@ const AstrologyCalculator = {
 		this.resultsTitle = document.getElementById('results-title');
 		this.wheelTitle = document.getElementById('wheel-title');
 		this.resultsContainer = document.getElementById('results');
-		// Cache both SVG elements
 		this.siderealWheelSvg = document.getElementById('sidereal-wheel-svg');
 		this.tropicalWheelSvg = document.getElementById('tropical-wheel-svg');
 	},
@@ -127,7 +127,8 @@ const AstrologyCalculator = {
 			let chartImageBase64 = null;
 			if (this.siderealWheelSvg.innerHTML.trim() !== '' && !chartData.unknown_time) {
 				const svgString = new XMLSerializer().serializeToString(this.siderealWheelSvg);
-				chartImageBase64 = btoa(svgString);
+				// FIXED: Correctly encode the SVG string to handle special characters
+				chartImageBase64 = btoa(unescape(encodeURIComponent(svgString)));
 			}
 
 			const readingRes = await fetch(this.API_URLS.reading, {
@@ -172,7 +173,6 @@ const AstrologyCalculator = {
 				throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
 			}
 			const transitData = await apiRes.json();
-			// For transits, we'll just draw the sidereal wheel
 			this.drawChartWheel(transitData, 'transit-wheel-svg', 'sidereal');
 
 			const legendHtml = this.getLegendHtml();
@@ -207,7 +207,6 @@ const AstrologyCalculator = {
 
 		if (!chartData.unknown_time) {
 			this.wheelTitle.parentElement.style.display = 'block';
-			// Draw both charts
 			this.drawChartWheel(chartData, 'sidereal-wheel-svg', 'sidereal');
 			this.drawChartWheel(chartData, 'tropical-wheel-svg', 'tropical');
 			
@@ -410,7 +409,8 @@ const AstrologyCalculator = {
 		
 		const positions = data[`${chartType}_major_positions`];
 		const aspects = data[`${chartType}_aspects`];
-		const houseCusps = data.house_cusps; // House cusps are the same for both
+		// FIXED: Use the correct house cusps for each chart type
+		const houseCusps = data[`${chartType}_house_cusps`];
 
 		const ascendant = positions.find(p => p.name === 'Ascendant');
 		if (!ascendant || ascendant.degrees === null) {
@@ -451,7 +451,6 @@ const AstrologyCalculator = {
 			mainGroup.appendChild(circle);
 		});
 		
-		// Zodiac Signs
 		const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2;
 		if (chartType === 'sidereal' && data.true_sidereal_signs) {
 			data.true_sidereal_signs.forEach(sign => {
@@ -490,7 +489,7 @@ const AstrologyCalculator = {
 				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
 				text.setAttribute('class', 'zodiac-glyph');
 				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
-				text.textContent = this.ZODIAC_GLYPHS[Object.keys(this.ZODIAC_GLYPHS)[i]];
+				text.textContent = this.ZODIAC_GLYPHS[this.TROPICAL_ZODIAC_ORDER[i]];
 				mainGroup.appendChild(text);
 			}
 		}
