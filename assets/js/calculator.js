@@ -26,7 +26,7 @@ const AstrologyCalculator = {
 		this.resultsTitle = document.getElementById('results-title');
 		this.wheelTitle = document.getElementById('wheel-title');
 		this.resultsContainer = document.getElementById('results');
-		// NEW: Cache both SVG elements
+		// Cache both SVG elements
 		this.siderealWheelSvg = document.getElementById('sidereal-wheel-svg');
 		this.tropicalWheelSvg = document.getElementById('tropical-wheel-svg');
 	},
@@ -56,7 +56,6 @@ const AstrologyCalculator = {
 		} catch (err) {
 			this.resultsContainer.style.display = 'block';
 			this.resultsTitle.parentElement.style.display = 'block';
-			// Fallback to a single column on error
 			const siderealOutput = document.getElementById('sidereal-output');
 			if(siderealOutput) siderealOutput.innerText = "Error: " + err.message;
 
@@ -208,7 +207,7 @@ const AstrologyCalculator = {
 
 		if (!chartData.unknown_time) {
 			this.wheelTitle.parentElement.style.display = 'block';
-			// NEW: Draw both charts
+			// Draw both charts
 			this.drawChartWheel(chartData, 'sidereal-wheel-svg', 'sidereal');
 			this.drawChartWheel(chartData, 'tropical-wheel-svg', 'tropical');
 			
