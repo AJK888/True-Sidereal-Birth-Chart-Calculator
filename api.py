@@ -257,6 +257,7 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         return "Gemini API key not configured. AI reading is unavailable."
 
     try:
+        # FIXED: Corrected typo from GenerModel to GenerativeModel
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
         prompt_parts = []
         
