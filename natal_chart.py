@@ -202,12 +202,11 @@ class NatalChart:
     def _calculate_all_points(self, unknown_time: bool) -> None:
         sidereal_asc = self.ascendant_data.get("sidereal_asc") if not unknown_time else None
         tropical_asc = self.ascendant_data.get("tropical_asc") if not unknown_time else None
-        ayanamsa = 31.38 + ((self.birth_year - 2000) / 72.0) # Calculate ayanamsa even for unknown time
+        ayanamsa = 31.38 + ((self.birth_year - 2000) / 72.0)
         
         configs = PLANETS_CONFIG + ADDITIONAL_BODIES_CONFIG
         for name, code in configs:
             try:
-                # Exclude Vertex for unknown time as it's time-sensitive
                 if unknown_time and name == 'Vertex':
                     continue
                 res = swe.calc_ut(self.jd, code); is_retro = res[0][3] < 0; tropical_lon = res[0][0]; sidereal_lon = (tropical_lon - ayanamsa + 360) % 360
@@ -400,10 +399,13 @@ class NatalChart:
                     house_rulers_formatted[f"House {i+1}"] = f"{sign} (Ruler: {ruler_name} {ruler_pos})"
             house_sign_distributions_data = self.house_sign_distributions
 
-        house_cusps = []
+        sidereal_house_cusps = []
+        tropical_house_cusps = []
         if self.ascendant_data.get("sidereal_asc") is not None and not unknown_time:
-            asc = self.ascendant_data['sidereal_asc']
-            house_cusps = [(asc + i * 30) % 360 for i in range(12)]
+            s_asc = self.ascendant_data['sidereal_asc']
+            t_asc = self.ascendant_data['tropical_asc']
+            sidereal_house_cusps = [(s_asc + i * 30) % 360 for i in range(12)]
+            tropical_house_cusps = [(t_asc + i * 30) % 360 for i in range(12)]
             
         sidereal_retrogrades = [{"name": p.name} for p in self.all_sidereal_points if p.retrograde and p.name in [pc[0] for pc in PLANETS_CONFIG]]
         tropical_retrogrades = [{"name": p.name} for p in self.all_tropical_points if p.retrograde and p.name in [pc[0] for pc in PLANETS_CONFIG]]
@@ -434,7 +436,8 @@ class NatalChart:
             "numerology_analysis": {"life_path_number": numerology["life_path"], "day_number": numerology["day_number"], "name_numerology": name_numerology},
             "unknown_time": unknown_time,
             "true_sidereal_signs": TRUE_SIDEREAL_SIGNS,
-            "house_cusps": house_cusps,
+            "sidereal_house_cusps": sidereal_house_cusps,
+            "tropical_house_cusps": tropical_house_cusps,
             "house_rulers": house_rulers_formatted,
             "house_sign_distributions": house_sign_distributions_data,
             "sidereal_chart_analysis": sidereal_chart_analysis,
