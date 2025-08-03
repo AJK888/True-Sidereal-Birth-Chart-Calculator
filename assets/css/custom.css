@@ -2,7 +2,6 @@
 
 /* 1. Header & Section Color Updates */
 #header {
-    /* REVERTED: Changed back to a solid color */
     background-color: #805ad5; 
     transition: background-color 0.3s ease-in-out;
 }
@@ -26,10 +25,9 @@
     box-shadow: none !important;
 }
 #banner:before {
-    /* MODIFIED: Reduced opacity of the overlay to 25% */
-    background: rgba(36, 41, 62, 0.25) !important; /* Dark overlay with 25% opacity */
+    background: rgba(36, 41, 62, 0.25) !important; 
     box-shadow: none !important;
-    opacity: 1 !important; /* Ensure the overlay is visible */
+    opacity: 1 !important; 
 }
 #banner {
     background-image: url('../images/star-background.jpg');
@@ -86,12 +84,25 @@ pre {
 }
 .results-container .major { margin-bottom: 2rem; }
 
-/* Styles moved from index.html for better maintainability */
 .results-container {
-    display: none; /* Initially hidden, controlled by JS */
+    display: none; 
 }
 .results-container .result-section h2 {
     text-align: left;
+}
+
+/* NEW: Styles for the side-by-side report layout */
+.report-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2em;
+    align-items: start;
+}
+
+@media screen and (max-width: 980px) {
+    .report-columns {
+        grid-template-columns: 1fr;
+    }
 }
 
 
@@ -121,24 +132,23 @@ pre {
     letter-spacing: 0.05em;
 }
 
-/* Styles to align the name input and its checkbox horizontally */
 #form-section .field:has(#fullName) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
 }
 #form-section .field:has(#fullName) > label {
-    width: 100%; /* Keep label on its own line */
+    width: 100%; 
     margin-bottom: 0.5em;
 }
 #form-section .field:has(#fullName) > input {
-    flex: 1; /* Make input take up available space */
+    flex: 1; 
     min-width: 200px;
 }
 .name-numerology-toggle {
     display: flex;
     align-items: center;
-    margin-top: 0; /* Reset margin for flex layout */
+    margin-top: 0; 
     margin-left: 2em;
 }
 
@@ -160,12 +170,11 @@ pre {
 }
 
 #form-section input[type="checkbox"]:checked + label::before {
-    background-color: #ffffff; /* Set background to white when checked */
+    background-color: #ffffff; 
 }
 
 #form-section input[type="checkbox"]:checked + label::after {
-    /* This targets the checkmark itself */
-    color: #24293e; /* Dark color for the checkmark */
+    color: #24293e; 
 }
 /* 5. Chart Wheel SVG styles */
 #chart-wheel-svg, #transit-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; }
@@ -260,7 +269,7 @@ pre {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(36, 41, 62, 0.85); /* Opacity increased to 85% */
+    background-color: rgba(36, 41, 62, 0.85); 
 }
 #form-section .inner {
     position: relative;
