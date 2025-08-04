@@ -56,14 +56,11 @@
 }
 
 /* Sizing for chart containers */
-#chart-wheel-container {
-    max-width: 500px;
-    margin: 0 auto;
-}
-#transit-wheel-container {
+#chart-wheel-container, #transit-wheel-container, #sidereal-wheel-container, #tropical-wheel-container {
     max-width: 100%;
     margin: 0 auto;
 }
+
 
 /* 3. Thematic Font and Color Consistency */
 pre {
@@ -209,7 +206,6 @@ pre {
 .planet-retrograde { 
     fill: #ffffff; 
     font-size: 20px; 
-    /* ADDED: Ensure consistent alignment for the retrograde symbol */
     text-anchor: middle; 
     dominant-baseline: middle;
 }
