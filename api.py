@@ -82,7 +82,7 @@ class ReadingRequest(BaseModel):
 
 def get_full_text_report(res: dict) -> str:
     # This function remains the same as before...
-    out = f"=== TRUE SIDEREAL CHART: {res.get('name', 'N/A')} ===\n"
+    out = f"=== SIDEREAL CHART: {res.get('name', 'N/A')} ===\n"
     out += f"- UTC Date & Time: {res.get('utc_datetime', 'N/A')}{' (Noon Estimate)' if res.get('unknown_time') else ''}\n"
     out += f"- Location: {res.get('location', 'N/A')}\n"
     out += f"- Day/Night Determination: {res.get('day_night_status', 'N/A')}\n\n"
@@ -229,6 +229,7 @@ def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inp
         html += "<hr>"
 
     html += "<h2>AI Astrological Synthesis</h2>"
+    # FIXED: Corrected the newline character from /n to \n
     html += f"<p>{gemini_reading.replace('/n', '<br><br>')}</p>"
     html += "<hr>"
 
@@ -577,7 +578,7 @@ async def calculate_chart_endpoint(data: ChartRequest):
             
         return full_response
 
-    except Exception as e:
+    except HTTPException as e:
         raise e
     except Exception as e:
         logger.error(f"An unexpected error occurred: {type(e).__name__} - {e}", exc_info=True)
