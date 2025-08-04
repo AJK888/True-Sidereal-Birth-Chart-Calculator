@@ -51,10 +51,9 @@ const AstrologyCalculator = {
 		const termsCheckbox = document.getElementById('terms');
 		const termsError = document.getElementById('termsError');
 
-		// First, check if the terms box is checked.
 		if (!termsCheckbox.checked) {
 			termsError.style.display = 'block';
-			return; // Stop the function if it's not checked.
+			return; 
 		} else {
 			termsError.style.display = 'none';
 		}
@@ -184,10 +183,12 @@ const AstrologyCalculator = {
 				throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
 			}
 			const transitData = await apiRes.json();
-			this.drawChartWheel(transitData, 'transit-wheel-svg', 'sidereal');
+			// Draw both transit charts
+			this.drawChartWheel(transitData, 'sidereal-transit-wheel-svg', 'sidereal');
+			this.drawChartWheel(transitData, 'tropical-transit-wheel-svg', 'tropical');
 
 			const legendHtml = this.getLegendHtml();
-			const container = document.getElementById('transit-wheel-container');
+			const container = document.querySelector('#transit-chart .chart-wheels-wrapper');
 			const oldLegend = container.nextElementSibling;
 			if (oldLegend && oldLegend.classList.contains('glyph-legend-details')) {
 				oldLegend.remove();
@@ -196,7 +197,7 @@ const AstrologyCalculator = {
 
 		} catch (err) {
 			console.error("Failed to load transit chart:", err);
-			document.getElementById('transit-wheel-svg').innerHTML = '<text x="500" y="500" fill="white" font-size="20" text-anchor="middle">Could not load transits.</text>';
+			document.getElementById('sidereal-transit-wheel-svg').innerHTML = '<text x="500" y="500" fill="white" font-size="20" text-anchor="middle">Could not load transits.</text>';
 		}
 	},
 
@@ -222,7 +223,7 @@ const AstrologyCalculator = {
 			this.drawChartWheel(chartData, 'tropical-wheel-svg', 'tropical');
 			
 			const legendHtml = this.getLegendHtml();
-			const container = document.querySelector('.chart-wheels-wrapper');
+			const container = document.querySelector('#results .chart-wheels-wrapper');
 			const oldLegend = container.nextElementSibling;
 			if (oldLegend && oldLegend.classList.contains('glyph-legend-details')) {
 				oldLegend.remove();
@@ -242,7 +243,7 @@ const AstrologyCalculator = {
 
 	renderTextResults(res) {
 		// --- SIDEREAL REPORT ---
-		let siderealOut = `=== TRUE SIDEREAL CHART: ${res.name || 'N/A'} ===\n`;
+		let siderealOut = `=== SIDEREAL CHART: ${res.name || 'N/A'} ===\n`;
 		siderealOut += `- UTC Date & Time: ${res.utc_datetime || 'N/A'}${res.unknown_time ? ' (Noon Estimate)' : ''}\n`;
 		siderealOut += `- Location: ${res.location || 'N/A'}\n`;
 		siderealOut += `- Day/Night Determination: ${res.day_night_status || 'N/A'}\n\n`;
