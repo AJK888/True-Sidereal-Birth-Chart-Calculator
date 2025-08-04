@@ -54,12 +54,8 @@
         font-weight: 400;
     }
 }
-/* MODIFIED: Increased max-width to make charts larger */
-#chart-wheel-container, #sidereal-wheel-container, #tropical-wheel-container {
-    max-width: 550px;
-    margin: 0 auto;
-}
-#transit-wheel-container {
+/* MODIFIED: Changed max-width to 100% to match the transit chart */
+#chart-wheel-container, #sidereal-wheel-container, #tropical-wheel-container, #transit-wheel-container {
     max-width: 100%;
     margin: 0 auto;
 }
