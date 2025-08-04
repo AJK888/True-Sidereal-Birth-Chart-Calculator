@@ -89,8 +89,9 @@ pre {
     text-align: left;
 }
 
-/* MODIFIED: Increased the max-width of the results and transit sections to allow charts to be larger */
+/* MODIFIED: Increased the width of the results and transit sections to allow charts to be larger */
 #results .inner, #transit-section .inner {
+    width: 100%;
     max-width: 90em;
 }
 
