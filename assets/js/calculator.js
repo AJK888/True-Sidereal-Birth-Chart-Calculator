@@ -183,7 +183,6 @@ const AstrologyCalculator = {
 				throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
 			}
 			const transitData = await apiRes.json();
-			// Draw both transit charts
 			this.drawChartWheel(transitData, 'sidereal-transit-wheel-svg', 'sidereal');
 			this.drawChartWheel(transitData, 'tropical-transit-wheel-svg', 'tropical');
 
