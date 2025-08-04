@@ -60,11 +60,7 @@
     max-width: 100%;
     margin: 0 auto;
 }
-/* MODIFIED: Set a smaller max-width for the transit charts specifically */
-#transit-section .chart-wheels-wrapper {
-    max-width: 800px;
-    margin: 0 auto;
-}
+/* REMOVED: Removed the rule that was making the transit charts smaller */
 
 
 /* 3. Thematic Font and Color Consistency */
@@ -96,7 +92,7 @@ pre {
 }
 
 /* MODIFIED: Increased the width of ONLY the results section to make user charts larger */
-#results .inner {
+#results .inner, #transit-section .inner {
     max-width: 90em;
 }
 
