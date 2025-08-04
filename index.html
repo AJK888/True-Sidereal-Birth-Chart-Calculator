@@ -6,6 +6,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 		<link rel="stylesheet" href="assets/css/main.css" />
 		<link rel="stylesheet" href="assets/css/custom.css" />
+		<link rel="icon" type="image/jpeg" href="images/star-background.jpg" />
 		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
 	</head>
 	<body class="is-preload">
@@ -67,7 +68,7 @@
 										<h4>Religious Perspectives on Divination:</h4>
 										<p>The Catholic Church, Islam, and Judaism all strongly discourage or reject divination, viewing it as an attempt to divert trust away from God. These faiths emphasize that seeking knowledge of the future through supernatural means is contrary to divine providence. Instead, they advocate for believers to place their trust in God’s plan, seeking guidance through prayer, faith, and divine revelation.</p>
 										<h4>A Warning on the Occult:</h4>
-										<p>Many occult practices, such as tarot readings, psychic readings, crystal gazing, and Ouija boards, provide accurate information. However, I believe that this knowledge does not originate from divine sources. Instead, it may be influenced by spiritual forces that are not aligned with God’s will. These forces can lead individuals toward spiritual confusion, inner turmoil, and a detour from a path of peace and fulfillment.</p>
+										<p>Many occult practices, such as tarot readings, psychic readings, crystal gazing, and Ouija boards, provide accurate information. However, I believe that this knowledge does not originate from divine sources. Instead, it may be influenced by spiritual forces that are not aligned with God’s will, which you are inviting into your life.</p>
 										<h4>Astrology and Numerology:</h4>
 										<p>Astrology and numerology, are distinct from other occult practices. They are grounded in the observation of natural patterns in God’s creation. Because they focus on natural phenomena, astrology and numerology do not appear to invite harmful spiritual influences, as they are rooted in the study of God's design and order in the universe.</p>
 										<h4>Why I Practice Astrology:</h4>
@@ -80,7 +81,6 @@
 							</div>
 						</section>
 						
-						<!-- NEW: Transit charts moved to their own section -->
 						<section id="transit-section">
 							<div class="inner">
 								<div id="transit-chart">
@@ -144,6 +144,13 @@
 											</div>
 										</div>
 									</div>
+									
+									<div class="field">
+										<input type="checkbox" id="terms" name="terms">
+										<label for="terms">I have read and agree to the <a href="#legal" style="text-decoration: underline;">Terms of Service and Privacy Policy</a>.</label>
+										<p id="termsError" style="color: #e53e3e; display: none; margin-top: 0.5em; font-weight: 600;">You must agree to the terms to continue.</p>
+									</div>
+
 									<ul class="actions">
 										<li><button type="submit" id="submitBtn" class="primary">Calculate Chart</button></li>
 									</ul>
@@ -155,7 +162,16 @@
 								<div class="inner">
 									<div id="wheel-title" class="result-section">
 										<header class="major"><h2>Your Natal Chart</h2></header>
-										<div id="chart-wheel-container"><svg id="chart-wheel-svg" viewBox="-100 -100 1200 1200"></svg></div>
+										<div class="chart-wheels-wrapper">
+											<div id="sidereal-wheel-container">
+												<h3>Sidereal</h3>
+												<svg id="sidereal-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
+											</div>
+											<div id="tropical-wheel-container">
+												<h3>Tropical</h3>
+												<svg id="tropical-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
+											</div>
+										</div>
 									</div>
 							
 									<div id="gemini-title" class="result-section">
@@ -165,10 +181,17 @@
 							
 									<div id="results-title" class="result-section">
 										<header class="major"><h2>Full Report</h2></header>
-										<pre id="output"></pre>
+										<div class="report-columns">
+											<div class="report-column">
+												<pre id="sidereal-output"></pre>
+											</div>
+											<div class="report-column">
+												<pre id="tropical-output"></pre>
+											</div>
+										</div>
 									</div>
 							
-									</div>
+								</div>
 							</section>
 
 						<section id="legal">
@@ -183,7 +206,7 @@
 								<details>
 									<summary>Privacy Policy</summary>
 									<div>
-										<h4>Last Updated: August 2, 2025</h4>
+										<h4>Last Updated: August 4, 2025</h4>
 										<p>Thank you for using the Astrological and Numerological Blueprint Calculator. This Privacy Policy explains what information we collect when you use our service, why we collect it, and how it is handled. Your privacy is important to us, and we are committed to being transparent about our data practices.</p>
 										<h4>1. Information We Collect</h4>
 										<p>When you use the calculator, we collect the following information that you voluntarily provide:</p>
@@ -226,10 +249,10 @@
 								<details>
 									<summary>Terms of Service</summary>
 									<div>
-										<h4>Last Updated: August 2, 2025</h4>
+										<h4>Last Updated: August 4, 2025</h4>
 										<p>Welcome to the Astrological and Numerological Blueprint Calculator. These Terms of Service ("Terms") govern your use of this website and the services provided. By accessing or using the service, you agree to be bound by these Terms.</p>
 										<h4>1. Description of Service</h4>
-										<p>This website provides personalized astrological and numerological reports based on data you provide, including True Sidereal and Tropical zodiac calculations, a visual chart wheel, and numerology reports. The service is provided for informational and entertainment purposes.</p>
+										<p>This website provides personalized astrological and numerological reports based on data you provide, including Sidereal and Tropical zodiac calculations, a visual chart wheel, and numerology reports. The service is provided for informational and entertainment purposes.</p>
 										<h4>2. Acceptance of Terms</h4>
 										<p>By using this service, you confirm that you have read, understood, and agree to be bound by these Terms. If you do not agree with the Terms, please do not use the service.</p>
 										<h4>3. User-Provided Data</h4>
