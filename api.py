@@ -429,7 +429,7 @@ You are The Specialist, an astrologer with deep knowledge of planetary archetype
 2.  **Analyze the Tropical Placement:** Now, interpret the meaning of the Tropical {planet_name} in its sign and house. How does this express the soul's purpose in the personality?
 3.  **Analyze the Degree:** The {planet_name} is at {int(s_planet.get('degrees', 0))} degrees. Briefly describe the symbolic meaning of this degree and how it adds nuance to the interpretation.
 4.  **Analyze the Aspects:** Choose the two most significant aspects to {planet_name} and explain how they influence its expression.
-5.  **Synthesize:** In a concluding paragraph, synthesize the Sidereal and Tropical interpretations of {planet_name}, explaining how they work together.
+5.  **Synthesize:** In a concluding paragraph, create a unified interpretation of this planet's role in the person's life, showing how the soul's purpose (Sidereal) is expressed through the personality (Tropical). Explain how the Tropical placement either helps or creates challenges for the Sidereal placement.
 """
             return f"--- ANALYSIS FOR {planet_name.upper()} ---\n{await _run_gemini_prompt(specialist_prompt)}"
 
@@ -460,7 +460,7 @@ You are The Weaver, an astrologer who sees the hidden connections in a chart. Yo
 
         # Step 6: The Storyteller
         storyteller_prompt = f"""
-You are The Synthesizer, an insightful astrological consultant. Your skill is in explaining complex astrological data in a clear, practical, and grounded way. You will write a comprehensive, in-depth reading based *exclusively* on the structured analysis provided below. Your tone should be insightful and helpful, like a skilled analyst, avoiding overly spiritual or "dreamy" language.
+You are The Synthesizer, an insightful astrological consultant who excels at weaving complex data into a clear and compelling narrative. Your skill is in explaining complex astrological data in a practical and grounded way. You will write a comprehensive, in-depth reading based *exclusively* on the structured analysis provided below. Your tone should be insightful and helpful, like a skilled analyst, avoiding overly spiritual or "dreamy" language.
 
 **CRITICAL RULE:** Base your reading *only* on the analysis provided. Do not invent any placements, planets, signs, or aspects that are not explicitly listed in the analysis.
 
@@ -489,7 +489,7 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
 (Under this heading, write an introduction. Use the Foundational Themes and the Karmic Path analysis to explain the central story and key drivers of this chart in a practical way.)
 
 **Your Personality Blueprint: The Planets**
-(Under this heading, provide a detailed, flowing narrative of the planets. Do not just list them. Weave the analyses from the Planetary Deep Dive together, showing how they influence personality traits and life patterns. For every astrological term (e.g., Sun, Leo, 9th House, Trine), you MUST provide a simple, one-sentence definition.)
+(Under this heading, provide a detailed, flowing narrative. **Do not simply list each planet's analysis.** Instead, create transitions between them and group them thematically. For example: start with the Luminaries (Sun and Moon) to explain the core identity. Then, discuss the Personal Planets (Mercury, Venus, Mars) to describe the personality's tools. Finally, cover the Generational Planets (Jupiter, Saturn, etc.) to discuss broader life themes. **MANDATORY FORMATTING:** For every astrological placement you discuss, you must first introduce the term and its role, then provide the interpretation. Follow this exact structure: 'Your **Sun**—which represents your core identity and ego—is in the sign of Leo... This is placed in your **9th House**, the area of your chart related to higher learning and philosophy...')
 
 **Major Life Dynamics: Aspects and Patterns**
 (Under this heading, explain the major tensions and harmonies in the chart using the Aspect & Pattern Synthesis. Explain how these dynamics play out in the user's life.)
