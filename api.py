@@ -447,7 +447,25 @@ You are The Weaver, an astrologer who sees the hidden connections in a chart. Yo
 """
         weaver_analysis = await _run_gemini_prompt(weaver_prompt)
 
-        # Step 6: The Storyteller
+        # Step 6: The Executive Summarizer
+        summarizer_prompt = f"""
+You are an Executive Summarizer. Your job is to distill the key findings from a detailed analysis into a concise, bulleted list. Do not add new interpretations. Extract only the most critical points for each planet and aspect pattern.
+
+**Full Analysis to Summarize:**
+---
+**PLANETARY DEEP DIVE (from The Specialist):**
+{combined_specialist_analysis}
+---
+**ASPECT & PATTERN SYNTHESIS (from The Weaver):**
+{weaver_analysis}
+---
+
+**Your Task:**
+Summarize the above text into a bulleted list of key findings.
+"""
+        summary_analysis = await _run_gemini_prompt(summarizer_prompt)
+
+        # Step 7: The Storyteller
         storyteller_prompt = f"""
 You are The Synthesizer, an insightful astrological consultant who excels at weaving complex data into a clear and compelling narrative. Your skill is in explaining complex astrological data in a practical and grounded way. You will write a comprehensive, in-depth reading based *exclusively* on the structured analysis provided below. Your tone should be insightful and helpful, like a skilled analyst, avoiding overly spiritual or "dreamy" language.
 
@@ -464,11 +482,8 @@ You are The Synthesizer, an insightful astrological consultant who excels at wea
 **KARMIC PATH (from The Navigator):**
 {navigator_analysis}
 ---
-**PLANETARY DEEP DIVE (from The Specialist):**
-{combined_specialist_analysis}
----
-**ASPECT & PATTERN SYNTHESIS (from The Weaver):**
-{weaver_analysis}
+**SUMMARIZED ANALYSIS (from The Executive Summarizer):**
+{summary_analysis}
 ---
 
 **Your Task:**
