@@ -54,7 +54,6 @@
         font-weight: 400;
     }
 }
-/* MODIFIED: Changed max-width to 100% to match the transit chart */
 #chart-wheel-container, #sidereal-wheel-container, #tropical-wheel-container, #transit-wheel-container {
     max-width: 100%;
     margin: 0 auto;
@@ -86,6 +85,11 @@ pre {
 }
 .results-container .result-section h2 {
     text-align: left;
+}
+
+/* NEW: Increased the max-width of the results section to allow charts to be larger */
+#results .inner {
+    max-width: 90em;
 }
 
 .report-columns {
