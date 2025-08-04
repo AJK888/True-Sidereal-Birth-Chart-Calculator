@@ -8,7 +8,7 @@
 #header.alt {
     background-color: transparent;
 }
-#description-wrapper, #results, #legal, #spiritual-context {
+#description-wrapper, #results, #legal, #spiritual-context, #transit-section {
     background-color: #24293e;
 }
 #form-section {
@@ -54,7 +54,13 @@
         font-weight: 400;
     }
 }
-#sidereal-wheel-container, #tropical-wheel-container, #transit-wheel-container {
+
+/* Sizing for chart containers */
+#chart-wheel-container {
+    max-width: 500px;
+    margin: 0 auto;
+}
+#transit-wheel-container {
     max-width: 100%;
     margin: 0 auto;
 }
