@@ -229,6 +229,7 @@ def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inp
         html += "<hr>"
 
     html += "<h2>AI Astrological Synthesis</h2>"
+    # FIXED: Correctly replace newline characters with HTML line breaks for proper paragraph spacing.
     html += f"<p>{gemini_reading.replace('/n', '<br><br>')}</p>"
     html += "<hr>"
 
@@ -371,13 +372,21 @@ You are The Navigator, an expert in karmic astrology. Your task is to interpret 
             s_planet = s_pos.get(planet_name, {})
             t_planet = t_pos.get(planet_name, {})
             
+            # Helper to format aspect details
+            def format_aspect_string(aspect, planet_positions):
+                p1_name = aspect['p1_name'].split(' in ')[0]
+                p2_name = aspect['p2_name'].split(' in ')[0]
+                p1_details = planet_positions.get(p1_name, {})
+                p2_details = planet_positions.get(p2_name, {})
+                return f"{aspect['p1_name']} in House {p1_details.get('house_num')} {aspect['type']} {aspect['p2_name']} in House {p2_details.get('house_num')} ({aspect['orb']} orb)"
+
             all_s_aspects = chart_data.get('sidereal_aspects', [])
             planet_s_aspects = sorted([a for a in all_s_aspects if planet_name in a['p1_name'] or planet_name in a['p2_name']], key=lambda x: float(x['orb'][:-1]))[:2]
-            s_aspects_text = [f"{a['p1_name']} {a['type']} {a['p2_name']}" for a in planet_s_aspects]
+            s_aspects_text = [format_aspect_string(a, s_pos) for a in planet_s_aspects]
 
             all_t_aspects = chart_data.get('tropical_aspects', [])
             planet_t_aspects = sorted([a for a in all_t_aspects if planet_name in a['p1_name'] or planet_name in a['p2_name']], key=lambda x: float(x['orb'][:-1]))[:2]
-            t_aspects_text = [f"{a['p1_name']} {a['type']} {a['p2_name']}" for a in planet_t_aspects]
+            t_aspects_text = [format_aspect_string(a, t_pos) for a in planet_t_aspects]
 
             specialist_data = [
                 f"- Sidereal Placement: {s_planet.get('position')} in House {s_planet.get('house_num')}, Degree {int(s_planet.get('degrees', 0))}",
@@ -387,7 +396,7 @@ You are The Navigator, an expert in karmic astrology. Your task is to interpret 
             ]
             
             specialist_prompt = f"""
-You are an expert astrologer trained in both Sidereal and Tropical systems. For each planet, you must write a full paragraph for its Sidereal interpretation and a separate paragraph for its Tropical interpretation. Then, write a third paragraph synthesizing these views and analyzing the two tightest aspects to that planet. Use precise astrological terminology and explain your reasoning—not just conclusions. Avoid blending the two systems. Your job is to reveal the deeper karmic purpose (Sidereal) and the personality expression (Tropical) as distinct layers of the chart.
+You are an expert astrologer trained in both Sidereal and Tropical systems. For the planet {planet_name}, you must write a full paragraph for its Sidereal interpretation, a separate paragraph for its Tropical interpretation, and a third paragraph synthesizing these views and analyzing its two tightest aspects. Use precise astrological terminology and explain your reasoning—not just conclusions. Your job is to reveal the deeper karmic purpose (Sidereal) and the personality expression (Tropical) as distinct layers of the chart.
 
 **Foundational Themes (from The Architect):**
 {architect_analysis}
@@ -402,13 +411,13 @@ You are an expert astrologer trained in both Sidereal and Tropical systems. For 
 Write three clearly separated, detailed paragraphs:
 
 **Sidereal Interpretation:**
-(In this paragraph, explain the soul’s core essence and karmic purpose related to this planet. Discuss: the sign and house with psychological depth; element and modality influence; any relevant rulership or dispositor logic; dignity/debility if applicable; and the full impact of its retrograde status, focusing on internalized energy and revisited themes.)
+(In this paragraph, explain the soul’s core essence and karmic purpose related to {planet_name}. Discuss: the sign and house with psychological depth; element and modality influence; any relevant rulership or dispositor logic; dignity/debility if applicable; and the full impact of its retrograde status, focusing on internalized energy and revisited themes.)
 
 **Tropical Interpretation:**
-(In this paragraph, explain how the soul’s identity is expressed through the personality and ego via this planet. Discuss: the sign and house; how it modifies or amplifies the Sidereal placement; and how it plays out behaviorally and in relationships.)
+(In this paragraph, explain how the soul’s identity is expressed through the personality and ego via {planet_name}. Discuss: the sign and house; how it modifies or amplifies the Sidereal placement; and how it plays out behaviorally and in relationships.)
 
 **Synthesis and Aspects:**
-(In this paragraph, first compare the Sidereal vs. Tropical expression: are they aligned, in tension, or complementary? Then, explain the two tightest aspects involving this planet. Include the aspect type, orb, and its specific influence on the planet’s expression.)
+(In this paragraph, first compare the Sidereal vs. Tropical expression: are they aligned, in tension, or complementary? Then, explain the two tightest aspects involving this planet. Include the aspect type, orb, and its specific influence on the planet’s expression, mentioning the signs and houses of both planets involved.)
 """
             return f"--- ANALYSIS FOR {planet_name.upper()} ---\n{await _run_gemini_prompt(specialist_prompt)}"
 
@@ -468,7 +477,7 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
 (Under this heading, write an introduction. Use the Foundational Themes, Karmic Path analysis, Numerology, and Chinese Zodiac to explain the central story and key drivers of this chart in a practical way.)
 
 **Your Personality Blueprint: The Planets**
-(Under this heading, present the detailed analysis for each planet. **For each planet from the Sun to Pluto, you must present the three paragraphs (Sidereal, Tropical, Synthesis/Aspects) exactly as they were generated by The Specialist.** Do not summarize or combine them. Ensure there is a clear separation between each planet's section. Group them thematically: start with the Luminaries (Sun and Moon), then the Personal Planets (Mercury, Venus, Mars), and conclude with the Generational Planets. Create smooth, one-sentence transitions between each planet's analysis.)
+(Under this heading, present the detailed analysis for each planet. **For each planet from the Sun to Pluto, you must present the three paragraphs (Sidereal, Tropical, Synthesis/Aspects) exactly as they were generated by The Specialist.** Do not summarize or combine them. Ensure there is a clear separation between each planet's section using a "--- PLANET NAME ---" header and line breaks. Group them thematically: start with the Luminaries (Sun and Moon), then the Personal Planets (Mercury, Venus, Mars), and conclude with the Generational Planets. Create smooth, one-sentence transitions between each planet's analysis.)
 
 **Major Life Dynamics: Aspects and Patterns**
 (Under this heading, explain the major tensions and harmonies in the chart using the Aspect & Pattern Synthesis. Explain how these dynamics play out in the user's life.)
