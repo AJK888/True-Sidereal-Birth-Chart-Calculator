@@ -362,7 +362,7 @@ You are The Navigator, an expert in karmic astrology. Your task is to interpret 
 **Your Task:**
 1.  **Interpret the South Node:** Describe the past-life comfort zones, karmic patterns, and innate gifts represented by the South Node's position in both zodiacs.
 2.  **Interpret the North Node:** Describe the soul's mission, growth potential, and the qualities it must develop in this lifetime, as shown by the North Node's position in both zodiacs.
-3.  **Synthesize:** In a concluding paragraph, explain how the Sidereal (soul path) and Tropical (personality expression) Nodal placements work together. In your synthesis, highlight how the nodal axis is supported or challenged by the chart's dominant element.
+3.  **Synthesize:** In a concluding paragraph, explain how the Sidereal (soul path) and Tropical (personality expression) Nodal placements work together. In your synthesis, highlight how the nodal axis is supported or challenged by the chart's dominant element and any aspect patterns involving the nodes.
 """
         navigator_analysis = await _run_gemini_prompt(navigator_prompt)
 
@@ -387,7 +387,7 @@ You are The Navigator, an expert in karmic astrology. Your task is to interpret 
             ]
             
             specialist_prompt = f"""
-You are The Specialist, an astrologer with deep knowledge of planetary archetypes. Your task is to provide a detailed, multi-paragraph analysis of {planet_name} based on the provided data.
+You are an expert astrologer trained in both Sidereal and Tropical systems. For each planet, you must write a full paragraph for its Sidereal interpretation and a separate paragraph for its Tropical interpretation. Then, write a third paragraph synthesizing these views and analyzing the two tightest aspects to that planet. Use precise astrological terminology and explain your reasoning—not just conclusions. Avoid blending the two systems. Your job is to reveal the deeper karmic purpose (Sidereal) and the personality expression (Tropical) as distinct layers of the chart.
 
 **Foundational Themes (from The Architect):**
 {architect_analysis}
@@ -399,10 +399,16 @@ You are The Specialist, an astrologer with deep knowledge of planetary archetype
 {'/n'.join(specialist_data)}
 
 **Your Task:**
-Write three distinct, detailed paragraphs:
-1.  **Sidereal Interpretation:** Write a full paragraph interpreting the meaning of the Sidereal {planet_name} in its sign and house. How does this relate to the soul's purpose? Thoroughly explain the impact of its retrograde status, if applicable.
-2.  **Tropical Interpretation:** Write a full paragraph interpreting the meaning of the Tropical {planet_name} in its sign and house. How does this express the soul's purpose in the personality?
-3.  **Synthesis and Aspects:** In a final paragraph, synthesize the Sidereal and Tropical interpretations. Explain how the Tropical placement helps or challenges the Sidereal placement. Then, integrate the meaning of its two tightest aspects, explaining how they modify the planet's expression.
+Write three clearly separated, detailed paragraphs:
+
+**Sidereal Interpretation:**
+(In this paragraph, explain the soul’s core essence and karmic purpose related to this planet. Discuss: the sign and house with psychological depth; element and modality influence; any relevant rulership or dispositor logic; dignity/debility if applicable; and the full impact of its retrograde status, focusing on internalized energy and revisited themes.)
+
+**Tropical Interpretation:**
+(In this paragraph, explain how the soul’s identity is expressed through the personality and ego via this planet. Discuss: the sign and house; how it modifies or amplifies the Sidereal placement; and how it plays out behaviorally and in relationships.)
+
+**Synthesis and Aspects:**
+(In this paragraph, first compare the Sidereal vs. Tropical expression: are they aligned, in tension, or complementary? Then, explain the two tightest aspects involving this planet. Include the aspect type, orb, and its specific influence on the planet’s expression.)
 """
             return f"--- ANALYSIS FOR {planet_name.upper()} ---\n{await _run_gemini_prompt(specialist_prompt)}"
 
@@ -416,7 +422,7 @@ Write three distinct, detailed paragraphs:
         s_tightest_aspects = chart_data.get('sidereal_aspects', [])[:3]
         
         weaver_prompt = f"""
-You are The Weaver, an astrologer who sees the hidden connections in a chart. Your task is to synthesize the individual planetary analyses by interpreting the major aspect patterns and tightest aspects.
+You are The Weaver, an astrologer who sees the hidden connections in a chart. Your task is to synthesize the individual planetary analyses by interpreting the major aspect patterns and the three tightest aspects in the chart overall.
 
 **Planetary Analyses (from The Specialist):**
 {combined_specialist_analysis}
@@ -426,7 +432,7 @@ You are The Weaver, an astrologer who sees the hidden connections in a chart. Yo
 - Tightest Aspects: {[f"{a['p1_name']} {a['type']} {a['p2_name']}" for a in s_tightest_aspects]}
 
 **Your Task:**
-1.  **Analyze Tightest Aspects:** For each of the three tightest aspects provided, write a dedicated, detailed paragraph. Explain the dynamic it creates between the two planets involved, referencing their signs and houses. Describe how this energy is likely to manifest in the person's life as a core challenge or strength.
+1.  **Analyze Tightest Aspects:** For each of the three tightest aspects provided, write a dedicated, detailed paragraph. Explain the dynamic it creates between the two planets involved, referencing their signs and houses from the planetary analyses. Describe how this energy is likely to manifest as a core life theme, representing a central challenge or strength for the individual.
 2.  **Analyze Chart Patterns:** For each listed chart pattern (e.g., T-Square, Stellium), write a paragraph explaining its dynamic. How does it integrate the energies of the involved planets? Refer back to the provided planetary analyses to enrich your interpretation.
 """
         weaver_analysis = await _run_gemini_prompt(weaver_prompt)
@@ -462,7 +468,7 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
 (Under this heading, write an introduction. Use the Foundational Themes, Karmic Path analysis, Numerology, and Chinese Zodiac to explain the central story and key drivers of this chart in a practical way.)
 
 **Your Personality Blueprint: The Planets**
-(Under this heading, write a detailed, multi-paragraph analysis of the planets. **Dedicate a separate, substantial paragraph to each planet from the Sun to Pluto.** Do not just list the placements; expand on the analysis provided for each one, creating a rich, flowing narrative. Start with the Luminaries (Sun and Moon), then move to the Personal Planets (Mercury, Venus, Mars), and conclude with the Generational Planets. Create smooth transitions between each paragraph. **MANDATORY FORMATTING:** For every astrological placement you discuss, you must first introduce the term and its role, then provide the interpretation. Follow this exact structure: 'Your **Sun**—which represents your core identity and ego—is in the sign of Leo... This is placed in your **9th House**, the area of your chart related to higher learning and philosophy...')
+(Under this heading, present the detailed analysis for each planet. **For each planet from the Sun to Pluto, you must present the three paragraphs (Sidereal, Tropical, Synthesis/Aspects) exactly as they were generated by The Specialist.** Do not summarize or combine them. Ensure there is a clear separation between each planet's section. Group them thematically: start with the Luminaries (Sun and Moon), then the Personal Planets (Mercury, Venus, Mars), and conclude with the Generational Planets. Create smooth, one-sentence transitions between each planet's analysis.)
 
 **Major Life Dynamics: Aspects and Patterns**
 (Under this heading, explain the major tensions and harmonies in the chart using the Aspect & Pattern Synthesis. Explain how these dynamics play out in the user's life.)
