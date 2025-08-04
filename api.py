@@ -5,7 +5,8 @@ from typing import Optional, Dict, Any, List
 from natal_chart import (
     NatalChart,
     calculate_numerology, get_chinese_zodiac_and_element,
-    calculate_name_numerology
+    calculate_name_numerology,
+    TRUE_SIDEREAL_SIGNS
 )
 import swisseph as swe
 import traceback
@@ -383,7 +384,8 @@ You are The Architect, a master astrologer who identifies the foundational bluep
             f"- Sidereal South Node: {s_south_node.get('position')} in House {s_south_node.get('house_num')}",
             f"- Sidereal North Node: {s_north_node.get('position')} in House {s_north_node.get('house_num')}",
             f"- Tropical South Node: {t_south_node.get('position')} in House {t_south_node.get('house_num')}",
-            f"- Tropical North Node: {t_north_node.get('position')} in House {t_north_node.get('house_num')}"
+            f"- Tropical North Node: {t_north_node.get('position')} in House {t_north_node.get('house_num')}",
+            f"- Dominant Element: {s_analysis.get('dominant_element')}"
         ]
         navigator_prompt = f"""
 You are The Navigator, an expert in karmic astrology. Your task is to interpret the soul's journey from its past to its future potential, based on the Nodal Axis. Use the provided foundational themes to guide your interpretation.
@@ -397,7 +399,7 @@ You are The Navigator, an expert in karmic astrology. Your task is to interpret 
 **Your Task:**
 1.  **Interpret the South Node:** Describe the past-life comfort zones, karmic patterns, and innate gifts represented by the South Node's position in both zodiacs.
 2.  **Interpret the North Node:** Describe the soul's mission, growth potential, and the qualities it must develop in this lifetime, as shown by the North Node's position in both zodiacs.
-3.  **Synthesize:** In a concluding paragraph, explain how the Sidereal (soul path) and Tropical (personality expression) Nodal placements work together to define the user's ultimate purpose.
+3.  **Synthesize:** In a concluding paragraph, explain how the Sidereal (soul path) and Tropical (personality expression) Nodal placements work together. In your synthesis, highlight how the nodal axis is supported or challenged by the chart's dominant element.
 """
         navigator_analysis = await _run_gemini_prompt(navigator_prompt)
 
@@ -405,14 +407,20 @@ You are The Navigator, an expert in karmic astrology. Your task is to interpret 
         async def run_specialist_for_planet(planet_name):
             s_planet = s_pos.get(planet_name, {})
             t_planet = t_pos.get(planet_name, {})
-            s_aspects = [f"{a['p1_name']} {a['type']} {a['p2_name']}" for a in chart_data.get('sidereal_aspects', []) if planet_name in a['p1_name'] or planet_name in a['p2_name']]
-            t_aspects = [f"{a['p1_name']} {a['type']} {a['p2_name']}" for a in chart_data.get('tropical_aspects', []) if planet_name in a['p1_name'] or planet_name in a['p2_name']]
             
+            all_s_aspects = chart_data.get('sidereal_aspects', [])
+            planet_s_aspects = sorted([a for a in all_s_aspects if planet_name in a['p1_name'] or planet_name in a['p2_name']], key=lambda x: float(x['orb'][:-1]))[:2]
+            s_aspects_text = [f"{a['p1_name']} {a['type']} {a['p2_name']}" for a in planet_s_aspects]
+
+            all_t_aspects = chart_data.get('tropical_aspects', [])
+            planet_t_aspects = sorted([a for a in all_t_aspects if planet_name in a['p1_name'] or planet_name in a['p2_name']], key=lambda x: float(x['orb'][:-1]))[:2]
+            t_aspects_text = [f"{a['p1_name']} {a['type']} {a['p2_name']}" for a in planet_t_aspects]
+
             specialist_data = [
                 f"- Sidereal Placement: {s_planet.get('position')} in House {s_planet.get('house_num')}, Degree {int(s_planet.get('degrees', 0))}",
                 f"- Tropical Placement: {t_planet.get('position')} in House {t_planet.get('house_num')}, Degree {int(t_planet.get('degrees', 0))}",
-                f"- Sidereal Aspects: {', '.join(s_aspects)}",
-                f"- Tropical Aspects: {', '.join(t_aspects)}"
+                f"- Sidereal Aspects: {', '.join(s_aspects_text)}",
+                f"- Tropical Aspects: {', '.join(t_aspects_text)}"
             ]
             
             specialist_prompt = f"""
@@ -421,14 +429,17 @@ You are The Specialist, an astrologer with deep knowledge of planetary archetype
 **Foundational Themes (from The Architect):**
 {architect_analysis}
 
+**Sidereal Sign Boundaries (Degrees):**
+{TRUE_SIDEREAL_SIGNS}
+
 **{planet_name} Data:**
 {'/n'.join(specialist_data)}
 
 **Your Task:**
-1.  **Analyze the Sidereal Placement:** Based on the core themes, interpret the meaning of the Sidereal {planet_name} in its sign and house. How does this relate to the soul's purpose?
+1.  **Analyze the Sidereal Placement:** Based on the core themes, interpret the meaning of the Sidereal {planet_name} in its sign and house. How does this relate to the soul's purpose? Consider if the planet is retrograde.
 2.  **Analyze the Tropical Placement:** Now, interpret the meaning of the Tropical {planet_name} in its sign and house. How does this express the soul's purpose in the personality?
-3.  **Analyze the Degree:** The {planet_name} is at {int(s_planet.get('degrees', 0))} degrees. Briefly describe the symbolic meaning of this degree and how it adds nuance to the interpretation.
-4.  **Analyze the Aspects:** Choose the two most significant aspects to {planet_name} and explain how they influence its expression.
+3.  **Analyze the Degree:** The Sidereal {planet_name} is at {int(s_planet.get('degrees', 0))} degrees. Using the provided Sidereal Sign Boundaries, briefly describe the symbolic meaning of this degree and how it adds nuance to the interpretation.
+4.  **Analyze the Aspects:** Explain how the two tightest aspects influence the planet's expression.
 5.  **Synthesize:** In a concluding paragraph, create a unified interpretation of this planet's role in the person's life, showing how the soul's purpose (Sidereal) is expressed through the personality (Tropical). Explain how the Tropical placement either helps or creates challenges for the Sidereal placement.
 """
             return f"--- ANALYSIS FOR {planet_name.upper()} ---\n{await _run_gemini_prompt(specialist_prompt)}"
