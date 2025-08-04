@@ -262,6 +262,7 @@ async def _run_gemini_prompt(prompt_text: str) -> str:
     """A helper function to run a single Gemini prompt and return the text."""
     try:
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
+        # FIXED: Added generation_config to prevent the output from being cut off.
         generation_config = genai.types.GenerationConfig(max_output_tokens=8192)
         response = await model.generate_content_async(prompt_text, generation_config=generation_config)
         return response.text.strip()
