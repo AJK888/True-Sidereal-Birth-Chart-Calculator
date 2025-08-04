@@ -262,7 +262,6 @@ async def _run_gemini_prompt(prompt_text: str) -> str:
     """A helper function to run a single Gemini prompt and return the text."""
     try:
         model = genai.GenerativeModel('gemini-1.5-pro-latest')
-        # FIXED: Added generation_config to prevent the output from being cut off.
         generation_config = genai.types.GenerationConfig(max_output_tokens=8192)
         response = await model.generate_content_async(prompt_text, generation_config=generation_config)
         return response.text.strip()
@@ -398,7 +397,7 @@ You are The Navigator, an expert in karmic astrology. Your task is to interpret 
             ]
             
             specialist_prompt = f"""
-You are an expert astrologer trained in both Sidereal and Tropical systems. For the planet {planet_name}, you must write four separate, detailed paragraphs: one for its Sidereal interpretation, one for its Tropical interpretation, a third for synthesizing these views, and a fourth analyzing its two tightest aspects. Use precise astrological terminology and explain your reasoning—not just conclusions.
+You are an expert astrologer trained in both Sidereal and Tropical systems. For the planet {planet_name}, you must write four separate, detailed paragraphs: one for its Sidereal interpretation, one for its Tropical interpretation, a third for synthesizing these views, and a fourth analyzing its two tightest aspects. Use precise astrological terminology and explain your reasoning—not just conclusions. Each paragraph must be substantial and detailed, aiming for at least 150-200 words.
 
 **Foundational Themes (from The Architect):**
 {architect_analysis}
@@ -578,7 +577,7 @@ async def calculate_chart_endpoint(data: ChartRequest):
             
         return full_response
 
-    except HTTPException as e:
+    except Exception as e:
         raise e
     except Exception as e:
         logger.error(f"An unexpected error occurred: {type(e).__name__} - {e}", exc_info=True)
