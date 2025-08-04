@@ -56,11 +56,10 @@
 }
 
 /* Sizing for chart containers */
-#chart-wheel-container, #transit-wheel-container, #sidereal-wheel-container, #tropical-wheel-container {
+#sidereal-wheel-container, #tropical-wheel-container, #transit-wheel-container {
     max-width: 100%;
     margin: 0 auto;
 }
-
 
 /* 3. Thematic Font and Color Consistency */
 pre {
@@ -90,7 +89,8 @@ pre {
     text-align: left;
 }
 
-#results .inner {
+/* MODIFIED: Increased the max-width of the results and transit sections to allow charts to be larger */
+#results .inner, #transit-section .inner {
     max-width: 90em;
 }
 
