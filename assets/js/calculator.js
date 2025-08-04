@@ -47,6 +47,18 @@ const AstrologyCalculator = {
 
 	async handleFormSubmit(e) {
 		e.preventDefault();
+
+		const termsCheckbox = document.getElementById('terms');
+		const termsError = document.getElementById('termsError');
+
+		// First, check if the terms box is checked.
+		if (!termsCheckbox.checked) {
+			termsError.style.display = 'block';
+			return; // Stop the function if it's not checked.
+		} else {
+			termsError.style.display = 'none';
+		}
+
 		this.setLoadingState(true);
 
 		try {
@@ -127,7 +139,6 @@ const AstrologyCalculator = {
 			let chartImageBase64 = null;
 			if (this.siderealWheelSvg.innerHTML.trim() !== '' && !chartData.unknown_time) {
 				const svgString = new XMLSerializer().serializeToString(this.siderealWheelSvg);
-				// FIXED: Correctly encode the SVG string to handle special characters
 				chartImageBase64 = btoa(unescape(encodeURIComponent(svgString)));
 			}
 
@@ -409,7 +420,6 @@ const AstrologyCalculator = {
 		
 		const positions = data[`${chartType}_major_positions`];
 		const aspects = data[`${chartType}_aspects`];
-		// FIXED: Use the correct house cusps for each chart type
 		const houseCusps = data[`${chartType}_house_cusps`];
 
 		const ascendant = positions.find(p => p.name === 'Ascendant');
