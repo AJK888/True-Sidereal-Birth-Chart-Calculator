@@ -229,7 +229,6 @@ def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inp
         html += "<hr>"
 
     html += "<h2>AI Astrological Synthesis</h2>"
-    # FIXED: Correctly replace newline characters with HTML line breaks for proper paragraph spacing.
     html += f"<p>{gemini_reading.replace('/n', '<br><br>')}</p>"
     html += "<hr>"
 
