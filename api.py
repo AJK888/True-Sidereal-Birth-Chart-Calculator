@@ -312,7 +312,9 @@ You are The Cartographer, an astrological data analyst. Your task is to compare 
             f"- Chart Ruler: {s_analysis.get('chart_ruler')}",
             f"- Dominant Planet (Sidereal): {s_analysis.get('dominant_planet')}",
             f"- Dominant Planet (Tropical): {t_analysis.get('dominant_planet')}",
-            f"- Life Path Number: {numerology.get('life_path_number')}"
+            f"- Life Path Number: {numerology.get('life_path_number')}",
+            f"- Day Number: {numerology.get('day_number')}",
+            f"- Chinese Zodiac: {chart_data.get('chinese_zodiac')}"
         ]
         architect_prompt = f"""
 You are The Architect, a master astrologer who identifies the foundational blueprint of a soul. Your task is to analyze the provided chart data and the alignment map to determine the 3-5 central themes of this person's life.
@@ -330,7 +332,7 @@ You are The Architect, a master astrologer who identifies the foundational bluep
 **Your Task:**
 1. Review all provided data.
 2. Identify the 3-5 most powerful and interconnected themes that define the core of this chart.
-3. For each theme, list the specific Sidereal and Tropical data points that serve as evidence.
+3. For each theme, list the specific Sidereal, Tropical, and Numerological/Zodiacal data points that serve as evidence.
 4. Output this as a structured list. Do not write a narrative.
 """
         architect_analysis = await _run_gemini_prompt(architect_prompt)
@@ -385,7 +387,7 @@ You are The Navigator, an expert in karmic astrology. Your task is to interpret 
             ]
             
             specialist_prompt = f"""
-You are The Specialist, an astrologer with deep knowledge of planetary archetypes. Your task is to provide a detailed analysis of {planet_name} based on the provided data and the chart's foundational themes.
+You are The Specialist, an astrologer with deep knowledge of planetary archetypes. Your task is to provide a detailed, multi-paragraph analysis of {planet_name} based on the provided data.
 
 **Foundational Themes (from The Architect):**
 {architect_analysis}
@@ -397,11 +399,10 @@ You are The Specialist, an astrologer with deep knowledge of planetary archetype
 {'/n'.join(specialist_data)}
 
 **Your Task:**
-1.  **Analyze the Sidereal Placement:** Based on the core themes, interpret the meaning of the Sidereal {planet_name} in its sign and house. How does this relate to the soul's purpose? Consider if the planet is retrograde.
-2.  **Analyze the Tropical Placement:** Now, interpret the meaning of the Tropical {planet_name} in its sign and house. How does this express the soul's purpose in the personality?
-3.  **Analyze the Degree:** The Sidereal {planet_name} is at {int(s_planet.get('degrees', 0))} degrees. Using the provided Sidereal Sign Boundaries, briefly describe the symbolic meaning of this degree and how it adds nuance to the interpretation.
-4.  **Analyze the Aspects:** Explain how the two tightest aspects influence the planet's expression.
-5.  **Synthesize:** In a concluding paragraph, create a unified interpretation of this planet's role in the person's life, showing how the soul's purpose (Sidereal) is expressed through the personality (Tropical). Explain how the Tropical placement either helps or creates challenges for the Sidereal placement.
+Write three distinct, detailed paragraphs:
+1.  **Sidereal Interpretation:** Write a full paragraph interpreting the meaning of the Sidereal {planet_name} in its sign and house. How does this relate to the soul's purpose? Thoroughly explain the impact of its retrograde status, if applicable.
+2.  **Tropical Interpretation:** Write a full paragraph interpreting the meaning of the Tropical {planet_name} in its sign and house. How does this express the soul's purpose in the personality?
+3.  **Synthesis and Aspects:** In a final paragraph, synthesize the Sidereal and Tropical interpretations. Explain how the Tropical placement helps or challenges the Sidereal placement. Then, integrate the meaning of its two tightest aspects, explaining how they modify the planet's expression.
 """
             return f"--- ANALYSIS FOR {planet_name.upper()} ---\n{await _run_gemini_prompt(specialist_prompt)}"
 
@@ -412,21 +413,21 @@ You are The Specialist, an astrologer with deep knowledge of planetary archetype
 
         # Step 5: The Weaver
         weaver_data = [p.get('description', '') for p in chart_data.get('sidereal_aspect_patterns', [])]
-        s_tightest_aspects = [f"{a['p1_name']} {a['type']} {a['p2_name']}" for a in chart_data.get('sidereal_aspects', [])[:3]]
+        s_tightest_aspects = chart_data.get('sidereal_aspects', [])[:3]
         
         weaver_prompt = f"""
-You are The Weaver, an astrologer who sees the hidden connections in a chart. Your task is to synthesize the individual planetary analyses by interpreting the major aspect patterns.
+You are The Weaver, an astrologer who sees the hidden connections in a chart. Your task is to synthesize the individual planetary analyses by interpreting the major aspect patterns and tightest aspects.
 
 **Planetary Analyses (from The Specialist):**
 {combined_specialist_analysis}
 
 **Chart Pattern Data:**
 - Patterns: {', '.join(weaver_data)}
-- Tightest Aspects: {', '.join(s_tightest_aspects)}
+- Tightest Aspects: {[f"{a['p1_name']} {a['type']} {a['p2_name']}" for a in s_tightest_aspects]}
 
 **Your Task:**
-1.  **Analyze Major Aspects:** Review the planetary analyses. How do the three tightest aspects in the chart create a central dynamic of tension or harmony? Explain how these aspects are core to the user's life story, referencing the planets involved.
-2.  **Analyze Chart Patterns:** For each listed chart pattern (T-Square, Stellium, etc.), explain its dynamic. How does it integrate the energies of the involved planets? Refer back to the provided planetary analyses to enrich your interpretation.
+1.  **Analyze Tightest Aspects:** For each of the three tightest aspects provided, write a dedicated, detailed paragraph. Explain the dynamic it creates between the two planets involved, referencing their signs and houses. Describe how this energy is likely to manifest in the person's life as a core challenge or strength.
+2.  **Analyze Chart Patterns:** For each listed chart pattern (e.g., T-Square, Stellium), write a paragraph explaining its dynamic. How does it integrate the energies of the involved planets? Refer back to the provided planetary analyses to enrich your interpretation.
 """
         weaver_analysis = await _run_gemini_prompt(weaver_prompt)
 
@@ -458,7 +459,7 @@ You are The Synthesizer, an insightful astrological consultant who excels at wea
 Write a comprehensive analysis. Structure your response exactly as follows, using plain text headings without markdown.
 
 **Chart Overview and Core Themes**
-(Under this heading, write an introduction. Use the Foundational Themes and the Karmic Path analysis to explain the central story and key drivers of this chart in a practical way.)
+(Under this heading, write an introduction. Use the Foundational Themes, Karmic Path analysis, Numerology, and Chinese Zodiac to explain the central story and key drivers of this chart in a practical way.)
 
 **Your Personality Blueprint: The Planets**
 (Under this heading, write a detailed, multi-paragraph analysis of the planets. **Dedicate a separate, substantial paragraph to each planet from the Sun to Pluto.** Do not just list the placements; expand on the analysis provided for each one, creating a rich, flowing narrative. Start with the Luminaries (Sun and Moon), then move to the Personal Planets (Mercury, Venus, Mars), and conclude with the Generational Planets. Create smooth transitions between each paragraph. **MANDATORY FORMATTING:** For every astrological placement you discuss, you must first introduce the term and its role, then provide the interpretation. Follow this exact structure: 'Your **Sun**—which represents your core identity and ego—is in the sign of Leo... This is placed in your **9th House**, the area of your chart related to higher learning and philosophy...')
