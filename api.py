@@ -229,7 +229,6 @@ def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inp
         html += "<hr>"
 
     html += "<h2>AI Astrological Synthesis</h2>"
-    # FIXED: Corrected the newline character from /n to \n
     html += f"<p>{gemini_reading.replace('/n', '<br><br>')}</p>"
     html += "<hr>"
 
@@ -275,8 +274,44 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         return "Gemini API key not configured. AI reading is unavailable."
 
     if unknown_time:
-        # This logic remains the same
-        return await _run_gemini_prompt("...") # Simplified for brevity
+        s_analysis = chart_data.get("sidereal_chart_analysis", {})
+        numerology_analysis = chart_data.get("numerology_analysis", {})
+        s_positions = chart_data.get("sidereal_major_positions", [])
+        s_aspects = chart_data.get("sidereal_aspects", [])
+        s_retrogrades = chart_data.get("sidereal_retrogrades", [])
+        sun = next((p for p in s_positions if p['name'] == 'Sun'), None)
+        moon = next((p for p in s_positions if p['name'] == 'Moon'), None)
+        
+        prompt_parts = [
+            "You are a wise astrologer providing a reading for a chart where the exact birth time is unknown. "
+            "This is called a 'Noon Chart'.\n"
+            "**Your most important rule is to completely avoid mentioning the Ascendant, Midheaven (MC), Chart Ruler, or any House placements, as they are unknown and cannot be used.** "
+            "You must focus exclusively on the placement of planets in their signs, the aspects between them, and the numerology.",
+            "\n**Anonymized Chart Data (Noon Calculation - Time-Sensitive Data Excluded):**"
+        ]
+        if sun: prompt_parts.append(f"- Sun: {sun['position']} ({sun['percentage']}%)")
+        if moon: prompt_parts.append(f"- Moon: {moon['position']} ({moon['percentage']}%)")
+        if s_analysis.get('dominant_element'): prompt_parts.append(f"- Dominant Element: {s_analysis.get('dominant_element')}")
+        if numerology_analysis.get('life_path_number'): prompt_parts.append(f"- Life Path Number: {numerology_analysis.get('life_path_number')}")
+        if numerology_analysis.get('day_number'): prompt_parts.append(f"- Day Number: {numerology_analysis.get('day_number')}")
+        if numerology_analysis.get('name_numerology', {}).get('expression_number'): prompt_parts.append(f"- Expression Number: {numerology_analysis.get('name_numerology', {}).get('expression_number')}")
+        if s_retrogrades:
+            retro_list = ", ".join([p['name'] for p in s_retrogrades])
+            prompt_parts.append(f"- Retrograde Planets: {retro_list}")
+        if s_aspects and len(s_aspects) >= 3:
+            prompt_parts.append(f"- Three Tightest Aspects: {s_aspects[0]['p1_name']} {s_aspects[0]['type']} {s_aspects[0]['p2_name']}, {s_aspects[1]['p1_name']} {s_aspects[1]['type']} {s_aspects[1]['p2_name']}, {s_aspects[2]['p1_name']} {s_aspects[2]['type']} {s_aspects[2]['p2_name']}")
+
+        prompt_parts.append("\n**Your Task:**")
+        prompt_parts.append("""
+First, perform a silent internal analysis to identify the most powerful themes from the limited data. Then, structure your final response **exactly as follows, using plain text without any markdown like '#' or '**'.**
+
+Key Themes in Your Chart
+(Under this plain text heading, list the 2-3 most important themes you identified.)
+
+The Story of Your Inner World
+(Under this plain text heading, write a multi-paragraph narrative weaving together the Sun, Moon, numerology, and the three tightest aspects to explain the core themes. Do not use sub-labels like 'Introduction' or 'Body'.)
+""")
+        return await _run_gemini_prompt("\n".join(prompt_parts))
 
     try:
         # Step 1: The Cartographer
@@ -398,7 +433,7 @@ You are The Navigator, an expert in karmic astrology. Your task is to interpret 
             ]
             
             specialist_prompt = f"""
-You are an expert astrologer trained in both Sidereal and Tropical systems. For the planet {planet_name}, you must write four separate, detailed paragraphs: one for its Sidereal interpretation, one for its Tropical interpretation, a third for synthesizing these views, and a fourth analyzing its two tightest aspects. Use precise astrological terminology and explain your reasoning—not just conclusions. Each paragraph must be substantial and detailed, aiming for at least 150-200 words.
+You are an expert astrologer trained in both Sidereal and Tropical systems. For the planet {planet_name}, you must write four separate, detailed paragraphs: one for its Sidereal interpretation, one for its Tropical interpretation, a third for synthesizing these views, and a fourth analyzing its two tightest aspects. Use precise astrological terminology and explain your reasoning—not just conclusions.
 
 **Foundational Themes (from The Architect):**
 {architect_analysis}
