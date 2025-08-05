@@ -136,7 +136,7 @@ const AstrologyCalculator = {
 			};
 
 			let chartImageBase64 = null;
-			if (this.siderealWheelSvg.innerHTML.trim() !== '' && !chartData.unknown_time) {
+			if (this.siderealWheelSvg && this.siderealWheelSvg.innerHTML.trim() !== '' && !chartData.unknown_time) {
 				const svgString = new XMLSerializer().serializeToString(this.siderealWheelSvg);
 				chartImageBase64 = btoa(unescape(encodeURIComponent(svgString)));
 			}
@@ -216,8 +216,14 @@ const AstrologyCalculator = {
 		this.geminiTitle.parentElement.style.display = 'block';
 		this.resultsTitle.parentElement.style.display = 'block';
 
+		const chartWheelsWrapper = document.querySelector('.chart-wheels-wrapper');
+		const chartPlaceholder = document.getElementById('chart-placeholder');
+
 		if (!chartData.unknown_time) {
 			this.wheelTitle.parentElement.style.display = 'block';
+			chartWheelsWrapper.style.display = 'grid';
+			chartPlaceholder.style.display = 'none';
+
 			this.drawChartWheel(chartData, 'sidereal-wheel-svg', 'sidereal');
 			this.drawChartWheel(chartData, 'tropical-wheel-svg', 'tropical');
 			
@@ -229,14 +235,15 @@ const AstrologyCalculator = {
 			}
 			container.insertAdjacentHTML('afterend', legendHtml);
 		} else {
-			this.wheelTitle.parentElement.style.display = 'none';
+			this.wheelTitle.parentElement.style.display = 'block'; // Keep the title visible
+			chartWheelsWrapper.style.display = 'none';
+			chartPlaceholder.style.display = 'block';
 		}
 
 		this.resultsContainer.style.display = 'block';
 		
 		setTimeout(() => {
-			this.resultsContainer.getBoundingClientRect(); 
-			window.dispatchEvent(new Event('resize'));
+			this.resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}, 100);
 	},
 
@@ -619,4 +626,3 @@ document.addEventListener('DOMContentLoaded', () => {
 		}, 100);
 	});
 });
-
