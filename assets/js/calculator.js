@@ -5,6 +5,7 @@ const AstrologyCalculator = {
 	},
 	SVG_NS: "http://www.w3.org/2000/svg",
 	ZODIAC_GLYPHS: {'Aries':'♈︎','Taurus':'♉︎','Gemini':'♊︎','Cancer':'♋︎','Leo':'♌︎','Virgo':'♍︎','Libra':'♎︎','Scorpio':'♏︎','Ophiuchus':'⛎︎','Sagittarius':'♐︎','Capricorn':'♑︎','Aquarius':'♒︎','Pisces':'♓︎'},
+	TROPICAL_ZODIAC_ORDER: ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'],
 	PLANET_GLYPHS: {'Sun':'☉','Moon':'☽','Mercury':'☿','Venus':'♀','Mars':'♂','Jupiter':'♃','Saturn':'♄','Uranus':'♅','Neptune':'♆','Pluto':'♇','Chiron':'⚷','True Node':'☊','South Node':'☋','Ascendant':'AC','Midheaven (MC)':'MC','Descendant':'DC','Imum Coeli (IC)':'IC'},
 
 	form: null, submitBtn: null, noFullNameCheckbox: null, outputEl: null, geminiTitle: null, geminiOutput: null,
@@ -132,7 +133,7 @@ const AstrologyCalculator = {
 			};
 
 			let chartImageBase64 = null;
-			if (this.wheelSvg.innerHTML.trim() !== '' && !chartData.unknown_time) {
+			if (this.wheelSvg && this.wheelSvg.innerHTML.trim() !== '' && !chartData.unknown_time) {
 				const svgString = new XMLSerializer().serializeToString(this.wheelSvg);
 				chartImageBase64 = btoa(unescape(encodeURIComponent(svgString)));
 			}
@@ -214,7 +215,7 @@ const AstrologyCalculator = {
 
 		if (!chartData.unknown_time) {
 			this.wheelTitle.parentElement.style.display = 'block';
-			this.drawChartWheel(chartData, 'chart-wheel-svg', 'sidereal');
+			this.drawChartWheel(chartData, 'chart-wheel-svg', 'sidereal'); // Only one chart for user results now
 			
 			const legendHtml = this.getLegendHtml();
 			const container = document.getElementById('chart-wheel-container');
