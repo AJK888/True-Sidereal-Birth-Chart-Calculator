@@ -216,7 +216,7 @@ const AstrologyCalculator = {
 		this.geminiTitle.parentElement.style.display = 'block';
 		this.resultsTitle.parentElement.style.display = 'block';
 
-		const chartWheelsWrapper = document.querySelector('.chart-wheels-wrapper');
+		const chartWheelsWrapper = document.querySelector('#results .chart-wheels-wrapper');
 		const chartPlaceholder = document.getElementById('chart-placeholder');
 
 		if (!chartData.unknown_time) {
@@ -228,14 +228,13 @@ const AstrologyCalculator = {
 			this.drawChartWheel(chartData, 'tropical-wheel-svg', 'tropical');
 			
 			const legendHtml = this.getLegendHtml();
-			const container = document.querySelector('#results .chart-wheels-wrapper');
-			const oldLegend = container.nextElementSibling;
+			const oldLegend = chartWheelsWrapper.nextElementSibling;
 			if (oldLegend && oldLegend.classList.contains('glyph-legend-details')) {
 				oldLegend.remove();
 			}
-			container.insertAdjacentHTML('afterend', legendHtml);
+			chartWheelsWrapper.insertAdjacentHTML('afterend', legendHtml);
 		} else {
-			this.wheelTitle.parentElement.style.display = 'block'; // Keep the title visible
+			this.wheelTitle.parentElement.style.display = 'block';
 			chartWheelsWrapper.style.display = 'none';
 			chartPlaceholder.style.display = 'block';
 		}
