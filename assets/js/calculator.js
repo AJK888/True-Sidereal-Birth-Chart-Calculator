@@ -210,7 +210,8 @@ const AstrologyCalculator = {
 	},
 
 	displayInitialResults(chartData) {
-		this.geminiOutput.innerText = "Generating AI Synthesis...";
+		// UPDATED: Changed the loading text to manage user expectations.
+		this.geminiOutput.innerText = "Generating AI Synthesis... This deep analysis can take up to 4 minutes as the AI synthesizes your Sidereal & Tropical charts, numerology, and Chinese Zodiac sign. Please do not leave this page while it loads.";
 		this.renderTextResults(chartData);
 
 		this.geminiTitle.parentElement.style.display = 'block';
