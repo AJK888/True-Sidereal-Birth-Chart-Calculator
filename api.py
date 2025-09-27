@@ -261,7 +261,7 @@ def send_chart_email(html_content: str, recipient_email: str, subject: str):
 async def _run_gemini_prompt(prompt_text: str) -> str:
     """A helper function to run a single Gemini prompt and return the text."""
     try:
-        model = genai.GenerativeModel('gemini-2.5-pro-latest')
+        model = genai.GenerativeModel('gemini-2.5-pro')
         generation_config = genai.types.GenerationConfig(max_output_tokens=8192)
         response = await model.generate_content_async(prompt_text, generation_config=generation_config)
         return response.text.strip()
@@ -642,4 +642,5 @@ async def generate_reading_endpoint(request: ReadingRequest):
     except Exception as e:
         logger.error(f"Error in /generate_reading endpoint: {type(e).__name__} - {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="An error occurred while generating the AI reading.")
+
 
