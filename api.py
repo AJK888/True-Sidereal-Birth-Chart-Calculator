@@ -270,10 +270,7 @@ def send_chart_email(html_content: str, recipient_email: str, subject: str):
 async def _run_gemini_prompt(prompt_text: str) -> str:
     """A helper function to run a single Gemini prompt and return the text."""
     try:
-        # === MODEL & CONFIG CHANGE ===
-        # Switched to Flash for speed and cost-efficiency. It still has a large context window.
-        # Removed the max_output_tokens limit to allow the model to generate a full response
-        # without being prematurely cut off. The API will use the model's default maximum.
+        # Using gemini-2.5-pro as requested and ensuring no output token limit is set.
         model = genai.GenerativeModel('gemini-2.5-pro')
         response = await model.generate_content_async(prompt_text)
         return response.text.strip()
@@ -329,7 +326,7 @@ The Story of Your Inner World
         return await _run_gemini_prompt("\n".join(prompt_parts))
 
     try:
-        # Step 1: The Cartographer (No changes needed)
+        # Step 1: The Cartographer
         cartographer_data = []
         s_pos = {p['name']: p for p in chart_data.get('sidereal_major_positions', [])}
         t_pos = {p['name']: p for p in chart_data.get('tropical_major_positions', [])}
@@ -350,7 +347,7 @@ You are The Cartographer, an astrological data analyst. Your task is to compare 
 """
         cartographer_analysis = await _run_gemini_prompt(cartographer_prompt)
 
-        # Step 2: The Architect (No changes needed)
+        # Step 2: The Architect
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         t_analysis = chart_data.get("tropical_chart_analysis", {})
         numerology = chart_data.get("numerology_analysis", {})
@@ -375,7 +372,7 @@ You are The Architect, a master astrologer who identifies the foundational bluep
 - The **Sidereal** placements represent the soul's deeper karmic blueprint, innate spiritual gifts, and ultimate life purpose.
 - The **Tropical** placements represent the personality's expression, psychological patterns, and how the soul's purpose manifests in this lifetime.
 
-**Alignment Analysis (from The Cartographer):**
+**Alignment Analysis:**
 {cartographer_analysis}
 
 **Core Chart Data:**
@@ -389,7 +386,7 @@ You are The Architect, a master astrologer who identifies the foundational bluep
 """
         architect_analysis = await _run_gemini_prompt(architect_prompt)
 
-        # Step 3: The Navigator (No changes needed)
+        # Step 3: The Navigator
         s_south_node = s_pos.get('South Node', {})
         s_north_node = s_pos.get('True Node', {})
         t_south_node = t_pos.get('South Node', {})
@@ -405,7 +402,7 @@ You are The Architect, a master astrologer who identifies the foundational bluep
         navigator_prompt = f"""
 You are The Navigator, an expert in karmic astrology. Your task is to interpret the soul's journey from its past to its future potential, based on the Nodal Axis. Use the provided foundational themes to guide your interpretation.
 
-**Foundational Themes (from The Architect):**
+**Foundational Themes:**
 {architect_analysis}
 
 **Nodal Axis Data:**
@@ -418,7 +415,7 @@ You are The Navigator, an expert in karmic astrology. Your task is to interpret 
 """
         navigator_analysis = await _run_gemini_prompt(navigator_prompt)
 
-        # Step 4: The Specialist (Concurrent Calls - No changes needed)
+        # Step 4: The Specialist (Concurrent Calls)
         async def run_specialist_for_planet(planet_name):
             s_planet = s_pos.get(planet_name, {})
             t_planet = t_pos.get(planet_name, {})
@@ -450,7 +447,7 @@ You are The Navigator, an expert in karmic astrology. Your task is to interpret 
             specialist_prompt = f"""
 You are an expert astrologer trained in both Sidereal and Tropical systems. For the planet {planet_name}, you must write four separate, detailed paragraphs: one for its Sidereal interpretation, one for its Tropical interpretation, a third for synthesizing these views, and a fourth analyzing its two tightest aspects. Use precise astrological terminology and explain your reasoning—not just conclusions.
 
-**Foundational Themes (from The Architect):**
+**Foundational Themes:**
 {architect_analysis}
 
 **{planet_name} Data:**
@@ -478,14 +475,14 @@ Write four clearly separated, detailed paragraphs:
         specialist_analyses = await asyncio.gather(*specialist_tasks)
         combined_specialist_analysis = "\n\n".join(specialist_analyses)
 
-        # Step 5: The Weaver (No changes needed)
+        # Step 5: The Weaver
         weaver_data = [p.get('description', '') for p in chart_data.get('sidereal_aspect_patterns', [])]
         s_tightest_aspects = chart_data.get('sidereal_aspects', [])[:3]
         
         weaver_prompt = f"""
 You are The Weaver, an astrologer who sees the hidden connections in a chart. Your task is to synthesize the individual planetary analyses by interpreting the major aspect patterns and the three tightest aspects in the chart overall.
 
-**Planetary Analyses (from The Specialist):**
+**Planetary Analyses:**
 {combined_specialist_analysis}
 
 **Chart Pattern Data:**
@@ -498,25 +495,7 @@ You are The Weaver, an astrologer who sees the hidden connections in a chart. Yo
 """
         weaver_analysis = await _run_gemini_prompt(weaver_prompt)
 
-        # Step 6: The Executive Summarizer (No changes needed)
-        summarizer_prompt = f"""
-You are an Executive Summarizer. Your job is to distill the key findings from a detailed analysis into a concise, bulleted list. Do not add new interpretations. Extract only the most critical points for each planet and aspect pattern.
-
-**Full Analysis to Summarize:**
----
-**PLANETARY DEEP DIVE (from The Specialist):**
-{combined_specialist_analysis}
----
-**ASPECT & PATTERN SYNTHESIS (from The Weaver):**
-{weaver_analysis}
----
-
-**Your Task:**
-Summarize the above text into a bulleted list of key findings.
-"""
-        summary_analysis = await _run_gemini_prompt(summarizer_prompt)
-
-        # Step 7: The Storyteller
+        # Step 6: The Storyteller
         storyteller_prompt = f"""
 You are The Synthesizer, an insightful astrological consultant who excels at weaving complex data into a clear and compelling narrative. Your skill is in explaining complex astrological data in a practical and grounded way. You will write a comprehensive, in-depth reading based *exclusively* on the structured analysis provided below. Your tone should be insightful and helpful, like a skilled analyst, avoiding overly spiritual or "dreamy" language.
 
@@ -524,19 +503,19 @@ You are The Synthesizer, an insightful astrological consultant who excels at wea
 
 **Provided Analysis:**
 ---
-**ALIGNMENT MAP (from The Cartographer):**
+**ALIGNMENT MAP:**
 {cartographer_analysis}
 ---
-**FOUNDATIONAL THEMES (from The Architect):**
+**FOUNDATIONAL THEMES:**
 {architect_analysis}
 ---
-**KARMIC PATH (from The Navigator):**
+**KARMIC PATH:**
 {navigator_analysis}
 ---
-**SUMMARIZED ANALYSIS (from The Executive Summarizer):**
-{summary_analysis}
+**FULL PLANETARY ANALYSIS:**
+{combined_specialist_analysis}
 ---
-**FULL ASPECT & PATTERN ANALYSIS (from The Weaver):**
+**FULL ASPECT & PATTERN ANALYSIS:**
 {weaver_analysis}
 ---
 
@@ -554,10 +533,10 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
 7. Ensure this overview is at least 700–900 words long. Prioritize depth over breadth.)
 
 **Your Personality Blueprint: The Planets**
-(Under this heading, present a detailed summary for each planet based on the Summarized Analysis. **For each planet from the Sun to Pluto, write one cohesive, detailed paragraph that synthesizes its Sidereal sign/house, Tropical sign/house, retrograde status, and key aspects.** Do not simply list the data. Weave it into a narrative that explains that planet's role in the personality. Use the Summarized Analysis as your source. Group them thematically: Luminaries, Personal, and Generational planets. Create smooth, one-sentence transitions between each planet's analysis.)
+(Under this heading, present the detailed analysis for each planet. **For each planet from the Sun to Pluto, you must present the FOUR paragraphs (Sidereal Interpretation, Tropical Interpretation, Synthesis, Aspect Analysis) exactly as they were generated in the FULL PLANETARY ANALYSIS section.** Do not summarize or combine them. Ensure there is a clear separation between each planet's section using a "--- PLANET NAME ---" header and line breaks. Group them thematically: start with the Luminaries (Sun and Moon), then the Personal Planets (Mercury, Venus, Mars), and conclude with the Generational Planets. Create smooth, one-sentence transitions between each planet's analysis.)
 
 **Major Life Dynamics: Aspects and Patterns**
-(Under this heading, present the full, detailed analysis of aspects and patterns *exactly as it was generated by The Weaver*. Do not summarize or change it. Simply insert the complete text from the "FULL ASPECT & PATTERN ANALYSIS" section provided above.)
+(Under this heading, present the full, detailed analysis of aspects and patterns *exactly as it was generated in the FULL ASPECT & PATTERN ANALYSIS section*. Do not summarize or change it.)
 
 **Summary and Key Takeaways**
 (Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness. This section should be at least 500 words.)
