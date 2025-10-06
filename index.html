@@ -9,9 +9,14 @@
 		<link rel="icon" type="image/jpeg" href="images/star-background.jpg" />
 		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
 		<style>
-			/* Added to prevent uppercase transformation on logo, banner title, and banner paragraph */
-			#header .logo, #banner .inner .major h1, #banner .content p {
+			/* Keep main title in normal case */
+			#banner .inner .major h1 {
 				text-transform: none !important;
+			}
+			/* Keep banner paragraph in normal case and fix letter spacing */
+			#banner .content p {
+				text-transform: none !important;
+				letter-spacing: normal !important;
 			}
 		</style>
 	</head>
@@ -140,7 +145,7 @@
 									
 									<div class="field">
 										<input type="checkbox" id="terms" name="terms">
-										<label for="terms">I have read and agree to the <a href="#legal" style="text-decoration: underline;">Terms of Service and Privacy Policy</a>.</label>
+										<label for="terms">I have read and agree to the Religious Disclaimer, <a href="#legal" style="text-decoration: underline;">Terms of Service and Privacy Policy</a>.</label>
 										<p id="termsError" style="color: #e53e3e; display: none; margin-top: 0.5em; font-weight: 600;">You must agree to the terms to continue.</p>
 									</div>
 
