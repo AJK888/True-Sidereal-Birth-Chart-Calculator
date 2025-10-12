@@ -9,3 +9,4 @@ logtail-python
 httpx
 google-generativeai
 sendgrid
+slowapi
