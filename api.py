@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
@@ -19,6 +19,10 @@ import google.generativeai as genai
 import asyncio
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from fastapi.responses import JSONResponse
 
 # --- SETUP THE LOGGER ---
 handler = None
@@ -41,7 +45,19 @@ if GEMINI_API_KEY:
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
 
+# --- SETUP RATE LIMITER ---
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="True Sidereal API", version="1.0")
+app.state.limiter = limiter
+
+async def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Thank you for using Synthesis Astrology. Due to high API costs we limit user's requests for readings. Please reach out to the developer if you would like them to provide you a reading."}
+    )
+
+app.add_exception_handler(RateLimitExceeded, custom_rate_limit_exceeded_handler)
+
 
 @app.get("/ping")
 def ping():
@@ -229,8 +245,7 @@ def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inp
         html += "<hr>"
 
     html += "<h2>AI Astrological Synthesis</h2>"
-    # Use replace on gemini_reading to format newlines for HTML
-    html += f"<div>{gemini_reading.replace('/n', '<br><br>')}</div>"
+    html += f"<p>{gemini_reading.replace('/n', '<br><br>')}</p>"
     html += "<hr>"
 
     full_text_report = get_full_text_report(chart_data)
@@ -253,14 +268,8 @@ def send_chart_email(html_content: str, recipient_email: str, subject: str):
         sg = SendGridAPIClient(SENDGRID_API_KEY)
         response = sg.send(message)
         logger.info(f"Email sent to {recipient_email}, status code: {response.status_code}")
-        # === ENHANCED DEBUGGING ===
-        # If SendGrid accepts the request (2xx), it doesn't mean the email is delivered.
-        # But if it returns an error, we can log it for more insight.
         if response.status_code >= 400:
-            logger.error(f"SendGrid returned an error for {recipient_email}:")
-            logger.error(f"Status Code: {response.status_code}")
-            logger.error(f"Body: {response.body}")
-            logger.error(f"Headers: {response.headers}")
+             logger.error(f"SendGrid error for {recipient_email}: Body: {response.body}, Headers: {response.headers}")
     except Exception as e:
         logger.error(f"Error sending email to {recipient_email}: {e}", exc_info=True)
 
@@ -270,15 +279,11 @@ def send_chart_email(html_content: str, recipient_email: str, subject: str):
 async def _run_gemini_prompt(prompt_text: str) -> str:
     """A helper function to run a single Gemini prompt and return the text."""
     try:
-        # Using gemini-2.5-pro as requested and ensuring no output token limit is set.
         model = genai.GenerativeModel('gemini-2.5-pro')
         response = await model.generate_content_async(prompt_text)
         return response.text.strip()
     except Exception as e:
         logger.error(f"Error in Gemini API call: {e}", exc_info=True)
-        # Check for specific content filtering errors
-        if "response was blocked" in str(e):
-            return "The AI-generated response was blocked due to safety settings. Please try again with different inputs."
         return f"An error occurred during a Gemini API call: {e}"
 
 async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
@@ -326,7 +331,7 @@ The Story of Your Inner World
         return await _run_gemini_prompt("\n".join(prompt_parts))
 
     try:
-        # Step 1: The Cartographer
+        # Step 1: Analyze Alignments
         cartographer_data = []
         s_pos = {p['name']: p for p in chart_data.get('sidereal_major_positions', [])}
         t_pos = {p['name']: p for p in chart_data.get('tropical_major_positions', [])}
@@ -335,7 +340,7 @@ The Story of Your Inner World
                 cartographer_data.append(f"- {body}: Sidereal {s_pos[body]['position'].split(' ')[-1]}, Tropical {t_pos[body]['position'].split(' ')[-1]}")
         
         cartographer_prompt = f"""
-You are The Cartographer, an astrological data analyst. Your task is to compare the provided Sidereal and Tropical placements and identify the primary points of alignment, tension, and contrast. Do not interpret the meaning of the placements. Your output must be a simple, structured list.
+Analyze the provided Sidereal and Tropical placements to identify the primary points of alignment, tension, and contrast. Do not interpret the meaning. Your output must be a simple, structured list.
 
 **Data to Analyze:**
 {'/n'.join(cartographer_data)}
@@ -347,7 +352,7 @@ You are The Cartographer, an astrological data analyst. Your task is to compare 
 """
         cartographer_analysis = await _run_gemini_prompt(cartographer_prompt)
 
-        # Step 2: The Architect
+        # Step 2: Identify Foundational Blueprint
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         t_analysis = chart_data.get("tropical_chart_analysis", {})
         numerology = chart_data.get("numerology_analysis", {})
@@ -366,7 +371,7 @@ You are The Cartographer, an astrological data analyst. Your task is to compare 
             f"- Chinese Zodiac: {chart_data.get('chinese_zodiac')}"
         ]
         architect_prompt = f"""
-You are The Architect, a master astrologer who identifies the foundational blueprint of a soul. Your task is to analyze the provided chart data and the alignment map to determine the 3-5 central themes of this person's life.
+Identify the foundational blueprint of a soul. Analyze the provided chart data and the alignment map to determine the 3-5 central themes of this person's life.
 
 **Zodiac Definitions:**
 - The **Sidereal** placements represent the soul's deeper karmic blueprint, innate spiritual gifts, and ultimate life purpose.
@@ -386,7 +391,7 @@ You are The Architect, a master astrologer who identifies the foundational bluep
 """
         architect_analysis = await _run_gemini_prompt(architect_prompt)
 
-        # Step 3: The Navigator
+        # Step 3: Interpret Karmic Path
         s_south_node = s_pos.get('South Node', {})
         s_north_node = s_pos.get('True Node', {})
         t_south_node = t_pos.get('South Node', {})
@@ -400,7 +405,7 @@ You are The Architect, a master astrologer who identifies the foundational bluep
             f"- Dominant Element: {s_analysis.get('dominant_element')}"
         ]
         navigator_prompt = f"""
-You are The Navigator, an expert in karmic astrology. Your task is to interpret the soul's journey from its past to its future potential, based on the Nodal Axis. Use the provided foundational themes to guide your interpretation.
+Interpret the soul's journey from its past to its future potential, based on the Nodal Axis. Use the provided foundational themes to guide your interpretation.
 
 **Foundational Themes:**
 {architect_analysis}
@@ -415,7 +420,7 @@ You are The Navigator, an expert in karmic astrology. Your task is to interpret 
 """
         navigator_analysis = await _run_gemini_prompt(navigator_prompt)
 
-        # Step 4: The Specialist (Concurrent Calls)
+        # Step 4: Perform Deep-Dive Planetary Analysis (Concurrent Calls)
         async def run_specialist_for_planet(planet_name):
             s_planet = s_pos.get(planet_name, {})
             t_planet = t_pos.get(planet_name, {})
@@ -445,7 +450,7 @@ You are The Navigator, an expert in karmic astrology. Your task is to interpret 
             ]
             
             specialist_prompt = f"""
-You are an expert astrologer trained in both Sidereal and Tropical systems. For the planet {planet_name}, you must write four separate, detailed paragraphs: one for its Sidereal interpretation, one for its Tropical interpretation, a third for synthesizing these views, and a fourth analyzing its two tightest aspects. Use precise astrological terminology and explain your reasoning—not just conclusions.
+For the planet {planet_name}, you must write four separate, detailed paragraphs: one for its Sidereal interpretation, one for its Tropical interpretation, a third for synthesizing these views, and a fourth analyzing its two tightest aspects. Use precise astrological terminology and explain your reasoning—not just conclusions.
 
 **Foundational Themes:**
 {architect_analysis}
@@ -475,12 +480,12 @@ Write four clearly separated, detailed paragraphs:
         specialist_analyses = await asyncio.gather(*specialist_tasks)
         combined_specialist_analysis = "\n\n".join(specialist_analyses)
 
-        # Step 5: The Weaver
+        # Step 5: Analyze Chart Dynamics
         weaver_data = [p.get('description', '') for p in chart_data.get('sidereal_aspect_patterns', [])]
         s_tightest_aspects = chart_data.get('sidereal_aspects', [])[:3]
         
         weaver_prompt = f"""
-You are The Weaver, an astrologer who sees the hidden connections in a chart. Your task is to synthesize the individual planetary analyses by interpreting the major aspect patterns and the three tightest aspects in the chart overall.
+Synthesize the individual planetary analyses by interpreting the major aspect patterns and the three tightest aspects in the chart overall.
 
 **Planetary Analyses:**
 {combined_specialist_analysis}
@@ -495,9 +500,9 @@ You are The Weaver, an astrologer who sees the hidden connections in a chart. Yo
 """
         weaver_analysis = await _run_gemini_prompt(weaver_prompt)
 
-        # Step 6: The Storyteller
+        # Step 6: Final Synthesis
         storyteller_prompt = f"""
-You are The Synthesizer, an insightful astrological consultant who excels at weaving complex data into a clear and compelling narrative. Your skill is in explaining complex astrological data in a practical and grounded way. You will write a comprehensive, in-depth reading based *exclusively* on the structured analysis provided below. Your tone should be insightful and helpful, like a skilled analyst, avoiding overly spiritual or "dreamy" language.
+You are an insightful astrological consultant who excels at weaving complex data into a clear and compelling narrative. Your skill is in explaining complex astrological data in a practical and grounded way. You will write a comprehensive, in-depth reading based *exclusively* on the structured analysis provided below. Your tone should be insightful and helpful, avoiding overly spiritual or "dreamy" language.
 
 **CRITICAL RULE:** Base your reading *only* on the analysis provided. Do not invent any placements, planets, signs, or aspects that are not explicitly listed in the analysis.
 
@@ -512,10 +517,10 @@ You are The Synthesizer, an insightful astrological consultant who excels at wea
 **KARMIC PATH:**
 {navigator_analysis}
 ---
-**FULL PLANETARY ANALYSIS:**
+**PLANETARY DEEP DIVE:**
 {combined_specialist_analysis}
 ---
-**FULL ASPECT & PATTERN ANALYSIS:**
+**ASPECT & PATTERN SYNTHESIS:**
 {weaver_analysis}
 ---
 
@@ -533,10 +538,10 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
 7. Ensure this overview is at least 700–900 words long. Prioritize depth over breadth.)
 
 **Your Personality Blueprint: The Planets**
-(Under this heading, present the detailed analysis for each planet. **For each planet from the Sun to Pluto, you must present the FOUR paragraphs (Sidereal Interpretation, Tropical Interpretation, Synthesis, Aspect Analysis) exactly as they were generated in the FULL PLANETARY ANALYSIS section.** Do not summarize or combine them. Ensure there is a clear separation between each planet's section using a "--- PLANET NAME ---" header and line breaks. Group them thematically: start with the Luminaries (Sun and Moon), then the Personal Planets (Mercury, Venus, Mars), and conclude with the Generational Planets. Create smooth, one-sentence transitions between each planet's analysis.)
+(Under this heading, present the detailed analysis for each planet. **For each planet from the Sun to Pluto, you must present the FOUR paragraphs (Sidereal Interpretation, Tropical Interpretation, Synthesis, Aspect Analysis) exactly as they were generated in the 'PLANETARY DEEP DIVE' section.** Do not summarize or combine them. Ensure there is a clear separation between each planet's section using a "--- PLANET NAME ---" header and line breaks. Group them thematically: start with the Luminaries (Sun and Moon), then the Personal Planets (Mercury, Venus, Mars), and conclude with the Generational Planets. Create smooth, one-sentence transitions between each planet's analysis.)
 
 **Major Life Dynamics: Aspects and Patterns**
-(Under this heading, present the full, detailed analysis of aspects and patterns *exactly as it was generated in the FULL ASPECT & PATTERN ANALYSIS section*. Do not summarize or change it.)
+(Under this heading, insert the complete, unedited text from the 'ASPECT & PATTERN SYNTHESIS' analysis. Do not summarize or re-interpret it.)
 
 **Summary and Key Takeaways**
 (Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness. This section should be at least 500 words.)
@@ -612,7 +617,8 @@ async def calculate_chart_endpoint(data: ChartRequest):
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {type(e).__name__} - {e}")
 
 @app.post("/generate_reading")
-async def generate_reading_endpoint(request: ReadingRequest):
+@limiter.limit("3/month")
+async def generate_reading_endpoint(request: ReadingRequest, fastapi_request: Request):
     try:
         gemini_reading = await get_gemini_reading(request.chart_data, request.unknown_time)
         
