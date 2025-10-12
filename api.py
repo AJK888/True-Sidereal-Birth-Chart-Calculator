@@ -63,11 +63,14 @@ app.add_exception_handler(RateLimitExceeded, custom_rate_limit_exceeded_handler)
 def ping():
     return {"message": "ok"}
 
+# --- CORS MIDDLEWARE ---
+# This is the section that needs to be correct on your server.
 origins = [
-    "https://true-sidereal-birth-chart.onrender.com",
     "https://synthesisastrology.org",
     "https://www.synthesisastrology.org",
+    "https://true-sidereal-birth-chart.onrender.com", # Your frontend's other domain if applicable
 ]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
