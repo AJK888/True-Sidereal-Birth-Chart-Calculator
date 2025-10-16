@@ -18,6 +18,23 @@
 				text-transform: none !important;
 				letter-spacing: normal !important;
 			}
+			/* Style for the new copy button */
+			.copy-button {
+				margin-left: 20px;
+				padding: 5px 15px;
+				font-size: 0.8em;
+				border-radius: 5px;
+				border: 1px solid white;
+				background-color: transparent;
+				color: white;
+				cursor: pointer;
+				vertical-align: middle;
+				transition: background-color 0.3s, color 0.3s;
+			}
+			.copy-button:hover {
+				background-color: white;
+				color: #242943; /* Body color from main.css */
+			}
 		</style>
 	</head>
 	<body class="is-preload">
@@ -176,7 +193,10 @@
 									</div>
 							
 									<div id="gemini-title" class="result-section">
-										<header class="major"><h2>AI Astrological Synthesis</h2></header>
+										<header class="major">
+											<h2>AI Astrological Synthesis</h2>
+											<button id="copyReadingBtn" class="copy-button" style="display: none;">Copy Reading</button>
+										</header>
 										<div id="gemini-output" class="content"></div>
 									</div>
 							
@@ -299,4 +319,3 @@
 
 	</body>
 </html>
-
