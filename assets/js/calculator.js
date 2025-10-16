@@ -1,3 +1,4 @@
+
 const AstrologyCalculator = {
 	API_URLS: {
 		calculate: "https://true-sidereal-api.onrender.com/calculate_chart",
@@ -210,7 +211,7 @@ const AstrologyCalculator = {
 	},
 
 	displayInitialResults(chartData) {
-		this.geminiOutput.innerHTML = "Generating AI Synthesis... This deep analysis can take up to 4 minutes as the AI synthesizes your Sidereal & Tropical charts, numerology, and Chinese Zodiac sign. Please do not leave this page while it loads.";
+		this.geminiOutput.innerHTML = "Generating AI Synthesis... Please do not leave this page as it loads. This complex analysis and explanation of your placements can take up to 10 minutes on mobile devices as the AI synthesizes your Sidereal & Tropical charts, numerology, and Chinese Zodiac sign.";
 		this.renderTextResults(chartData);
 
 		this.geminiTitle.parentElement.style.display = 'block';
