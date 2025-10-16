@@ -1,4 +1,3 @@
-
 const AstrologyCalculator = {
 	API_URLS: {
 		calculate: "https://true-sidereal-api.onrender.com/calculate_chart",
@@ -10,7 +9,7 @@ const AstrologyCalculator = {
 	PLANET_GLYPHS: {'Sun':'☉','Moon':'☽','Mercury':'☿','Venus':'♀','Mars':'♂','Jupiter':'♃','Saturn':'♄','Uranus':'♅','Neptune':'♆','Pluto':'♇','Chiron':'⚷','True Node':'☊','South Node':'☋','Ascendant':'AC','Midheaven (MC)':'MC','Descendant':'DC','Imum Coeli (IC)':'IC'},
 
 	form: null, submitBtn: null, noFullNameCheckbox: null,
-	geminiTitle: null, geminiOutput: null,
+	geminiTitle: null, geminiOutput: null, copyReadingBtn: null,
 	resultsTitle: null, wheelTitle: null, resultsContainer: null, 
 	siderealWheelSvg: null, tropicalWheelSvg: null,
 	
@@ -25,6 +24,7 @@ const AstrologyCalculator = {
 		this.noFullNameCheckbox = document.getElementById("noFullName");
 		this.geminiTitle = document.getElementById('gemini-title');
 		this.geminiOutput = document.getElementById('gemini-output');
+		this.copyReadingBtn = document.getElementById('copyReadingBtn');
 		this.resultsTitle = document.getElementById('results-title');
 		this.wheelTitle = document.getElementById('wheel-title');
 		this.resultsContainer = document.getElementById('results');
@@ -44,6 +44,7 @@ const AstrologyCalculator = {
 			}
 		});
 		this.form.addEventListener("submit", (e) => this.handleFormSubmit(e));
+		this.copyReadingBtn.addEventListener('click', () => this.copyReadingToClipboard());
 	},
 
 	async handleFormSubmit(e) {
@@ -142,9 +143,17 @@ const AstrologyCalculator = {
 				chartImageBase64 = btoa(unescape(encodeURIComponent(svgString)));
 			}
 
+			// --- NEW: Add admin secret header if present in URL ---
+			const headers = { "Content-Type": "application/json" };
+			const urlParams = new URLSearchParams(window.location.search);
+			const adminSecret = urlParams.get('admin_secret');
+			if (adminSecret) {
+				headers['X-Admin-Secret'] = adminSecret;
+			}
+
 			const readingRes = await fetch(this.API_URLS.reading, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: headers,
 				body: JSON.stringify({
 					chart_data: chartData,
 					unknown_time: chartData.unknown_time,
@@ -153,12 +162,17 @@ const AstrologyCalculator = {
 				})
 			});
 
-			if (!readingRes.ok) throw new Error('AI Reading service failed.');
+			if (!readingRes.ok) {
+                const errorData = await readingRes.json().catch(() => ({ detail: 'AI Reading service failed to respond correctly.' }));
+                throw new Error(errorData.detail || 'AI Reading service failed.');
+            }
 
 			const readingResult = await readingRes.json();
+            this.copyReadingBtn.style.display = 'inline-block';
 			this.geminiOutput.innerHTML = readingResult.gemini_reading ? readingResult.gemini_reading.replace(/\n/g, '<br>') : "The AI reading could not be generated at this time.";
 		} catch (err) {
 			this.geminiOutput.innerText = "Error: The AI reading is currently unavailable. " + err.message;
+            this.copyReadingBtn.style.display = 'none';
 		}
 	},
 
@@ -207,6 +221,7 @@ const AstrologyCalculator = {
 
 		if (isLoading) {
 			this.resultsContainer.style.display = 'none';
+			this.copyReadingBtn.style.display = 'none'; // Hide copy button while loading
 		}
 	},
 
@@ -246,6 +261,39 @@ const AstrologyCalculator = {
 			this.resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}, 100);
 	},
+
+	copyReadingToClipboard() {
+        if (!this.geminiOutput) return;
+
+        // The AI response has <br> tags for display. Convert them back to newlines for copying.
+        const textToCopy = this.geminiOutput.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+
+        // Use a temporary textarea element for robust copying
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed'; // Avoid scrolling to bottom
+        textArea.style.opacity = 0; // Make it invisible
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+            document.execCommand('copy');
+            // Provide user feedback
+            this.copyReadingBtn.innerText = 'Copied!';
+            setTimeout(() => {
+                this.copyReadingBtn.innerText = 'Copy Reading';
+            }, 2000); // Reset after 2 seconds
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+            this.copyReadingBtn.innerText = 'Copy Failed';
+             setTimeout(() => {
+                this.copyReadingBtn.innerText = 'Copy Reading';
+            }, 2000);
+        }
+
+        document.body.removeChild(textArea);
+    },
 
 	renderTextResults(res) {
 		// --- SIDEREAL REPORT ---
