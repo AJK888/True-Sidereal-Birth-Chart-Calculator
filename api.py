@@ -23,6 +23,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi.responses import JSONResponse
+import uuid
 
 # --- SETUP THE LOGGER ---
 handler = None
@@ -46,8 +47,26 @@ OUTLOOK_EMAIL = os.getenv("OUTLOOK_EMAIL")
 OUTLOOK_APP_PASSWORD = os.getenv("OUTLOOK_APP_PASSWORD")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
 
+# --- NEW: Admin Secret Key for bypassing rate limit ---
+ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
+
+# --- UPDATED: Rate Limiter Key Function ---
+def get_rate_limit_key(request: Request) -> str:
+    """
+    Determines the identifier for rate limiting.
+    If a valid admin secret is provided in the headers, returns a unique ID to bypass the limit.
+    Otherwise, returns the user's IP address.
+    """
+    if ADMIN_SECRET_KEY:
+        admin_secret_header = request.headers.get("x-admin-secret")
+        if admin_secret_header and admin_secret_header == ADMIN_SECRET_KEY:
+            return str(uuid.uuid4()) # Return a new unique ID for each admin request
+    
+    return get_remote_address(request)
+
+
 # --- SETUP RATE LIMITER ---
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_rate_limit_key)
 app = FastAPI(title="True Sidereal API", version="1.0")
 app.state.limiter = limiter
 
