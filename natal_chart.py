@@ -82,7 +82,8 @@ def calculate_numerology(day: int, month: int, year: int) -> dict:
     life_path_sum = sum(int(digit) for digit in f"{day}{month}{year}")
     life_path = _reduce_numerology_number(life_path_sum)
     day_number = _reduce_numerology_number(day)
-    return {"life_path": life_path, "day_number": day_number}
+    # FIX: Changed key from "life_path" to "life_path_number" to match main.py
+    return {"life_path_number": life_path, "day_number": day_number}
 
 def calculate_name_numerology(full_name: str) -> dict:
     letter_values = {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8, 'i': 9, 'j': 1, 'k': 2, 'l': 3, 'm': 4, 'n': 5, 'o': 6, 'p': 7, 'q': 8, 'r': 9, 's': 1, 't': 2, 'u': 3, 'v': 4, 'w': 5, 'x': 6, 'y': 7, 'z': 8}
@@ -165,6 +166,8 @@ class NatalChart:
         self.jd = swe.julday(year, month, day, hour + minute / 60.0); self.ut_decimal_hour = hour + minute / 60.0
         self.utc_datetime_str = datetime(year, month, day, hour, minute, tzinfo=timezone.utc).strftime("%Y-%m-%d %H:%M")
         self.location_str = f"{abs(latitude):.4f}° {'N' if latitude >= 0 else 'S'}, {abs(longitude):.4f}° {'E' if longitude >= 0 else 'W'}"
+        # OPTIMIZATION: Calculate Ayanamsa once and store it
+        self.ayanamsa = 31.38 + ((self.birth_year - 2000) / 72.0)
         self.sidereal_bodies: List[SiderealBody] = []; self.all_sidereal_points: List[SiderealBody] = []
         self.tropical_bodies: List[TropicalBody] = []; self.all_tropical_points: List[TropicalBody] = []
         self.sidereal_aspects: List[Aspect] = []; self.tropical_aspects: List[Aspect] = []
@@ -189,8 +192,7 @@ class NatalChart:
     def _calculate_ascendant_mc_data(self) -> None:
         try:
             res = swe.houses(self.jd, self.latitude, self.longitude, b'E')
-            ayanamsa = 31.38 + ((self.birth_year - 2000) / 72.0)
-            self.ascendant_data = {"tropical_asc": res[1][0], "mc": res[1][1], "ayanamsa": ayanamsa, "sidereal_asc": (res[1][0] - ayanamsa + 360) % 360}
+            self.ascendant_data = {"tropical_asc": res[1][0], "mc": res[1][1], "sidereal_asc": (res[1][0] - self.ayanamsa + 360) % 360}
         except Exception as e: 
             print(f"CRITICAL ERROR calculating ascendant: {e}")
             self.ascendant_data = {"sidereal_asc": None}
@@ -202,14 +204,13 @@ class NatalChart:
     def _calculate_all_points(self, unknown_time: bool) -> None:
         sidereal_asc = self.ascendant_data.get("sidereal_asc") if not unknown_time else None
         tropical_asc = self.ascendant_data.get("tropical_asc") if not unknown_time else None
-        ayanamsa = 31.38 + ((self.birth_year - 2000) / 72.0)
         
         configs = PLANETS_CONFIG + ADDITIONAL_BODIES_CONFIG
         for name, code in configs:
             try:
                 if unknown_time and name == 'Vertex':
                     continue
-                res = swe.calc_ut(self.jd, code); is_retro = res[0][3] < 0; tropical_lon = res[0][0]; sidereal_lon = (tropical_lon - ayanamsa + 360) % 360
+                res = swe.calc_ut(self.jd, code); is_retro = res[0][3] < 0; tropical_lon = res[0][0]; sidereal_lon = (tropical_lon - self.ayanamsa + 360) % 360
                 is_main = any(name == p[0] for p in PLANETS_CONFIG)
                 self.sidereal_bodies.append(SiderealBody(name, sidereal_lon, is_retro, sidereal_asc, is_main))
                 self.tropical_bodies.append(TropicalBody(name, tropical_lon, is_retro, tropical_asc, is_main))
@@ -222,7 +223,7 @@ class NatalChart:
 
         if not unknown_time and sidereal_asc is not None:
             s_asc = SiderealBody("Ascendant", sidereal_asc, False, sidereal_asc, False)
-            s_mc_deg = (self.ascendant_data.get('mc') - ayanamsa + 360) % 360 if self.ascendant_data.get('mc') is not None else None
+            s_mc_deg = (self.ascendant_data.get('mc') - self.ayanamsa + 360) % 360 if self.ascendant_data.get('mc') is not None else None
             s_mc = SiderealBody("Midheaven (MC)", s_mc_deg, False, sidereal_asc, False)
             t_asc = TropicalBody("Ascendant", tropical_asc, False, tropical_asc, False)
             t_mc = TropicalBody("Midheaven (MC)", self.ascendant_data.get('mc'), False, tropical_asc, False)
@@ -433,7 +434,7 @@ class NatalChart:
             "name": self.name, "utc_datetime": self.utc_datetime_str, "location": self.location_str,
             "day_night_status": self.day_night_info.get("status", "N/A"),
             "chinese_zodiac": f"{chinese_zodiac['element']} {chinese_zodiac['animal']}",
-            "numerology_analysis": {"life_path_number": numerology["life_path"], "day_number": numerology["day_number"], "name_numerology": name_numerology},
+            "numerology_analysis": {"life_path_number": numerology["life_path_number"], "day_number": numerology["day_number"], "name_numerology": name_numerology},
             "unknown_time": unknown_time,
             "true_sidereal_signs": TRUE_SIDEREAL_SIGNS,
             "sidereal_house_cusps": sidereal_house_cusps,
