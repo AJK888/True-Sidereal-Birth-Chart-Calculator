@@ -17,8 +17,8 @@ import logging
 from logtail import LogtailHandler
 import google.generativeai as genai
 import asyncio
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+import smtplib
+from email.message import EmailMessage
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -41,8 +41,9 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
-# --- SETUP SENDGRID ---
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+# --- SETUP OUTLOOK ---
+OUTLOOK_EMAIL = os.getenv("OUTLOOK_EMAIL")
+OUTLOOK_APP_PASSWORD = os.getenv("OUTLOOK_APP_PASSWORD")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
 
 # --- SETUP RATE LIMITER ---
@@ -259,23 +260,27 @@ def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inp
     return f"<html><head><style>body {{ font-family: sans-serif; }} pre {{ white-space: pre-wrap; word-wrap: break-word; }} img {{ max-width: 100%; height: auto; }}</style></head><body>{html}</body></html>"
 
 def send_chart_email(html_content: str, recipient_email: str, subject: str):
-    if not SENDGRID_API_KEY or not ADMIN_EMAIL:
-        logger.warning("SendGrid API Key or Admin Email not configured. Skipping email.")
+    # This function uses Outlook via SMTP
+    if not OUTLOOK_EMAIL or not OUTLOOK_APP_PASSWORD:
+        logger.warning("Outlook email or app password not configured. Skipping email.")
         return
 
-    message = Mail(
-        from_email=ADMIN_EMAIL,
-        to_emails=recipient_email,
-        subject=subject,
-        html_content=html_content)
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = OUTLOOK_EMAIL
+    msg['To'] = recipient_email
+    msg.set_content("Please enable HTML to view this report.") # Fallback for non-HTML clients
+    msg.add_alternative(html_content, subtype='html')
+
     try:
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        response = sg.send(message)
-        logger.info(f"Email sent to {recipient_email}, status code: {response.status_code}")
-        if response.status_code >= 400:
-             logger.error(f"SendGrid error for {recipient_email}: Body: {response.body}, Headers: {response.headers}")
+        # Use smtp-mail.outlook.com and port 587 for Outlook
+        with smtplib.SMTP('smtp-mail.outlook.com', 587) as smtp:
+            smtp.starttls() # Secure the connection
+            smtp.login(OUTLOOK_EMAIL, OUTLOOK_APP_PASSWORD)
+            smtp.send_message(msg)
+            logger.info(f"Email sent via Outlook to {recipient_email}")
     except Exception as e:
-        logger.error(f"Error sending email to {recipient_email}: {e}", exc_info=True)
+        logger.error(f"Error sending email via Outlook to {recipient_email}: {e}", exc_info=True)
 
 
 # --- NEW MULTI-STEP AI PROMPT LOGIC ---
@@ -622,7 +627,7 @@ async def calculate_chart_endpoint(data: ChartRequest):
 
 @app.post("/generate_reading")
 @limiter.limit("3/month")
-async def generate_reading_endpoint(reading_data: ReadingRequest, request: Request):
+async def generate_reading_endpoint(request: Request, reading_data: ReadingRequest):
     try:
         gemini_reading = await get_gemini_reading(reading_data.chart_data, reading_data.unknown_time)
         
