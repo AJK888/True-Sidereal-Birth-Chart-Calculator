@@ -64,11 +64,12 @@ def ping():
     return {"message": "ok"}
 
 # --- CORS MIDDLEWARE ---
-# This is the section that needs to be correct on your server.
 origins = [
     "https://synthesisastrology.org",
     "https://www.synthesisastrology.org",
-    "https://true-sidereal-birth-chart.onrender.com", # Your frontend's other domain if applicable
+    "https://synthesisastrology.com",
+    "https://www.synthesisastrology.com",
+    "https://true-sidereal-birth-chart.onrender.com",
 ]
 
 app.add_middleware(
@@ -621,21 +622,21 @@ async def calculate_chart_endpoint(data: ChartRequest):
 
 @app.post("/generate_reading")
 @limiter.limit("3/month")
-async def generate_reading_endpoint(request: ReadingRequest, fastapi_request: Request):
+async def generate_reading_endpoint(reading_data: ReadingRequest, request: Request):
     try:
-        gemini_reading = await get_gemini_reading(request.chart_data, request.unknown_time)
+        gemini_reading = await get_gemini_reading(reading_data.chart_data, reading_data.unknown_time)
         
-        user_inputs = request.user_inputs
+        user_inputs = reading_data.user_inputs
         user_email = user_inputs.get('user_email')
         chart_name = user_inputs.get('full_name', 'N/A')
-        chart_image = request.chart_image_base64
+        chart_image = reading_data.chart_image_base64
 
         if user_email:
-            user_html_content = format_full_report_for_email(request.chart_data, gemini_reading, user_inputs, chart_image, include_inputs=False)
+            user_html_content = format_full_report_for_email(reading_data.chart_data, gemini_reading, user_inputs, chart_image, include_inputs=False)
             send_chart_email(user_html_content, user_email, f"Your Astrology Chart Report for {chart_name}")
             
         if ADMIN_EMAIL:
-            admin_html_content = format_full_report_for_email(request.chart_data, gemini_reading, user_inputs, chart_image, include_inputs=True)
+            admin_html_content = format_full_report_for_email(reading_data.chart_data, gemini_reading, user_inputs, chart_image, include_inputs=True)
             send_chart_email(admin_html_content, ADMIN_EMAIL, f"New Chart Generated: {chart_name}")
 
         return {"gemini_reading": gemini_reading}
