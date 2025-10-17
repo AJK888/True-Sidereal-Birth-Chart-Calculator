@@ -71,7 +71,8 @@ async def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExc
         content={"detail": "Thank you for using Synthesis Astrology. Due to high API costs we limit user's requests for readings. Please reach out to the developer if you would like them to provide you a reading."}
     )
 
-@app.get("/ping", methods=["GET", "HEAD"])
+# FIX: Use @app.api_route to support multiple methods (GET and HEAD)
+@app.api_route("/ping", methods=["GET", "HEAD"])
 def ping():
     return {"message": "ok"}
 
@@ -685,4 +686,3 @@ async def generate_reading_endpoint(
     except Exception as e:
         logger.error(f"Error in /generate_reading endpoint: {type(e).__name__} - {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="An error occurred while starting the report generation.")
-
