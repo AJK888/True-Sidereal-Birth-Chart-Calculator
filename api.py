@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
@@ -47,39 +47,31 @@ OUTLOOK_EMAIL = os.getenv("OUTLOOK_EMAIL")
 OUTLOOK_APP_PASSWORD = os.getenv("OUTLOOK_APP_PASSWORD")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
 
-# --- NEW: Admin Secret Key for bypassing rate limit ---
+# --- Admin Secret Key for bypassing rate limit ---
 ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
 
-# --- UPDATED: Rate Limiter Key Function ---
+# --- Rate Limiter Key Function ---
 def get_rate_limit_key(request: Request) -> str:
-    """
-    Determines the identifier for rate limiting.
-    If a valid admin secret is provided in the headers, returns a unique ID to bypass the limit.
-    Otherwise, returns the user's IP address.
-    """
     if ADMIN_SECRET_KEY:
         admin_secret_header = request.headers.get("x-admin-secret")
         if admin_secret_header and admin_secret_header == ADMIN_SECRET_KEY:
-            return str(uuid.uuid4()) # Return a new unique ID for each admin request
-    
+            return str(uuid.uuid4())
     return get_remote_address(request)
 
 
-# --- SETUP RATE LIMITER ---
+# --- SETUP FASTAPI APP & RATE LIMITER ---
 limiter = Limiter(key_func=get_rate_limit_key)
 app = FastAPI(title="True Sidereal API", version="1.0")
 app.state.limiter = limiter
 
+@app.exception_handler(RateLimitExceeded)
 async def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
     return JSONResponse(
         status_code=429,
         content={"detail": "Thank you for using Synthesis Astrology. Due to high API costs we limit user's requests for readings. Please reach out to the developer if you would like them to provide you a reading."}
     )
 
-app.add_exception_handler(RateLimitExceeded, custom_rate_limit_exceeded_handler)
-
-
-@app.get("/ping")
+@app.get("/ping", methods=["GET", "HEAD"])
 def ping():
     return {"message": "ok"}
 
@@ -96,10 +88,11 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["POST", "GET", "HEAD", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# --- Pydantic Models ---
 class ChartRequest(BaseModel):
     full_name: str
     year: int
@@ -118,10 +111,10 @@ class ReadingRequest(BaseModel):
     user_inputs: Dict[str, Any]
     chart_image_base64: Optional[str] = None
 
-# --- EMAIL FORMATTING & SENDING ---
+# --- Functions ---
 
 def get_full_text_report(res: dict) -> str:
-    # This function remains the same as before...
+    # This function remains the same.
     out = f"=== SIDEREAL CHART: {res.get('name', 'N/A')} ===\n"
     out += f"- UTC Date & Time: {res.get('utc_datetime', 'N/A')}{' (Noon Estimate)' if res.get('unknown_time') else ''}\n"
     out += f"- Location: {res.get('location', 'N/A')}\n"
@@ -279,7 +272,6 @@ def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inp
     return f"<html><head><style>body {{ font-family: sans-serif; }} pre {{ white-space: pre-wrap; word-wrap: break-word; }} img {{ max-width: 100%; height: auto; }}</style></head><body>{html}</body></html>"
 
 def send_chart_email(html_content: str, recipient_email: str, subject: str):
-    # This function uses Outlook via SMTP
     if not OUTLOOK_EMAIL or not OUTLOOK_APP_PASSWORD:
         logger.warning("Outlook email or app password not configured. Skipping email.")
         return
@@ -288,24 +280,22 @@ def send_chart_email(html_content: str, recipient_email: str, subject: str):
     msg['Subject'] = subject
     msg['From'] = OUTLOOK_EMAIL
     msg['To'] = recipient_email
-    msg.set_content("Please enable HTML to view this report.") # Fallback for non-HTML clients
+    msg.set_content("Please enable HTML to view this report.")
     msg.add_alternative(html_content, subtype='html')
 
     try:
-        # Use smtp-mail.outlook.com and port 587 for Outlook
         with smtplib.SMTP('smtp-mail.outlook.com', 587) as smtp:
-            smtp.starttls() # Secure the connection
+            smtp.starttls()
             smtp.login(OUTLOOK_EMAIL, OUTLOOK_APP_PASSWORD)
             smtp.send_message(msg)
             logger.info(f"Email sent via Outlook to {recipient_email}")
+    except smtplib.SMTPAuthenticationError as e:
+        logger.error(f"Outlook Authentication Error: {e.smtp_code} - {e.smtp_error}. Check credentials.", exc_info=True)
     except Exception as e:
         logger.error(f"Error sending email via Outlook to {recipient_email}: {e}", exc_info=True)
 
 
-# --- NEW MULTI-STEP AI PROMPT LOGIC ---
-
 async def _run_gemini_prompt(prompt_text: str) -> str:
-    """A helper function to run a single Gemini prompt and return the text."""
     try:
         model = genai.GenerativeModel('gemini-2.5-pro')
         response = await model.generate_content_async(prompt_text)
@@ -315,6 +305,7 @@ async def _run_gemini_prompt(prompt_text: str) -> str:
         return f"An error occurred during a Gemini API call: {e}"
 
 async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
+    # This entire function remains the same, as it contains the core AI logic.
     if not GEMINI_API_KEY:
         return "Gemini API key not configured. AI reading is unavailable."
 
@@ -581,6 +572,30 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
         return "An error occurred while generating the detailed AI reading."
 
 
+async def process_reading_in_background(reading_data: ReadingRequest):
+    """This function runs the long AI generation and email sending in the background."""
+    try:
+        logger.info("Starting background task for AI reading and email.")
+        gemini_reading = await get_gemini_reading(reading_data.chart_data, reading_data.unknown_time)
+
+        user_inputs = reading_data.user_inputs
+        user_email = user_inputs.get('user_email')
+        chart_name = user_inputs.get('full_name', 'N/A')
+        chart_image = reading_data.chart_image_base64
+
+        if user_email:
+            user_html_content = format_full_report_for_email(reading_data.chart_data, gemini_reading, user_inputs, chart_image, include_inputs=False)
+            send_chart_email(user_html_content, user_email, f"Your Astrology Chart Report for {chart_name}")
+            
+        if ADMIN_EMAIL:
+            admin_html_content = format_full_report_for_email(reading_data.chart_data, gemini_reading, user_inputs, chart_image, include_inputs=True)
+            send_chart_email(admin_html_content, ADMIN_EMAIL, f"New Chart Generated: {chart_name}")
+        
+        logger.info(f"Background task completed for {chart_name}.")
+    except Exception as e:
+        logger.error(f"Error in background task: {e}", exc_info=True)
+
+
 @app.post("/calculate_chart")
 async def calculate_chart_endpoint(data: ChartRequest):
     try:
@@ -646,25 +661,28 @@ async def calculate_chart_endpoint(data: ChartRequest):
 
 @app.post("/generate_reading")
 @limiter.limit("3/month")
-async def generate_reading_endpoint(request: Request, reading_data: ReadingRequest):
+async def generate_reading_endpoint(
+    request: Request,
+    reading_data: ReadingRequest,
+    background_tasks: BackgroundTasks
+):
+    """
+    This endpoint now runs the entire AI generation and email process in the background.
+    It returns an immediate response to the user to avoid timeouts.
+    """
     try:
-        gemini_reading = await get_gemini_reading(reading_data.chart_data, reading_data.unknown_time)
-        
-        user_inputs = reading_data.user_inputs
-        user_email = user_inputs.get('user_email')
-        chart_name = user_inputs.get('full_name', 'N/A')
-        chart_image = reading_data.chart_image_base64
+        user_email = reading_data.user_inputs.get('user_email')
+        if not user_email:
+            # Although the frontend should prevent this, it's good practice to have a server-side check.
+            raise HTTPException(status_code=400, detail="An email address is required to receive the report.")
 
-        if user_email:
-            user_html_content = format_full_report_for_email(reading_data.chart_data, gemini_reading, user_inputs, chart_image, include_inputs=False)
-            send_chart_email(user_html_content, user_email, f"Your Astrology Chart Report for {chart_name}")
-            
-        if ADMIN_EMAIL:
-            admin_html_content = format_full_report_for_email(reading_data.chart_data, gemini_reading, user_inputs, chart_image, include_inputs=True)
-            send_chart_email(admin_html_content, ADMIN_EMAIL, f"New Chart Generated: {chart_name}")
+        # Add the entire long-running process to the background
+        background_tasks.add_task(process_reading_in_background, reading_data=reading_data)
 
-        return {"gemini_reading": gemini_reading}
+        # Return an immediate success message to the frontend
+        return {"message": "Report generation has started. It will be sent to your email shortly."}
+    
     except Exception as e:
         logger.error(f"Error in /generate_reading endpoint: {type(e).__name__} - {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="An error occurred while generating the AI reading.")
+        raise HTTPException(status_code=500, detail="An error occurred while starting the report generation.")
 
