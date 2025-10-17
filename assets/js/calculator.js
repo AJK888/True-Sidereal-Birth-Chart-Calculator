@@ -44,7 +44,7 @@ const AstrologyCalculator = {
 			}
 		});
 		this.form.addEventListener("submit", (e) => this.handleFormSubmit(e));
-		this.copyReadingBtn.addEventListener('click', () => this.copyReadingToClipboard());
+        // The copy button is no longer needed in this workflow, so we can remove its event listener logic
 	},
 
 	async handleFormSubmit(e) {
@@ -52,6 +52,7 @@ const AstrologyCalculator = {
 
 		const termsCheckbox = document.getElementById('terms');
 		const termsError = document.getElementById('termsError');
+        const userEmailInput = this.form.querySelector("[name='userEmail']");
 
 		if (!termsCheckbox.checked) {
 			termsError.style.display = 'block';
@@ -60,12 +61,22 @@ const AstrologyCalculator = {
 			termsError.style.display = 'none';
 		}
 
+        // Require an email address for the background task workflow
+        if (!userEmailInput.value) {
+            this.geminiOutput.innerText = "An email address is required to receive your generated report. Please enter your email and try again.";
+            this.geminiTitle.parentElement.style.display = 'block';
+            this.resultsContainer.style.display = 'block';
+            this.resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            return;
+        }
+
 		this.setLoadingState(true);
 
 		try {
 			const chartData = await this.fetchChartData();
 			this.displayInitialResults(chartData);
-			this.fetchAndDisplayAIReading(chartData);
+			// This function now just kicks off the background process
+			await this.submitForBackgroundProcessing(chartData);
 		} catch (err) {
 			this.resultsContainer.style.display = 'block';
 			this.resultsTitle.parentElement.style.display = 'block';
@@ -73,7 +84,7 @@ const AstrologyCalculator = {
 			if(siderealOutput) siderealOutput.innerText = "Error: " + err.message;
 
 		} finally {
-			this.setLoadingState(false);
+            // The loading state is now handled inside the submit function
 		}
 	},
 	
@@ -127,7 +138,7 @@ const AstrologyCalculator = {
 		return await apiRes.json();
 	},
 
-	async fetchAndDisplayAIReading(chartData) {
+	async submitForBackgroundProcessing(chartData) {
 		try {
 			const userInputs = {
 				full_name: this.form.querySelector("[name='fullName']").value,
@@ -143,7 +154,6 @@ const AstrologyCalculator = {
 				chartImageBase64 = btoa(unescape(encodeURIComponent(svgString)));
 			}
 
-			// --- NEW: Add admin secret header if present in URL ---
 			const headers = { "Content-Type": "application/json" };
 			const urlParams = new URLSearchParams(window.location.search);
 			const adminSecret = urlParams.get('admin_secret');
@@ -163,17 +173,19 @@ const AstrologyCalculator = {
 			});
 
 			if (!readingRes.ok) {
-                const errorData = await readingRes.json().catch(() => ({ detail: 'AI Reading service failed to respond correctly.' }));
-                throw new Error(errorData.detail || 'AI Reading service failed.');
+                const errorData = await readingRes.json().catch(() => ({ detail: 'Failed to start report generation.' }));
+                throw new Error(errorData.detail || 'Failed to start report generation.');
             }
+            
+            // On success, show confirmation message
+			this.geminiOutput.innerHTML = "<strong>Success!</strong> Your report is now being generated. The complete reading will be sent to your email address shortly. Please check your inbox (and spam folder).";
 
-			const readingResult = await readingRes.json();
-            this.copyReadingBtn.style.display = 'inline-block';
-			this.geminiOutput.innerHTML = readingResult.gemini_reading ? readingResult.gemini_reading.replace(/\n/g, '<br>') : "The AI reading could not be generated at this time.";
 		} catch (err) {
-			this.geminiOutput.innerText = "Error: The AI reading is currently unavailable. " + err.message;
-            this.copyReadingBtn.style.display = 'none';
-		}
+			this.geminiOutput.innerText = "Error: Could not start the report generation. " + err.message;
+		} finally {
+            // End the loading state now that the request is complete
+            this.setLoadingState(false);
+        }
 	},
 
 	async loadAndDrawTransitChart() {
@@ -221,16 +233,24 @@ const AstrologyCalculator = {
 
 		if (isLoading) {
 			this.resultsContainer.style.display = 'none';
-			this.copyReadingBtn.style.display = 'none'; // Hide copy button while loading
+			if (this.copyReadingBtn) {
+                this.copyReadingBtn.style.display = 'none';
+            }
 		}
 	},
 
 	displayInitialResults(chartData) {
-		this.geminiOutput.innerHTML = "Generating AI Synthesis... Please do not leave this page as it loads. This complex analysis and explanation of your placements can take up to 10 minutes on mobile devices as the AI synthesizes your Sidereal & Tropical charts, numerology, and Chinese Zodiac sign.";
+        // Updated message for background processing
+		this.geminiOutput.innerHTML = "Submitting your chart for analysis... Please wait.";
 		this.renderTextResults(chartData);
 
 		this.geminiTitle.parentElement.style.display = 'block';
 		this.resultsTitle.parentElement.style.display = 'block';
+
+        // Hide the copy button as it's not relevant for this workflow
+        if(this.copyReadingBtn) {
+            this.copyReadingBtn.style.display = 'none';
+        }
 
 		const chartWheelsWrapper = document.querySelector('#results .chart-wheels-wrapper');
 		const chartPlaceholder = document.getElementById('chart-placeholder');
@@ -261,38 +281,9 @@ const AstrologyCalculator = {
 			this.resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}, 100);
 	},
-
+    
 	copyReadingToClipboard() {
-        if (!this.geminiOutput) return;
-
-        // The AI response has <br> tags for display. Convert them back to newlines for copying.
-        const textToCopy = this.geminiOutput.innerHTML.replace(/<br\s*\/?>/gi, '\n');
-
-        // Use a temporary textarea element for robust copying
-        const textArea = document.createElement('textarea');
-        textArea.value = textToCopy;
-        textArea.style.position = 'fixed'; // Avoid scrolling to bottom
-        textArea.style.opacity = 0; // Make it invisible
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-
-        try {
-            document.execCommand('copy');
-            // Provide user feedback
-            this.copyReadingBtn.innerText = 'Copied!';
-            setTimeout(() => {
-                this.copyReadingBtn.innerText = 'Copy Reading';
-            }, 2000); // Reset after 2 seconds
-        } catch (err) {
-            console.error('Failed to copy text: ', err);
-            this.copyReadingBtn.innerText = 'Copy Failed';
-             setTimeout(() => {
-                this.copyReadingBtn.innerText = 'Copy Reading';
-            }, 2000);
-        }
-
-        document.body.removeChild(textArea);
+        // This function is no longer used in the main workflow but is kept for potential future use.
     },
 
 	renderTextResults(res) {
@@ -554,7 +545,7 @@ const AstrologyCalculator = {
 				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
 				text.setAttribute('class', 'zodiac-glyph');
 				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
-				text.textContent = this.ZODIAC_GLYPHS[this.TROPICAL_ZODIAC_ORDER[i]];
+				text.textContent = this.TROPICAL_ZODIAC_ORDER[i];
 				mainGroup.appendChild(text);
 			}
 		}
