@@ -16,7 +16,21 @@ const AstrologyCalculator = {
 	init() {
 		this.cacheDOMElements();
 		this.addEventListeners();
+		this.updateEmailFieldAsRequired(); // New function call
 	},
+
+	updateEmailFieldAsRequired() {
+        const emailInput = document.getElementById('userEmail');
+        const emailLabel = document.querySelector('label[for="userEmail"]');
+
+        if (emailInput) {
+            emailInput.required = true;
+        }
+
+        if (emailLabel) {
+            emailLabel.innerHTML = 'Your Email <span class="field-note">Required to receive your full report.</span>';
+        }
+    },
 
 	cacheDOMElements() {
 		this.form = document.getElementById("chartForm");
