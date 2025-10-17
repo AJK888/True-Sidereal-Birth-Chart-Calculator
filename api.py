@@ -686,3 +686,4 @@ async def generate_reading_endpoint(
     except Exception as e:
         logger.error(f"Error in /generate_reading endpoint: {type(e).__name__} - {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="An error occurred while starting the report generation.")
+
