@@ -240,8 +240,8 @@ const AstrologyCalculator = {
 	},
 
 	displayInitialResults(chartData) {
-        // Updated message for background processing
-		this.geminiOutput.innerHTML = "Submitting your chart for analysis... Please wait.";
+        // Updated message for background processing to be more descriptive
+		this.geminiOutput.innerHTML = "Your chart data has been calculated. We are now submitting it for AI analysis. The final report will be sent to your email.";
 		this.renderTextResults(chartData);
 
 		this.geminiTitle.parentElement.style.display = 'block';
