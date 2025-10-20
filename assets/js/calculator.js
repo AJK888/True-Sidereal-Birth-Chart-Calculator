@@ -16,19 +16,19 @@ const AstrologyCalculator = {
 	init() {
 		this.cacheDOMElements();
 		this.addEventListeners();
-		this.updateEmailFieldAsRequired(); // New function call
+		this.updateEmailFieldAsOptional(); // Revert email field to optional
 	},
 
-	updateEmailFieldAsRequired() {
+	updateEmailFieldAsOptional() {
         const emailInput = document.getElementById('userEmail');
         const emailLabel = document.querySelector('label[for="userEmail"]');
 
         if (emailInput) {
-            emailInput.required = true;
+            emailInput.required = false; // Make email optional again
         }
 
         if (emailLabel) {
-            emailLabel.innerHTML = 'Your Email <span class="field-note">Required to receive your full report.</span>';
+            emailLabel.innerHTML = 'Your Email <span class="field-note">Optional: For your records. Not required.</span>';
         }
     },
 
@@ -58,7 +58,9 @@ const AstrologyCalculator = {
 			}
 		});
 		this.form.addEventListener("submit", (e) => this.handleFormSubmit(e));
-        // The copy button is no longer needed in this workflow, so we can remove its event listener logic
+		if (this.copyReadingBtn) {
+            this.copyReadingBtn.addEventListener('click', () => this.copyReadingToClipboard());
+        }
 	},
 
 	async handleFormSubmit(e) {
@@ -66,7 +68,6 @@ const AstrologyCalculator = {
 
 		const termsCheckbox = document.getElementById('terms');
 		const termsError = document.getElementById('termsError');
-        const userEmailInput = this.form.querySelector("[name='userEmail']");
 
 		if (!termsCheckbox.checked) {
 			termsError.style.display = 'block';
@@ -75,22 +76,12 @@ const AstrologyCalculator = {
 			termsError.style.display = 'none';
 		}
 
-        // Require an email address for the background task workflow
-        if (!userEmailInput.value) {
-            this.geminiOutput.innerText = "An email address is required to receive your generated report. Please enter your email and try again.";
-            this.geminiTitle.parentElement.style.display = 'block';
-            this.resultsContainer.style.display = 'block';
-            this.resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            return;
-        }
-
 		this.setLoadingState(true);
 
 		try {
 			const chartData = await this.fetchChartData();
 			this.displayInitialResults(chartData);
-			// This function now just kicks off the background process
-			await this.submitForBackgroundProcessing(chartData);
+			await this.fetchAndDisplayAIReading(chartData);
 		} catch (err) {
 			this.resultsContainer.style.display = 'block';
 			this.resultsTitle.parentElement.style.display = 'block';
@@ -98,7 +89,7 @@ const AstrologyCalculator = {
 			if(siderealOutput) siderealOutput.innerText = "Error: " + err.message;
 
 		} finally {
-            // The loading state is now handled inside the submit function
+            // Loading state is set to false inside fetchAndDisplayAIReading
 		}
 	},
 	
@@ -152,7 +143,7 @@ const AstrologyCalculator = {
 		return await apiRes.json();
 	},
 
-	async submitForBackgroundProcessing(chartData) {
+	async fetchAndDisplayAIReading(chartData) {
 		try {
 			const userInputs = {
 				full_name: this.form.querySelector("[name='fullName']").value,
@@ -187,17 +178,23 @@ const AstrologyCalculator = {
 			});
 
 			if (!readingRes.ok) {
-                const errorData = await readingRes.json().catch(() => ({ detail: 'Failed to start report generation.' }));
-                throw new Error(errorData.detail || 'Failed to start report generation.');
+                const errorData = await readingRes.json().catch(() => ({ detail: 'AI Reading service failed to respond correctly.' }));
+                throw new Error(errorData.detail || 'AI Reading service failed.');
             }
+
+			const readingResult = await readingRes.json();
             
-            // On success, show confirmation message
-			this.geminiOutput.innerHTML = "<strong>Success!</strong> Your report is now being generated. The complete reading will be sent to your email address shortly. Please check your inbox (and spam folder).";
+			this.geminiOutput.innerHTML = readingResult.gemini_reading ? readingResult.gemini_reading.replace(/\n/g, '<br>') : "The AI reading could not be generated at this time.";
+            if (this.copyReadingBtn) {
+                this.copyReadingBtn.style.display = 'inline-block';
+            }
 
 		} catch (err) {
-			this.geminiOutput.innerText = "Error: Could not start the report generation. " + err.message;
+			this.geminiOutput.innerText = "Error: The AI reading is currently unavailable. " + err.message;
+            if (this.copyReadingBtn) {
+                this.copyReadingBtn.style.display = 'none';
+            }
 		} finally {
-            // End the loading state now that the request is complete
             this.setLoadingState(false);
         }
 	},
@@ -254,17 +251,11 @@ const AstrologyCalculator = {
 	},
 
 	displayInitialResults(chartData) {
-        // Updated message for background processing to be more descriptive
-		this.geminiOutput.innerHTML = "Your chart data has been calculated. We are now submitting it for AI analysis. The final report will be sent to your email.";
+		this.geminiOutput.innerHTML = "Generating AI Synthesis... This deep analysis can take several minutes. Please do not leave this page while it loads.";
 		this.renderTextResults(chartData);
 
 		this.geminiTitle.parentElement.style.display = 'block';
 		this.resultsTitle.parentElement.style.display = 'block';
-
-        // Hide the copy button as it's not relevant for this workflow
-        if(this.copyReadingBtn) {
-            this.copyReadingBtn.style.display = 'none';
-        }
 
 		const chartWheelsWrapper = document.querySelector('#results .chart-wheels-wrapper');
 		const chartPlaceholder = document.getElementById('chart-placeholder');
@@ -295,9 +286,35 @@ const AstrologyCalculator = {
 			this.resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}, 100);
 	},
-    
+
 	copyReadingToClipboard() {
-        // This function is no longer used in the main workflow but is kept for potential future use.
+        if (!this.geminiOutput) return;
+
+        const textToCopy = this.geminiOutput.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.opacity = 0;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+            document.execCommand('copy');
+            this.copyReadingBtn.innerText = 'Copied!';
+            setTimeout(() => {
+                this.copyReadingBtn.innerText = 'Copy Reading';
+            }, 2000);
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+            this.copyReadingBtn.innerText = 'Copy Failed';
+             setTimeout(() => {
+                this.copyReadingBtn.innerText = 'Copy Reading';
+            }, 2000);
+        }
+
+        document.body.removeChild(textArea);
     },
 
 	renderTextResults(res) {
