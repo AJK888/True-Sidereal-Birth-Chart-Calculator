@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
@@ -17,6 +17,8 @@ import logging
 from logtail import LogtailHandler
 import google.generativeai as genai
 import asyncio
+import smtplib # Using smtplib for Gmail
+from email.message import EmailMessage # Using standard email library
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -39,6 +41,11 @@ if handler:
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
+
+# --- SETUP GMAIL --- Using Gmail now
+GMAIL_EMAIL = os.getenv("GMAIL_EMAIL")
+GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL") # Still needed for sending admin copies
 
 # --- Admin Secret Key for bypassing rate limit ---
 ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
@@ -95,7 +102,7 @@ class ChartRequest(BaseModel):
     minute: int
     location: str
     unknown_time: bool = False
-    user_email: Optional[str] = None # Kept for data collection, but not used for sending email
+    user_email: Optional[str] = None
     no_full_name: bool = False
 
 class ReadingRequest(BaseModel):
@@ -104,8 +111,190 @@ class ReadingRequest(BaseModel):
     user_inputs: Dict[str, Any]
     chart_image_base64: Optional[str] = None
 
+# --- Functions ---
 
-# --- AI Reading Functions ---
+def get_full_text_report(res: dict) -> str:
+    # This function remains the same.
+    out = f"=== SIDEREAL CHART: {res.get('name', 'N/A')} ===\n"
+    out += f"- UTC Date & Time: {res.get('utc_datetime', 'N/A')}{' (Noon Estimate)' if res.get('unknown_time') else ''}\n"
+    out += f"- Location: {res.get('location', 'N/A')}\n"
+    out += f"- Day/Night Determination: {res.get('day_night_status', 'N/A')}\n\n"
+    
+    out += f"--- CHINESE ZODIAC ---\n"
+    out += f"- Your sign is the {res.get('chinese_zodiac', 'N/A')}\n\n"
+
+    if res.get('numerology_analysis'):
+        numerology = res['numerology_analysis']
+        out += f"--- NUMEROLOGY REPORT ---\n"
+        out += f"- Life Path Number: {numerology.get('life_path_number', 'N/A')}\n"
+        out += f"- Day Number: {numerology.get('day_number', 'N/A')}\n"
+        if numerology.get('name_numerology'):
+            name_numerology = numerology['name_numerology']
+            out += f"\n-- NAME NUMEROLOGY --\n"
+            out += f"- Expression (Destiny) Number: {name_numerology.get('expression_number', 'N/A')}\n"
+            out += f"- Soul Urge Number: {name_numerology.get('soul_urge_number', 'N/A')}\n"
+            out += f"- Personality Number: {name_numerology.get('personality_number', 'N/A')}\n"
+    
+    if res.get('sidereal_chart_analysis'):
+        analysis = res['sidereal_chart_analysis']
+        out += f"\n-- SIDEREAL CHART ANALYSIS --\n"
+        out += f"- Chart Ruler: {analysis.get('chart_ruler', 'N/A')}\n"
+        out += f"- Dominant Sign: {analysis.get('dominant_sign', 'N/A')}\n"
+        out += f"- Dominant Element: {analysis.get('dominant_element', 'N/A')}\n"
+        out += f"- Dominant Modality: {analysis.get('dominant_modality', 'N/A')}\n"
+        out += f"- Dominant Planet: {analysis.get('dominant_planet', 'N/A')}\n\n"
+        
+    out += f"--- MAJOR POSITIONS ---\n"
+    if res.get('sidereal_major_positions'):
+        for p in res['sidereal_major_positions']:
+            line = f"- {p.get('name', '')}: {p.get('position', '')}"
+            if p.get('name') not in ['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node']:
+                line += f" ({p.get('percentage', 0)}%)"
+            if p.get('retrograde'): line += " (Rx)"
+            if p.get('house_info'): line += f" {p.get('house_info')}"
+            out += f"{line}\n"
+
+    if res.get('sidereal_retrogrades'):
+        out += f"\n--- RETROGRADE PLANETS (Energy turned inward) ---\n"
+        for p in res['sidereal_retrogrades']:
+            out += f"- {p.get('name', 'N/A')}\n"
+
+    out += f"\n--- MAJOR ASPECTS (ranked by influence score) ---\n"
+    if res.get('sidereal_aspects'):
+        for a in res['sidereal_aspects']:
+            out += f"- {a.get('p1_name','')} {a.get('type','')} {a.get('p2_name','')} (orb {a.get('orb','')}, score {a.get('score','')})\n"
+    else:
+        out += "- No major aspects detected.\n"
+        
+    out += f"\n--- ASPECT PATTERNS ---\n"
+    if res.get('sidereal_aspect_patterns'):
+        for p in res['sidereal_aspect_patterns']:
+            line = f"- {p.get('description', '')}"
+            if p.get('orb'): line += f" (avg orb {p.get('orb')})"
+            if p.get('score'): line += f" (score {p.get('score')})"
+            out += f"{line}\n"
+    else:
+        out += "- No major aspect patterns detected.\n"
+
+    if not res.get('unknown_time'):
+        out += f"\n--- ADDITIONAL POINTS & ANGLES ---\n"
+        if res.get('sidereal_additional_points'):
+            for p in res['sidereal_additional_points']:
+                line = f"- {p.get('name', '')}: {p.get('info', '')}"
+                if p.get('retrograde'): line += " (Rx)"
+                out += f"{line}\n"
+        out += f"\n--- HOUSE RULERS ---\n"
+        if res.get('house_rulers'):
+            for house, info in res['house_rulers'].items():
+                out += f"- {house}: {info}\n"
+        out += f"\n--- HOUSE SIGN DISTRIBUTIONS ---\n"
+        if res.get('house_sign_distributions'):
+            for house, segments in res['house_sign_distributions'].items():
+                out += f"{house}:\n"
+                if segments:
+                    for seg in segments:
+                        out += f"      - {seg}\n"
+    else:
+        out += f"\n- (House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n"
+
+    if res.get('tropical_major_positions'):
+        out += f"\n\n\n=== TROPICAL CHART ===\n\n"
+        trop_analysis = res.get('tropical_chart_analysis', {})
+        out += f"-- CHART ANALYSIS --\n"
+        out += f"- Dominant Sign: {trop_analysis.get('dominant_sign', 'N/A')}\n"
+        out += f"- Dominant Element: {trop_analysis.get('dominant_element', 'N/A')}\n"
+        out += f"- Dominant Modality: {trop_analysis.get('dominant_modality', 'N/A')}\n"
+        out += f"- Dominant Planet: {trop_analysis.get('dominant_planet', 'N/A')}\n\n"
+        out += f"--- MAJOR POSITIONS ---\n"
+        for p in res['tropical_major_positions']:
+            line = f"- {p.get('name', '')}: {p.get('position', '')}"
+            if p.get('name') not in ['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node']:
+                line += f" ({p.get('percentage', 0)}%)"
+            if p.get('retrograde'): line += " (Rx)"
+            if p.get('house_info'): line += f" {p.get('house_info')}"
+            out += f"{line}\n"
+
+        if res.get('tropical_retrogrades'):
+            out += f"\n--- RETROGRADE PLANETS (Energy turned inward) ---\n"
+            for p in res['tropical_retrogrades']:
+                out += f"- {p.get('name', 'N/A')}\n"
+
+        out += f"\n--- MAJOR ASPECTS (ranked by influence score) ---\n"
+        if res.get('tropical_aspects'):
+            for a in res['tropical_aspects']:
+                out += f"- {a.get('p1_name','')} {a.get('type','')} {a.get('p2_name','')} (orb {a.get('orb','')}, score {a.get('score','')})\n"
+        else:
+            out += "- No major aspects detected.\n"
+            
+        out += f"\n--- ASPECT PATTERNS ---\n"
+        if res.get('tropical_aspect_patterns'):
+            for p in res['tropical_aspect_patterns']:
+                line = f"- {p.get('description', '')}"
+                if p.get('orb'): line += f" (avg orb {p.get('orb')})"
+                if p.get('score'): line += f" (score {p.get('score')})"
+                out += f"{line}\n"
+        else:
+            out += "- No major aspect patterns detected.\n"
+            
+        if not res.get('unknown_time'):
+            out += f"\n--- ADDITIONAL POINTS & ANGLES ---\n"
+            if res.get('tropical_additional_points'):
+                for p in res['tropical_additional_points']:
+                    line = f"- {p.get('name', '')}: {p.get('info', '')}"
+                    if p.get('retrograde'): line += " (Rx)"
+                    out += f"{line}\n"
+    return out
+
+def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inputs: dict, chart_image_base64: Optional[str], include_inputs: bool = True) -> str:
+    html = "<h1>Synthesis Astrology Report</h1>"
+    
+    if include_inputs:
+        html += "<h2>Chart Inputs</h2>"
+        html += f"<p><b>Name:</b> {user_inputs.get('full_name', 'N/A')}</p>"
+        html += f"<p><b>Birth Date:</b> {user_inputs.get('birth_date', 'N/A')}</p>"
+        html += f"<p><b>Birth Time:</b> {user_inputs.get('birth_time', 'N/A')}</p>"
+        html += f"<p><b>Location:</b> {user_inputs.get('location', 'N/A')}</p>"
+        html += "<hr>"
+
+    if chart_image_base64:
+        html += "<h2>Natal Chart Wheel</h2>"
+        html += f'<img src="data:image/svg+xml;base64,{chart_image_base64}" alt="Natal Chart Wheel" width="600">'
+        html += "<hr>"
+
+    html += "<h2>AI Astrological Synthesis</h2>"
+    html += f"<p>{gemini_reading.replace('/n', '<br><br>')}</p>"
+    html += "<hr>"
+
+    full_text_report = get_full_text_report(chart_data)
+    html += "<h2>Full Astrological Data</h2>"
+    html += f"<pre>{full_text_report}</pre>"
+    
+    return f"<html><head><style>body {{ font-family: sans-serif; }} pre {{ white-space: pre-wrap; word-wrap: break-word; }} img {{ max-width: 100%; height: auto; }}</style></head><body>{html}</body></html>"
+
+# Updated to use Gmail SMTP
+def send_chart_email(html_content: str, recipient_email: str, subject: str):
+    if not GMAIL_EMAIL or not GMAIL_APP_PASSWORD:
+        logger.warning("Gmail email or app password not configured. Skipping email.")
+        return
+
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = GMAIL_EMAIL
+    msg['To'] = recipient_email
+    msg.set_content("Please enable HTML to view this report.") # Fallback
+    msg.add_alternative(html_content, subtype='html')
+
+    try:
+        # Use smtp.gmail.com and port 465 for Gmail SSL
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(GMAIL_EMAIL, GMAIL_APP_PASSWORD)
+            smtp.send_message(msg)
+            logger.info(f"Email sent via Gmail to {recipient_email}")
+    except smtplib.SMTPAuthenticationError as e:
+        logger.error(f"Gmail Authentication Error: {e.smtp_code} - {e.smtp_error}. Check GMAIL_EMAIL and GMAIL_APP_PASSWORD.", exc_info=True)
+    except Exception as e:
+        logger.error(f"Error sending email via Gmail to {recipient_email}: {e}", exc_info=True)
+
 
 async def _run_gemini_prompt(prompt_text: str) -> str:
     try:
@@ -117,6 +306,7 @@ async def _run_gemini_prompt(prompt_text: str) -> str:
         return f"An error occurred during a Gemini API call: {e}"
 
 async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
+    # This entire function remains the same.
     if not GEMINI_API_KEY:
         return "Gemini API key not configured. AI reading is unavailable."
 
@@ -382,7 +572,28 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
         return "An error occurred while generating the detailed AI reading."
 
 
-# --- API Endpoints ---
+# Simplified background task ONLY for sending emails
+async def send_emails_in_background(chart_data: Dict, gemini_reading: str, user_inputs: Dict, chart_image_base64: Optional[str]):
+    try:
+        logger.info("Starting background task for email sending.")
+        user_email = user_inputs.get('user_email')
+        chart_name = user_inputs.get('full_name', 'N/A')
+
+        # Send email to the user (if provided)
+        if user_email:
+            user_html_content = format_full_report_for_email(chart_data, gemini_reading, user_inputs, chart_image_base64, include_inputs=False)
+            send_chart_email(user_html_content, user_email, f"Your Astrology Chart Report for {chart_name}")
+            
+        # Send email to the admin (if configured)
+        admin_email_to_send_to = os.getenv("ADMIN_EMAIL") # Get admin email inside task
+        if admin_email_to_send_to:
+            admin_html_content = format_full_report_for_email(chart_data, gemini_reading, user_inputs, chart_image_base64, include_inputs=True)
+            send_chart_email(admin_html_content, admin_email_to_send_to, f"New Chart Generated: {chart_name}")
+        
+        logger.info(f"Email background task completed for {chart_name}.")
+    except Exception as e:
+        logger.error(f"Error in email background task: {e}", exc_info=True)
+
 
 @app.post("/calculate_chart")
 async def calculate_chart_endpoint(data: ChartRequest):
@@ -449,19 +660,34 @@ async def calculate_chart_endpoint(data: ChartRequest):
 
 @app.post("/generate_reading")
 @limiter.limit("3/month")
-async def generate_reading_endpoint(request: Request, reading_data: ReadingRequest):
+async def generate_reading_endpoint(
+    request: Request,
+    reading_data: ReadingRequest,
+    background_tasks: BackgroundTasks
+):
     """
-    This endpoint now runs the AI generation synchronously and returns the result to the user.
-    Email functionality has been removed.
+    This endpoint runs the AI generation synchronously to return to the user,
+    and handles email sending in the background using Gmail SMTP.
     """
     try:
+        # Run AI generation synchronously
         gemini_reading = await get_gemini_reading(reading_data.chart_data, reading_data.unknown_time)
         
-        # Log that a chart was generated for the admin, but don't send an email.
+        # Log basic info
         user_inputs = reading_data.user_inputs
         chart_name = user_inputs.get('full_name', 'N/A')
         logger.info(f"AI Reading generated for: {chart_name}")
 
+        # Add ONLY the email sending to a background task
+        background_tasks.add_task(
+            send_emails_in_background,
+            chart_data=reading_data.chart_data,
+            gemini_reading=gemini_reading,
+            user_inputs=user_inputs,
+            chart_image_base64=reading_data.chart_image_base64
+        )
+
+        # Return the reading to the frontend
         return {"gemini_reading": gemini_reading}
     
     except Exception as e:
