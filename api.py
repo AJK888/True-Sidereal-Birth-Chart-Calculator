@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
@@ -17,6 +17,8 @@ import logging
 from logtail import LogtailHandler
 import google.generativeai as genai
 import asyncio
+import smtplib # Using smtplib for Gmail
+from email.message import EmailMessage # Using standard email library
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -39,6 +41,11 @@ if handler:
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
+
+# --- SETUP GMAIL --- Using Gmail now
+GMAIL_EMAIL = os.getenv("GMAIL_EMAIL")
+GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL") # Still needed for sending admin copies
 
 # --- Admin Secret Key for bypassing rate limit ---
 ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
@@ -95,7 +102,7 @@ class ChartRequest(BaseModel):
     minute: int
     location: str
     unknown_time: bool = False
-    user_email: Optional[str] = None # Kept for data collection, but not used for sending email
+    user_email: Optional[str] = None
     no_full_name: bool = False
 
 class ReadingRequest(BaseModel):
@@ -104,8 +111,190 @@ class ReadingRequest(BaseModel):
     user_inputs: Dict[str, Any]
     chart_image_base64: Optional[str] = None
 
+# --- Functions ---
 
-# --- AI Reading Functions ---
+def get_full_text_report(res: dict) -> str:
+    # This function remains the same.
+    out = f"=== SIDEREAL CHART: {res.get('name', 'N/A')} ===\n"
+    out += f"- UTC Date & Time: {res.get('utc_datetime', 'N/A')}{' (Noon Estimate)' if res.get('unknown_time') else ''}\n"
+    out += f"- Location: {res.get('location', 'N/A')}\n"
+    out += f"- Day/Night Determination: {res.get('day_night_status', 'N/A')}\n\n"
+    
+    out += f"--- CHINESE ZODIAC ---\n"
+    out += f"- Your sign is the {res.get('chinese_zodiac', 'N/A')}\n\n"
+
+    if res.get('numerology_analysis'):
+        numerology = res['numerology_analysis']
+        out += f"--- NUMEROLOGY REPORT ---\n"
+        out += f"- Life Path Number: {numerology.get('life_path_number', 'N/A')}\n"
+        out += f"- Day Number: {numerology.get('day_number', 'N/A')}\n"
+        if numerology.get('name_numerology'):
+            name_numerology = numerology['name_numerology']
+            out += f"\n-- NAME NUMEROLOGY --\n"
+            out += f"- Expression (Destiny) Number: {name_numerology.get('expression_number', 'N/A')}\n"
+            out += f"- Soul Urge Number: {name_numerology.get('soul_urge_number', 'N/A')}\n"
+            out += f"- Personality Number: {name_numerology.get('personality_number', 'N/A')}\n"
+    
+    if res.get('sidereal_chart_analysis'):
+        analysis = res['sidereal_chart_analysis']
+        out += f"\n-- SIDEREAL CHART ANALYSIS --\n"
+        out += f"- Chart Ruler: {analysis.get('chart_ruler', 'N/A')}\n"
+        out += f"- Dominant Sign: {analysis.get('dominant_sign', 'N/A')}\n"
+        out += f"- Dominant Element: {analysis.get('dominant_element', 'N/A')}\n"
+        out += f"- Dominant Modality: {analysis.get('dominant_modality', 'N/A')}\n"
+        out += f"- Dominant Planet: {analysis.get('dominant_planet', 'N/A')}\n\n"
+        
+    out += f"--- MAJOR POSITIONS ---\n"
+    if res.get('sidereal_major_positions'):
+        for p in res['sidereal_major_positions']:
+            line = f"- {p.get('name', '')}: {p.get('position', '')}"
+            if p.get('name') not in ['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node']:
+                line += f" ({p.get('percentage', 0)}%)"
+            if p.get('retrograde'): line += " (Rx)"
+            if p.get('house_info'): line += f" {p.get('house_info')}"
+            out += f"{line}\n"
+
+    if res.get('sidereal_retrogrades'):
+        out += f"\n--- RETROGRADE PLANETS (Energy turned inward) ---\n"
+        for p in res['sidereal_retrogrades']:
+            out += f"- {p.get('name', 'N/A')}\n"
+
+    out += f"\n--- MAJOR ASPECTS (ranked by influence score) ---\n"
+    if res.get('sidereal_aspects'):
+        for a in res['sidereal_aspects']:
+            out += f"- {a.get('p1_name','')} {a.get('type','')} {a.get('p2_name','')} (orb {a.get('orb','')}, score {a.get('score','')})\n"
+    else:
+        out += "- No major aspects detected.\n"
+        
+    out += f"\n--- ASPECT PATTERNS ---\n"
+    if res.get('sidereal_aspect_patterns'):
+        for p in res['sidereal_aspect_patterns']:
+            line = f"- {p.get('description', '')}"
+            if p.get('orb'): line += f" (avg orb {p.get('orb')})"
+            if p.get('score'): line += f" (score {p.get('score')})"
+            out += f"{line}\n"
+    else:
+        out += "- No major aspect patterns detected.\n"
+
+    if not res.get('unknown_time'):
+        out += f"\n--- ADDITIONAL POINTS & ANGLES ---\n"
+        if res.get('sidereal_additional_points'):
+            for p in res['sidereal_additional_points']:
+                line = f"- {p.get('name', '')}: {p.get('info', '')}"
+                if p.get('retrograde'): line += " (Rx)"
+                out += f"{line}\n"
+        out += f"\n--- HOUSE RULERS ---\n"
+        if res.get('house_rulers'):
+            for house, info in res['house_rulers'].items():
+                out += f"- {house}: {info}\n"
+        out += f"\n--- HOUSE SIGN DISTRIBUTIONS ---\n"
+        if res.get('house_sign_distributions'):
+            for house, segments in res['house_sign_distributions'].items():
+                out += f"{house}:\n"
+                if segments:
+                    for seg in segments:
+                        out += f"      - {seg}\n"
+    else:
+        out += f"\n- (House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n"
+
+    if res.get('tropical_major_positions'):
+        out += f"\n\n\n=== TROPICAL CHART ===\n\n"
+        trop_analysis = res.get('tropical_chart_analysis', {})
+        out += f"-- CHART ANALYSIS --\n"
+        out += f"- Dominant Sign: {trop_analysis.get('dominant_sign', 'N/A')}\n"
+        out += f"- Dominant Element: {trop_analysis.get('dominant_element', 'N/A')}\n"
+        out += f"- Dominant Modality: {trop_analysis.get('dominant_modality', 'N/A')}\n"
+        out += f"- Dominant Planet: {trop_analysis.get('dominant_planet', 'N/A')}\n\n"
+        out += f"--- MAJOR POSITIONS ---\n"
+        for p in res['tropical_major_positions']:
+            line = f"- {p.get('name', '')}: {p.get('position', '')}"
+            if p.get('name') not in ['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node']:
+                line += f" ({p.get('percentage', 0)}%)"
+            if p.get('retrograde'): line += " (Rx)"
+            if p.get('house_info'): line += f" {p.get('house_info')}"
+            out += f"{line}\n"
+
+        if res.get('tropical_retrogrades'):
+            out += f"\n--- RETROGRADE PLANETS (Energy turned inward) ---\n"
+            for p in res['tropical_retrogrades']:
+                out += f"- {p.get('name', 'N/A')}\n"
+
+        out += f"\n--- MAJOR ASPECTS (ranked by influence score) ---\n"
+        if res.get('tropical_aspects'):
+            for a in res['tropical_aspects']:
+                out += f"- {a.get('p1_name','')} {a.get('type','')} {a.get('p2_name','')} (orb {a.get('orb','')}, score {a.get('score','')})\n"
+        else:
+            out += "- No major aspects detected.\n"
+            
+        out += f"\n--- ASPECT PATTERNS ---\n"
+        if res.get('tropical_aspect_patterns'):
+            for p in res['tropical_aspect_patterns']:
+                line = f"- {p.get('description', '')}"
+                if p.get('orb'): line += f" (avg orb {p.get('orb')})"
+                if p.get('score'): line += f" (score {p.get('score')})"
+                out += f"{line}\n"
+        else:
+            out += "- No major aspect patterns detected.\n"
+            
+        if not res.get('unknown_time'):
+            out += f"\n--- ADDITIONAL POINTS & ANGLES ---\n"
+            if res.get('tropical_additional_points'):
+                for p in res['tropical_additional_points']:
+                    line = f"- {p.get('name', '')}: {p.get('info', '')}"
+                    if p.get('retrograde'): line += " (Rx)"
+                    out += f"{line}\n"
+    return out
+
+def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inputs: dict, chart_image_base64: Optional[str], include_inputs: bool = True) -> str:
+    html = "<h1>Synthesis Astrology Report</h1>"
+    
+    if include_inputs:
+        html += "<h2>Chart Inputs</h2>"
+        html += f"<p><b>Name:</b> {user_inputs.get('full_name', 'N/A')}</p>"
+        html += f"<p><b>Birth Date:</b> {user_inputs.get('birth_date', 'N/A')}</p>"
+        html += f"<p><b>Birth Time:</b> {user_inputs.get('birth_time', 'N/A')}</p>"
+        html += f"<p><b>Location:</b> {user_inputs.get('location', 'N/A')}</p>"
+        html += "<hr>"
+
+    if chart_image_base64:
+        html += "<h2>Natal Chart Wheel</h2>"
+        html += f'<img src="data:image/svg+xml;base64,{chart_image_base64}" alt="Natal Chart Wheel" width="600">'
+        html += "<hr>"
+
+    html += "<h2>AI Astrological Synthesis</h2>"
+    html += f"<p>{gemini_reading.replace('/n', '<br><br>')}</p>"
+    html += "<hr>"
+
+    full_text_report = get_full_text_report(chart_data)
+    html += "<h2>Full Astrological Data</h2>"
+    html += f"<pre>{full_text_report}</pre>"
+    
+    return f"<html><head><style>body {{ font-family: sans-serif; }} pre {{ white-space: pre-wrap; word-wrap: break-word; }} img {{ max-width: 100%; height: auto; }}</style></head><body>{html}</body></html>"
+
+# Updated to use Gmail SMTP
+def send_chart_email(html_content: str, recipient_email: str, subject: str):
+    if not GMAIL_EMAIL or not GMAIL_APP_PASSWORD:
+        logger.warning("Gmail email or app password not configured. Skipping email.")
+        return
+
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = GMAIL_EMAIL
+    msg['To'] = recipient_email
+    msg.set_content("Please enable HTML to view this report.") # Fallback
+    msg.add_alternative(html_content, subtype='html')
+
+    try:
+        # Use smtp.gmail.com and port 465 for Gmail SSL
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login(GMAIL_EMAIL, GMAIL_APP_PASSWORD)
+            smtp.send_message(msg)
+            logger.info(f"Email sent via Gmail to {recipient_email}")
+    except smtplib.SMTPAuthenticationError as e:
+        logger.error(f"Gmail Authentication Error: {e.smtp_code} - {e.smtp_error}. Check GMAIL_EMAIL and GMAIL_APP_PASSWORD.", exc_info=True)
+    except Exception as e:
+        logger.error(f"Error sending email via Gmail to {recipient_email}: {e}", exc_info=True)
+
 
 async def _run_gemini_prompt(prompt_text: str) -> str:
     try:
@@ -116,32 +305,35 @@ async def _run_gemini_prompt(prompt_text: str) -> str:
              # Check for safety feedback which might indicate blocking
             safety_feedback = response.prompt_feedback if hasattr(response, 'prompt_feedback') else "No feedback available."
             logger.error(f"Gemini response blocked or empty. Safety Feedback: {safety_feedback}. Prompt: {prompt_text[:500]}...") # Log beginning of prompt
+            # Raise exception instead of returning error string
             raise Exception(f"Gemini response was blocked or empty. Feedback: {safety_feedback}")
         return response.text.strip()
     except Exception as e:
         logger.error(f"Error in Gemini API call: {e}", exc_info=True)
         # Propagate specific error messages if available
+        error_message = f"An error occurred during a Gemini API call: {e}"
         if "response was blocked" in str(e):
-             # Try to extract more details if possible
              reason = "Safety settings"
              try:
-                 # Attempt to access potential block reason (structure might vary)
                  block_reason = getattr(e, 'block_reason', 'Unknown')
                  if hasattr(e, 'response') and hasattr(e.response, 'prompt_feedback'):
                       block_reason = e.response.prompt_feedback.block_reason
                  reason = str(block_reason)
              except Exception:
-                 pass # Keep default reason if extraction fails
-             return f"Error: The AI's response was blocked due to {reason}. Please try rephrasing or contact support."
-        return f"An error occurred during a Gemini API call: {e}"
+                 pass
+             error_message = f"Error: The AI's response was blocked due to {reason}. Please try rephrasing or contact support."
+        # Raise exception instead of returning error string
+        raise Exception(error_message)
 
 
 async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
     if not GEMINI_API_KEY:
-        return "Gemini API key not configured. AI reading is unavailable."
+        # Raise exception instead of returning error string
+        raise Exception("Gemini API key not configured. AI reading is unavailable.")
 
-    # --- Unknown Time Handling (remains unchanged) ---
+    # --- Unknown Time Handling ---
     if unknown_time:
+        # ... (rest of the unknown time logic remains the same) ...
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         numerology_analysis = chart_data.get("numerology_analysis", {})
         s_positions = chart_data.get("sidereal_major_positions", [])
@@ -179,18 +371,18 @@ Key Themes in Your Chart
 The Story of Your Inner World
 (Under this plain text heading, write a multi-paragraph narrative weaving together the Sun, Moon, numerology, and the three tightest aspects to explain the core themes. Do not use sub-labels like 'Introduction' or 'Body'.)
 """)
-        reading_result = await _run_gemini_prompt("\n".join(prompt_parts))
-        if "error" in reading_result.lower(): raise Exception(reading_result)
-        return reading_result
+        # Error handling now happens implicitly via raise in _run_gemini_prompt
+        return await _run_gemini_prompt("\n".join(prompt_parts))
+
 
     # --- Known Time - Multi-Step Process ---
+    # Wrap the entire multi-step process in a try...except to catch errors from any step
     try:
-        # --- Step 1: Analyze Alignments (No change) ---
+        # --- Step 1: Analyze Alignments ---
         cartographer_data = []
         s_pos_all = {p['name']: p for p in chart_data.get('sidereal_major_positions', []) + chart_data.get('sidereal_additional_points', [])}
         t_pos_all = {p['name']: p for p in chart_data.get('tropical_major_positions', []) + chart_data.get('tropical_additional_points', [])}
         
-        # Expand list for alignment analysis
         bodies_for_alignment = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Chiron', 'True Node', 'Lilith', 'Ascendant', 'Midheaven (MC)', 'Ceres', 'Pallas', 'Juno', 'Vesta']
         for body in bodies_for_alignment:
             s_body_data = s_pos_all.get(body)
@@ -213,9 +405,9 @@ Analyze the provided Sidereal and Tropical placements to identify the primary po
 3. Output nothing but this list.
 """
         cartographer_analysis = await _run_gemini_prompt(cartographer_prompt)
-        if "error" in cartographer_analysis.lower(): raise Exception(cartographer_analysis)
+        # Error check removed, will be caught by outer try/except
 
-        # --- Step 2: Identify Foundational Blueprint (No change) ---
+        # --- Step 2: Identify Foundational Blueprint ---
         s_analysis = chart_data.get("sidereal_chart_analysis", {})
         t_analysis = chart_data.get("tropical_chart_analysis", {})
         numerology = chart_data.get("numerology_analysis", {})
@@ -253,12 +445,11 @@ Identify the foundational blueprint of a soul. Analyze the provided chart data a
 4. Output this as a structured list. Do not write a narrative.
 """
         architect_analysis = await _run_gemini_prompt(architect_prompt)
-        if "error" in architect_analysis.lower(): raise Exception(architect_analysis)
+        # Error check removed
 
-        # --- Step 3: Interpret Karmic Path (using True Node, implying South Node) ---
-        # Data gathering uses the combined dictionaries
+        # --- Step 3: Interpret Karmic Path ---
         s_north_node = s_pos_all.get('True Node', {})
-        s_south_node = s_pos_all.get('South Node', {}) # Calculated in natal_chart.py
+        s_south_node = s_pos_all.get('South Node', {})
         t_north_node = t_pos_all.get('True Node', {})
         t_south_node = t_pos_all.get('South Node', {})
 
@@ -267,7 +458,7 @@ Identify the foundational blueprint of a soul. Analyze the provided chart data a
             f"- Sidereal North Node: {s_north_node.get('position')} in House {s_north_node.get('house_num')}",
             f"- Tropical South Node: {t_south_node.get('position')} in House {t_south_node.get('house_num')}",
             f"- Tropical North Node: {t_north_node.get('position')} in House {t_north_node.get('house_num')}",
-            f"- Dominant Element: {s_analysis.get('dominant_element')}" # Keeping Sidereal dominance for soul path context
+            f"- Dominant Element: {s_analysis.get('dominant_element')}"
         ]
         navigator_prompt = f"""
 Interpret the soul's journey from its past to its future potential, based on the Nodal Axis (True Node and implied South Node). Use the provided foundational themes to guide your interpretation.
@@ -284,14 +475,13 @@ Interpret the soul's journey from its past to its future potential, based on the
 3.  **Synthesize:** In a concluding paragraph, explain how the Sidereal (soul path) and Tropical (personality expression) Nodal placements work together. In your synthesis, highlight how the nodal axis is supported or challenged by the chart's dominant element.
 """
         navigator_analysis = await _run_gemini_prompt(navigator_prompt)
-        if "error" in navigator_analysis.lower(): raise Exception(navigator_analysis)
+        # Error check removed
 
-        # --- Step 4: Perform Deep-Dive Point Analysis (EXPANDED & MODIFIED) ---
+        # --- Step 4: Perform Deep-Dive Point Analysis ---
         async def run_specialist_for_point(point_name):
             s_point = s_pos_all.get(point_name, {})
             t_point = t_pos_all.get(point_name, {})
 
-            # Determine if retrograde applies and exists
             has_retrograde = point_name not in ['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'True Node', 'South Node', 'Part of Fortune', 'Vertex']
             retrograde_status = 'Yes' if has_retrograde and s_point.get('retrograde') else ('No' if has_retrograde else 'N/A')
 
@@ -302,9 +492,8 @@ Interpret the soul's journey from its past to its future potential, based on the
             if has_retrograde:
                  specialist_data.append(f"- Retrograde Status: {retrograde_status}")
 
-
-            # Dynamically adjust prompt based on point type
             interpretation_focus = f"soul’s core essence and karmic purpose related to {point_name}"
+            # ... (dynamic focus adjustments remain the same) ...
             if point_name in ['Ascendant', 'Descendant']:
                  interpretation_focus = f"interface with the world and relationships through {point_name}"
             elif point_name in ['Midheaven (MC)', 'Imum Coeli (IC)']:
@@ -319,9 +508,7 @@ Interpret the soul's journey from its past to its future potential, based on the
                  interpretation_focus = "point of innate luck, joy, and harmonious expression"
             elif point_name == 'Vertex':
                  interpretation_focus = "point of fated encounters and significant turning points"
-            # Add specific focuses for Ceres, Pallas, Juno, Vesta if desired
 
-            # Simplified 3-paragraph prompt for all points
             specialist_prompt = f"""
 You are an expert astrologer trained in both Sidereal and Tropical systems. For the point/body '{point_name}', you must write three separate, detailed paragraphs: one for its Sidereal interpretation, one for its Tropical interpretation, and a third for synthesizing these views. Use precise astrological terminology and explain your reasoning.
 
@@ -343,24 +530,39 @@ Write three clearly separated, detailed paragraphs:
 **Synthesis:**
 (In this paragraph, compare the Sidereal vs. Tropical expressions for {point_name}. Are they aligned, in tension, or complementary? How does the house placement in one system support or challenge the other?)
 """
+            # Error handling inside _run_gemini_prompt will raise exception on failure
             result_text = await _run_gemini_prompt(specialist_prompt)
-            if "error" in result_text.lower(): raise Exception(f"Error in Specialist for {point_name}: {result_text}")
             return f"--- {point_name.upper()} ---\n{result_text}"
 
-        # Define all points to analyze
         points_to_analyze = [
-            'Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', # Planets
-            'Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', # Angles
-            'True Node', 'South Node', # Nodes
-            'Chiron', 'Lilith', 'Ceres', 'Pallas', 'Juno', 'Vesta', # Asteroids/Points
-            'Part of Fortune', 'Vertex' # Other Points
+            'Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto',
+            'Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)',
+            'True Node', 'South Node',
+            'Chiron', 'Lilith', 'Ceres', 'Pallas', 'Juno', 'Vesta',
+            'Part of Fortune', 'Vertex'
         ]
 
-        specialist_tasks = [run_specialist_for_point(p) for p in points_to_analyze if p in s_pos_all] # Only analyze points present in data
-        specialist_analyses = await asyncio.gather(*specialist_tasks)
-        combined_specialist_analysis = "\n\n".join(specialist_analyses)
+        # Use asyncio.gather with return_exceptions=True to handle potential errors in parallel calls
+        specialist_tasks_results = await asyncio.gather(
+            *[run_specialist_for_point(p) for p in points_to_analyze if p in s_pos_all],
+            return_exceptions=True
+        )
+        
+        # Check results for exceptions
+        combined_specialist_analysis_parts = []
+        for result in specialist_tasks_results:
+            if isinstance(result, Exception):
+                logger.error(f"Error during specialist analysis step: {result}", exc_info=result)
+                # Option 1: Raise the first exception encountered
+                raise result 
+                # Option 2: Collect errors and continue, potentially returning a partial report or specific error message
+                # combined_specialist_analysis_parts.append(f"Error analyzing point: {result}") 
+            else:
+                combined_specialist_analysis_parts.append(result)
+        combined_specialist_analysis = "\n\n".join(combined_specialist_analysis_parts)
 
-        # --- Step 5: Analyze Tightest Aspects (remains focused on top 5) ---
+
+        # --- Step 5: Analyze Tightest Aspects ---
         s_tightest_aspects = chart_data.get('sidereal_aspects', [])[:5] 
         aspect_data_for_prompt = []
         for a in s_tightest_aspects:
@@ -368,7 +570,6 @@ Write three clearly separated, detailed paragraphs:
              p2_name_base = a['p2_name'].split(' in ')[0]
              p1_house = s_pos_all.get(p1_name_base, {}).get('house_num', 'N/A')
              p2_house = s_pos_all.get(p2_name_base, {}).get('house_num', 'N/A')
-             # Add Rx status if applicable
              p1_rx = " (Rx)" if s_pos_all.get(p1_name_base, {}).get('retrograde') else ""
              p2_rx = " (Rx)" if s_pos_all.get(p2_name_base, {}).get('retrograde') else ""
              aspect_data_for_prompt.append(f"- {a['p1_name']}{p1_rx} (House {p1_house}) {a['type']} {a['p2_name']}{p2_rx} (House {p2_house}) (orb {a['orb']}, score {a['score']})")
@@ -387,10 +588,9 @@ You are The Weaver, an astrologer who sees the hidden connections in a chart. Yo
 **Analyze Tightest Aspects:** For each of the five tightest aspects listed above, write a dedicated, detailed paragraph (5 paragraphs total). Explain the dynamic it creates between the two bodies involved, referencing their signs and houses as provided in the aspect string. Describe how this specific aspect energy is likely to manifest as a core life theme or psychological dynamic, representing a central challenge, strength, or unique characteristic for the individual. Focus on providing insightful interpretation for each aspect individually. Output ONLY these 5 paragraphs, clearly separated.
 """
         weaver_analysis = await _run_gemini_prompt(weaver_prompt)
-        if "error" in weaver_analysis.lower(): raise Exception(weaver_analysis)
+        # Error check removed
 
-        # --- Step 6: Final Synthesis (MODIFIED) ---
-        # Updated Storyteller prompt instructions to include the expanded list
+        # --- Step 6: Final Synthesis ---
         storyteller_prompt = f"""
 You are The Synthesizer, an insightful astrological consultant who excels at weaving complex data into a clear and compelling narrative. Your skill is in explaining complex astrological data in a practical and grounded way. You will write a comprehensive, in-depth reading based *exclusively* on the structured analysis provided below. Your tone should be insightful and helpful, avoiding overly spiritual or "dreamy" language.
 
@@ -435,16 +635,38 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
 (Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. This section should be at least 500 words.)
 """
         final_reading = await _run_gemini_prompt(storyteller_prompt)
-        if "error" in final_reading.lower(): raise Exception(final_reading)
+        # Error check removed
         return final_reading
 
     except Exception as e:
-        logger.error(f"Error during multi-step Gemini reading: {e}", exc_info=True)
-        # Return a user-friendly error message, potentially incorporating the specific error e
-        return f"An error occurred while generating the detailed AI reading: {e}"
+        # Catch errors from any step in the known-time process
+        logger.error(f"Error during multi-step Gemini reading (known time): {e}", exc_info=True)
+        # Raise the exception to be handled by the endpoint
+        raise Exception(f"An error occurred while generating the detailed AI reading: {e}")
 
 
-# --- API Endpoints ---
+# Simplified background task ONLY for sending emails
+async def send_emails_in_background(chart_data: Dict, gemini_reading: str, user_inputs: Dict, chart_image_base64: Optional[str]):
+    try:
+        logger.info("Starting background task for email sending.")
+        user_email = user_inputs.get('user_email')
+        chart_name = user_inputs.get('full_name', 'N/A')
+
+        # Send email to the user (if provided)
+        if user_email:
+            user_html_content = format_full_report_for_email(chart_data, gemini_reading, user_inputs, chart_image_base64, include_inputs=False)
+            send_chart_email(user_html_content, user_email, f"Your Astrology Chart Report for {chart_name}")
+            
+        # Send email to the admin (if configured)
+        admin_email_to_send_to = os.getenv("ADMIN_EMAIL") # Get admin email inside task
+        if admin_email_to_send_to:
+            admin_html_content = format_full_report_for_email(chart_data, gemini_reading, user_inputs, chart_image_base64, include_inputs=True)
+            send_chart_email(admin_html_content, admin_email_to_send_to, f"New Chart Generated: {chart_name}")
+        
+        logger.info(f"Email background task completed for {chart_name}.")
+    except Exception as e:
+        logger.error(f"Error in email background task: {e}", exc_info=True)
+
 
 @app.post("/calculate_chart")
 async def calculate_chart_endpoint(data: ChartRequest):
@@ -537,32 +759,39 @@ async def calculate_chart_endpoint(data: ChartRequest):
 
 @app.post("/generate_reading")
 @limiter.limit("3/month")
-async def generate_reading_endpoint(request: Request, reading_data: ReadingRequest):
+async def generate_reading_endpoint(
+    request: Request,
+    reading_data: ReadingRequest,
+    background_tasks: BackgroundTasks
+):
     """
-    This endpoint now runs the AI generation synchronously and returns the result to the user.
-    Email functionality has been removed.
+    This endpoint runs the AI generation synchronously to return to the user,
+    and handles email sending in the background using Gmail SMTP.
     """
     try:
+        # Run AI generation synchronously
         gemini_reading = await get_gemini_reading(reading_data.chart_data, reading_data.unknown_time)
         
-        # Check if the reading function returned an error message string
-        if isinstance(gemini_reading, str) and "error" in gemini_reading.lower():
-             # Return a structured error response
-             logger.error(f"AI Reading generation failed: {gemini_reading}")
-             raise HTTPException(status_code=500, detail=gemini_reading) # Send specific error back
-
-        # Log that a chart was generated for the admin, but don't send an email.
+        # Log basic info
         user_inputs = reading_data.user_inputs
         chart_name = user_inputs.get('full_name', 'N/A')
-        logger.info(f"AI Reading successfully generated for: {chart_name}")
+        logger.info(f"AI Reading successfully generated for: {chart_name}") # Log success before email attempt
 
+        # Add ONLY the email sending to a background task
+        background_tasks.add_task(
+            send_emails_in_background,
+            chart_data=reading_data.chart_data,
+            gemini_reading=gemini_reading,
+            user_inputs=user_inputs,
+            chart_image_base64=reading_data.chart_image_base64
+        )
+
+        # Return the reading to the frontend
         return {"gemini_reading": gemini_reading}
     
-    # Handle specific HTTP exceptions raised during generation (like Gemini errors from get_gemini_reading)
-    except HTTPException as e:
-        # Already logged in get_gemini_reading or calculate_chart, just re-raise
-        raise e
-    except Exception as e:
-        logger.error(f"General Error in /generate_reading endpoint: {type(e).__name__} - {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="An unexpected error occurred while generating the AI reading.")
+    # Handle exceptions specifically from get_gemini_reading
+    except Exception as e: 
+        logger.error(f"Error during AI reading generation in endpoint: {e}", exc_info=True)
+        # Raise HTTPException to send error detail back to frontend
+        raise HTTPException(status_code=500, detail=str(e))
 
