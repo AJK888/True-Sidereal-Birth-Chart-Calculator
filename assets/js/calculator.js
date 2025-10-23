@@ -28,7 +28,8 @@ const AstrologyCalculator = {
         }
 
         if (emailLabel) {
-            emailLabel.innerHTML = 'Your Email <span class="field-note">Optional: For your records. Not required.</span>';
+            // Updated text to reflect optional nature (email is not used for sending)
+            emailLabel.innerHTML = 'Your Email <span class="field-note">Optional: For your records only. Report will display on page.</span>';
         }
     },
 
@@ -81,16 +82,19 @@ const AstrologyCalculator = {
 		try {
 			const chartData = await this.fetchChartData();
 			this.displayInitialResults(chartData);
+			// Fetch and display AI reading directly on the page
 			await this.fetchAndDisplayAIReading(chartData);
 		} catch (err) {
+            // Display error and ensure loading state is off
 			this.resultsContainer.style.display = 'block';
 			this.resultsTitle.parentElement.style.display = 'block';
 			const siderealOutput = document.getElementById('sidereal-output');
+            this.geminiOutput.innerText = "Error calculating chart or generating reading: " + err.message;
 			if(siderealOutput) siderealOutput.innerText = "Error: " + err.message;
+            this.setLoadingState(false); // Make sure loading stops on error
 
-		} finally {
-            // Loading state is set to false inside fetchAndDisplayAIReading
-		}
+		} 
+        // finally block is removed as loading state is handled in fetchAndDisplayAIReading or catch block
 	},
 	
 	async fetchChartData() {
@@ -154,10 +158,7 @@ const AstrologyCalculator = {
 			};
 
 			let chartImageBase64 = null;
-			if (this.siderealWheelSvg && this.siderealWheelSvg.innerHTML.trim() !== '' && !chartData.unknown_time) {
-				const svgString = new XMLSerializer().serializeToString(this.siderealWheelSvg);
-				chartImageBase64 = btoa(unescape(encodeURIComponent(svgString)));
-			}
+			// Removed image generation logic as it's not needed without email
 
 			const headers = { "Content-Type": "application/json" };
 			const urlParams = new URLSearchParams(window.location.search);
@@ -166,6 +167,7 @@ const AstrologyCalculator = {
 				headers['X-Admin-Secret'] = adminSecret;
 			}
 
+            // This fetch now waits for the full reading before proceeding
 			const readingRes = await fetch(this.API_URLS.reading, {
 				method: "POST",
 				headers: headers,
@@ -173,7 +175,7 @@ const AstrologyCalculator = {
 					chart_data: chartData,
 					unknown_time: chartData.unknown_time,
 					user_inputs: userInputs,
-					chart_image_base64: chartImageBase64
+					chart_image_base64: null // Not sending image data anymore
 				})
 			});
 
@@ -186,16 +188,16 @@ const AstrologyCalculator = {
             
 			this.geminiOutput.innerHTML = readingResult.gemini_reading ? readingResult.gemini_reading.replace(/\n/g, '<br>') : "The AI reading could not be generated at this time.";
             if (this.copyReadingBtn) {
-                this.copyReadingBtn.style.display = 'inline-block';
+                this.copyReadingBtn.style.display = 'inline-block'; // Show copy button
             }
 
 		} catch (err) {
 			this.geminiOutput.innerText = "Error: The AI reading is currently unavailable. " + err.message;
             if (this.copyReadingBtn) {
-                this.copyReadingBtn.style.display = 'none';
+                this.copyReadingBtn.style.display = 'none'; // Hide copy button on error
             }
 		} finally {
-            this.setLoadingState(false);
+            this.setLoadingState(false); // Stop loading indicator here
         }
 	},
 
@@ -240,7 +242,8 @@ const AstrologyCalculator = {
 
 	setLoadingState(isLoading) {
 		this.submitBtn.disabled = isLoading;
-		this.submitBtn.innerText = isLoading ? "Calculating..." : "Calculate Chart";
+		// Updated button text for synchronous loading
+		this.submitBtn.innerText = isLoading ? "Generating AI Synthesis..." : "Calculate Chart";
 
 		if (isLoading) {
 			this.resultsContainer.style.display = 'none';
@@ -251,11 +254,16 @@ const AstrologyCalculator = {
 	},
 
 	displayInitialResults(chartData) {
+        // Updated initial message for synchronous loading
 		this.geminiOutput.innerHTML = "Generating AI Synthesis... This deep analysis can take several minutes. Please do not leave this page while it loads.";
 		this.renderTextResults(chartData);
 
 		this.geminiTitle.parentElement.style.display = 'block';
 		this.resultsTitle.parentElement.style.display = 'block';
+        if(this.copyReadingBtn) { // Hide copy button initially
+            this.copyReadingBtn.style.display = 'none';
+        }
+
 
 		const chartWheelsWrapper = document.querySelector('#results .chart-wheels-wrapper');
 		const chartPlaceholder = document.getElementById('chart-placeholder');
@@ -278,6 +286,9 @@ const AstrologyCalculator = {
 			this.wheelTitle.parentElement.style.display = 'block';
 			chartWheelsWrapper.style.display = 'none';
 			chartPlaceholder.style.display = 'block';
+            // Also clear the SVGs explicitly if time is unknown
+             if (this.siderealWheelSvg) this.siderealWheelSvg.innerHTML = '';
+             if (this.tropicalWheelSvg) this.tropicalWheelSvg.innerHTML = '';
 		}
 
 		this.resultsContainer.style.display = 'block';
@@ -286,22 +297,25 @@ const AstrologyCalculator = {
 			this.resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}, 100);
 	},
-
+    
 	copyReadingToClipboard() {
         if (!this.geminiOutput) return;
 
-        const textToCopy = this.geminiOutput.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+        // Convert <br> back to newlines for plain text copy
+        const textToCopy = this.geminiOutput.innerHTML.replace(/<br\s*\/?>/gi, '\n'); 
 
         const textArea = document.createElement('textarea');
         textArea.value = textToCopy;
-        textArea.style.position = 'fixed';
-        textArea.style.opacity = 0;
+        textArea.style.position = 'fixed'; // Prevent scrolling to bottom of page in MS Edge.
+        textArea.style.left = '-9999px';
+        textArea.style.top = '0';
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
 
         try {
-            document.execCommand('copy');
+            // Use document.execCommand for broader compatibility
+            document.execCommand('copy'); 
             this.copyReadingBtn.innerText = 'Copied!';
             setTimeout(() => {
                 this.copyReadingBtn.innerText = 'Copy Reading';
@@ -490,7 +504,7 @@ const AstrologyCalculator = {
 	drawChartWheel(data, svgId, chartType) {
 		const svg = document.getElementById(svgId);
 		if (!svg) return;
-		svg.innerHTML = '';
+		svg.innerHTML = ''; // Clear previous chart
 
 		const centerX = 500, centerY = 500;
 		const zodiacRadius = 450, houseRingRadius = 350, innerRadius = 150;
@@ -499,37 +513,44 @@ const AstrologyCalculator = {
 		const aspects = data[`${chartType}_aspects`];
 		const houseCusps = data[`${chartType}_house_cusps`];
 
+		// Check if Ascendant data is available (needed for rotation)
 		const ascendant = positions.find(p => p.name === 'Ascendant');
 		if (!ascendant || ascendant.degrees === null) {
+            // Display message directly in the SVG area if time is unknown
 			svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text>';
-			return;
+			return; // Stop drawing if no Ascendant
 		}
 		
-		const rotation = ascendant.degrees - 180;
+		// Rotation based on Ascendant degree
+		const rotation = ascendant.degrees - 180; 
 
 		const mainGroup = document.createElementNS(this.SVG_NS, 'g');
 		mainGroup.setAttribute('transform', `rotate(${rotation} ${centerX} ${centerY})`);
 		svg.appendChild(mainGroup);
 
+		// Helper to convert degrees to SVG coordinates
 		const degreeToCartesian = (radius, angleDegrees) => {
-			const angleRadians = -angleDegrees * (Math.PI / 180);
+			const angleRadians = -angleDegrees * (Math.PI / 180); // SVG rotation is clockwise, math is counter-clockwise
 			return { x: centerX + radius * Math.cos(angleRadians), y: centerY + radius * Math.sin(angleRadians) };
 		};
 
+		// Draw Aspect Lines
 		if (aspects) {
 			aspects.forEach(aspect => {
-				if (aspect.p1_degrees === null || aspect.p2_degrees === null) return;
+				// Ensure degrees exist for both planets involved in the aspect
+				if (aspect.p1_degrees === null || aspect.p2_degrees === null) return; 
 				const p1Coords = degreeToCartesian(innerRadius, aspect.p1_degrees);
 				const p2Coords = degreeToCartesian(innerRadius, aspect.p2_degrees);
 				const line = document.createElementNS(this.SVG_NS, 'line');
 				line.setAttribute('x1', p1Coords.x); line.setAttribute('y1', p1Coords.y);
 				line.setAttribute('x2', p2Coords.x); line.setAttribute('y2', p2Coords.y);
-				const aspectClass = aspect.type.toLowerCase().replace(' ', '-');
+				const aspectClass = aspect.type.toLowerCase().replace(' ', '-'); // e.g., 'square', 'grand-trine'
 				line.setAttribute('class', `aspect-line aspect-${aspectClass}`);
 				mainGroup.appendChild(line);
 			});
 		}
 
+		// Draw Concentric Circles
 		[zodiacRadius, houseRingRadius, innerRadius].forEach(r => {
 			const circle = document.createElementNS(this.SVG_NS, 'circle');
 			circle.setAttribute('cx', centerX); circle.setAttribute('cy', centerY);
@@ -538,10 +559,13 @@ const AstrologyCalculator = {
 			mainGroup.appendChild(circle);
 		});
 		
-		const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2;
+		// Draw Zodiac Signs & Dividers
+		const glyphRadius = houseRingRadius + (zodiacRadius - houseRingRadius) / 2; // Midpoint of the zodiac band
 		if (chartType === 'sidereal' && data.true_sidereal_signs) {
+			// Sidereal: Use variable sign boundaries
 			data.true_sidereal_signs.forEach(sign => {
 				const [name, start, end] = sign;
+				// Draw divider line at the start of the sign
 				const p1 = degreeToCartesian(houseRingRadius, start);
 				const p2 = degreeToCartesian(zodiacRadius, start);
 				const line = document.createElementNS(this.SVG_NS, 'line');
@@ -550,18 +574,20 @@ const AstrologyCalculator = {
 				line.setAttribute('class', 'zodiac-divider');
 				mainGroup.appendChild(line);
 
-				const midAngle = start + ((end - start + 360) % 360) / 2;
+				// Place glyph in the middle of the sign
+				const midAngle = start + ((end - start + 360) % 360) / 2; // Handle wrap-around
 				const textCoords = degreeToCartesian(glyphRadius, midAngle);
 				const text = document.createElementNS(this.SVG_NS, 'text');
 				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
 				text.setAttribute('class', 'zodiac-glyph');
-				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
+				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`); // Counter-rotate text
 				text.textContent = this.ZODIAC_GLYPHS[name];
 				mainGroup.appendChild(text);
 			});
-		} else { // Tropical Signs
+		} else { // Tropical Signs: Equal 30-degree divisions
 			for (let i = 0; i < 12; i++) {
 				const start = i * 30;
+				// Draw divider line
 				const p1 = degreeToCartesian(houseRingRadius, start);
 				const p2 = degreeToCartesian(zodiacRadius, start);
 				const line = document.createElementNS(this.SVG_NS, 'line');
@@ -570,55 +596,69 @@ const AstrologyCalculator = {
 				line.setAttribute('class', 'zodiac-divider');
 				mainGroup.appendChild(line);
 
+				// Place glyph in the middle (15 degrees into the sign)
 				const midAngle = start + 15;
 				const textCoords = degreeToCartesian(glyphRadius, midAngle);
 				const text = document.createElementNS(this.SVG_NS, 'text');
 				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
 				text.setAttribute('class', 'zodiac-glyph');
-				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
-				text.textContent = this.TROPICAL_ZODIAC_ORDER[i];
+				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`); // Counter-rotate text
+				// FIX: Look up the glyph from the ZODIAC_GLYPHS map
+                text.textContent = this.ZODIAC_GLYPHS[this.TROPICAL_ZODIAC_ORDER[i]]; 
 				mainGroup.appendChild(text);
 			}
 		}
 
 
+		// Draw House Cusps & Numbers
 		if (houseCusps && houseCusps.length === 12) {
+			// Draw cusp lines
 			houseCusps.forEach((cuspDegrees, i) => {
 				const p1 = degreeToCartesian(innerRadius, cuspDegrees);
 				const p2 = degreeToCartesian(houseRingRadius, cuspDegrees);
 				const line = document.createElementNS(this.SVG_NS, 'line');
 				line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
 				line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
-				line.setAttribute('class', (i % 3 === 0) ? 'house-cusp major' : 'house-cusp');
+				// Make Asc/MC/Desc/IC lines thicker
+				line.setAttribute('class', (i % 3 === 0) ? 'house-cusp major' : 'house-cusp'); 
 				mainGroup.appendChild(line);
 			});
+			// Draw house numbers in the middle of each house
 			for (let i = 0; i < 12; i++) {
 				const startAngle = houseCusps[i];
 				const endAngle = houseCusps[(i + 1) % 12];
+				// Calculate midpoint angle, handling wrap-around from 360 to 0
 				let midAngle = (startAngle + endAngle) / 2;
-				if (endAngle < startAngle) midAngle = ((startAngle + endAngle + 360) / 2) % 360;
-				const textCoords = degreeToCartesian(innerRadius + 25, midAngle);
+				if (endAngle < startAngle) midAngle = ((startAngle + endAngle + 360) / 2) % 360; 
+				const textCoords = degreeToCartesian(innerRadius + 25, midAngle); // Place number inside inner circle
 				const text = document.createElementNS(this.SVG_NS, 'text');
 				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
 				text.setAttribute('class', 'house-number');
-				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
+				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`); // Counter-rotate text
 				text.textContent = i + 1;
 				mainGroup.appendChild(text);
 			}
 		}
 		
+		// Draw Planets/Points with adjusted positions to avoid overlap
 		if (positions) {
-			const outerGlyphRadius = zodiacRadius + 35;
-			const glyphConnectorRadius = zodiacRadius;
-			const minGlyphSeparation = 8;
+			const outerGlyphRadius = zodiacRadius + 35; // Position glyphs outside the wheel
+			const glyphConnectorRadius = zodiacRadius; // Line starts from outer circle
+			const minGlyphSeparation = 8; // Minimum degrees between glyphs
 
+			// Filter valid planets and sort by degree
 			let planets = positions
 				.filter(p => p.degrees !== null && this.PLANET_GLYPHS[p.name])
 				.sort((a, b) => a.degrees - b.degrees);
 
+			// Adjust positions iteratively to prevent overlap
 			if (planets.length > 0) {
-				planets.forEach(p => p.adjustedDegrees = p.degrees);
-				for (let k = 0; k < 2; k++) {
+				// Initialize adjusted degrees
+				planets.forEach(p => p.adjustedDegrees = p.degrees); 
+
+				// Run adjustment loop twice for better distribution
+				for (let k = 0; k < 2; k++) { 
+					// Check wrap-around overlap (last planet vs first planet)
 					let last = planets[planets.length - 1];
 					let first = planets[0];
 					let angleDiffWrap = (first.adjustedDegrees + 360) - last.adjustedDegrees;
@@ -627,42 +667,47 @@ const AstrologyCalculator = {
 						first.adjustedDegrees += adjustment;
 						last.adjustedDegrees -= adjustment;
 					}
+					// Check overlap between adjacent planets
 					for (let i = 1; i < planets.length; i++) {
 						let prev = planets[i-1];
 						let current = planets[i];
 						let angleDiff = current.adjustedDegrees - prev.adjustedDegrees;
 						if (angleDiff < minGlyphSeparation) {
 							let adjustment = (minGlyphSeparation - angleDiff) / 2;
-							prev.adjustedDegrees -= adjustment;
-							current.adjustedDegrees += adjustment;
+							prev.adjustedDegrees -= adjustment; // Push previous back
+							current.adjustedDegrees += adjustment; // Push current forward
 						}
 					}
 				}
 			}
 
+			// Draw each planet glyph and connecting line
 			planets.forEach(planet => {
-				const lineStartCoords = degreeToCartesian(glyphConnectorRadius, planet.degrees);
-				const lineEndCoords = degreeToCartesian(outerGlyphRadius, planet.adjustedDegrees);
+				// Line from outer circle to adjusted glyph position
+				const lineStartCoords = degreeToCartesian(glyphConnectorRadius, planet.degrees); // Line starts at true degree
+				const lineEndCoords = degreeToCartesian(outerGlyphRadius, planet.adjustedDegrees); // Line ends at adjusted degree
 				const line = document.createElementNS(this.SVG_NS, 'line');
 				line.setAttribute('x1', lineStartCoords.x); line.setAttribute('y1', lineStartCoords.y);
 				line.setAttribute('x2', lineEndCoords.x); line.setAttribute('y2', lineEndCoords.y);
-				line.setAttribute('class', 'zodiac-divider');
+				line.setAttribute('class', 'zodiac-divider'); // Use same style as dividers
 				mainGroup.appendChild(line);
 
-				const textCoords = degreeToCartesian(outerGlyphRadius + 20, planet.adjustedDegrees);
+				// Place planet glyph at adjusted position
+				const textCoords = degreeToCartesian(outerGlyphRadius + 20, planet.adjustedDegrees); // Place glyph slightly further out
 				const text = document.createElementNS(this.SVG_NS, 'text');
 				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
 				text.setAttribute('class', 'planet-glyph');
-				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`);
+				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`); // Counter-rotate
 				text.textContent = this.PLANET_GLYPHS[planet.name];
 				mainGroup.appendChild(text);
 
+				// Add 'Rx' symbol if retrograde
 				if (planet.retrograde) {
-					const rxCoords = degreeToCartesian(outerGlyphRadius + 22, planet.adjustedDegrees + 4.5);
+					const rxCoords = degreeToCartesian(outerGlyphRadius + 22, planet.adjustedDegrees + 4.5); // Offset slightly
 					const rxText = document.createElementNS(this.SVG_NS, 'text');
 					rxText.setAttribute('x', rxCoords.x); rxText.setAttribute('y', rxCoords.y);
 					rxText.setAttribute('class', 'planet-retrograde');
-					rxText.setAttribute('transform', `rotate(${-rotation} ${rxCoords.x} ${rxCoords.y})`);
+					rxText.setAttribute('transform', `rotate(${-rotation} ${rxCoords.x} ${rxCoords.y})`); // Counter-rotate
 					rxText.textContent = '℞';
 					mainGroup.appendChild(rxText);
 				}
