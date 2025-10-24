@@ -779,30 +779,12 @@ async def generate_reading_endpoint(
     This endpoint runs the AI generation synchronously to return to the user,
     and handles email sending in the background using Gmail SMTP.
     """
-    try:
-        # Run AI generation synchronously
-        gemini_reading = await get_gemini_reading(reading_data.chart_data, reading_data.unknown_time)
-        
-        # Log basic info
-        user_inputs = reading_data.user_inputs
-        chart_name = user_inputs.get('full_name', 'N/A')
-        logger.info(f"AI Reading successfully generated for: {chart_name}") # Log success before email attempt
+Signature: `(self, path: str, *, methods: 'list[str] | None' = None, name: 'str | None' = None, tags: 'list[str] | None' = None, summary: 'str | None' = None, description: 'str | None' = None, response_description: str = 'Successful Response', responses: 'dict[int | str, dict[str, Any]] | None' = None, deprecated: 'bool | None' = None, operation_id: 'str | None' = None, response_model: 'Any' = None, status_code: 'int | None' = None, dependencies: 'Sequence[Depends] | None' = None, response_model_include: 'IncEx' = None, response_model_exclude: 'IncEx' = None, response_model_by_alias: bool = True, response_model_exclude_unset: bool = False, response_model_exclude_defaults: bool = False, response_model_exclude_none: bool = False, include_in_schema: bool = True, response_class: 'type[Response]' = Default(JSONResponse), endpoint: 'Callable[..., Any] | None' = None, dependency_overrides_provider: 'Any' = None, callbacks: 'list[BaseRoute] | None' = None, openapi_extra: 'dict[str, Any] | None' = None, generate_unique_id_function: 'Callable[[APIRoute], str]' = Default(generate_unique_id)) -> Callable[[Callable[..., Any]], Callable[..., Any]]`
 
-        # Add ONLY the email sending to a background task
-        background_tasks.add_task(
-            send_emails_in_background,
-            chart_data=reading_data.chart_data,
-            gemini_reading=gemini_reading,
-            user_inputs=user_inputs,
-            chart_image_base64=reading_data.chart_image_base64
-        )
+Docstring:
+Decorator to add a path operation to the application.
 
-        # Return the reading to the frontend
-        return {"gemini_reading": gemini_reading}
-    
-    # Handle exceptions specifically from get_gemini_reading
-    except Exception as e: 
-        logger.error(f"Error during AI reading generation in endpoint: {e}", exc_info=True)
-        # Raise HTTPException to send error detail back to frontend
-        raise HTTPException(status_code=500, detail=str(e))
+It's a shortcut for `app.add_api_route()`, `app.api_route(path, methods=["GET"])`.
+
+It takes the same parameters as `app.api_route()`.
 
