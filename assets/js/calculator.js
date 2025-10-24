@@ -603,8 +603,9 @@ const AstrologyCalculator = {
 				text.setAttribute('x', textCoords.x); text.setAttribute('y', textCoords.y);
 				text.setAttribute('class', 'zodiac-glyph');
 				text.setAttribute('transform', `rotate(${-rotation} ${textCoords.x} ${textCoords.y})`); // Counter-rotate text
-				// FIX: Look up the glyph from the ZODIAC_GLYPHS map
-                text.textContent = this.ZODIAC_GLYPHS[this.TROPICAL_ZODIAC_ORDER[i]]; 
+				// FIX: Look up the glyph from the ZODIAC_GLYPHS map using the name from TROPICAL_ZODIAC_ORDER
+                const signName = this.TROPICAL_ZODIAC_ORDER[i];
+				text.textContent = this.ZODIAC_GLYPHS[signName]; 
 				mainGroup.appendChild(text);
 			}
 		}
