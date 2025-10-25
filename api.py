@@ -691,7 +691,8 @@ async def calculate_chart_endpoint(data: ChartRequest):
         if not os.path.exists(ephe_path):
              logger.warning(f"Ephemeris path '{ephe_path}' not found. Falling back to default.")
              ephe_path = "." # Fallback just in case
-        swe.set_ephe_path(ephe_path.encode('utf-8')) # Encode path for swisseph
+        # FIX: Remove .encode('utf-8') - pyswisseph expects a string path
+        swe.set_ephe_path(ephe_path) 
 
         opencage_key = os.getenv("OPENCAGE_KEY")
         if not opencage_key:
