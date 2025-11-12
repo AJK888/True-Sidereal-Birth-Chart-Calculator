@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
@@ -22,6 +22,10 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi.responses import JSONResponse
 import uuid
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
+import base64
+from pdf_generator import generate_pdf_report
 
 # --- SETUP THE LOGGER ---
 handler = None
@@ -39,6 +43,11 @@ if handler:
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
+
+# --- SETUP SENDGRID ---
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL")  # Verified sender email in SendGrid
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")  # Admin email for receiving copies
 
 # --- Admin Secret Key for bypassing rate limit ---
 ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
@@ -95,7 +104,7 @@ class ChartRequest(BaseModel):
     minute: int
     location: str
     unknown_time: bool = False
-    user_email: Optional[str] = None # Kept for data collection, but not used for sending email
+    user_email: Optional[str] = None  # User email for sending chart report
     no_full_name: bool = False
 
 class ReadingRequest(BaseModel):
@@ -382,6 +391,109 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
         return "An error occurred while generating the detailed AI reading."
 
 
+# --- Email Functions ---
+
+# Removed format_full_report_for_email - now using PDF generation instead
+
+
+def send_chart_email_via_sendgrid(pdf_bytes: bytes, recipient_email: str, subject: str, chart_name: str):
+    """Send email with PDF attachment using SendGrid API."""
+    if not SENDGRID_API_KEY:
+        logger.warning("SendGrid API key not configured. Skipping email.")
+        return False
+    
+    if not SENDGRID_FROM_EMAIL:
+        logger.warning("SendGrid FROM email not configured. Skipping email.")
+        return False
+
+    try:
+        # Create email message
+        message = Mail(
+            from_email=SENDGRID_FROM_EMAIL,
+            to_emails=recipient_email,
+            subject=subject,
+            html_content=f"""
+            <html>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <h2 style="color: #2c3e50;">Your Astrology Chart Report</h2>
+                <p>Dear {chart_name},</p>
+                <p>Thank you for using Synthesis Astrology. Your complete astrological chart report is attached as a PDF.</p>
+                <p>The PDF includes:</p>
+                <ul>
+                    <li>Your natal chart wheels (Sidereal and Tropical)</li>
+                    <li>Your complete AI Astrological Synthesis</li>
+                    <li>Full astrological data and positions</li>
+                </ul>
+                <p>We hope this report provides valuable insights into your personality, life patterns, and spiritual growth.</p>
+                <p>Best regards,<br>Synthesis Astrology</p>
+            </body>
+            </html>
+            """
+        )
+        
+        # Attach PDF
+        encoded_pdf = base64.b64encode(pdf_bytes).decode()
+        attachment = Attachment(
+            FileContent(encoded_pdf),
+            FileName(f"Astrology_Report_{chart_name.replace(' ', '_')}.pdf"),
+            FileType('application/pdf'),
+            Disposition('attachment')
+        )
+        message.add_attachment(attachment)
+        
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        
+        if response.status_code in [200, 202]:
+            logger.info(f"Email with PDF sent successfully via SendGrid to {recipient_email} (status: {response.status_code})")
+            return True
+        else:
+            logger.error(f"SendGrid returned non-success status: {response.status_code} - {response.body}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error sending email via SendGrid to {recipient_email}: {e}", exc_info=True)
+        return False
+
+
+async def send_emails_in_background(chart_data: Dict, gemini_reading: str, user_inputs: Dict):
+    """Background task to send emails with PDF attachments to user and admin."""
+    try:
+        logger.info("Starting background task for email sending.")
+        user_email = user_inputs.get('user_email')
+        chart_name = user_inputs.get('full_name', 'N/A')
+
+        # Generate PDF report
+        try:
+            pdf_bytes = generate_pdf_report(chart_data, gemini_reading, user_inputs)
+            logger.info(f"PDF generated successfully ({len(pdf_bytes)} bytes)")
+        except Exception as e:
+            logger.error(f"Error generating PDF: {e}", exc_info=True)
+            return  # Don't send emails if PDF generation fails
+
+        # Send email to the user (if provided)
+        if user_email:
+            send_chart_email_via_sendgrid(
+                pdf_bytes, 
+                user_email, 
+                f"Your Astrology Chart Report for {chart_name}",
+                chart_name
+            )
+            
+        # Send email to the admin (if configured)
+        if ADMIN_EMAIL:
+            send_chart_email_via_sendgrid(
+                pdf_bytes, 
+                ADMIN_EMAIL, 
+                f"New Chart Generated: {chart_name}",
+                chart_name
+            )
+        
+        logger.info(f"Email background task completed for {chart_name}.")
+    except Exception as e:
+        logger.error(f"Error in email background task: {e}", exc_info=True)
+
+
 # --- API Endpoints ---
 
 @app.post("/calculate_chart")
@@ -449,18 +561,25 @@ async def calculate_chart_endpoint(data: ChartRequest):
 
 @app.post("/generate_reading")
 @limiter.limit("3/month")
-async def generate_reading_endpoint(request: Request, reading_data: ReadingRequest):
+async def generate_reading_endpoint(request: Request, reading_data: ReadingRequest, background_tasks: BackgroundTasks):
     """
-    This endpoint now runs the AI generation synchronously and returns the result to the user.
-    Email functionality has been removed.
+    This endpoint runs the AI generation synchronously and returns the result to the user.
+    Email sending is handled in the background via SendGrid.
     """
     try:
         gemini_reading = await get_gemini_reading(reading_data.chart_data, reading_data.unknown_time)
         
-        # Log that a chart was generated for the admin, but don't send an email.
         user_inputs = reading_data.user_inputs
         chart_name = user_inputs.get('full_name', 'N/A')
         logger.info(f"AI Reading generated for: {chart_name}")
+
+        # Add email sending to background task
+        background_tasks.add_task(
+            send_emails_in_background,
+            chart_data=reading_data.chart_data,
+            gemini_reading=gemini_reading,
+            user_inputs=user_inputs
+        )
 
         return {"gemini_reading": gemini_reading}
     
