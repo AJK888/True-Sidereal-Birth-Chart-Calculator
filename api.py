@@ -17,8 +17,6 @@ import logging
 from logtail import LogtailHandler
 import google.generativeai as genai
 import asyncio
-import smtplib # Using smtplib for Gmail
-from email.message import EmailMessage # Using standard email library
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -274,31 +272,6 @@ def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inp
     html += f"<pre>{full_text_report}</pre>"
     
     return f"<html><head><style>body {{ font-family: sans-serif; }} pre {{ white-space: pre-wrap; word-wrap: break-word; }} img {{ max-width: 100%; height: auto; }}</style></head><body>{html}</body></html>"
-
-# Updated to use Gmail SMTP
-def send_chart_email(html_content: str, recipient_email: str, subject: str):
-    if not GMAIL_EMAIL or not GMAIL_APP_PASSWORD:
-        logger.warning("Gmail email or app password not configured. Skipping email.")
-        return
-
-    msg = EmailMessage()
-    msg['Subject'] = subject
-    msg['From'] = GMAIL_EMAIL
-    msg['To'] = recipient_email
-    msg.set_content("Please enable HTML to view this report.") # Fallback
-    msg.add_alternative(html_content, subtype='html')
-
-    try:
-        # Use smtp.gmail.com and port 465 for Gmail SSL
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-            smtp.login(GMAIL_EMAIL, GMAIL_APP_PASSWORD)
-            smtp.send_message(msg)
-            logger.info(f"Email sent via Gmail to {recipient_email}")
-    except smtplib.SMTPAuthenticationError as e:
-        logger.error(f"Gmail Authentication Error: {e.smtp_code} - {e.smtp_error}. Check GMAIL_EMAIL and GMAIL_APP_PASSWORD.", exc_info=True)
-    except Exception as e:
-        logger.error(f"Error sending email via Gmail to {recipient_email}: {e}", exc_info=True)
-
 
 async def _run_gemini_prompt(prompt_text: str) -> str:
     try:
@@ -659,7 +632,6 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
         raise Exception(f"An error occurred while generating the detailed AI reading: {e}")
 
 
-<<<<<<< HEAD
 # --- Email Functions ---
 
 # Removed format_full_report_for_email - now using PDF generation instead
