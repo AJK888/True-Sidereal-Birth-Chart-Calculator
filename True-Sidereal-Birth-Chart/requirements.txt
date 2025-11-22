@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+pyswisseph
+anyio
+a2wsgi
+requests
+pendulum
+logtail-python
+httpx
+google-generativeai
+sendgrid
+slowapi
+reportlab
+cairosvg
+Pillow
