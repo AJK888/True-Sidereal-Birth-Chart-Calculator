@@ -820,7 +820,12 @@ async def calculate_chart_endpoint(data: ChartRequest):
         )
         chart.calculate_chart(unknown_time=data.unknown_time)
         
-        numerology = calculate_numerology(data.day, data.month, data.year)
+        numerology_raw = calculate_numerology(data.day, data.month, data.year)
+        # Convert to expected format: {"life_path": ...} -> {"life_path_number": ...}
+        numerology = {
+            "life_path_number": numerology_raw.get("life_path", "N/A"),
+            "day_number": numerology_raw.get("day_number", "N/A")
+        }
         
         name_numerology = None
         name_parts = data.full_name.strip().split()

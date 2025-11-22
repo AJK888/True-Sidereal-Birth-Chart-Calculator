@@ -165,12 +165,16 @@ class NatalChart:
         self.aspects: List[Aspect] = []; self.aspect_patterns: List[Dict[str, Any]] = []
         self.house_sign_distributions: Dict[str, List[str]] = {}; self.dominance_analysis: Dict[str, Any] = {}
         self.ascendant_data: Dict[str, Any] = {}; self.day_night_info: Dict[str, Any] = {}
-    def calculate_chart(self) -> None:
+    def calculate_chart(self, unknown_time: bool = False) -> None:
         self._calculate_ascendant_mc_data();
         if self.ascendant_data.get("sidereal_asc") is None: return
-        self._determine_day_night(); self._calculate_all_points()
+        if not unknown_time:
+            self._determine_day_night()
+        self._calculate_all_points()
         self._calculate_aspects(); self._detect_aspect_patterns()
-        self._calculate_house_sign_distributions(); self._analyze_chart_dominance()
+        if not unknown_time:
+            self._calculate_house_sign_distributions()
+        self._analyze_chart_dominance()
     def _calculate_ascendant_mc_data(self) -> None:
         try:
             res = swe.houses(self.jd, self.latitude, self.longitude, b'P'); ayanamsa = 31.38 + ((self.birth_year - 2000) / 72.0)
@@ -257,3 +261,109 @@ class NatalChart:
         self.dominance_analysis = {f"dominant_{k}": max(v, key=v.get) if v else "N/A" for k, v in counts.items()}
         self.dominance_analysis['dominant_planet'] = max(strength, key=strength.get) if strength else "N/A"
         self.dominance_analysis['counts'] = counts; self.dominance_analysis['strength'] = {k: round(v, 2) for k, v in strength.items()}
+    
+    def get_full_chart_data(self, numerology: dict, name_numerology: Optional[dict], chinese_zodiac: dict, unknown_time: bool) -> dict:
+        """Build the full chart response dictionary."""
+        # Major positions order
+        MAJOR_POSITIONS_ORDER = ['Ascendant', 'Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Chiron', 'True Node', 'South Node', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)']
+        
+        # Build sidereal major positions
+        sidereal_major_positions = []
+        for p in sorted(self.all_points, key=lambda x: MAJOR_POSITIONS_ORDER.index(x.name) if x.name in MAJOR_POSITIONS_ORDER else 99):
+            if p.name in MAJOR_POSITIONS_ORDER:
+                sidereal_major_positions.append({
+                    "name": p.name,
+                    "position": p.formatted_position,
+                    "degrees": p.degree,
+                    "percentage": p.sign_percentage,
+                    "retrograde": p.retrograde,
+                    "house_info": f"– House {p.house_num}, {p.house_degrees}" if p.house_num > 0 and not unknown_time else "",
+                    "house_num": p.house_num
+                })
+        
+        # Build sidereal retrogrades
+        sidereal_retrogrades = [{"name": p.name} for p in self.celestial_bodies if p.retrograde and p.is_main_planet]
+        
+        # Build sidereal aspects
+        sidereal_aspects = [{
+            "p1_name": f"{a.p1.name} in {a.p1.sign}{' (Rx)' if a.p1.retrograde else ''}",
+            "p2_name": f"{a.p2.name} in {a.p2.sign}{' (Rx)' if a.p2.retrograde else ''}",
+            "type": a.type,
+            "orb": f"{abs(a.orb):.2f}°",
+            "score": f"{a.strength:.2f}",
+            "p1_degrees": a.p1.degree,
+            "p2_degrees": a.p2.degree
+        } for a in self.aspects]
+        
+        # Build additional points
+        sidereal_additional_points = []
+        for p in sorted(self.all_points, key=lambda x: x.name):
+            if p.name not in MAJOR_POSITIONS_ORDER:
+                sidereal_additional_points.append({
+                    "name": p.name,
+                    "info": f"{p.formatted_position} – House {p.house_num}, {p.house_degrees}" if p.house_num > 0 and not unknown_time else p.formatted_position,
+                    "retrograde": p.retrograde
+                })
+        
+        # Build house rulers
+        house_rulers = {}
+        if not unknown_time and self.ascendant_data.get("sidereal_asc") is not None:
+            for i in range(12):
+                cusp_deg = (self.ascendant_data['sidereal_asc'] + i * 30) % 360
+                sign, ruler_name = get_sign_and_ruler(cusp_deg)
+                ruler_body = next((p for p in self.celestial_bodies if p.name == ruler_name), None)
+                ruler_pos = f"– {ruler_body.formatted_position} – House {ruler_body.house_num}, {ruler_body.house_degrees}" if ruler_body and ruler_body.degree is not None else ""
+                house_rulers[f"House {i+1}"] = f"{sign} (Ruler: {ruler_name} {ruler_pos})"
+        
+        # Build chart analysis
+        chart_ruler = "N/A"
+        if self.ascendant_data.get("sidereal_asc") is not None:
+            _, chart_ruler = get_sign_and_ruler(self.ascendant_data['sidereal_asc'])
+        
+        sidereal_chart_analysis = {
+            "chart_ruler": chart_ruler,
+            "dominant_sign": self.dominance_analysis.get("dominant_sign", "N/A"),
+            "dominant_element": self.dominance_analysis.get("dominant_element", "N/A"),
+            "dominant_modality": self.dominance_analysis.get("dominant_modality", "N/A"),
+            "dominant_planet": self.dominance_analysis.get("dominant_planet", "N/A")
+        }
+        
+        # Build house cusps
+        sidereal_house_cusps = []
+        tropical_house_cusps = []
+        if not unknown_time and self.ascendant_data.get("sidereal_asc") is not None:
+            for i in range(12):
+                sidereal_house_cusps.append((self.ascendant_data['sidereal_asc'] + i * 30) % 360)
+                if self.ascendant_data.get("tropical_asc") is not None:
+                    tropical_house_cusps.append((self.ascendant_data['tropical_asc'] + i * 30) % 360)
+        
+        return {
+            "name": self.name,
+            "utc_datetime": self.utc_datetime_str,
+            "location": self.location_str,
+            "day_night_status": self.day_night_info.get("status", "N/A"),
+            "chinese_zodiac": f"{chinese_zodiac.get('element', '')} {chinese_zodiac.get('animal', '')}",
+            "numerology_analysis": {
+                "life_path_number": numerology.get("life_path_number", "N/A"),
+                "day_number": numerology.get("day_number", "N/A"),
+                "name_numerology": name_numerology
+            },
+            "unknown_time": unknown_time,
+            "true_sidereal_signs": TRUE_SIDEREAL_SIGNS,
+            "sidereal_house_cusps": sidereal_house_cusps,
+            "tropical_house_cusps": tropical_house_cusps,
+            "house_rulers": house_rulers,
+            "house_sign_distributions": self.house_sign_distributions,
+            "sidereal_chart_analysis": sidereal_chart_analysis,
+            "sidereal_major_positions": sidereal_major_positions,
+            "sidereal_retrogrades": sidereal_retrogrades,
+            "sidereal_aspects": sidereal_aspects,
+            "sidereal_aspect_patterns": self.aspect_patterns,
+            "sidereal_additional_points": sidereal_additional_points,
+            "tropical_chart_analysis": {},
+            "tropical_major_positions": [],
+            "tropical_retrogrades": [],
+            "tropical_aspects": [],
+            "tropical_aspect_patterns": [],
+            "tropical_additional_points": []
+        }
