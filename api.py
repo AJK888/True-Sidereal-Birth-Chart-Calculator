@@ -66,18 +66,7 @@ limiter = Limiter(key_func=get_rate_limit_key)
 app = FastAPI(title="True Sidereal API", version="1.0")
 app.state.limiter = limiter
 
-@app.exception_handler(RateLimitExceeded)
-async def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
-    return JSONResponse(
-        status_code=429,
-        content={"detail": "Thank you for using Synthesis Astrology. Due to high API costs we limit user's requests for readings. Please reach out to the developer if you would like them to provide you a reading."}
-    )
-
-@app.api_route("/ping", methods=["GET", "HEAD"])
-def ping():
-    return {"message": "ok"}
-
-# --- CORS MIDDLEWARE ---
+# --- CORS MIDDLEWARE (MUST BE ADDED BEFORE ROUTES) ---
 origins = [
     "https://synthesisastrology.org",
     "https://www.synthesisastrology.org",
@@ -92,7 +81,19 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
+
+@app.exception_handler(RateLimitExceeded)
+async def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Thank you for using Synthesis Astrology. Due to high API costs we limit user's requests for readings. Please reach out to the developer if you would like them to provide you a reading."}
+    )
+
+@app.api_route("/ping", methods=["GET", "HEAD"])
+def ping():
+    return {"message": "ok"}
 
 # --- Pydantic Models ---
 class ChartRequest(BaseModel):
