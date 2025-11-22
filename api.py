@@ -815,8 +815,7 @@ async def calculate_chart_endpoint(data: ChartRequest):
 
         chart = NatalChart(
             name=data.full_name, year=utc_time.year, month=utc_time.month, day=utc_time.day,
-            hour=utc_time.hour, minute=utc_time.minute, latitude=lat, longitude=lng,
-            local_hour=data.hour # Pass local hour for day/night calc
+            hour=utc_time.hour, minute=utc_time.minute, latitude=lat, longitude=lng
         )
         chart.calculate_chart(unknown_time=data.unknown_time)
         
