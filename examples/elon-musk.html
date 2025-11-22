@@ -1,0 +1,183 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Elon Musk - Example Reading | Synthesis Astrology</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="../assets/css/main.css" />
+		<link rel="stylesheet" href="../assets/css/custom.css" />
+		<link rel="icon" type="image/jpeg" href="../images/star-background.jpg" />
+		<noscript><link rel="stylesheet" href="../assets/css/noscript.css" /></noscript>
+		<style>
+			#banner .inner .major h1 {
+				text-transform: none !important;
+			}
+			#banner .content p {
+				text-transform: none !important;
+				letter-spacing: normal !important;
+			}
+			.copy-button {
+				margin-left: 20px;
+				padding: 5px 15px;
+				font-size: 0.8em;
+				border-radius: 5px;
+				border: 1px solid white;
+				background-color: transparent;
+				color: white;
+				cursor: pointer;
+				vertical-align: middle;
+				transition: background-color 0.3s, color 0.3s;
+			}
+			.copy-button:hover {
+				background-color: white;
+				color: #242943;
+			}
+			#error-message {
+				display: none;
+				color: #e53e3e;
+				background-color: rgba(229, 62, 62, 0.1);
+				border: 1px solid #e53e3e;
+				padding: 1em;
+				border-radius: 4px;
+				margin: 2em 0;
+			}
+		</style>
+	</head>
+	<body class="is-preload" data-example="elon-musk">
+
+		<div id="wrapper">
+
+				<header id="header" class="alt">
+						<a href="../index.html" class="logo"><strong>Synthesis</strong> <span>Astrology</span></a>
+						<nav>
+							<a href="#menu">Menu</a>
+						</nav>
+					</header>
+
+				<nav id="menu">
+						<ul class="links">
+							<li><a href="../index.html">Home</a></li>
+							<li><a href="index.html">Example Readings</a></li>
+							<li><a href="elon-musk.html">Elon Musk</a></li>
+						</ul>
+					</nav>
+
+				<section id="banner" class="major">
+						<div class="inner">
+							<header class="major">
+								<h1 id="example-name">Elon Musk</h1>
+							</header>
+							<div class="content">
+								<p>Example Astrological Reading</p>
+								<div id="birth-info"></div>
+							</div>
+						</div>
+					</section>
+
+				<div id="main">
+
+						<div id="error-message"></div>
+
+						<section id="results" class="results-container" style="display: none;">
+								<div class="inner">
+									<div id="wheel-title" class="result-section">
+										<header class="major"><h2>Natal Chart</h2></header>
+										<div class="chart-wheels-wrapper">
+											<div id="sidereal-wheel-container">
+												<h3>Sidereal</h3>
+												<svg id="sidereal-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
+											</div>
+											<div id="tropical-wheel-container">
+												<h3>Tropical</h3>
+												<svg id="tropical-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
+											</div>
+										</div>
+										<div id="chart-placeholder" class="chart-placeholder-message" style="display: none;">
+											<p>Provide your exact birth time to see Chart images.</p>
+										</div>
+									</div>
+							
+									<div id="gemini-title" class="result-section">
+										<header class="major">
+											<h2>AI Astrological Synthesis</h2>
+											<button id="copyReadingBtn" class="copy-button" onclick="copyReadingToClipboard()">Copy Reading</button>
+										</header>
+										<div id="gemini-output" class="content"></div>
+									</div>
+							
+									<div id="results-title" class="result-section">
+										<header class="major"><h2>Full Report</h2></header>
+										<div class="report-columns">
+											<div class="report-column">
+												<pre id="sidereal-output"></pre>
+											</div>
+											<div class="report-column">
+												<pre id="tropical-output"></pre>
+											</div>
+										</div>
+									</div>
+
+									<div style="margin-top: 3em; padding-top: 2em; border-top: 1px solid rgba(255, 255, 255, 0.25);">
+										<p><a href="index.html" class="button">← Back to Examples</a> <a href="../index.html" class="button">Home</a></p>
+									</div>
+							
+								</div>
+							</section>
+
+					</div>
+
+				<footer id="footer">
+						<div class="inner">
+							<ul class="copyright">
+								<li>&copy; Synthesis Astrology</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li>
+							</ul>
+						</div>
+					</footer>
+
+			</div>
+
+		<script src="../assets/js/jquery.min.js"></script>
+			<script src="../assets/js/jquery.scrolly.min.js"></script>
+			<script src="../assets/js/jquery.scrollex.min.js"></script>
+			<script src="../assets/js/browser.min.js"></script>
+			<script src="../assets/js/breakpoints.min.js"></script>
+			<script src="../assets/js/util.js"></script>
+			<script src="../assets/js/main.js"></script>
+			<script src="examples.js"></script>
+			<script>
+				function copyReadingToClipboard() {
+					const geminiOutput = document.getElementById('gemini-output');
+					if (!geminiOutput) return;
+
+					const textToCopy = geminiOutput.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+					const textArea = document.createElement('textarea');
+					textArea.value = textToCopy;
+					textArea.style.position = 'fixed';
+					textArea.style.left = '-9999px';
+					textArea.style.top = '0';
+					document.body.appendChild(textArea);
+					textArea.focus();
+					textArea.select();
+
+					try {
+						document.execCommand('copy');
+						const btn = document.getElementById('copyReadingBtn');
+						if (btn) {
+							btn.innerText = 'Copied!';
+							setTimeout(() => {
+								btn.innerText = 'Copy Reading';
+							}, 2000);
+						}
+					} catch (err) {
+						console.error('Failed to copy text: ', err);
+					}
+
+					document.body.removeChild(textArea);
+				}
+			</script>
+
+	</body>
+</html>
+
+
+
