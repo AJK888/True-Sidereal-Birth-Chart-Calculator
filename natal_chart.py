@@ -76,6 +76,50 @@ def calculate_numerology(day: int, month: int, year: int) -> dict:
 def get_chinese_zodiac(year: int, month: int, day: int) -> str:
     zodiac_animals = ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"]
     return zodiac_animals[(year - 1924) % 12]
+
+def calculate_name_numerology(full_name: str) -> dict:
+    """Calculate Expression, Soul Urge, and Personality numbers from a full name."""
+    name_to_number = {
+        'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8, 'I': 9,
+        'J': 1, 'K': 2, 'L': 3, 'M': 4, 'N': 5, 'O': 6, 'P': 7, 'Q': 8, 'R': 9,
+        'S': 1, 'T': 2, 'U': 3, 'V': 4, 'W': 5, 'X': 6, 'Y': 7, 'Z': 8
+    }
+    vowels = {'A', 'E', 'I', 'O', 'U'}
+    
+    def reduce_number(n):
+        while n > 9 and n not in [11, 22, 33]:
+            n = sum(int(d) for d in str(n))
+        return n
+    
+    full_name_upper = full_name.upper().replace(' ', '')
+    expression_sum = sum(name_to_number.get(char, 0) for char in full_name_upper)
+    soul_urge_sum = sum(name_to_number.get(char, 0) for char in full_name_upper if char in vowels)
+    personality_sum = sum(name_to_number.get(char, 0) for char in full_name_upper if char not in vowels)
+    
+    expression_number = reduce_number(expression_sum)
+    soul_urge_number = reduce_number(soul_urge_sum)
+    personality_number = reduce_number(personality_sum)
+    
+    return {"expression_number": expression_number, "soul_urge_number": soul_urge_number, "personality_number": personality_number}
+
+def get_chinese_zodiac_and_element(year: int, month: int, day: int) -> Dict[str, str]:
+    effective_year = year
+    if month == 1 or (month == 2 and day < 4):
+        effective_year -= 1
+
+    zodiac_animals = ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"]
+    elements = ["Wood", "Fire", "Earth", "Metal", "Water"]
+    
+    start_year = 4 
+    year_diff = effective_year - start_year
+    
+    animal_index = year_diff % 12
+    stem_index = year_diff % 10
+    
+    animal = zodiac_animals[animal_index]
+    element = elements[stem_index // 2]
+
+    return {"animal": animal, "element": element}
 def _calculate_approximate_sunrise_sunset_math(jd_ut: float, latitude: float, longitude: float) -> Tuple[Optional[float], Optional[float]]:
     try:
         res = swe.calc_ut(jd_ut, swe.SUN); lon = res[0][0]; obl = 23.439
