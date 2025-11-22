@@ -28,8 +28,8 @@ const AstrologyCalculator = {
         }
 
         if (emailLabel) {
-            // Updated text to reflect optional nature (email is not used for sending)
-            emailLabel.innerHTML = 'Your Email <span class="field-note">Optional: For your records only. Report will display on page.</span>';
+            // Updated text to reflect optional nature (email is used for sending PDF report)
+            emailLabel.innerHTML = 'Your Email <span class="field-note">Optional: To receive a copy of your chart via email.</span>';
         }
     },
 
@@ -255,7 +255,7 @@ const AstrologyCalculator = {
 
 	displayInitialResults(chartData) {
         // Updated initial message for synchronous loading
-		this.geminiOutput.innerHTML = "Generating AI Synthesis... This deep analysis can take several minutes. Please do not leave this page while it loads.";
+		this.geminiOutput.innerHTML = "Generating AI Synthesis... This deep analysis can take up to 10 minutes. Please do not leave this page while it loads.";
 		this.renderTextResults(chartData);
 
 		this.geminiTitle.parentElement.style.display = 'block';
@@ -345,6 +345,7 @@ const AstrologyCalculator = {
 		if (res.numerology_analysis) {
 			siderealOut += `- Life Path Number: ${res.numerology_analysis.life_path_number || 'N/A'}\n`;
 			siderealOut += `- Day Number: ${res.numerology_analysis.day_number || 'N/A'}\n`;
+			siderealOut += `- Lucky Number: ${res.numerology_analysis.lucky_number || 'N/A'}\n`;
 			
 			if (res.numerology_analysis.name_numerology) {
 				siderealOut += `\n-- NAME NUMEROLOGY --\n`;
