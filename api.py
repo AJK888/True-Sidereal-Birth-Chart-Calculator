@@ -658,7 +658,12 @@ def send_chart_email_via_sendgrid(pdf_bytes: bytes, recipient_email: str, subjec
         logger.error("SendGrid FROM email not configured. Cannot send email.")
         return False
     
-    logger.info(f"Preparing to send email via SendGrid to {recipient_email} with subject: {subject}")
+    logger.info(f"Preparing to send email via SendGrid")
+    logger.info(f"  From: {SENDGRID_FROM_EMAIL}")
+    logger.info(f"  To: {recipient_email}")
+    logger.info(f"  Subject: {subject}")
+    logger.info(f"  Chart name: {chart_name}")
+    logger.info(f"  PDF size: {len(pdf_bytes)} bytes")
 
     try:
         # Create email message
@@ -695,25 +700,46 @@ def send_chart_email_via_sendgrid(pdf_bytes: bytes, recipient_email: str, subjec
         )
         message.add_attachment(attachment)
         
+        logger.info(f"Initializing SendGrid client...")
         sg = SendGridAPIClient(SENDGRID_API_KEY)
+        logger.info(f"Sending email via SendGrid...")
         response = sg.send(message)
+        logger.info(f"SendGrid response received: status_code={response.status_code}")
         
         if response.status_code in [200, 202]:
             logger.info(f"Email with PDF sent successfully via SendGrid to {recipient_email} (status: {response.status_code})")
             return True
         else:
-            logger.error(f"SendGrid returned non-success status: {response.status_code} - {response.body}")
+            # Get response body properly - SendGrid response has body as bytes
+            try:
+                if hasattr(response, 'body'):
+                    if isinstance(response.body, bytes):
+                        response_body = response.body.decode('utf-8')
+                    else:
+                        response_body = str(response.body)
+                else:
+                    response_body = f"No body attribute. Response: {response}"
+            except Exception as decode_error:
+                response_body = f"Error decoding response body: {decode_error}. Response object: {response}"
+            
+            logger.error(f"SendGrid returned non-success status: {response.status_code}")
+            logger.error(f"SendGrid response body: {response_body}")
+            logger.error(f"SendGrid response headers: {getattr(response, 'headers', 'N/A')}")
             return False
             
     except Exception as e:
         logger.error(f"Error sending email via SendGrid to {recipient_email}: {e}", exc_info=True)
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return False
 
 
 async def send_emails_in_background(chart_data: Dict, gemini_reading: str, user_inputs: Dict):
     """Background task to send emails with PDF attachments to user and admin."""
     try:
+        logger.info("="*60)
         logger.info("Starting background task for email sending.")
+        logger.info("="*60)
         user_email = user_inputs.get('user_email')
         # Strip whitespace if email is provided
         if user_email and isinstance(user_email, str):
@@ -722,13 +748,24 @@ async def send_emails_in_background(chart_data: Dict, gemini_reading: str, user_
         
         logger.info(f"Email task - User email provided: {bool(user_email)}, Admin email configured: {bool(ADMIN_EMAIL)}")
         logger.info(f"SendGrid API key configured: {bool(SENDGRID_API_KEY)}, From email configured: {bool(SENDGRID_FROM_EMAIL)}")
+        
+        # Validate SendGrid configuration
+        if not SENDGRID_API_KEY:
+            logger.error("SENDGRID_API_KEY is not set. Cannot send emails.")
+            return
+        if not SENDGRID_FROM_EMAIL:
+            logger.error("SENDGRID_FROM_EMAIL is not set. Cannot send emails.")
+            return
 
         # Generate PDF report
         try:
+            logger.info("Generating PDF report...")
             pdf_bytes = generate_pdf_report(chart_data, gemini_reading, user_inputs)
             logger.info(f"PDF generated successfully ({len(pdf_bytes)} bytes)")
         except Exception as e:
             logger.error(f"Error generating PDF: {e}", exc_info=True)
+            import traceback
+            logger.error(f"PDF generation traceback: {traceback.format_exc()}")
             return  # Don't send emails if PDF generation fails
 
         # Send email to the user (if provided and not empty)
@@ -884,12 +921,15 @@ async def generate_reading_endpoint(request: Request, reading_data: ReadingReque
         logger.info(f"AI Reading successfully generated for: {chart_name} (length: {len(gemini_reading)} characters)")
 
         # Add email sending to background task
+        user_email = user_inputs.get('user_email', '')
+        logger.info(f"Adding email background task. User email in inputs: {bool(user_email)}")
         background_tasks.add_task(
             send_emails_in_background,
             chart_data=reading_data.chart_data,
             gemini_reading=gemini_reading,
             user_inputs=user_inputs
         )
+        logger.info("Email background task added successfully.")
 
         return {"gemini_reading": gemini_reading}
     
