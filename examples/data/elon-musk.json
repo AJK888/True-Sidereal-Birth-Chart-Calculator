@@ -1,0 +1,1164 @@
+{
+  "metadata": {
+    "name": "Elon Musk",
+    "birth_date": "June 28, 1971",
+    "birth_time": "7:30 AM",
+    "location": "Pretoria, South Africa",
+    "unknown_time": false
+  },
+  "ai_reading": "Chart Overview and Core Themes\n\nWelcome. Your astrological chart is a remarkable document, a blueprint that maps the intricate relationship between your soul's enduring purpose and the personality you've developed to navigate this lifetime. The analysis reveals a life path of profound depth, centered on the challenge of bringing a rich, private inner world into the light through a disciplined and heart-centered creative process. There is a consistent and powerful tension in your chart between a soul designed for communication and a personality wired for privacy and protection. Your life is the story of building a bridge between these two worlds, and your tools for this construction are creative expression and a deep-seated sense of responsibility. As we explore this map, we will see that your greatest challenges are also the source of your most unique and powerful gifts. Three core themes emerge as the central pillars of your life's architecture.\n\nThe first and most foundational theme is what can be called **The Voice from the Subconscious**. At your core, you are a \"hidden messenger.\" Your Sidereal blueprint, reflecting your soul's purpose, shows a Sun and Ascendant in the communicative, intellectual sign of Gemini. Your soul is here to connect, to articulate, and to disseminate information. However, this entire purpose is filtered through the 12th House, the realm of the subconscious, spirit, and all that is hidden from plain view. This creates a fascinating paradox: a soul designed to be a broadcaster, but whose studio is located in a secret, internal sanctuary. This soul-level design manifests through a personality, described by your Tropical chart, that is inherently private and protective, with a Sun and Ascendant in the sensitive sign of Cancer. Your personality instinct is to retreat, to nurture, and to create a safe emotional shell. This reinforces the 12th House placement, making your conscious self naturally shy and your vitality replenished in solitude. The central life task is to reconcile the soul's need to speak with the personality's need for safety. Your purpose is not to be a public orator, but to become a trusted voice for the subtle, emotional, and spiritual currents that flow beneath the surface of everyday life.\n\nYour primary tool for building this bridge is found in the second core theme: **Self-Worth Defined by Creative Expression and Recognition**. This is the most powerful and integrated aspect of your entire chart. Both your soul's deep-seated need and your personality's emotional expression are perfectly aligned in the sign of Leo, located in the 2nd House of self-worth and personal values. Your emotional well-being, your sense of security, and your very definition of value are fundamentally and inextricably linked to your ability to express yourself with creativity, warmth, and authentic pride. The Moon, your dominant planet, insists that this is not a hobby but a vital necessity. You feel secure when you are creating and when that creation is seen, valued, and celebrated. This theme is further amplified by your Day Number of 1, underscoring a core drive to be seen as a unique individual and a leader in your creative domain. This powerful Leonine engine is the fuel that gives you the courage to overcome the inherent shyness of your Cancerian personality, pushing your inner world out into the open so it can be recognized and affirmed. Your art, in whatever form it takes, is not just something you do; it is the tangible proof of your value in the world.\n\nThese two dynamics—the hidden messenger and the creative powerhouse—are ultimately in service of your third foundational theme: **The Nurturer's Responsibility**. This theme acts as the ultimate container and purpose for your life's work. Your Life Path Number is 6, the number of the caregiver, healer, and community steward. This is reinforced by your Chinese Zodiac sign of the Earth Goat, noted for its gentle, artistic, and nurturing disposition. Astrologically, this is powerfully reflected in the Cancerian placements that define your personality (Tropical Sun/Ascendant) and inform your soul's thinking and expansion (Sidereal Mercury/Jupiter). Your life is fundamentally oriented toward creating emotional security, not just for yourself, but for others. This is the \"why\" behind your actions. You are driven to use your voice (Theme 1) and your creative gifts (Theme 2) to heal, protect, and provide for your chosen \"family\" or community. The journey of your Nodal Axis confirms this entire story: your soul is evolving away from a past of depending on others' resources and navigating shared crises (South Node in the 8th House) toward a future of building your own solid foundation of value through tangible, creative craftsmanship (North Node in the 2nd House). Your life's mission is to become the sovereign creator of your own security so that you may, in turn, become a stable, nurturing, and inspiring presence for others.\n\nYour path is therefore one of profound integration. It is the journey of the sensitive soul who must learn to become a courageous artist, the private individual who must find a public voice, and the creative sovereign who must learn that their greatest power lies in their capacity to care for their kingdom. By embracing your creative fire, you build the confidence to speak your hidden truths, and in speaking those truths, you fulfill your ultimate purpose as a healer and a source of security in the world. This is the alchemical work of turning private feeling into a tangible, heart-centered, and beautifully crafted contribution to the world.",
+  "chart_data": {
+    "name": "Elon Musk",
+    "utc_datetime": "1971-06-28 05:30",
+    "location": "25.7459° S, 28.1879° E",
+    "day_night_status": "Day Birth",
+    "chinese_zodiac": "Metal Pig",
+    "numerology_analysis": {
+      "life_path_number": "7",
+      "day_number": "1",
+      "name_numerology": {
+        "expression_number": 11,
+        "soul_urge_number": 5,
+        "personality_number": 6
+      }
+    },
+    "unknown_time": false,
+    "true_sidereal_signs": [
+      [
+        "Aries",
+        0.0,
+        19.7286
+      ],
+      [
+        "Taurus",
+        19.7286,
+        56.5875
+      ],
+      [
+        "Gemini",
+        56.5875,
+        86.0412
+      ],
+      [
+        "Cancer",
+        86.0412,
+        103.19
+      ],
+      [
+        "Leo",
+        103.19,
+        141.6065
+      ],
+      [
+        "Virgo",
+        141.6065,
+        191.32
+      ],
+      [
+        "Libra",
+        191.32,
+        210.1972
+      ],
+      [
+        "Scorpio",
+        210.1972,
+        223.4245
+      ],
+      [
+        "Ophiuchus",
+        223.4245,
+        235.7818
+      ],
+      [
+        "Sagittarius",
+        235.7818,
+        269.2677
+      ],
+      [
+        "Capricorn",
+        269.2677,
+        294.8435
+      ],
+      [
+        "Aquarius",
+        294.8435,
+        318.0103
+      ],
+      [
+        "Pisces",
+        318.0103,
+        360.0
+      ]
+    ],
+    "sidereal_house_cusps": [
+      72.53811898627714,
+      102.53811898627714,
+      132.53811898627714,
+      162.53811898627714,
+      192.53811898627714,
+      222.53811898627714,
+      252.53811898627714,
+      282.53811898627714,
+      312.53811898627714,
+      342.53811898627714,
+      12.53811898627714,
+      42.53811898627714
+    ],
+    "tropical_house_cusps": [
+      103.51534120849934,
+      133.51534120849934,
+      163.51534120849934,
+      193.51534120849934,
+      223.51534120849934,
+      253.51534120849934,
+      283.5153412084993,
+      313.5153412084993,
+      343.5153412084993,
+      13.515341208499308,
+      43.51534120849931,
+      73.51534120849931
+    ],
+    "house_rulers": {
+      "House 1": "Gemini (Ruler: Mercury – 16°30′ Gemini – House 1, 0°33′)",
+      "House 2": "Cancer (Ruler: Moon – 24°05′ Leo – House 2, 24°44′)",
+      "House 3": "Leo (Ruler: Sun – 8°20′ Gemini – House 12, 22°23′)",
+      "House 4": "Virgo (Ruler: Mercury – 16°30′ Gemini – House 1, 0°33′)",
+      "House 5": "Libra (Ruler: Venus – 28°41′ Taurus – House 12, 5°53′)",
+      "House 6": "Scorpio (Ruler: Pluto – 4°31′ Virgo – House 3, 13°35′)",
+      "House 7": "Sagittarius (Ruler: Jupiter – 15°21′ Libra – House 5, 14°08′)",
+      "House 8": "Capricorn (Ruler: Saturn – 10°25′ Taurus – House 11, 17°36′)",
+      "House 9": "Aquarius (Ruler: Uranus – 16°54′ Virgo – House 3, 25°58′)",
+      "House 10": "Pisces (Ruler: Neptune – 18°31′ Libra – House 5, 17°18′)",
+      "House 11": "Aries (Ruler: Mars – 20°40′ Capricorn – House 8, 7°23′)",
+      "House 12": "Taurus (Ruler: Venus – 28°41′ Taurus – House 12, 5°53′)"
+    },
+    "house_sign_distributions": {
+      "House 1": [
+        "Gemini 16.0°–29.5°",
+        "Cancer 0.0°–16.5°"
+      ],
+      "House 2": [
+        "Cancer 16.5°–17.1°",
+        "Leo 0.0°–29.3°"
+      ],
+      "House 3": [
+        "Leo 29.3°–38.4°",
+        "Virgo 0.0°–20.9°"
+      ],
+      "House 4": [
+        "Virgo 20.9°–49.7°",
+        "Libra 0.0°–1.2°"
+      ],
+      "House 5": [
+        "Libra 1.2°–18.9°",
+        "Scorpio 0.0°–12.3°"
+      ],
+      "House 6": [
+        "Scorpio 12.3°–13.2°",
+        "Ophiuchus (complete)",
+        "Sagittarius 0.0°–16.8°"
+      ],
+      "House 7": [
+        "Sagittarius 16.8°–33.5°",
+        "Capricorn 0.0°–13.3°"
+      ],
+      "House 8": [
+        "Capricorn 13.3°–25.6°",
+        "Aquarius 0.0°–17.7°"
+      ],
+      "House 9": [
+        "Aquarius 17.7°–23.2°",
+        "Pisces 0.0°–24.5°"
+      ],
+      "House 10": [
+        "Aries 0.0°–12.5°",
+        "Pisces 24.5°–42.0°"
+      ],
+      "House 11": [
+        "Aries 12.5°–19.7°",
+        "Taurus 0.0°–22.8°"
+      ],
+      "House 12": [
+        "Taurus 22.8°–36.9°",
+        "Gemini 0.0°–16.0°"
+      ]
+    },
+    "sidereal_chart_analysis": {
+      "chart_ruler": "Mercury",
+      "dominant_sign": "Gemini",
+      "dominant_element": "Earth",
+      "dominant_modality": "Mutable",
+      "dominant_planet": "Mercury"
+    },
+    "sidereal_major_positions": [
+      {
+        "name": "Ascendant",
+        "position": "15°57′ Gemini",
+        "degrees": 72.53811898627714,
+        "percentage": 54,
+        "retrograde": false,
+        "house_info": "– House 1, 0°00′",
+        "house_num": 1
+      },
+      {
+        "name": "Sun",
+        "position": "8°20′ Gemini",
+        "degrees": 64.91340521001598,
+        "percentage": 28,
+        "retrograde": false,
+        "house_info": "– House 12, 22°23′",
+        "house_num": 12
+      },
+      {
+        "name": "Moon",
+        "position": "24°05′ Leo",
+        "degrees": 127.26548994161647,
+        "percentage": 63,
+        "retrograde": false,
+        "house_info": "– House 2, 24°44′",
+        "house_num": 2
+      },
+      {
+        "name": "Mercury",
+        "position": "16°30′ Gemini",
+        "degrees": 73.08933877702998,
+        "percentage": 56,
+        "retrograde": false,
+        "house_info": "– House 1, 0°33′",
+        "house_num": 1
+      },
+      {
+        "name": "Venus",
+        "position": "28°41′ Taurus",
+        "degrees": 48.41956617550454,
+        "percentage": 78,
+        "retrograde": false,
+        "house_info": "– House 12, 5°53′",
+        "house_num": 12
+      },
+      {
+        "name": "Mars",
+        "position": "20°40′ Capricorn",
+        "degrees": 289.92842323448167,
+        "percentage": 81,
+        "retrograde": false,
+        "house_info": "– House 8, 7°23′",
+        "house_num": 8
+      },
+      {
+        "name": "Jupiter",
+        "position": "15°21′ Libra",
+        "degrees": 206.67072442551216,
+        "percentage": 81,
+        "retrograde": true,
+        "house_info": "– House 5, 14°08′",
+        "house_num": 5
+      },
+      {
+        "name": "Saturn",
+        "position": "10°25′ Taurus",
+        "degrees": 30.145411934078766,
+        "percentage": 28,
+        "retrograde": false,
+        "house_info": "– House 11, 17°36′",
+        "house_num": 11
+      },
+      {
+        "name": "Uranus",
+        "position": "16°54′ Virgo",
+        "degrees": 158.5048693755018,
+        "percentage": 34,
+        "retrograde": false,
+        "house_info": "– House 3, 25°58′",
+        "house_num": 3
+      },
+      {
+        "name": "Neptune",
+        "position": "18°31′ Libra",
+        "degrees": 209.83624767195045,
+        "percentage": 98,
+        "retrograde": true,
+        "house_info": "– House 5, 17°18′",
+        "house_num": 5
+      },
+      {
+        "name": "Pluto",
+        "position": "4°31′ Virgo",
+        "degrees": 146.11612747762882,
+        "percentage": 9,
+        "retrograde": false,
+        "house_info": "– House 3, 13°35′",
+        "house_num": 3
+      },
+      {
+        "name": "Chiron",
+        "position": "24°43′ Pisces",
+        "degrees": 342.7199431543812,
+        "percentage": 59,
+        "retrograde": false,
+        "house_info": "– House 10, 0°11′",
+        "house_num": 10
+      },
+      {
+        "name": "True Node",
+        "position": "14°52′ Capricorn",
+        "degrees": 284.1354889673339,
+        "percentage": 58,
+        "retrograde": false,
+        "house_info": "– House 8, 1°36′",
+        "house_num": 8
+      },
+      {
+        "name": "South Node",
+        "position": "0°57′ Leo",
+        "degrees": 104.13548896733391,
+        "percentage": 2,
+        "retrograde": false,
+        "house_info": "– House 2, 1°36′",
+        "house_num": 2
+      },
+      {
+        "name": "Descendant",
+        "position": "16°45′ Sagittarius",
+        "degrees": 252.53811898627714,
+        "percentage": 50,
+        "retrograde": false,
+        "house_info": "– House 7, 0°00′",
+        "house_num": 7
+      },
+      {
+        "name": "Midheaven (MC)",
+        "position": "39°23′ Pisces",
+        "degrees": 357.3900492175966,
+        "percentage": 94,
+        "retrograde": false,
+        "house_info": "– House 10, 14°51′",
+        "house_num": 10
+      },
+      {
+        "name": "Imum Coeli (IC)",
+        "position": "35°47′ Virgo",
+        "degrees": 177.39004921759658,
+        "percentage": 72,
+        "retrograde": false,
+        "house_info": "– House 4, 14°51′",
+        "house_num": 4
+      }
+    ],
+    "sidereal_retrogrades": [
+      {
+        "name": "Jupiter"
+      },
+      {
+        "name": "Neptune"
+      }
+    ],
+    "sidereal_aspects": [
+      {
+        "p1_name": "Saturn in Taurus",
+        "p2_name": "Neptune in Libra (Rx)",
+        "type": "Opposition",
+        "orb": "0.31°",
+        "score": "3.06",
+        "p1_degrees": 30.145411934078766,
+        "p2_degrees": 209.83624767195045
+      },
+      {
+        "p1_name": "Mercury in Gemini",
+        "p2_name": "Chiron in Pisces",
+        "type": "Square",
+        "orb": "0.37°",
+        "score": "2.19",
+        "p1_degrees": 73.08933877702998,
+        "p2_degrees": 342.7199431543812
+      },
+      {
+        "p1_name": "Jupiter in Libra (Rx)",
+        "p2_name": "Pluto in Virgo",
+        "type": "Sextile",
+        "orb": "0.55°",
+        "score": "1.61",
+        "p1_degrees": 206.67072442551216,
+        "p2_degrees": 146.11612747762882
+      },
+      {
+        "p1_name": "Mars in Capricorn",
+        "p2_name": "Pluto in Virgo",
+        "type": "Biquintile",
+        "orb": "0.19°",
+        "score": "1.52",
+        "p1_degrees": 289.92842323448167,
+        "p2_degrees": 146.11612747762882
+      },
+      {
+        "p1_name": "Sun in Gemini",
+        "p2_name": "Mars in Capricorn",
+        "type": "Sesquiquadrate",
+        "orb": "0.02°",
+        "score": "1.48",
+        "p1_degrees": 64.91340521001598,
+        "p2_degrees": 289.92842323448167
+      },
+      {
+        "p1_name": "Venus in Taurus",
+        "p2_name": "Mars in Capricorn",
+        "type": "Trine",
+        "orb": "1.51°",
+        "score": "1.40",
+        "p1_degrees": 48.41956617550454,
+        "p2_degrees": 289.92842323448167
+      },
+      {
+        "p1_name": "Jupiter in Libra (Rx)",
+        "p2_name": "Neptune in Libra (Rx)",
+        "type": "Conjunction",
+        "orb": "3.17°",
+        "score": "1.20",
+        "p1_degrees": 206.67072442551216,
+        "p2_degrees": 209.83624767195045
+      },
+      {
+        "p1_name": "Moon in Leo",
+        "p2_name": "Chiron in Pisces",
+        "type": "Biquintile",
+        "orb": "0.55°",
+        "score": "1.16",
+        "p1_degrees": 127.26548994161647,
+        "p2_degrees": 342.7199431543812
+      },
+      {
+        "p1_name": "Chiron in Pisces",
+        "p2_name": "True Node in Capricorn",
+        "type": "Sextile",
+        "orb": "1.42°",
+        "score": "1.03",
+        "p1_degrees": 342.7199431543812,
+        "p2_degrees": 284.1354889673339
+      },
+      {
+        "p1_name": "Mercury in Gemini",
+        "p2_name": "Mars in Capricorn",
+        "type": "Biquintile",
+        "orb": "0.84°",
+        "score": "0.98",
+        "p1_degrees": 73.08933877702998,
+        "p2_degrees": 289.92842323448167
+      },
+      {
+        "p1_name": "Mercury in Gemini",
+        "p2_name": "True Node in Capricorn",
+        "type": "Quincunx",
+        "orb": "1.05°",
+        "score": "0.98",
+        "p1_degrees": 73.08933877702998,
+        "p2_degrees": 284.1354889673339
+      },
+      {
+        "p1_name": "Sun in Gemini",
+        "p2_name": "Neptune in Libra (Rx)",
+        "type": "Biquintile",
+        "orb": "0.92°",
+        "score": "0.94",
+        "p1_degrees": 64.91340521001598,
+        "p2_degrees": 209.83624767195045
+      },
+      {
+        "p1_name": "Jupiter in Libra (Rx)",
+        "p2_name": "Saturn in Taurus",
+        "type": "Opposition",
+        "orb": "3.47°",
+        "score": "0.89",
+        "p1_degrees": 206.67072442551216,
+        "p2_degrees": 30.145411934078766
+      },
+      {
+        "p1_name": "Uranus in Virgo",
+        "p2_name": "Chiron in Pisces",
+        "type": "Opposition",
+        "orb": "4.22°",
+        "score": "0.77",
+        "p1_degrees": 158.5048693755018,
+        "p2_degrees": 342.7199431543812
+      },
+      {
+        "p1_name": "Sun in Gemini",
+        "p2_name": "Moon in Leo",
+        "type": "Sextile",
+        "orb": "2.35°",
+        "score": "0.75",
+        "p1_degrees": 64.91340521001598,
+        "p2_degrees": 127.26548994161647
+      },
+      {
+        "p1_name": "Mars in Capricorn",
+        "p2_name": "True Node in Capricorn",
+        "type": "Conjunction",
+        "orb": "5.79°",
+        "score": "0.74",
+        "p1_degrees": 289.92842323448167,
+        "p2_degrees": 284.1354889673339
+      },
+      {
+        "p1_name": "Jupiter in Libra (Rx)",
+        "p2_name": "Chiron in Pisces",
+        "type": "Sesquiquadrate",
+        "orb": "1.05°",
+        "score": "0.73",
+        "p1_degrees": 206.67072442551216,
+        "p2_degrees": 342.7199431543812
+      },
+      {
+        "p1_name": "Saturn in Taurus",
+        "p2_name": "Pluto in Virgo",
+        "type": "Trine",
+        "orb": "4.03°",
+        "score": "0.70",
+        "p1_degrees": 30.145411934078766,
+        "p2_degrees": 146.11612747762882
+      },
+      {
+        "p1_name": "Moon in Leo",
+        "p2_name": "Uranus in Virgo",
+        "type": "Semisextile",
+        "orb": "1.24°",
+        "score": "0.67",
+        "p1_degrees": 127.26548994161647,
+        "p2_degrees": 158.5048693755018
+      },
+      {
+        "p1_name": "Venus in Taurus",
+        "p2_name": "True Node in Capricorn",
+        "type": "Trine",
+        "orb": "4.28°",
+        "score": "0.66",
+        "p1_degrees": 48.41956617550454,
+        "p2_degrees": 284.1354889673339
+      },
+      {
+        "p1_name": "Sun in Gemini",
+        "p2_name": "Uranus in Virgo",
+        "type": "Square",
+        "orb": "3.59°",
+        "score": "0.65",
+        "p1_degrees": 64.91340521001598,
+        "p2_degrees": 158.5048693755018
+      },
+      {
+        "p1_name": "Mercury in Gemini",
+        "p2_name": "Jupiter in Libra (Rx)",
+        "type": "Sesquiquadrate",
+        "orb": "1.42°",
+        "score": "0.62",
+        "p1_degrees": 73.08933877702998,
+        "p2_degrees": 206.67072442551216
+      },
+      {
+        "p1_name": "Mercury in Gemini",
+        "p2_name": "Neptune in Libra (Rx)",
+        "type": "Sesquiquadrate",
+        "orb": "1.75°",
+        "score": "0.55",
+        "p1_degrees": 73.08933877702998,
+        "p2_degrees": 209.83624767195045
+      },
+      {
+        "p1_name": "Sun in Gemini",
+        "p2_name": "Mercury in Gemini",
+        "type": "Conjunction",
+        "orb": "8.18°",
+        "score": "0.54",
+        "p1_degrees": 64.91340521001598,
+        "p2_degrees": 73.08933877702998
+      },
+      {
+        "p1_name": "Mercury in Gemini",
+        "p2_name": "Uranus in Virgo",
+        "type": "Square",
+        "orb": "4.58°",
+        "score": "0.54",
+        "p1_degrees": 73.08933877702998,
+        "p2_degrees": 158.5048693755018
+      },
+      {
+        "p1_name": "Uranus in Virgo",
+        "p2_name": "True Node in Capricorn",
+        "type": "Trine",
+        "orb": "5.63°",
+        "score": "0.53",
+        "p1_degrees": 158.5048693755018,
+        "p2_degrees": 284.1354889673339
+      },
+      {
+        "p1_name": "Neptune in Libra (Rx)",
+        "p2_name": "Pluto in Virgo",
+        "type": "Sextile",
+        "orb": "3.72°",
+        "score": "0.53",
+        "p1_degrees": 209.83624767195045,
+        "p2_degrees": 146.11612747762882
+      },
+      {
+        "p1_name": "Moon in Leo",
+        "p2_name": "Mercury in Gemini",
+        "type": "Sextile",
+        "orb": "5.82°",
+        "score": "0.37",
+        "p1_degrees": 127.26548994161647,
+        "p2_degrees": 73.08933877702998
+      },
+      {
+        "p1_name": "Moon in Leo",
+        "p2_name": "Saturn in Taurus",
+        "type": "Square",
+        "orb": "7.12°",
+        "score": "0.37",
+        "p1_degrees": 127.26548994161647,
+        "p2_degrees": 30.145411934078766
+      },
+      {
+        "p1_name": "Moon in Leo",
+        "p2_name": "Neptune in Libra (Rx)",
+        "type": "Square",
+        "orb": "7.43°",
+        "score": "0.36",
+        "p1_degrees": 127.26548994161647,
+        "p2_degrees": 209.83624767195045
+      },
+      {
+        "p1_name": "Sun in Gemini",
+        "p2_name": "Chiron in Pisces",
+        "type": "Square",
+        "orb": "7.81°",
+        "score": "0.34",
+        "p1_degrees": 64.91340521001598,
+        "p2_degrees": 342.7199431543812
+      }
+    ],
+    "sidereal_aspect_patterns": [],
+    "sidereal_additional_points": [
+      {
+        "name": "Ceres",
+        "info": "35°44′ Taurus – House 12, 12°55′",
+        "retrograde": false
+      },
+      {
+        "name": "Juno",
+        "info": "4°44′ Cancer – House 1, 18°14′",
+        "retrograde": false
+      },
+      {
+        "name": "Lilith",
+        "info": "10°28′ Virgo – House 3, 19°32′",
+        "retrograde": false
+      },
+      {
+        "name": "Pallas",
+        "info": "8°07′ Aries – House 10, 25°35′",
+        "retrograde": false
+      },
+      {
+        "name": "Part of Fortune",
+        "info": "31°42′ Leo – House 3, 2°21′",
+        "retrograde": false
+      },
+      {
+        "name": "Vertex",
+        "info": "28°41′ Taurus – House 12, 5°53′",
+        "retrograde": false
+      },
+      {
+        "name": "Vesta",
+        "info": "4°31′ Capricorn – House 7, 21°15′",
+        "retrograde": true
+      }
+    ],
+    "tropical_chart_analysis": {
+      "dominant_sign": "Cancer (2 placements)",
+      "dominant_element": "Air (4)",
+      "dominant_modality": "Mutable (5)",
+      "dominant_planet": "Mercury (score 6.77)"
+    },
+    "tropical_major_positions": [
+      {
+        "name": "Ascendant",
+        "position": "13°31′ Cancer",
+        "degrees": 103.51534120849934,
+        "percentage": 45,
+        "retrograde": false,
+        "house_info": "– House 1, 0°00′",
+        "house_num": 1
+      },
+      {
+        "name": "Sun",
+        "position": "5°53′ Cancer",
+        "degrees": 95.89062743223823,
+        "percentage": 20,
+        "retrograde": false,
+        "house_info": "– House 12, 22°23′",
+        "house_num": 12
+      },
+      {
+        "name": "Moon",
+        "position": "8°15′ Virgo",
+        "degrees": 158.2427121638387,
+        "percentage": 27,
+        "retrograde": false,
+        "house_info": "– House 2, 24°44′",
+        "house_num": 2
+      },
+      {
+        "name": "Mercury",
+        "position": "14°04′ Cancer",
+        "degrees": 104.0665609992522,
+        "percentage": 47,
+        "retrograde": false,
+        "house_info": "– House 1, 0°33′",
+        "house_num": 1
+      },
+      {
+        "name": "Venus",
+        "position": "19°24′ Gemini",
+        "degrees": 79.39678839772674,
+        "percentage": 65,
+        "retrograde": false,
+        "house_info": "– House 12, 5°53′",
+        "house_num": 12
+      },
+      {
+        "name": "Mars",
+        "position": "20°54′ Aquarius",
+        "degrees": 320.90564545670395,
+        "percentage": 70,
+        "retrograde": false,
+        "house_info": "– House 8, 7°23′",
+        "house_num": 8
+      },
+      {
+        "name": "Jupiter",
+        "position": "27°39′ Scorpio",
+        "degrees": 237.64794664773441,
+        "percentage": 92,
+        "retrograde": true,
+        "house_info": "– House 5, 14°08′",
+        "house_num": 5
+      },
+      {
+        "name": "Saturn",
+        "position": "1°07′ Gemini",
+        "degrees": 61.122634156300975,
+        "percentage": 4,
+        "retrograde": false,
+        "house_info": "– House 11, 17°36′",
+        "house_num": 11
+      },
+      {
+        "name": "Uranus",
+        "position": "9°29′ Libra",
+        "degrees": 189.48209159772398,
+        "percentage": 32,
+        "retrograde": false,
+        "house_info": "– House 3, 25°58′",
+        "house_num": 3
+      },
+      {
+        "name": "Neptune",
+        "position": "0°49′ Sagittarius",
+        "degrees": 240.81346989417264,
+        "percentage": 3,
+        "retrograde": true,
+        "house_info": "– House 5, 17°18′",
+        "house_num": 5
+      },
+      {
+        "name": "Pluto",
+        "position": "27°06′ Virgo",
+        "degrees": 177.09334969985105,
+        "percentage": 90,
+        "retrograde": false,
+        "house_info": "– House 3, 13°35′",
+        "house_num": 3
+      },
+      {
+        "name": "Chiron",
+        "position": "13°42′ Aries",
+        "degrees": 13.697165376603442,
+        "percentage": 46,
+        "retrograde": false,
+        "house_info": "– House 10, 0°11′",
+        "house_num": 10
+      },
+      {
+        "name": "True Node",
+        "position": "15°07′ Aquarius",
+        "degrees": 315.1127111895562,
+        "percentage": 50,
+        "retrograde": false,
+        "house_info": "– House 8, 1°36′",
+        "house_num": 8
+      },
+      {
+        "name": "South Node",
+        "position": "15°07′ Leo",
+        "degrees": 135.1127111895562,
+        "percentage": 50,
+        "retrograde": false,
+        "house_info": "– House 2, 1°36′",
+        "house_num": 2
+      },
+      {
+        "name": "Descendant",
+        "position": "13°31′ Capricorn",
+        "degrees": 283.5153412084993,
+        "percentage": 45,
+        "retrograde": false,
+        "house_info": "– House 7, 0°00′",
+        "house_num": 7
+      },
+      {
+        "name": "Midheaven (MC)",
+        "position": "28°22′ Aries",
+        "degrees": 28.367271439818815,
+        "percentage": 95,
+        "retrograde": false,
+        "house_info": "– House 10, 14°51′",
+        "house_num": 10
+      },
+      {
+        "name": "Imum Coeli (IC)",
+        "position": "28°22′ Libra",
+        "degrees": 208.3672714398188,
+        "percentage": 95,
+        "retrograde": false,
+        "house_info": "– House 4, 14°51′",
+        "house_num": 4
+      }
+    ],
+    "tropical_retrogrades": [
+      {
+        "name": "Jupiter"
+      },
+      {
+        "name": "Neptune"
+      }
+    ],
+    "tropical_aspects": [
+      {
+        "p1_name": "Saturn in Gemini",
+        "p2_name": "Neptune in Sagittarius (Rx)",
+        "type": "Opposition",
+        "orb": "0.31°",
+        "score": "3.06",
+        "p1_degrees": 61.122634156300975,
+        "p2_degrees": 240.81346989417264
+      },
+      {
+        "p1_name": "Mercury in Cancer",
+        "p2_name": "Chiron in Aries",
+        "type": "Square",
+        "orb": "0.37°",
+        "score": "2.19",
+        "p1_degrees": 104.0665609992522,
+        "p2_degrees": 13.697165376603442
+      },
+      {
+        "p1_name": "Jupiter in Scorpio (Rx)",
+        "p2_name": "Pluto in Virgo",
+        "type": "Sextile",
+        "orb": "0.55°",
+        "score": "1.61",
+        "p1_degrees": 237.64794664773441,
+        "p2_degrees": 177.09334969985105
+      },
+      {
+        "p1_name": "Mars in Aquarius",
+        "p2_name": "Pluto in Virgo",
+        "type": "Biquintile",
+        "orb": "0.19°",
+        "score": "1.52",
+        "p1_degrees": 320.90564545670395,
+        "p2_degrees": 177.09334969985105
+      },
+      {
+        "p1_name": "Sun in Cancer",
+        "p2_name": "Mars in Aquarius",
+        "type": "Sesquiquadrate",
+        "orb": "0.02°",
+        "score": "1.48",
+        "p1_degrees": 95.89062743223823,
+        "p2_degrees": 320.90564545670395
+      },
+      {
+        "p1_name": "Venus in Gemini",
+        "p2_name": "Mars in Aquarius",
+        "type": "Trine",
+        "orb": "1.51°",
+        "score": "1.40",
+        "p1_degrees": 79.39678839772674,
+        "p2_degrees": 320.90564545670395
+      },
+      {
+        "p1_name": "Jupiter in Scorpio (Rx)",
+        "p2_name": "Neptune in Sagittarius (Rx)",
+        "type": "Conjunction",
+        "orb": "3.17°",
+        "score": "1.20",
+        "p1_degrees": 237.64794664773441,
+        "p2_degrees": 240.81346989417264
+      },
+      {
+        "p1_name": "Moon in Virgo",
+        "p2_name": "Chiron in Aries",
+        "type": "Biquintile",
+        "orb": "0.55°",
+        "score": "1.16",
+        "p1_degrees": 158.2427121638387,
+        "p2_degrees": 13.697165376603442
+      },
+      {
+        "p1_name": "Chiron in Aries",
+        "p2_name": "True Node in Aquarius",
+        "type": "Sextile",
+        "orb": "1.42°",
+        "score": "1.03",
+        "p1_degrees": 13.697165376603442,
+        "p2_degrees": 315.1127111895562
+      },
+      {
+        "p1_name": "Mercury in Cancer",
+        "p2_name": "Mars in Aquarius",
+        "type": "Biquintile",
+        "orb": "0.84°",
+        "score": "0.98",
+        "p1_degrees": 104.0665609992522,
+        "p2_degrees": 320.90564545670395
+      },
+      {
+        "p1_name": "Mercury in Cancer",
+        "p2_name": "True Node in Aquarius",
+        "type": "Quincunx",
+        "orb": "1.05°",
+        "score": "0.98",
+        "p1_degrees": 104.0665609992522,
+        "p2_degrees": 315.1127111895562
+      },
+      {
+        "p1_name": "Sun in Cancer",
+        "p2_name": "Neptune in Sagittarius (Rx)",
+        "type": "Biquintile",
+        "orb": "0.92°",
+        "score": "0.94",
+        "p1_degrees": 95.89062743223823,
+        "p2_degrees": 240.81346989417264
+      },
+      {
+        "p1_name": "Jupiter in Scorpio (Rx)",
+        "p2_name": "Saturn in Gemini",
+        "type": "Opposition",
+        "orb": "3.47°",
+        "score": "0.89",
+        "p1_degrees": 237.64794664773441,
+        "p2_degrees": 61.122634156300975
+      },
+      {
+        "p1_name": "Uranus in Libra",
+        "p2_name": "Chiron in Aries",
+        "type": "Opposition",
+        "orb": "4.22°",
+        "score": "0.77",
+        "p1_degrees": 189.48209159772398,
+        "p2_degrees": 13.697165376603442
+      },
+      {
+        "p1_name": "Sun in Cancer",
+        "p2_name": "Moon in Virgo",
+        "type": "Sextile",
+        "orb": "2.35°",
+        "score": "0.75",
+        "p1_degrees": 95.89062743223823,
+        "p2_degrees": 158.2427121638387
+      },
+      {
+        "p1_name": "Mars in Aquarius",
+        "p2_name": "True Node in Aquarius",
+        "type": "Conjunction",
+        "orb": "5.79°",
+        "score": "0.74",
+        "p1_degrees": 320.90564545670395,
+        "p2_degrees": 315.1127111895562
+      },
+      {
+        "p1_name": "Jupiter in Scorpio (Rx)",
+        "p2_name": "Chiron in Aries",
+        "type": "Sesquiquadrate",
+        "orb": "1.05°",
+        "score": "0.73",
+        "p1_degrees": 237.64794664773441,
+        "p2_degrees": 13.697165376603442
+      },
+      {
+        "p1_name": "Saturn in Gemini",
+        "p2_name": "Pluto in Virgo",
+        "type": "Trine",
+        "orb": "4.03°",
+        "score": "0.70",
+        "p1_degrees": 61.122634156300975,
+        "p2_degrees": 177.09334969985105
+      },
+      {
+        "p1_name": "Moon in Virgo",
+        "p2_name": "Uranus in Libra",
+        "type": "Semisextile",
+        "orb": "1.24°",
+        "score": "0.67",
+        "p1_degrees": 158.2427121638387,
+        "p2_degrees": 189.48209159772398
+      },
+      {
+        "p1_name": "Venus in Gemini",
+        "p2_name": "True Node in Aquarius",
+        "type": "Trine",
+        "orb": "4.28°",
+        "score": "0.66",
+        "p1_degrees": 79.39678839772674,
+        "p2_degrees": 315.1127111895562
+      },
+      {
+        "p1_name": "Sun in Cancer",
+        "p2_name": "Uranus in Libra",
+        "type": "Square",
+        "orb": "3.59°",
+        "score": "0.65",
+        "p1_degrees": 95.89062743223823,
+        "p2_degrees": 189.48209159772398
+      },
+      {
+        "p1_name": "Mercury in Cancer",
+        "p2_name": "Jupiter in Scorpio (Rx)",
+        "type": "Sesquiquadrate",
+        "orb": "1.42°",
+        "score": "0.62",
+        "p1_degrees": 104.0665609992522,
+        "p2_degrees": 237.64794664773441
+      },
+      {
+        "p1_name": "Mercury in Cancer",
+        "p2_name": "Neptune in Sagittarius (Rx)",
+        "type": "Sesquiquadrate",
+        "orb": "1.75°",
+        "score": "0.55",
+        "p1_degrees": 104.0665609992522,
+        "p2_degrees": 240.81346989417264
+      },
+      {
+        "p1_name": "Sun in Cancer",
+        "p2_name": "Mercury in Cancer",
+        "type": "Conjunction",
+        "orb": "8.18°",
+        "score": "0.54",
+        "p1_degrees": 95.89062743223823,
+        "p2_degrees": 104.0665609992522
+      },
+      {
+        "p1_name": "Mercury in Cancer",
+        "p2_name": "Uranus in Libra",
+        "type": "Square",
+        "orb": "4.58°",
+        "score": "0.54",
+        "p1_degrees": 104.0665609992522,
+        "p2_degrees": 189.48209159772398
+      },
+      {
+        "p1_name": "Uranus in Libra",
+        "p2_name": "True Node in Aquarius",
+        "type": "Trine",
+        "orb": "5.63°",
+        "score": "0.53",
+        "p1_degrees": 189.48209159772398,
+        "p2_degrees": 315.1127111895562
+      },
+      {
+        "p1_name": "Neptune in Sagittarius (Rx)",
+        "p2_name": "Pluto in Virgo",
+        "type": "Sextile",
+        "orb": "3.72°",
+        "score": "0.53",
+        "p1_degrees": 240.81346989417264,
+        "p2_degrees": 177.09334969985105
+      },
+      {
+        "p1_name": "Moon in Virgo",
+        "p2_name": "Mercury in Cancer",
+        "type": "Sextile",
+        "orb": "5.82°",
+        "score": "0.37",
+        "p1_degrees": 158.2427121638387,
+        "p2_degrees": 104.0665609992522
+      },
+      {
+        "p1_name": "Moon in Virgo",
+        "p2_name": "Saturn in Gemini",
+        "type": "Square",
+        "orb": "7.12°",
+        "score": "0.37",
+        "p1_degrees": 158.2427121638387,
+        "p2_degrees": 61.122634156300975
+      },
+      {
+        "p1_name": "Moon in Virgo",
+        "p2_name": "Neptune in Sagittarius (Rx)",
+        "type": "Square",
+        "orb": "7.43°",
+        "score": "0.36",
+        "p1_degrees": 158.2427121638387,
+        "p2_degrees": 240.81346989417264
+      },
+      {
+        "p1_name": "Sun in Cancer",
+        "p2_name": "Chiron in Aries",
+        "type": "Square",
+        "orb": "7.81°",
+        "score": "0.34",
+        "p1_degrees": 95.89062743223823,
+        "p2_degrees": 13.697165376603442
+      }
+    ],
+    "tropical_aspect_patterns": [],
+    "tropical_additional_points": [
+      {
+        "name": "Ceres",
+        "info": "26°26′ Gemini – House 12, 12°55′",
+        "retrograde": false
+      },
+      {
+        "name": "Juno",
+        "info": "1°45′ Leo – House 1, 18°14′",
+        "retrograde": false
+      },
+      {
+        "name": "Lilith",
+        "info": "3°03′ Libra – House 3, 19°32′",
+        "retrograde": false
+      },
+      {
+        "name": "Pallas",
+        "info": "9°06′ Taurus – House 10, 25°35′",
+        "retrograde": false
+      },
+      {
+        "name": "Part of Fortune",
+        "info": "15°52′ Virgo – House 3, 2°21′",
+        "retrograde": false
+      },
+      {
+        "name": "Vertex",
+        "info": "19°24′ Gemini – House 12, 5°53′",
+        "retrograde": false
+      },
+      {
+        "name": "Vesta",
+        "info": "4°46′ Aquarius – House 7, 21°15′",
+        "retrograde": true
+      }
+    ]
+  }
+}
