@@ -414,7 +414,7 @@ Analyze the provided Sidereal and Tropical placements to identify the primary po
             f"- Chinese Zodiac: {chart_data.get('chinese_zodiac')}"
         ]
         architect_prompt = f"""
-Identify the foundational blueprint of a soul. Analyze the provided chart data and the alignment map to determine the 3-5 central themes of this person's life.
+Identify the foundational blueprint of a soul. Analyze the provided chart data and the alignment map to determine the 5 central themes of this person's life.
 
 **Zodiac Definitions:**
 - The **Sidereal** placements represent the soul's deeper karmic blueprint, innate spiritual gifts, and ultimate life purpose.
@@ -428,7 +428,7 @@ Identify the foundational blueprint of a soul. Analyze the provided chart data a
 
 **Your Task:**
 1. Review all provided data.
-2. Identify the 3-5 most powerful and interconnected themes that define the core of this chart.
+2. Identify exactly 5 most powerful and interconnected themes that define the core of this chart.
 3. For each theme, list the specific Sidereal, Tropical, and Numerological/Zodiacal data points that serve as evidence.
 4. Output this as a structured list. Do not write a narrative.
 """
@@ -615,13 +615,14 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
 
 **Chart Overview and Core Themes**
 (Under this heading, write an in-depth interpretive introduction (minimum 4 paragraphs). Focus on clarity, depth, and insight—not just listing placements. Your task:
-1. Identify 3–4 core psychological or life themes based on the Foundational Themes, Nodes, Numerology, and Ascendant contrast.
+1. Identify 5 core psychological or life themes based on the Foundational Themes, Nodes, Numerology, and Ascendant contrast.
 2. For each theme, explain it fully: how it arises, what internal tension or motivation it represents, and what its life lesson is.
 3. Draw explicitly from both the Sidereal and Tropical layers, showing how the soul path and personality expression either support or challenge each other.
 4. Integrate Numerology and Chinese Zodiac only if they reinforce the astrology—not as separate trivia.
 5. Avoid listing too many placements without explanation. Instead, choose a few powerful combinations (e.g., Sun/Moon/Ascendant, key aspects, nodal placements) and explain them in rich psychological detail.
 6. Use metaphors, examples, or hypothetical behaviors where appropriate to make each theme emotionally resonant and memorable.
-7. Ensure this overview is at least 700–900 words long. Prioritize depth over breadth.)
+7. Ensure this overview is at least 700–900 words long. Prioritize depth over breadth.
+8. After presenting all 5 themes, conclude this section with a long, comprehensive paragraph (minimum 200 words) that synthesizes and summarizes how these five themes interconnect, complement, and sometimes challenge each other. Explain how they work together as a unified system to shape the individual's life path, personality development, and spiritual evolution. This summary should weave the themes into a cohesive narrative that shows the bigger picture of how these forces operate in harmony and tension throughout the person's life journey.)
 
 **Your Astrological Blueprint: Planets, Points, and Angles**
 (Under this heading, present the detailed analysis for each body. **For each body analyzed in the 'PLANETARY & POINT DEEP DIVE' section, you must present the THREE paragraphs (Sidereal Interpretation, Tropical Interpretation, Synthesis) exactly as they were generated.** Do not summarize or combine them. Ensure there is a clear separation between each body's section using a "--- BODY NAME ---" header and line breaks. Group them thematically: Luminaries (Sun, Moon), Personal Planets (Mercury, Venus, Mars), Generational Planets (Jupiter, Saturn, Uranus, Neptune, Pluto), Angles (Ascendant, Descendant, Midheaven, Imum Coeli), Nodes (True Node, South Node), Major Asteroids (Chiron, Ceres, Pallas, Juno, Vesta, Lilith), Other Points (Part of Fortune, Vertex). Create smooth, one-sentence transitions between each body's analysis.)
