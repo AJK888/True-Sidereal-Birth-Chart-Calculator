@@ -41,12 +41,22 @@ const ExampleReader = {
 	},
 
 	displayExample(data) {
+		if (!data) {
+			console.error('No data provided to displayExample');
+			return;
+		}
+
 		const chartData = data.chart_data;
 		const aiReading = data.ai_reading;
 		const metadata = data.metadata;
 
+		if (!chartData) {
+			console.error('No chart_data in example data');
+			return;
+		}
+
 		// Update page title with name
-		if (metadata.name) {
+		if (metadata && metadata.name) {
 			document.title = `${metadata.name} - Example Reading | Synthesis Astrology`;
 			const nameHeader = document.getElementById('example-name');
 			if (nameHeader) {
@@ -55,10 +65,12 @@ const ExampleReader = {
 		}
 
 		// Display birth info
-		this.displayBirthInfo(metadata);
+		if (metadata) {
+			this.displayBirthInfo(metadata);
+		}
 
 		// Draw chart wheels
-		if (!chartData.unknown_time) {
+		if (chartData && !chartData.unknown_time) {
 			this.drawChartWheel(chartData, 'sidereal-wheel-svg', 'sidereal');
 			this.drawChartWheel(chartData, 'tropical-wheel-svg', 'tropical');
 			
@@ -112,12 +124,22 @@ const ExampleReader = {
 		if (!svg) return;
 		svg.innerHTML = '';
 
+		if (!data) {
+			svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">No chart data available.</text>';
+			return;
+		}
+
 		const centerX = 500, centerY = 500;
 		const zodiacRadius = 450, houseRingRadius = 350, innerRadius = 150;
 		
 		const positions = data[`${chartType}_major_positions`];
 		const aspects = data[`${chartType}_aspects`];
 		const houseCusps = data[`${chartType}_house_cusps`];
+
+		if (!positions || !Array.isArray(positions)) {
+			svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart data is incomplete.</text>';
+			return;
+		}
 
 		const ascendant = positions.find(p => p.name === 'Ascendant');
 		if (!ascendant || ascendant.degrees === null) {
