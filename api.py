@@ -276,8 +276,15 @@ def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inp
 
 async def _run_gemini_prompt(prompt_text: str) -> str:
     try:
+        if not GEMINI_API_KEY:
+            logger.error("Gemini API key not configured - cannot call Gemini API")
+            raise Exception("Gemini API key not configured")
+        
+        logger.info(f"Calling Gemini API with prompt length: {len(prompt_text)} characters")
         model = genai.GenerativeModel('gemini-2.5-pro')
+        logger.info("Gemini model initialized, generating content...")
         response = await model.generate_content_async(prompt_text)
+        logger.info("Gemini API call completed successfully")
         # Add basic error checking for empty or blocked responses
         if not response.parts:
              # Check for safety feedback which might indicate blocking
@@ -307,7 +314,10 @@ async def _run_gemini_prompt(prompt_text: str) -> str:
 async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
     if not GEMINI_API_KEY:
         # Raise exception instead of returning error string
+        logger.error("Gemini API key not configured - AI reading unavailable")
         raise Exception("Gemini API key not configured. AI reading is unavailable.")
+    
+    logger.info("Starting Gemini reading generation...")
 
     # --- Unknown Time Handling ---
     if unknown_time:
@@ -823,7 +833,8 @@ async def calculate_chart_endpoint(data: ChartRequest):
         # Convert to expected format: {"life_path": ...} -> {"life_path_number": ...}
         numerology = {
             "life_path_number": numerology_raw.get("life_path", "N/A"),
-            "day_number": numerology_raw.get("day_number", "N/A")
+            "day_number": numerology_raw.get("day_number", "N/A"),
+            "lucky_number": numerology_raw.get("lucky_number", "N/A")
         }
         
         name_numerology = None
@@ -863,12 +874,14 @@ async def generate_reading_endpoint(request: Request, reading_data: ReadingReque
     Email sending is handled in the background via SendGrid with PDF attachments.
     """
     try:
+        user_inputs = reading_data.user_inputs
+        chart_name = user_inputs.get('full_name', 'N/A')
+        logger.info(f"Starting AI reading generation for: {chart_name}")
+        
         # Run AI generation synchronously
         gemini_reading = await get_gemini_reading(reading_data.chart_data, reading_data.unknown_time)
         
-        user_inputs = reading_data.user_inputs
-        chart_name = user_inputs.get('full_name', 'N/A')
-        logger.info(f"AI Reading successfully generated for: {chart_name}")
+        logger.info(f"AI Reading successfully generated for: {chart_name} (length: {len(gemini_reading)} characters)")
 
         # Add email sending to background task
         background_tasks.add_task(

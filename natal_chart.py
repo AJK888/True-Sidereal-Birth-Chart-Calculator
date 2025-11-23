@@ -92,7 +92,21 @@ def calculate_numerology(day: int, month: int, year: int) -> dict:
     day_sum = sum(int(digit) for digit in str(day))
     day_number = reduce_number(day_sum)
     
-    return {"life_path": life_path, "day_number": day_number}
+    # Calculate Lucky Number (first digit + last non-zero digit, NOT reduced)
+    day_str = str(day)
+    first_digit = int(day_str[0]) if day_str else 0
+    
+    # Find last non-zero digit
+    last_non_zero_digit = 0
+    for digit in reversed(day_str):
+        if digit != '0':
+            last_non_zero_digit = int(digit)
+            break
+    
+    # Keep as two-digit number (first digit + last non-zero digit), not reduced
+    lucky_number = int(f"{first_digit}{last_non_zero_digit}")
+    
+    return {"life_path": life_path, "day_number": day_number, "lucky_number": lucky_number}
 def get_chinese_zodiac(year: int, month: int, day: int) -> str:
     zodiac_animals = ["Rat","Ox","Tiger","Rabbit","Dragon","Snake","Horse","Goat","Monkey","Rooster","Dog","Pig"]
     return zodiac_animals[(year - 1924) % 12]
