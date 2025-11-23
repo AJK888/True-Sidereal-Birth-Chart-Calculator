@@ -55,5 +55,9 @@ Cursor/
 *.temp
 .cache/
 
+# Test files with API keys (DO NOT COMMIT)
+test_gemini_with_key.py
+*_with_key.py
+
 
 

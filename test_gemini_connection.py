@@ -4,13 +4,14 @@ import os
 import google.generativeai as genai
 import asyncio
 
-async def test_gemini():
+async def test_gemini(api_key=None):
     """Test if Gemini API is working"""
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    GEMINI_API_KEY = api_key or os.getenv("GEMINI_API_KEY")
     
     if not GEMINI_API_KEY:
-        print("❌ GEMINI_API_KEY environment variable is not set")
-        print("   Set it in your Render dashboard or .env file")
+        print("❌ GEMINI_API_KEY not provided")
+        print("   Usage: python test_gemini_connection.py [API_KEY]")
+        print("   Or set GEMINI_API_KEY environment variable")
         return False
     
     print(f"✓ GEMINI_API_KEY is set (length: {len(GEMINI_API_KEY)} characters)")
@@ -40,12 +41,24 @@ async def test_gemini():
         return False
 
 if __name__ == "__main__":
+    import sys
+    
     print("=" * 60)
     print("Testing Gemini API Connection")
     print("=" * 60)
     print()
     
-    result = asyncio.run(test_gemini())
+    # Allow API key as command-line argument
+    api_key = None
+    if len(sys.argv) > 1:
+        api_key = sys.argv[1]
+        print("Using API key from command line argument")
+    else:
+        print("Checking for GEMINI_API_KEY environment variable...")
+    
+    print()
+    
+    result = asyncio.run(test_gemini(api_key))
     
     print()
     print("=" * 60)

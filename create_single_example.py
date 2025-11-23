@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 API_BASE = "https://true-sidereal-api.onrender.com"
+ADMIN_SECRET = "my-super-secret-key-12345"  # Admin secret to bypass rate limits
 
 def create_example(name, year, month, day, hour, minute, location):
     """Create an example JSON file"""
@@ -26,12 +27,18 @@ def create_example(name, year, month, day, hour, minute, location):
     }
     
     print("  Calling calculate_chart API (this may take 1-2 minutes)...")
+    print(f"  API URL: {API_BASE}/calculate_chart")
+    print(f"  Using admin secret to bypass rate limits")
     try:
+        headers = {"x-admin-secret": ADMIN_SECRET}
+        print("  Sending request...")
         chart_response = requests.post(
             f"{API_BASE}/calculate_chart", 
-            json=chart_payload, 
-            timeout=(30, 300)  # 30s connect, 5min read
+            json=chart_payload,
+            headers=headers,
+            timeout=(30, 180)  # 30s connect, 3min read (reduced from 5min)
         )
+        print(f"  Response status: {chart_response.status_code}")
         
         # Handle rate limiting
         if chart_response.status_code == 429:
@@ -44,7 +51,8 @@ def create_example(name, year, month, day, hour, minute, location):
             time.sleep(wait_time)
             chart_response = requests.post(
                 f"{API_BASE}/calculate_chart", 
-                json=chart_payload, 
+                json=chart_payload,
+                headers=headers,
                 timeout=(30, 300)
             )
         
@@ -72,12 +80,17 @@ def create_example(name, year, month, day, hour, minute, location):
     }
     
     print("  Calling generate_reading API (this may take 2-3 minutes)...")
+    print(f"  API URL: {API_BASE}/generate_reading")
     try:
+        headers = {"x-admin-secret": ADMIN_SECRET}
+        print("  Sending request...")
         reading_response = requests.post(
             f"{API_BASE}/generate_reading", 
-            json=reading_payload, 
-            timeout=(30, 600)  # 30s connect, 10min read
+            json=reading_payload,
+            headers=headers,
+            timeout=(30, 300)  # 30s connect, 5min read (reduced from 10min)
         )
+        print(f"  Response status: {reading_response.status_code}")
         
         # Handle rate limiting
         if reading_response.status_code == 429:
@@ -90,7 +103,8 @@ def create_example(name, year, month, day, hour, minute, location):
             time.sleep(wait_time)
             reading_response = requests.post(
                 f"{API_BASE}/generate_reading", 
-                json=reading_payload, 
+                json=reading_payload,
+                headers=headers,
                 timeout=(30, 600)
             )
         
