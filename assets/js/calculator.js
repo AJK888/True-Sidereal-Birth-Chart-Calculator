@@ -186,10 +186,38 @@ const AstrologyCalculator = {
 
 			const readingResult = await readingRes.json();
             
-			this.geminiOutput.innerHTML = readingResult.gemini_reading ? readingResult.gemini_reading.replace(/\n/g, '<br>') : "The AI reading could not be generated at this time.";
-            if (this.copyReadingBtn) {
-                this.copyReadingBtn.style.display = 'inline-block'; // Show copy button
-            }
+			// Check if this is the new async processing response
+			if (readingResult.status === "processing") {
+				// Display the processing message with instructions
+				const message = readingResult.message || "Your comprehensive astrology reading is being generated.";
+				const instructions = readingResult.instructions || "You can safely close this page - your reading will be sent to your email when ready.";
+				const estimatedTime = readingResult.estimated_time || "up to 15 minutes";
+				const email = readingResult.email || "your email";
+				
+				this.geminiOutput.innerHTML = `
+					<div style="padding: 20px; background-color: #f0f7ff; border-left: 4px solid #1b6ca8; margin-bottom: 15px;">
+						<h3 style="margin-top: 0; color: #1b6ca8;">⏳ ${message}</h3>
+						<p style="margin-bottom: 10px;"><strong>Estimated time:</strong> ${estimatedTime}</p>
+						<p style="margin-bottom: 0;">${instructions}</p>
+						${email ? `<p style="margin-top: 10px; font-size: 0.9em; color: #666;">Your reading will be sent to: <strong>${email}</strong></p>` : ''}
+					</div>
+				`;
+				if (this.copyReadingBtn) {
+					this.copyReadingBtn.style.display = 'none'; // Hide copy button while processing
+				}
+			} else if (readingResult.gemini_reading) {
+				// Legacy format: reading is immediately available
+				this.geminiOutput.innerHTML = readingResult.gemini_reading.replace(/\n/g, '<br>');
+				if (this.copyReadingBtn) {
+					this.copyReadingBtn.style.display = 'inline-block'; // Show copy button
+				}
+			} else {
+				// No reading available
+				this.geminiOutput.innerHTML = "The AI reading could not be generated at this time.";
+				if (this.copyReadingBtn) {
+					this.copyReadingBtn.style.display = 'none'; // Hide copy button
+				}
+			}
 
 		} catch (err) {
 			this.geminiOutput.innerText = "Error: The AI reading is currently unavailable. " + err.message;
