@@ -1,7 +1,7 @@
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, PageBreak, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, PageBreak, Table, TableStyle, KeepTogether
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
 from reportlab.pdfgen import canvas
@@ -11,6 +11,7 @@ import cairosvg
 from typing import Dict, Any, Optional
 import math
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -201,8 +202,22 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     Matches the webpage formatting as closely as possible.
     """
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.75*inch, bottomMargin=0.75*inch,
-                            leftMargin=0.75*inch, rightMargin=0.75*inch)
+    
+    # Custom page template for page numbers
+    def add_page_number(canvas_obj, doc):
+        """Add page numbers to each page."""
+        page_num = canvas_obj.getPageNumber()
+        text = f"Page {page_num}"
+        canvas_obj.saveState()
+        canvas_obj.setFont('Helvetica', 9)
+        canvas_obj.setFillColor(colors.HexColor('#666666'))
+        # Position at bottom center
+        canvas_obj.drawCentredString(letter[0] / 2.0, 0.5*inch, text)
+        canvas_obj.restoreState()
+    
+    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.75*inch, bottomMargin=1.0*inch,
+                            leftMargin=0.75*inch, rightMargin=0.75*inch,
+                            onFirstPage=add_page_number, onLaterPages=add_page_number)
     
     styles = getSampleStyleSheet()
     
@@ -269,6 +284,18 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         textColor=colors.HexColor('#1f2933'),
         alignment=TA_CENTER,
         spaceAfter=8
+    )
+    
+    bullet_style = ParagraphStyle(
+        'BulletStyle',
+        parent=styles['BodyText'],
+        fontSize=11,
+        textColor=colors.HexColor('#333333'),
+        leading=16,
+        alignment=TA_LEFT,
+        spaceAfter=8,
+        leftIndent=20,
+        bulletIndent=10
     )
     
     story = []
@@ -357,8 +384,36 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     # The reading comes as plain text with headings and paragraphs
     lines = gemini_reading.split('\n')
     current_para = []
+    in_bullet_section = False  # Track if we're in a section that contains bullets
+    content_added = False  # Track if we've added content to avoid page break on first section
+    major_sections = [
+        'Snapshot: What Will Feel Most True About You',
+        'Chart Overview and Core Themes',
+        'Your Astrological Blueprint: Planets, Points, and Angles',
+        'Major Life Dynamics: The Tightest Aspects',
+        'Summary and Key Takeaways'
+    ]
     
-    for line in lines:
+    # Sections that typically contain bullet points
+    bullet_section_keywords = ['snapshot', 'action checklist', 'checklist', 'key takeaways']
+    
+    def is_bullet_line(line: str) -> tuple[bool, str]:
+        """Check if a line is a bullet point and return (is_bullet, cleaned_text)."""
+        bullet_patterns = [
+            r'^[-•*]\s+(.+)',  # Starts with -, •, or *
+            r'^\d+[.)]\s+(.+)',  # Starts with number followed by . or )
+            r'^[•]\s+(.+)',  # Starts with bullet character
+        ]
+        
+        for pattern in bullet_patterns:
+            match = re.match(pattern, line)
+            if match:
+                bullet_text = match.group(1) if match.groups() else line
+                return True, bullet_text.strip()
+        
+        return False, line
+    
+    for i, line in enumerate(lines):
         line = line.strip()
         if not line:
             # Empty line - end current paragraph
@@ -367,28 +422,111 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
                 story.append(Paragraph(para_text, body_style))
                 story.append(Spacer(1, 0.12*inch))  # Space between paragraphs
                 current_para = []
-        else:
-            # Check if this looks like a heading (short line, possibly all caps or bold markers)
-            is_heading = (
-                len(line) < 80 and (
-                    line.isupper() or 
-                    line.startswith('**') and line.endswith('**') or
-                    (line[0].isupper() and line.count(' ') < 5 and not line.endswith('.'))
-                )
-            )
+                content_added = True
+            # Check if we should exit bullet section after empty line
+            # (we'll re-enter if next line is a bullet)
+            continue
+        
+        # Check if this is a major section header
+        is_major_section = False
+        matched_section = None
+        line_clean = line.replace('**', '').strip()
+        for section in major_sections:
+            # Check various patterns for section matching
+            section_keywords = section.lower().split()
+            if (section.lower() in line.lower() or 
+                any(keyword in line.lower() for keyword in section_keywords if len(keyword) > 4) or
+                line_clean.startswith(section) or
+                (len(line) < 100 and section.lower().replace(':', '') in line.lower())):
+                is_major_section = True
+                matched_section = section
+                break
+        
+        # Check if this looks like a heading
+        is_heading = (
+            is_major_section or
+            (len(line) < 80 and (
+                line.isupper() or 
+                line.startswith('**') and line.endswith('**') or
+                (line[0].isupper() and line.count(' ') < 5 and not line.endswith('.'))
+            ))
+        )
+        
+        # Handle major section headers (with page breaks)
+        if is_major_section:
+            # Finish any current paragraph
+            if current_para:
+                para_text = ' '.join(current_para)
+                story.append(Paragraph(para_text, body_style))
+                story.append(Spacer(1, 0.12*inch))
+                current_para = []
             
-            if is_heading and current_para:
-                # Finish current paragraph first
+            # Check if entering a section that typically contains bullets
+            in_bullet_section = any(keyword in line.lower() for keyword in bullet_section_keywords)
+            
+            # Add page break before major section (except for the very first one)
+            if content_added:  # We've already added content, so this is a new section
+                story.append(PageBreak())
+            
+            heading_text = line_clean
+            story.append(Paragraph(f"<b>{heading_text}</b>", section_heading_style))
+            story.append(Spacer(1, 0.12*inch))
+            content_added = True
+            continue
+        
+        if is_heading and not is_major_section:
+            # Regular heading (not major section)
+            if current_para:
                 para_text = ' '.join(current_para)
                 story.append(Paragraph(para_text, body_style))
                 story.append(Spacer(1, 0.1*inch))
                 current_para = []
+                content_added = True
+            heading_text = line.replace('**', '').strip()
+            story.append(Paragraph(f"<b>{heading_text}</b>", heading_style))
+            story.append(Spacer(1, 0.12*inch))
+            content_added = True
+            # Check if this heading indicates a bullet section
+            if any(keyword in heading_text.lower() for keyword in bullet_section_keywords):
+                in_bullet_section = True
+        else:
+            # Check if this line is a bullet point
+            is_bullet, bullet_text = is_bullet_line(line)
             
-            if is_heading:
-                # It's a heading
-                heading_text = line.replace('**', '').strip()
-                story.append(Paragraph(f"<b>{heading_text}</b>", heading_style))
-                story.append(Spacer(1, 0.12*inch))
+            # If we detect a bullet pattern, we're definitely in a bullet section
+            if is_bullet:
+                in_bullet_section = True
+                # Finish any current paragraph before starting bullets
+                if current_para:
+                    para_text = ' '.join(current_para)
+                    story.append(Paragraph(para_text, body_style))
+                    story.append(Spacer(1, 0.12*inch))
+                    current_para = []
+                    content_added = True
+                # Format as bullet point
+                story.append(Paragraph(f"• {bullet_text}", bullet_style))
+                content_added = True
+            elif in_bullet_section:
+                # We were in bullet section, but this line doesn't match bullet pattern
+                # Check if it's a short line that might still be part of bullet list
+                # (sometimes bullets don't have explicit markers, especially in Action Checklist)
+                is_likely_bullet = (len(line) < 120 and 
+                                   not line.endswith('.') and 
+                                   not line.endswith(':') and
+                                   not line.endswith('!') and
+                                   line.count('.') < 2)  # Not a full sentence
+                
+                if is_likely_bullet:
+                    # Likely a bullet without marker, format it
+                    story.append(Paragraph(f"• {line}", bullet_style))
+                    content_added = True
+                else:
+                    # Exit bullet section, start regular paragraph
+                    in_bullet_section = False
+                    if current_para:
+                        current_para.append(line)
+                    else:
+                        current_para = [line]
             else:
                 # Regular text - add to current paragraph
                 current_para.append(line)
@@ -398,6 +536,35 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         para_text = ' '.join(current_para)
         story.append(Paragraph(para_text, body_style))
         story.append(Spacer(1, 0.12*inch))
+        content_added = True
+    
+    story.append(PageBreak())
+    
+    # Glossary Section
+    story.append(Paragraph("Glossary", section_heading_style))
+    story.append(Spacer(1, 0.2*inch))
+    
+    glossary_terms = [
+        ("Sidereal Zodiac", "A zodiac system based on the actual positions of constellations in the sky. It represents the soul's deeper karmic blueprint and spiritual gifts."),
+        ("Tropical Zodiac", "The traditional Western zodiac system based on the seasons. It represents personality expression and how the soul's purpose manifests in this lifetime."),
+        ("Aspect", "A geometric angle between two planets or points in the chart, indicating how their energies interact (e.g., conjunction, square, trine)."),
+        ("House", "One of 12 divisions of the chart representing different areas of life (career, relationships, home, etc.). Only available when birth time is known."),
+        ("Ascendant (Rising Sign)", "The zodiac sign rising on the eastern horizon at the moment of birth. Represents how you present yourself to the world."),
+        ("Midheaven (MC)", "The highest point in the chart, representing career, public image, and life direction."),
+        ("North Node", "The point indicating your soul's growth direction and life lessons in this incarnation."),
+        ("South Node", "The point representing past-life patterns, comfort zones, and innate gifts."),
+        ("Retrograde", "When a planet appears to move backward in the sky. Indicates internalized or reflective energy."),
+        ("Chart Ruler", "The planet that rules the Ascendant sign, considered the most important planet in the chart."),
+        ("Aspect Pattern", "A geometric configuration formed by multiple aspects (e.g., T-Square, Grand Trine, Grand Cross)."),
+        ("Stellium", "Three or more planets in the same sign or house, creating a concentration of energy."),
+        ("Life Path Number", "A numerology calculation derived from your birth date, representing your life's purpose and challenges."),
+        ("Expression Number", "A numerology calculation from your full name, representing your natural talents and abilities."),
+    ]
+    
+    for term, definition in glossary_terms:
+        story.append(Paragraph(f"<b>{term}</b>", heading_style))
+        story.append(Paragraph(definition, body_style))
+        story.append(Spacer(1, 0.15*inch))
     
     story.append(PageBreak())
     
