@@ -248,6 +248,16 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         spaceBefore=20
     )
     
+    subsection_style = ParagraphStyle(
+        'SubsectionStyle',
+        parent=styles['Heading3'],
+        fontSize=14,
+        textColor=colors.HexColor('#2c3e50'),
+        spaceAfter=8,
+        spaceBefore=12,
+        leftIndent=0
+    )
+    
     section_heading_style = ParagraphStyle(
         'SectionHeading',
         parent=styles['Heading1'],
@@ -502,12 +512,27 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         # Only treat as heading if:
         # 1. It's a major section (already handled above)
         # 2. It's wrapped in ** markers (markdown bold) AND very short
-        # 3. It's ALL CAPS, very short (under 40 chars), no punctuation, and looks like a title
+        # 3. It matches "Theme X – [Title]" pattern
+        # 4. It's a subsection label like "Why this shows up in your chart:" or "How it tends to feel and play out:"
+        # 5. It's ALL CAPS, very short (under 40 chars), no punctuation, and looks like a title
         is_heading = False
+        is_subsection = False
+        
         if is_major_section:
             is_heading = True
         elif line.startswith('**') and line.endswith('**') and len(line) < 80:
             # Markdown bold heading
+            is_heading = True
+        elif re.match(r'^Theme \d+\s*[–—\-]\s+\w', line, re.IGNORECASE):
+            # Theme heading like "Theme 1 – [Title]" or "Theme 2 — [Title]"
+            # Must start with "Theme", have a number, dash, and a word character
+            is_heading = True
+        elif re.match(r'^---\s+.+\s+---\s*$', line):
+            # Body name headers like "--- SUN ---" or "--- MOON ---"
+            is_heading = True
+        elif re.match(r'^(Why this shows up in your chart|How it tends to feel and play out):\s*$', line, re.IGNORECASE):
+            # Subsection labels - treat as smaller heading
+            is_subsection = True
             is_heading = True
         elif (len(line) < 40 and line.isupper() and 
               not line.endswith(('.', '!', '?', ':', ';', ',', ')')) and
@@ -549,8 +574,20 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
                 current_para = []
                 content_added = True
             heading_text = line.replace('**', '').strip()
-            story.append(Paragraph(f"<b>{heading_text}</b>", heading_style))
-            story.append(Spacer(1, 0.12*inch))
+            
+            # Clean up "--- BODY NAME ---" format
+            if re.match(r'^---\s+.+\s+---\s*$', heading_text):
+                # Extract body name from "--- BODY NAME ---"
+                body_name = re.sub(r'^---\s+|\s+---\s*$', '', heading_text).strip()
+                heading_text = body_name
+            
+            # Use subsection style for subsection labels, regular heading style for theme headings
+            if is_subsection:
+                story.append(Paragraph(f"<b>{heading_text}</b>", subsection_style))
+                story.append(Spacer(1, 0.08*inch))
+            else:
+                story.append(Paragraph(f"<b>{heading_text}</b>", heading_style))
+                story.append(Spacer(1, 0.12*inch))
             content_added = True
             # Check if this heading indicates a bullet section
             if any(keyword in heading_text.lower() for keyword in bullet_section_keywords):

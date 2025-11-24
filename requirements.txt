@@ -7,7 +7,7 @@ requests
 pendulum
 logtail-python
 httpx
-google-generativeai
+anthropic
 sendgrid
 slowapi
 reportlab

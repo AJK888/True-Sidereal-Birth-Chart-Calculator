@@ -15,7 +15,7 @@ import pendulum
 import os
 import logging
 from logtail import LogtailHandler
-import google.generativeai as genai
+from anthropic import AsyncAnthropic
 import asyncio
 from slowapi import Limiter
 import hashlib
@@ -29,6 +29,10 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 import base64
 from pdf_generator import generate_pdf_report
+from llm_schemas import (
+    ChartOverviewOutput, CoreTheme, serialize_chart_for_llm,
+    format_serialized_chart_for_prompt, parse_json_response
+)
 
 # --- SETUP THE LOGGER ---
 import sys
@@ -54,10 +58,18 @@ if logtail_token:
     logtail_handler = LogtailHandler(source_token=logtail_token, host=ingesting_host)
     logger.addHandler(logtail_handler)
 
-# --- SETUP GEMINI ---
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+# --- SETUP CLAUDE ---
+CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
+claude_client = None
+if CLAUDE_API_KEY:
+    try:
+        claude_client = AsyncAnthropic(api_key=CLAUDE_API_KEY)
+        logger.info("Claude async API client initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize Claude client: {e}")
+        claude_client = None
+else:
+    logger.warning("CLAUDE_API_KEY not configured - AI reading will be unavailable unless AI_MODE=stub")
 
 # --- SETUP SENDGRID ---
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
@@ -333,7 +345,8 @@ def get_full_text_report(res: dict) -> str:
                     out += f"{line}\n"
     return out
 
-def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inputs: dict, chart_image_base64: Optional[str], include_inputs: bool = True) -> str:
+def format_full_report_for_email(chart_data: dict, claude_reading: str, user_inputs: dict, chart_image_base64: Optional[str], include_inputs: bool = True) -> str:
+    # Note: This function is deprecated - PDF generation is used instead
     html = "<h1>Synthesis Astrology Report</h1>"
     
     if include_inputs:
@@ -350,7 +363,7 @@ def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inp
         html += "<hr>"
 
     html += "<h2>AI Astrological Synthesis</h2>"
-    html += f"<p>{gemini_reading.replace('\\n', '<br><br>')}</p>"
+    html += f"<p>{claude_reading.replace('\\n', '<br><br>')}</p>"
     html += "<hr>"
 
     full_text_report = get_full_text_report(chart_data)
@@ -370,21 +383,17 @@ def _safe_get_tokens(usage: dict, key: str) -> int:
         return 0
 
 
-def calculate_gemini_cost(prompt_tokens: int, completion_tokens: int, 
-                          input_price_per_million: float = 1.25, 
-                          output_price_per_million: float = 10.00) -> dict:
+def calculate_claude_cost(prompt_tokens: int, completion_tokens: int, 
+                          input_price_per_million: float = 3.00, 
+                          output_price_per_million: float = 15.00) -> dict:
     """
-    Calculate the cost of a Gemini API call based on token usage.
+    Calculate the cost of a Claude API call based on token usage.
     
-    Default prices are for Gemini 2.5 Pro (for prompts <= 200k tokens):
-    - Input: $1.25 per 1M tokens
-    - Output: $10.00 per 1M tokens (including thinking tokens)
-    
-    Note: For prompts > 200k tokens, prices are:
-    - Input: $2.50 per 1M tokens
+    Default prices are for Claude 3.5 Sonnet:
+    - Input: $3.00 per 1M tokens
     - Output: $15.00 per 1M tokens
     
-    You should verify current pricing at: https://ai.google.dev/pricing
+    You should verify current pricing at: https://www.anthropic.com/pricing
     
     Returns a dict with cost breakdown.
     """
@@ -410,7 +419,7 @@ def calculate_gemini_cost(prompt_tokens: int, completion_tokens: int,
             'total_cost_usd': round(total_cost, 6)
         }
     except (TypeError, ValueError) as e:
-        logger.error(f"Error calculating Gemini cost: {e}. Tokens: prompt={prompt_tokens}, completion={completion_tokens}")
+        logger.error(f"Error calculating Claude cost: {e}. Tokens: prompt={prompt_tokens}, completion={completion_tokens}")
         # Return safe defaults
         return {
             'prompt_tokens': 0,
@@ -419,6 +428,167 @@ def calculate_gemini_cost(prompt_tokens: int, completion_tokens: int,
             'input_cost_usd': 0.0,
             'output_cost_usd': 0.0,
             'total_cost_usd': 0.0
+        }
+
+
+# --- Unified LLM Client ---
+AI_MODE = os.getenv("AI_MODE", "real").lower()  # "real" or "stub" for local testing
+
+class LLMClient:
+    """Unified LLM client with token and cost accumulation."""
+    
+    def __init__(self):
+        self.total_prompt_tokens = 0
+        self.total_completion_tokens = 0
+        self.total_cost_usd = 0.0
+        self.call_count = 0
+        
+    async def generate(self, system: str, user: str, temperature: float = 0.7, 
+                      max_output_tokens: Optional[int] = None, call_label: str = "unnamed",
+                      response_format: Optional[dict] = None) -> str:
+        """
+        Generate LLM response with token and cost tracking.
+        
+        Args:
+            system: System prompt
+            user: User prompt/content
+            temperature: Temperature setting (default 0.7)
+            max_output_tokens: Max output tokens (optional)
+            call_label: Label for logging (e.g., "call1_chart_overview")
+        
+        Returns:
+            Response text
+        """
+        self.call_count += 1
+        logger.info(f"[{call_label}] Starting LLM call #{self.call_count}")
+        logger.info(f"[{call_label}] System prompt length: {len(system)} chars")
+        logger.info(f"[{call_label}] User content length: {len(user)} chars")
+        
+        if AI_MODE == "stub":
+            logger.info(f"[{call_label}] AI_MODE=stub: Returning stub response")
+            stub_response = f"[STUB RESPONSE for {call_label}] This is a placeholder response for local testing. System: {system[:100]}... User: {user[:100]}..."
+            # Simulate token usage for stubs
+            self.total_prompt_tokens += len(system.split()) + len(user.split())
+            self.total_completion_tokens += len(stub_response.split())
+            return stub_response
+        
+        # Real LLM call
+        try:
+            if not CLAUDE_API_KEY or not claude_client:
+                logger.error(f"[{call_label}] Claude API key not configured or client not initialized - cannot call Claude API")
+                raise Exception("Claude API key not configured or client not initialized")
+            
+            logger.info(f"[{call_label}] Calling Claude API...")
+            
+            # Prepare messages for Claude API
+            # Note: Claude requires system prompt as a separate parameter, not in messages array
+            messages = [{"role": "user", "content": user}]
+            
+            # Determine max_tokens (default to 4096, allow override)
+            max_tokens = max_output_tokens if max_output_tokens else 4096
+            
+            logger.info(f"[{call_label}] Claude model initialized, generating content (max_tokens={max_tokens})...")
+            
+            # Make the API call
+            api_kwargs = {
+                "model": "claude-3-5-sonnet-20241022",  # Latest Claude 3.5 Sonnet model
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "messages": messages
+            }
+            
+            # Add system parameter if provided (Claude requires this as a top-level parameter)
+            if system:
+                api_kwargs["system"] = system
+                logger.info(f"[{call_label}] System prompt provided ({len(system)} chars)")
+            
+            # Note: Claude doesn't support OpenAI-style response_format.
+            # For JSON mode, we rely on strong prompting in the system/user messages.
+            # If response_format is provided, we'll log it but not pass it to the API.
+            if response_format:
+                logger.info(f"[{call_label}] JSON mode requested - relying on prompt instructions for JSON output")
+            
+            # Make async API call - this is non-blocking and maintains FastAPI event loop
+            response = await claude_client.messages.create(**api_kwargs)
+            
+            logger.info(f"[{call_label}] Claude API call completed successfully")
+            
+            # Extract usage metadata
+            usage_metadata = {
+                'prompt_tokens': 0,
+                'completion_tokens': 0,
+                'total_tokens': 0
+            }
+            if hasattr(response, 'usage') and response.usage:
+                try:
+                    usage_metadata = {
+                        'prompt_tokens': getattr(response.usage, 'input_tokens', 0) or 0,
+                        'completion_tokens': getattr(response.usage, 'output_tokens', 0) or 0,
+                        'total_tokens': (getattr(response.usage, 'input_tokens', 0) or 0) + (getattr(response.usage, 'output_tokens', 0) or 0)
+                    }
+                    usage_metadata = {k: int(v) if v is not None else 0 for k, v in usage_metadata.items()}
+                    logger.info(f"[{call_label}] Token usage - Input: {usage_metadata['prompt_tokens']}, Output: {usage_metadata['completion_tokens']}, Total: {usage_metadata['total_tokens']}")
+                except Exception as meta_error:
+                    logger.warning(f"[{call_label}] Error extracting usage metadata: {meta_error}. Using defaults.")
+                    usage_metadata = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
+            
+            # Accumulate tokens
+            self.total_prompt_tokens += usage_metadata['prompt_tokens']
+            self.total_completion_tokens += usage_metadata['completion_tokens']
+            
+            # Calculate and accumulate cost
+            cost_info = calculate_claude_cost(usage_metadata['prompt_tokens'], usage_metadata['completion_tokens'])
+            self.total_cost_usd += cost_info['total_cost_usd']
+            logger.info(f"[{call_label}] Call cost: ${cost_info['total_cost_usd']:.6f} (Input: ${cost_info['input_cost_usd']:.6f}, Output: ${cost_info['output_cost_usd']:.6f})")
+            
+            # Extract response text
+            if not hasattr(response, 'content') or not response.content:
+                raise Exception("Claude response has no content available")
+            
+            # Claude returns content as a list of content blocks
+            text_parts = []
+            for content_block in response.content:
+                if hasattr(content_block, 'text') and content_block.text:
+                    text_parts.append(content_block.text)
+                elif hasattr(content_block, 'type') and content_block.type == 'text' and hasattr(content_block, 'text'):
+                    text_parts.append(content_block.text)
+            
+            response_text = ' '.join(text_parts).strip() if text_parts else ""
+            if not response_text:
+                raise Exception("Claude response has no text content available")
+            
+            logger.info(f"[{call_label}] Response length: {len(response_text)} characters")
+            return response_text
+            
+        except Exception as e:
+            logger.error(f"[{call_label}] Error in Claude API call: {e}", exc_info=True)
+            error_str = str(e).lower()
+            error_message = f"An error occurred during a Claude API call: {e}"
+            
+            # Handle specific error types
+            if any(keyword in error_str for keyword in ['quota', 'credit', 'billing', 'payment', 'insufficient']):
+                error_message = "API quota or credits exhausted. Please check your Claude API billing and quota limits."
+                logger.error(f"[{call_label}] Claude API quota/credit error detected")
+            elif any(keyword in error_str for keyword in ['rate limit', '429', 'too many requests']):
+                error_message = "API rate limit exceeded. Please wait a moment and try again."
+                logger.error(f"[{call_label}] Claude API rate limit error detected")
+            elif any(keyword in error_str for keyword in ['permission', 'unauthorized', 'authentication', 'invalid api key', 'api key']):
+                error_message = "API authentication error. Please check your Claude API key configuration."
+                logger.error(f"[{call_label}] Claude API authentication error detected")
+            elif "content_filter" in error_str or "safety" in error_str:
+                error_message = f"Error: The AI's response was filtered due to content policy. Please try rephrasing or contact support."
+                logger.error(f"[{call_label}] Claude content filter triggered")
+            
+            raise Exception(error_message)
+    
+    def get_summary(self) -> dict:
+        """Get summary of token usage and costs."""
+        return {
+            'total_prompt_tokens': self.total_prompt_tokens,
+            'total_completion_tokens': self.total_completion_tokens,
+            'total_tokens': self.total_prompt_tokens + self.total_completion_tokens,
+            'total_cost_usd': self.total_cost_usd,
+            'call_count': self.call_count
         }
 
 
@@ -505,15 +675,15 @@ async def _run_gemini_prompt(prompt_text: str) -> tuple[str, dict]:
         
         # Handle blocked responses
         elif "response was blocked" in error_str or "blocked" in error_str:
-            reason = "Safety settings"
-            try:
-                block_reason = getattr(e, 'block_reason', 'Unknown')
-                if hasattr(e, 'response') and hasattr(e.response, 'prompt_feedback'):
-                    block_reason = e.response.prompt_feedback.block_reason
-                reason = str(block_reason)
-            except Exception:
-                pass
-            error_message = f"Error: The AI's response was blocked due to {reason}. Please try rephrasing or contact support."
+             reason = "Safety settings"
+             try:
+                 block_reason = getattr(e, 'block_reason', 'Unknown')
+                 if hasattr(e, 'response') and hasattr(e.response, 'prompt_feedback'):
+                      block_reason = e.response.prompt_feedback.block_reason
+                 reason = str(block_reason)
+             except Exception:
+                 pass
+             error_message = f"Error: The AI's response was blocked due to {reason}. Please try rephrasing or contact support."
         
         # Raise exception instead of returning error string
         raise Exception(error_message)
@@ -663,253 +833,122 @@ def get_quick_highlights(chart_data: dict, unknown_time: bool) -> str:
     return f"{intro}\n{body}"
 
 
-async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
-    if not GEMINI_API_KEY:
-        # Raise exception instead of returning error string
-        logger.error("Gemini API key not configured - AI reading unavailable")
-        raise Exception("Gemini API key not configured. AI reading is unavailable.")
+# --- Three-Call Reading Generation Functions ---
+
+async def call1_chart_overview_and_themes(llm: LLMClient, serialized_chart: dict, chart_summary: str, 
+                                         unknown_time: bool) -> dict:
+    """
+    Call 1: Generate structured chart overview and core themes.
+    Returns parsed JSON structure.
     
-    logger.info("Starting Gemini reading generation...")
+    This call uses Claude's JSON mode to ensure structured output.
+    """
+    logger.info("="*60)
+    logger.info("CALL 1: Chart Overview and Core Themes")
+    logger.info("="*60)
     
-    # Track total token usage and costs across all API calls
-    total_prompt_tokens = 0
-    total_completion_tokens = 0
-
-    # --- Unknown Time Handling - Enhanced Multi-Step Process ---
-    if unknown_time:
-        try:
-            # Get all available data (excluding house-dependent information)
-            s_analysis = chart_data.get("sidereal_chart_analysis", {})
-            t_analysis = chart_data.get("tropical_chart_analysis", {})
-            numerology_analysis = chart_data.get("numerology_analysis", {})
-            s_positions = chart_data.get("sidereal_major_positions", [])
-            t_positions = chart_data.get("tropical_major_positions", [])
-            s_aspects = chart_data.get("sidereal_aspects", [])
-            s_aspect_patterns = chart_data.get("sidereal_aspect_patterns", [])
-            s_retrogrades = chart_data.get("sidereal_retrogrades", [])
-            
-            s_pos_all = {p['name']: p for p in s_positions}
-            t_pos_all = {p['name']: p for p in t_positions}
-            
-            # --- Step 1: Analyze Sidereal-Tropical Alignments (without houses) ---
-            cartographer_data = []
-            bodies_for_alignment = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Chiron', 'True Node', 'Lilith', 'Ceres', 'Pallas', 'Juno', 'Vesta']
-            for body in bodies_for_alignment:
-                s_body_data = s_pos_all.get(body)
-                t_body_data = t_pos_all.get(body)
-                if s_body_data and t_body_data and s_body_data.get('position') and t_body_data.get('position'):
-                    s_sign = s_body_data['position'].split(' ')[-1]
-                    t_sign = t_body_data['position'].split(' ')[-1]
-                    if s_sign != 'N/A' and t_sign != 'N/A':
-                        cartographer_data.append(f"- {body}: Sidereal {s_sign}, Tropical {t_sign}")
-            
-            cartographer_prompt = f"""
-Analyze the provided Sidereal and Tropical placements to identify the primary points of alignment, tension, and contrast. Do not interpret the meaning. Your output must be a simple, structured list.
-
-**Data to Analyze:**
-{'\n'.join(cartographer_data) if cartographer_data else "No alignment data available."}
-
-**Your Task:**
-1. For each body, state the relationship between its Sidereal and Tropical sign placements.
-2. Label each finding with one of the following classifications: "High Alignment" (same sign), "Moderate Tension" (adjacent signs), or "High Contrast" (signs in different elements/modalities).
-3. Output nothing but this list.
-"""
-            cartographer_analysis, usage = await _run_gemini_prompt(cartographer_prompt)
-            total_prompt_tokens += usage.get('prompt_tokens', 0)
-            total_completion_tokens += usage.get('completion_tokens', 0)
-            
-            # --- Step 2: Identify Foundational Blueprint (5 themes) ---
-            architect_data = []
-            for body in ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']:
-                s_body = s_pos_all.get(body, {})
-                t_body = t_pos_all.get(body, {})
-                if s_body.get('position') and t_body.get('position'):
-                    architect_data.append(f"- {body}: Sidereal {s_body.get('position')}, Tropical {t_body.get('position')}")
-            
-            if s_analysis.get('dominant_element'): architect_data.append(f"- Dominant Element (Sidereal): {s_analysis.get('dominant_element')}")
-            if t_analysis.get('dominant_element'): architect_data.append(f"- Dominant Element (Tropical): {t_analysis.get('dominant_element')}")
-            if s_analysis.get('dominant_planet'): architect_data.append(f"- Dominant Planet (Sidereal): {s_analysis.get('dominant_planet')}")
-            if t_analysis.get('dominant_planet'): architect_data.append(f"- Dominant Planet (Tropical): {t_analysis.get('dominant_planet')}")
-            if numerology_analysis.get('life_path_number'): architect_data.append(f"- Life Path Number: {numerology_analysis.get('life_path_number')}")
-            if numerology_analysis.get('day_number'): architect_data.append(f"- Day Number: {numerology_analysis.get('day_number')}")
-            if numerology_analysis.get('lucky_number'): architect_data.append(f"- Lucky Number: {numerology_analysis.get('lucky_number')}")
-            if numerology_analysis.get('name_numerology', {}).get('expression_number'): architect_data.append(f"- Expression Number: {numerology_analysis.get('name_numerology', {}).get('expression_number')}")
-            if numerology_analysis.get('name_numerology', {}).get('soul_urge_number'): architect_data.append(f"- Soul Urge Number: {numerology_analysis.get('name_numerology', {}).get('soul_urge_number')}")
-            if numerology_analysis.get('name_numerology', {}).get('personality_number'): architect_data.append(f"- Personality Number: {numerology_analysis.get('name_numerology', {}).get('personality_number')}")
-            if chart_data.get('chinese_zodiac'): architect_data.append(f"- Chinese Zodiac: {chart_data.get('chinese_zodiac')}")
-            
-            architect_prompt = f"""
-Identify the foundational blueprint of a soul. Analyze the provided chart data and the alignment map to determine the 5 central themes of this person's life. Note: Birth time is unknown, so house placements and the Ascendant/MC are unavailable.
+    system_prompt = """You are an expert true sidereal astrologer and structural planner. Your job in this call is ONLY to analyze the chart and output a clean JSON plan for the reading (no prose, no commentary).
 
 **Zodiac Definitions:**
 - The **Sidereal** placements represent the soul's deeper karmic blueprint, innate spiritual gifts, and ultimate life purpose.
 - The **Tropical** placements represent the personality's expression, psychological patterns, and how the soul's purpose manifests in this lifetime.
 
-**Alignment Analysis:**
-{cartographer_analysis}
-
-**Core Chart Data:**
-{'\n'.join(architect_data) if architect_data else "No chart data available."}
-
 **Your Task:**
-1. Review all provided data.
-2. Identify exactly 5 most powerful and interconnected themes that define the core of this chart.
-3. For each theme, list the specific Sidereal, Tropical, and Numerological/Zodiacal data points that serve as evidence.
-4. Output this as a structured list. Do not write a narrative.
+Analyze the chart data to identify exactly 5 core themes. For each theme, provide:
+1. A short title in plain language
+2. Exactly 2 headline sentences that clearly name the pattern
+3. A "why_in_chart" section (2-4 sentences) referencing specific placements/aspects
+4. A "how_it_plays_out" section (1-2 concrete real-life examples)
 
 When choosing the 5 themes, prioritize:
-- Themes that involve the Sun, Moon, Ascendant analogs (if available), or Nodes.
-- Themes where Sidereal and Tropical placements sharply contrast (different element or modality) as shown in the Alignment Analysis.
-- Themes supported by multiple signals at once (e.g., dominant element plus planetary placements plus numerology pointing the same direction).
-Avoid themes that sound generic or disconnected from specific evidence.
+- Themes involving Sun, Moon, Ascendant (if known), or Nodes
+- Themes where Sidereal and Tropical placements sharply contrast
+- Themes supported by multiple signals (element + planet + numerology)
+
+**CRITICAL: You must output ONLY valid JSON matching this exact schema. The entire response must be a single valid JSON object with no extra text, no markdown, no code blocks, no explanations. Start your response with {{ and end with }}.**
+
+{
+  "themes": [
+    {
+      "title": "Short Title in Plain Language",
+      "headline_sentences": [
+        "First headline sentence",
+        "Second headline sentence"
+      ],
+      "why_in_chart": {
+        "text": "2-4 sentences explaining why this shows up, referencing specific placements/aspects"
+      },
+      "how_it_plays_out": {
+        "text": "1-2 concrete real-life examples of how this tends to feel and play out"
+      }
+    }
+  ],
+  "synthesis": {
+    "text": "Paragraph showing how the 5 themes interact",
+    "key_tension": "One key inner tension (e.g., 'between security and risk')",
+    "growth_direction": "Key long-term growth direction from resolving the tension"
+  }
+}
+
+**IMPORTANT:** Your response must be valid JSON that can be parsed by json.loads(). Do not include any text before or after the JSON object. Do not wrap it in markdown code blocks."""
+    
+    user_prompt = f"""**Chart Data:**
+{chart_summary}
+
+**Note:** {"Birth time is unknown, so house placements and Ascendant/MC are unavailable." if unknown_time else "Full chart data including houses and angles is available."}
+
+**Output Requirement:** Return ONLY the JSON object described in the system prompt. Your response must start with {{ and end with }}. No markdown, no explanations, no code blocks, no text outside the JSON object."""
+    
+    # Generate JSON response - Claude will follow the strict JSON instructions in the prompt
+    # Note: Claude doesn't support OpenAI-style response_format parameter
+    # We rely on strong prompting to ensure JSON output
+    response_text = await llm.generate(
+        system=system_prompt,
+        user=user_prompt,
+        temperature=0.7,
+        max_output_tokens=4096,
+        call_label="call1_chart_overview_and_themes"
+    )
+    
+    # Parse JSON response
+    chart_overview_output = parse_json_response(response_text, ChartOverviewOutput)
+    if chart_overview_output is None:
+        logger.warning("Failed to parse call1 JSON response, using raw text")
+        # Return a dict structure for compatibility
+        return {"raw_text": response_text, "parsed": None}
+    
+    logger.info("Call 1 completed successfully - parsed JSON structure")
+    return {"raw_text": response_text, "parsed": chart_overview_output}
+
+
+async def call2_full_section_drafts(llm: LLMClient, serialized_chart: dict, chart_summary: str,
+                                   chart_overview: dict, unknown_time: bool) -> str:
+    """
+    Call 2: Generate full draft of all reading sections.
+    Uses chart_overview from call1 as structured context.
+    
+    This call generates the full reading draft following the JSON plan from Call 1.
+    """
+    logger.info("="*60)
+    logger.info("CALL 2: Full Section Drafts")
+    logger.info("="*60)
+    
+    # Prepare structured overview context (JSON blueprint from Call 1)
+    overview_context = ""
+    if chart_overview.get("parsed"):
+        overview_context = f"""
+**STRUCTURED CHART OVERVIEW (Use this as primary source for Chart Overview section):**
+{json.dumps(chart_overview['parsed'].model_dump(), indent=2)}
 """
-            architect_analysis, usage = await _run_gemini_prompt(architect_prompt)
-            total_prompt_tokens += usage.get('prompt_tokens', 0)
-            total_completion_tokens += usage.get('completion_tokens', 0)
-            
-            # --- Step 3: Interpret Karmic Path (Nodes without houses) ---
-            s_north_node = s_pos_all.get('True Node', {})
-            t_north_node = t_pos_all.get('True Node', {})
-            
-            navigator_data = []
-            if s_north_node.get('position'): navigator_data.append(f"- Sidereal North Node: {s_north_node.get('position')}")
-            if t_north_node.get('position'): navigator_data.append(f"- Tropical North Node: {t_north_node.get('position')}")
-            if s_analysis.get('dominant_element'): navigator_data.append(f"- Dominant Element: {s_analysis.get('dominant_element')}")
-            
-            navigator_prompt = f"""
-Interpret the soul's journey from its past to its future potential, based on the Nodal Axis (True Node and implied South Node). Use the provided foundational themes to guide your interpretation. Note: Birth time is unknown, so house placements are unavailable.
-
-**Foundational Themes:**
-{architect_analysis}
-
-**Nodal Axis Data:**
-{'\n'.join(navigator_data) if navigator_data else "No nodal data available."}
-
-**Your Task:**
-1. **Interpret the South Node:** Describe the past-life comfort zones, karmic patterns, and innate gifts represented by the South Node's position in both zodiacs (opposite the North Node).
-2. **Interpret the North Node:** Describe the soul's mission, growth potential, and the qualities it must develop in this lifetime, as shown by the North Node's position in both zodiacs.
-3. **Synthesize:** In a concluding paragraph, explain how the Sidereal (soul path) and Tropical (personality expression) Nodal placements work together. In your synthesis, highlight how the nodal axis is supported or challenged by the chart's dominant element.
+    elif chart_overview.get("raw_text"):
+        overview_context = f"""
+**CHART OVERVIEW (Text Format):**
+{chart_overview['raw_text']}
 """
-            navigator_analysis, usage = await _run_gemini_prompt(navigator_prompt)
-            total_prompt_tokens += usage.get('prompt_tokens', 0)
-            total_completion_tokens += usage.get('completion_tokens', 0)
-            
-            # --- Step 4: Deep-Dive Planetary Analysis (without houses) ---
-            async def run_specialist_for_point_noon(point_name):
-                s_point = s_pos_all.get(point_name, {})
-                t_point = t_pos_all.get(point_name, {})
-                
-                if not s_point.get('position') or not t_point.get('position'):
-                    return None
-                
-                has_retrograde = point_name not in ['True Node', 'South Node', 'Lilith', 'Ceres', 'Pallas', 'Juno', 'Vesta']
-                retrograde_status = 'Yes' if has_retrograde and s_point.get('retrograde') else ('No' if has_retrograde else 'N/A')
-                
-                specialist_data = [
-                    f"- Sidereal Placement: {s_point.get('position')}",
-                    f"- Tropical Placement: {t_point.get('position')}",
-                ]
-                if has_retrograde:
-                    specialist_data.append(f"- Retrograde Status: {retrograde_status}")
-                
-                interpretation_focus = f"soul's core essence and karmic purpose related to {point_name}"
-                if point_name == 'True Node':
-                    interpretation_focus = "soul's evolutionary direction and path of growth"
-                elif point_name == 'South Node':
-                    interpretation_focus = "past life patterns, comfort zones, and innate gifts"
-                elif point_name == 'Lilith':
-                    interpretation_focus = "shadow self, raw instincts, and areas of potential repression or taboo"
-                elif point_name == 'Ceres':
-                    interpretation_focus = "themes of nurturing, self-care, and the mother-child dynamic"
-                elif point_name == 'Pallas':
-                    interpretation_focus = "themes of wisdom, strategy, creative intelligence, and father-daughter dynamics"
-                elif point_name == 'Juno':
-                    interpretation_focus = "themes of committed partnership, marriage, and balance in relationships"
-                elif point_name == 'Vesta':
-                    interpretation_focus = "themes of devotion, sacred focus, purity, and where one's 'inner flame' is dedicated"
-                elif point_name == 'Chiron':
-                    interpretation_focus = "the 'wounded healer' archetype, showing the soul's deepest wound and its greatest gift of healing"
-                
-                specialist_prompt = f"""
-You are an expert astrologer trained in both Sidereal and Tropical systems. For the point/body '{point_name}', you must write three separate, detailed paragraphs: one for its Sidereal interpretation, one for its Tropical interpretation, and a third for synthesizing these views. Use precise astrological terminology and explain your reasoning. Note: Birth time is unknown, so house placements are unavailable.
+    
+    system_prompt = """You are an expert true sidereal astrologer writing a deeply personalized reading. Follow the supplied JSON plan exactly. Do not change structure, only fill in the content.
 
-**Foundational Themes (Context Only):**
-{architect_analysis}
-
-**{point_name} Data:**
-{'\n'.join(specialist_data)}
-
-**Your Task:**
-Write three clearly separated, detailed paragraphs:
-
-**Sidereal Interpretation:**
-(In this paragraph, explain the {interpretation_focus} within the Sidereal zodiac. Analyze its placement in its sign. Discuss relevant factors like element and modality. If Retrograde Status is 'Yes', explain the impact of its internalized energy.)
-
-**Tropical Interpretation:**
-(In this paragraph, explain how the Sidereal energy manifests through the personality via {point_name} in the Tropical zodiac. Analyze its placement in its sign. Explain how the Tropical placement affects its behavioral expression and interaction with the Sidereal placement.)
-
-**Synthesis:**
-(In this paragraph, compare the Sidereal vs. Tropical expressions for {point_name}. Are they aligned, in tension, or complementary? How do these two layers of meaning work together to shape this person's experience?)
-"""
-                result_text, usage = await _run_gemini_prompt(specialist_prompt)
-                return (f"--- {point_name.upper()} ---\n{result_text}", usage)
-            
-            points_to_analyze = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'True Node', 'Chiron', 'Lilith', 'Ceres', 'Pallas', 'Juno', 'Vesta']
-            
-            specialist_tasks_results = await asyncio.gather(
-                *[run_specialist_for_point_noon(p) for p in points_to_analyze if p in s_pos_all],
-                return_exceptions=True
-            )
-            
-            combined_specialist_analysis_parts = []
-            for result in specialist_tasks_results:
-                if isinstance(result, Exception):
-                    logger.error(f"Error during specialist analysis step (noon chart): {result}", exc_info=result)
-                    continue
-                elif result is not None:  # Filter out None values (points with missing position data)
-                    if isinstance(result, tuple):
-                        text, usage = result
-                        combined_specialist_analysis_parts.append(text)
-                        total_prompt_tokens += usage.get('prompt_tokens', 0)
-                        total_completion_tokens += usage.get('completion_tokens', 0)
-                    else:
-                        combined_specialist_analysis_parts.append(result)
-            combined_specialist_analysis = "\n\n".join(combined_specialist_analysis_parts)
-            
-            # --- Step 5: Analyze Tightest Aspects (Top 8, without houses) ---
-            s_tightest_aspects = s_aspects[:8] if s_aspects else []
-            aspect_data_for_prompt = []
-            for a in s_tightest_aspects:
-                p1_rx = " (Rx)" if any(p.get('name') == a['p1_name'].split(' in ')[0] and p.get('retrograde') for p in s_positions) else ""
-                p2_rx = " (Rx)" if any(p.get('name') == a['p2_name'].split(' in ')[0] and p.get('retrograde') for p in s_positions) else ""
-                aspect_data_for_prompt.append(f"- {a['p1_name']}{p1_rx} {a['type']} {a['p2_name']}{p2_rx} (orb {a['orb']}, score {a['score']})")
-            
-            weaver_prompt = f"""
-You are The Weaver, an astrologer who sees the hidden connections in a chart. Your task is to synthesize the individual planetary analyses by interpreting ONLY the **eight** tightest aspects in the Sidereal chart overall. Note: Birth time is unknown, so house placements are unavailable.
-
-**Planetary & Point Analyses (Context Only):** (Briefly review the core meaning of bodies involved in the tightest aspects below if needed from this text block, but DO NOT reference this block directly in your output.)
-{combined_specialist_analysis} 
-
-**Top 8 Tightest Sidereal Aspects:**
-{'\n'.join(aspect_data_for_prompt) if aspect_data_for_prompt else "No aspects available."}
-
-**Aspect Patterns Detected:**
-{chr(10).join([f"- {p.get('description', '')}" for p in s_aspect_patterns]) if s_aspect_patterns else "No major aspect patterns detected."}
-
-**Your Task:**
-For each of the **eight** tightest aspects listed above, write a dedicated, detailed paragraph (**8 paragraphs total**). For every paragraph:
-- State the core tension, strength, or pattern in plain language before referencing astrology.
-- Include at least one concrete example of how this energy might show up in real life (relationships, work, creativity, etc.).
-- Avoid vague phrases like "you might sometimes feel" without naming a specific behavior or scenario.
-Explain the dynamic created between the two bodies, referencing their signs as provided, and tie in any relevant aspect patterns. Output ONLY these 8 paragraphs, clearly separated.
-"""
-            weaver_analysis, usage = await _run_gemini_prompt(weaver_prompt)
-            total_prompt_tokens += usage.get('prompt_tokens', 0)
-            total_completion_tokens += usage.get('completion_tokens', 0)
-            
-            # --- Step 6: Final Synthesis ---
-            storyteller_prompt = f"""
-You are The Synthesizer, an insightful astrological consultant who excels at weaving complex data into a clear and compelling narrative. Your skill is in explaining complex astrological data in a practical and grounded way. You will write a comprehensive, in-depth reading based *exclusively* on the structured analysis provided below. Your tone should be insightful and helpful, avoiding overly spiritual or "dreamy" language.
+You are The Synthesizer, an insightful astrological consultant who excels at weaving complex data into a clear and compelling narrative. Your skill is in explaining complex astrological data in a practical and grounded way.
 
 Tone Guidelines:
 - Sound like a psychologically literate consultant speaking to an intelligent client.
@@ -917,24 +956,12 @@ Tone Guidelines:
 - Use second person ("you") throughout.
 - Avoid hedging like "you might possibly"; prefer confident but non-absolute phrases such as "you tend to" or "you are likely to."
 
-**CRITICAL RULE:** Base your reading *only* on the analysis provided. Do not invent any placements, planets, signs, or aspects that are not explicitly listed in the analysis. **IMPORTANT: Birth time is unknown, so you must completely avoid mentioning the Ascendant, Midheaven (MC), Chart Ruler, or any House placements, as they are unknown and cannot be used.**
+**CRITICAL RULE:** Base your reading *only* on the analysis provided. Do not invent any placements, planets, signs, or aspects that are not explicitly listed."""
+    
+    user_prompt = f"""**Chart Data Summary:**
+{chart_summary}
 
-**Provided Analysis:**
----
-**ALIGNMENT MAP:**
-{cartographer_analysis}
----
-**FOUNDATIONAL THEMES:**
-{architect_analysis}
----
-**KARMIC PATH:**
-{navigator_analysis}
----
-**PLANETARY & POINT DEEP DIVE (3 paragraphs per body):** {combined_specialist_analysis}
----
-**TIGHTEST ASPECTS ANALYSIS (Top 8 Sidereal):**
-{weaver_analysis}
----
+{overview_context}
 
 **Your Task:**
 Write a comprehensive analysis. Structure your response exactly as follows, using plain text headings without markdown.
@@ -942,397 +969,158 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
 **Snapshot: What Will Feel Most True About You**
 (Open the reading with 7 short bullet points. Each bullet must describe a concrete trait or pattern someone who knows this person well would instantly recognize. Avoid astrological jargon; speak directly to the reader in plain psychological/behavioral language using "you." These bullets should feel specific and uncanny, not generic.)
 
-After the Snapshot, include a short 4 sentence paragraph that explains the birth time is unknown, so the interpretation focuses on sign-level and aspect-level patterns rather than precise houses or angles. Reassure the reader that the core psychological and karmic signatures remain accurate despite missing timing data. Keep this framing brief and non-technical.
+{"After the Snapshot, include a short 4 sentence paragraph that explains the birth time is unknown, so the interpretation focuses on sign-level and aspect-level patterns rather than precise houses or angles. Reassure the reader that the core psychological and karmic signatures remain accurate despite missing timing data. Keep this framing brief and non-technical." if unknown_time else ""}
 
 **Chart Overview and Core Themes**
-(Under this heading, write an in-depth interpretive introduction. Focus on clarity, depth, and insight—not just listing placements. Your task:
-1. Identify exactly 5 core psychological or life themes based on the Foundational Themes, Nodes, Numerology, and Sidereal-Tropical contrasts.
-2. Ensure the overview feels dense and focused: every sentence must add a fresh layer of meaning and avoid repetition. Aim for roughly 7 substantial paragraphs, prioritizing precision over length.
-3. For each theme, begin with 2 headline sentences in plain language that name the pattern clearly. Follow with 2 paragraphs explaining why this is true, referencing specific Sidereal, Tropical, nodal, aspect, and numerological signals. Do not re-explain the same idea across multiple themes.
-4. When mentioning a pattern, briefly cite which placements or aspects support it (e.g., "This is reinforced by your Sun–Saturn square and dominant Earth emphasis") without turning sentences into long lists.
-5. Integrate Numerology or Chinese Zodiac only when they directly reinforce an existing astrological pattern. Do not introduce conflicts or detached numerology themes.
-6. After addressing all 5 themes, end this section with a cohesive synthesis paragraph that weaves the five themes together, highlighting how they interact to shape the life path.)
+{"Use the structured chart overview provided above to write this section. Expand each theme with the exact structure requested: Theme heading, 2 headline sentences, 'Why this shows up in your chart:' subsection, and 'How it tends to feel and play out:' subsection. End with the synthesis paragraph." if chart_overview.get("parsed") else "(Under this heading, write an in-depth interpretive introduction. Focus on clarity, depth, and insight—not just listing placements. Your job is to make the client feel 'seen' in a way that is traceable back to the chart. Identify exactly 5 core psychological or life themes. Structure each theme as: Theme heading, 2 headline sentences, 'Why this shows up in your chart:' subsection, and 'How it tends to feel and play out:' subsection. End with a synthesis paragraph.)"}
 
 **Your Astrological Blueprint: Planets, Points, and Angles**
-(Under this heading, present the detailed analysis for each body. **For each body analyzed in the 'PLANETARY & POINT DEEP DIVE' section, you must present the THREE paragraphs (Sidereal Interpretation, Tropical Interpretation, Synthesis) exactly as they were generated.** Do not summarize or combine them. Ensure there is a clear separation between each body's section using a "--- BODY NAME ---" header and line breaks. Group them thematically: Luminaries (Sun, Moon), Personal Planets (Mercury, Venus, Mars), Generational Planets (Jupiter, Saturn, Uranus, Neptune, Pluto), Nodes (True Node, South Node), Major Asteroids (Chiron, Ceres, Pallas, Juno, Vesta, Lilith). Create smooth, one-sentence transitions between each body's analysis. **Remember: Do not mention houses, Ascendant, MC, or Chart Ruler as birth time is unknown.**)
+(Under this heading, provide detailed analysis for each major planet and point. For each body, write 3 paragraphs: Sidereal Interpretation, Tropical Interpretation, and Synthesis. Group them thematically: Luminaries (Sun, Moon), Personal Planets (Mercury, Venus, Mars), Generational Planets (Jupiter, Saturn, Uranus, Neptune, Pluto), {"Nodes (True Node, South Node), Major Asteroids (Chiron, Ceres, Pallas, Juno, Vesta, Lilith)." if unknown_time else "Angles (Ascendant, Descendant, Midheaven, Imum Coeli), Nodes (True Node, South Node), Major Asteroids (Chiron, Ceres, Pallas, Juno, Vesta, Lilith), Other Points (Part of Fortune, Vertex)."} {"Remember: Do not mention houses, Ascendant, MC, or Chart Ruler as birth time is unknown." if unknown_time else ""})
 
 **Major Life Dynamics: The Tightest Aspects**
-(Under this heading, insert the complete, unedited text from the 'TIGHTEST ASPECTS ANALYSIS' section, containing the **8** detailed paragraphs about the top 8 Sidereal aspects.)
+(Under this heading, analyze the top 8 tightest aspects in the Sidereal chart. For each aspect, write a detailed paragraph explaining the core tension, strength, or pattern in plain language, and include at least one concrete example of how this energy might show up in real life.)
 
 **Summary and Key Takeaways**
-(Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. Close this section with a short "Action Checklist" containing 7 bullet points. Each bullet must point to a concrete focus area or experiment that clearly connects back to themes/aspects discussed above. Avoid generic self-help cliches.)
-"""
-            final_reading, usage = await _run_gemini_prompt(storyteller_prompt)
-            total_prompt_tokens += usage.get('prompt_tokens', 0)
-            total_completion_tokens += usage.get('completion_tokens', 0)
-            
-            # Calculate and log total cost
-            logger.info(">>> ENTERED get_gemini_reading (Unknown Time) AND ABOUT TO LOG COST <<<")
-            cost_info = calculate_gemini_cost(total_prompt_tokens, total_completion_tokens)
-            logger.info(f"=== GEMINI API COST SUMMARY (Unknown Time) ===")
-            logger.info(f"Total Input Tokens: {cost_info['prompt_tokens']:,}")
-            logger.info(f"Total Output Tokens: {cost_info['completion_tokens']:,}")
-            logger.info(f"Total Tokens: {cost_info['total_tokens']:,}")
-            logger.info(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
-            logger.info(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
-            logger.info(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
-            logger.info("=" * 50)
-            # Also print to stdout as fallback (Render always shows print output)
-            print(f"\n{'='*60}")
-            print(f"GEMINI API COST SUMMARY (Unknown Time)")
-            print(f"Total Input Tokens: {cost_info['prompt_tokens']:,}")
-            print(f"Total Output Tokens: {cost_info['completion_tokens']:,}")
-            print(f"Total Tokens: {cost_info['total_tokens']:,}")
-            print(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
-            print(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
-            print(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
-            print(f"{'='*60}\n")
-            
-            return final_reading
-            
-        except Exception as e:
-            logger.error(f"Error during multi-step Gemini reading (unknown time): {e}", exc_info=True)
-            raise Exception(f"An error occurred while generating the detailed AI reading: {e}")
+(Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness. Close this section with a short "Action Checklist" containing 7 bullet points. Each bullet must point to a concrete focus area or experiment that clearly connects back to themes/aspects discussed above. Avoid generic self-help cliches.)"""
+    
+    response_text = await llm.generate(
+        system=system_prompt,
+        user=user_prompt,
+        temperature=0.7,
+        max_output_tokens=8192,  # Allow longer output for full reading
+        call_label="call2_full_section_drafts"
+    )
+    
+    logger.info("Call 2 completed successfully")
+    return response_text
 
 
-    # --- Known Time - Multi-Step Process ---
-    # Wrap the entire multi-step process in a try...except to catch errors from any step
+async def call3_polish_reading(llm: LLMClient, draft_reading: str, chart_summary: str) -> str:
+    """
+    Call 3: Polish the full draft reading for clarity and impact.
+    
+    This is a lightweight polish pass that improves tone, flow, and clarity
+    without changing meaning or adding new interpretations.
+    """
+    logger.info("="*60)
+    logger.info("CALL 3: Polish Reading")
+    logger.info("="*60)
+    
+    system_prompt = """You are a careful editor. You will polish tone, flow, and clarity without changing meaning or adding new interpretations. Keep all section headings and structure identical.
+
+Style guide:
+- Warm, grounded, psychologically insightful
+- No fluff, no fatalism
+- Clear and concrete language
+- Maintain the exact structure and headings from the draft"""
+    
+    user_prompt = f"""**Draft Reading to Polish:**
+{draft_reading}
+
+**Your Task:**
+Review and polish this reading. Make improvements to:
+- Sentence flow and transitions
+- Clarity of explanations
+- Consistency of tone
+- Impact of key insights
+
+**CRITICAL:** Do NOT change:
+- The structure or section headings
+- The factual astrological content
+- The number of themes, bullets, or examples
+- Any specific placements, aspects, or chart data mentioned
+
+Output the polished reading with the exact same structure as the draft."""
+    
+    response_text = await llm.generate(
+        system=system_prompt,
+        user=user_prompt,
+        temperature=0.3,  # Lower temperature for polishing
+        max_output_tokens=8192,  # Allow longer output
+        call_label="call3_polish_reading"
+    )
+    
+    logger.info("Call 3 completed successfully")
+    return response_text
+
+
+async def get_claude_reading(chart_data: dict, unknown_time: bool) -> str:
+    """
+    Generate comprehensive astrological reading using exactly 3 Claude API calls.
+    
+    Call 1: Deep Chart Analysis → Chart JSON blueprint
+    Call 2: Full Draft Reading (using JSON plan)
+    Call 3: Lightweight Polish
+    """
+    if not CLAUDE_API_KEY and AI_MODE != "stub":
+        logger.error("Claude API key not configured - AI reading unavailable")
+        raise Exception("Claude API key not configured. AI reading is unavailable.")
+
+    logger.info("="*60)
+    logger.info("Starting Claude reading generation...")
+    logger.info(f"AI_MODE: {AI_MODE}")
+    logger.info(f"Unknown time: {unknown_time}")
+    logger.info("="*60)
+    
+    # Initialize LLM client for token/cost tracking
+    llm = LLMClient()
+    
     try:
-        # --- Step 1: Analyze Alignments ---
-        cartographer_data = []
-        s_pos_all = {p['name']: p for p in chart_data.get('sidereal_major_positions', []) + chart_data.get('sidereal_additional_points', [])}
-        t_pos_all = {p['name']: p for p in chart_data.get('tropical_major_positions', []) + chart_data.get('tropical_additional_points', [])}
+        # Serialize chart data for LLM consumption
+        serialized_chart = serialize_chart_for_llm(chart_data, unknown_time=unknown_time)
+        chart_summary = format_serialized_chart_for_prompt(serialized_chart)
         
-        bodies_for_alignment = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Chiron', 'True Node', 'Lilith', 'Ascendant', 'Midheaven (MC)', 'Ceres', 'Pallas', 'Juno', 'Vesta']
-        for body in bodies_for_alignment:
-            s_body_data = s_pos_all.get(body)
-            t_body_data = t_pos_all.get(body)
-            if s_body_data and t_body_data and s_body_data.get('position') and t_body_data.get('position'):
-                 s_sign = s_body_data['position'].split(' ')[-1]
-                 t_sign = t_body_data['position'].split(' ')[-1]
-                 if s_sign != 'N/A' and t_sign != 'N/A':
-                      cartographer_data.append(f"- {body}: Sidereal {s_sign}, Tropical {t_sign}")
-
-        cartographer_prompt = f"""
-Analyze the provided Sidereal and Tropical placements to identify the primary points of alignment, tension, and contrast. Do not interpret the meaning. Your output must be a simple, structured list.
-
-**Data to Analyze:**
-{'\n'.join(cartographer_data)}
-
-**Your Task:**
-1. For each body, state the relationship between its Sidereal and Tropical sign placements.
-2. Label each finding with one of the following classifications: "High Alignment" (same sign), "Moderate Tension" (adjacent signs), or "High Contrast" (signs in different elements/modalities).
-3. Output nothing but this list.
-"""
-        cartographer_analysis, usage = await _run_gemini_prompt(cartographer_prompt)
-        total_prompt_tokens += usage.get('prompt_tokens', 0)
-        total_completion_tokens += usage.get('completion_tokens', 0)
-        # Error check removed, will be caught by outer try/except
-
-        # --- Step 2: Identify Foundational Blueprint ---
-        s_analysis = chart_data.get("sidereal_chart_analysis", {})
-        t_analysis = chart_data.get("tropical_chart_analysis", {})
-        numerology = chart_data.get("numerology_analysis", {})
-        architect_data = [
-            f"- Sidereal Sun: {s_pos_all.get('Sun', {}).get('position')} in House {s_pos_all.get('Sun', {}).get('house_num')}",
-            f"- Tropical Sun: {t_pos_all.get('Sun', {}).get('position')} in House {t_pos_all.get('Sun', {}).get('house_num')}",
-            f"- Sidereal Moon: {s_pos_all.get('Moon', {}).get('position')} in House {s_pos_all.get('Moon', {}).get('house_num')}",
-            f"- Tropical Moon: {t_pos_all.get('Moon', {}).get('position')} in House {t_pos_all.get('Moon', {}).get('house_num')}",
-            f"- Sidereal Ascendant: {s_pos_all.get('Ascendant', {}).get('position')}",
-            f"- Tropical Ascendant: {t_pos_all.get('Ascendant', {}).get('position')}",
-            f"- Chart Ruler: {s_analysis.get('chart_ruler')}",
-            f"- Dominant Planet (Sidereal): {s_analysis.get('dominant_planet')}",
-            f"- Dominant Planet (Tropical): {t_analysis.get('dominant_planet')}",
-            f"- Life Path Number: {numerology.get('life_path_number')}",
-            f"- Day Number: {numerology.get('day_number')}",
-            f"- Chinese Zodiac: {chart_data.get('chinese_zodiac')}"
-        ]
-        architect_prompt = f"""
-Identify the foundational blueprint of a soul. Analyze the provided chart data and the alignment map to determine the 5 central themes of this person's life.
-
-**Zodiac Definitions:**
-- The **Sidereal** placements represent the soul's deeper karmic blueprint, innate spiritual gifts, and ultimate life purpose.
-- The **Tropical** placements represent the personality's expression, psychological patterns, and how the soul's purpose manifests in this lifetime.
-
-**Alignment Analysis:**
-{cartographer_analysis}
-
-**Core Chart Data:**
-{'\n'.join(architect_data)}
-
-**Your Task:**
-1. Review all provided data.
-2. Identify exactly 5 most powerful and interconnected themes that define the core of this chart.
-3. For each theme, list the specific Sidereal, Tropical, and Numerological/Zodiacal data points that serve as evidence.
-4. Output this as a structured list. Do not write a narrative.
-
-When choosing the 5 themes, prioritize:
-- Themes that involve the Sun, Moon, Ascendant, Chart Ruler, or Nodes.
-- Themes where Sidereal and Tropical placements sharply contrast (different element or modality) as shown in the Alignment Analysis.
-- Themes supported by multiple signals at once (e.g., dominant element plus key placements plus numerology all aligning).
-Avoid generic statements that could apply to anyone.
-"""
-        architect_analysis, usage = await _run_gemini_prompt(architect_prompt)
-        total_prompt_tokens += usage.get('prompt_tokens', 0)
-        total_completion_tokens += usage.get('completion_tokens', 0)
-        # Error check removed
-
-        # --- Step 3: Interpret Karmic Path ---
-        s_north_node = s_pos_all.get('True Node', {})
-        s_south_node = s_pos_all.get('South Node', {})
-        t_north_node = t_pos_all.get('True Node', {})
-        t_south_node = t_pos_all.get('South Node', {})
-
-        navigator_data = [
-            f"- Sidereal South Node: {s_south_node.get('position')} in House {s_south_node.get('house_num')}",
-            f"- Sidereal North Node: {s_north_node.get('position')} in House {s_north_node.get('house_num')}",
-            f"- Tropical South Node: {t_south_node.get('position')} in House {t_south_node.get('house_num')}",
-            f"- Tropical North Node: {t_north_node.get('position')} in House {t_north_node.get('house_num')}",
-            f"- Dominant Element: {s_analysis.get('dominant_element')}"
-        ]
-        navigator_prompt = f"""
-Interpret the soul's journey from its past to its future potential, based on the Nodal Axis (True Node and implied South Node). Use the provided foundational themes to guide your interpretation.
-
-**Foundational Themes:**
-{architect_analysis}
-
-**Nodal Axis Data:**
-{'\n'.join(navigator_data)}
-
-**Your Task:**
-1.  **Interpret the South Node:** Describe the past-life comfort zones, karmic patterns, and innate gifts represented by the South Node's position in both zodiacs and its house placement.
-2.  **Interpret the North Node:** Describe the soul's mission, growth potential, and the qualities it must develop in this lifetime, as shown by the North Node's position in both zodiacs and its house placement.
-3.  **Synthesize:** In a concluding paragraph, explain how the Sidereal (soul path) and Tropical (personality expression) Nodal placements work together. In your synthesis, highlight how the nodal axis is supported or challenged by the chart's dominant element.
-"""
-        navigator_analysis, usage = await _run_gemini_prompt(navigator_prompt)
-        total_prompt_tokens += usage.get('prompt_tokens', 0)
-        total_completion_tokens += usage.get('completion_tokens', 0)
-        # Error check removed
-
-        # --- Step 4: Perform Deep-Dive Point Analysis ---
-        async def run_specialist_for_point(point_name):
-            s_point = s_pos_all.get(point_name, {})
-            t_point = t_pos_all.get(point_name, {})
-
-            # Skip if position data is missing or invalid
-            if not s_point.get('position') or s_point.get('position') == 'N/A' or not t_point.get('position') or t_point.get('position') == 'N/A':
-                return None
-
-            has_retrograde = point_name not in ['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'True Node', 'South Node', 'Part of Fortune', 'Vertex']
-            retrograde_status = 'Yes' if has_retrograde and s_point.get('retrograde') else ('No' if has_retrograde else 'N/A')
-
-            specialist_data = [
-                 f"- Sidereal Placement: {s_point.get('position', 'N/A')} in House {s_point.get('house_num', 'N/A')}",
-                 f"- Tropical Placement: {t_point.get('position', 'N/A')} in House {t_point.get('house_num', 'N/A')}",
-            ]
-            if has_retrograde:
-                 specialist_data.append(f"- Retrograde Status: {retrograde_status}")
-
-            interpretation_focus = f"soul's core essence and karmic purpose related to {point_name}"
-            # ... (dynamic focus adjustments remain the same) ...
-            if point_name in ['Ascendant', 'Descendant']:
-                 interpretation_focus = f"interface with the world and relationships through {point_name}"
-            elif point_name in ['Midheaven (MC)', 'Imum Coeli (IC)']:
-                 interpretation_focus = f"public persona/career and private/inner foundation through {point_name}"
-            elif point_name == 'True Node':
-                 interpretation_focus = "soul's evolutionary direction and path of growth"
-            elif point_name == 'South Node':
-                 interpretation_focus = "past life patterns, comfort zones, and innate gifts"
-            elif point_name == 'Lilith':
-                 interpretation_focus = "shadow self, raw instincts, and areas of potential repression or taboo related to Lilith"
-            elif point_name == 'Part of Fortune':
-                 interpretation_focus = "point of innate luck, joy, and harmonious expression"
-            elif point_name == 'Vertex':
-                 interpretation_focus = "point of fated encounters and significant turning points"
-            elif point_name == 'Ceres':
-                interpretation_focus = "themes of nurturing, self-care, and the mother-child dynamic"
-            elif point_name == 'Pallas':
-                interpretation_focus = "themes of wisdom, strategy, creative intelligence, and father-daughter dynamics"
-            elif point_name == 'Juno':
-                interpretation_focus = "themes of committed partnership, marriage, and balance in relationships"
-            elif point_name == 'Vesta':
-                interpretation_focus = "themes of devotion, sacred focus, purity, and where one's 'inner flame' is dedicated"
-            elif point_name == 'Chiron':
-                interpretation_focus = "the 'wounded healer' archetype, showing the soul's deepest wound and its greatest gift of healing"
-
-
-            specialist_prompt = f"""
-You are an expert astrologer trained in both Sidereal and Tropical systems. For the point/body '{point_name}', you must write three separate, detailed paragraphs: one for its Sidereal interpretation, one for its Tropical interpretation, and a third for synthesizing these views. Use precise astrological terminology and explain your reasoning.
-
-**Foundational Themes (Context Only):**
-{architect_analysis}
-
-**{point_name} Data:**
-{'\n'.join(specialist_data)}
-
-**Your Task:**
-Write three clearly separated, detailed paragraphs:
-
-**Sidereal Interpretation:**
-(In this paragraph, explain the {interpretation_focus} within the Sidereal zodiac. Analyze its placement in its **sign AND house**. Explain the psychological implications of the house placement. Discuss relevant factors like element and modality. If Retrograde Status is 'Yes', explain the impact of its internalized energy.)
-
-**Tropical Interpretation:**
-(In this paragraph, explain how the Sidereal energy manifests through the personality via {point_name} in the Tropical zodiac. Analyze its placement in its **sign AND house**. Explain how the house placement affects its behavioral expression and interaction with the Sidereal placement.)
-
-**Synthesis:**
-(In this paragraph, compare the Sidereal vs. Tropical expressions for {point_name}. Are they aligned, in tension, or complementary? How does the house placement in one system support or challenge the other?)
-"""
-            # Error handling inside _run_gemini_prompt will raise exception on failure
-            result_text, usage = await _run_gemini_prompt(specialist_prompt)
-            return (f"--- {point_name.upper()} ---\n{result_text}", usage)
-
-        points_to_analyze = [
-            'Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto',
-            'Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)',
-            'True Node', 'South Node',
-            'Chiron', 'Lilith', 'Ceres', 'Pallas', 'Juno', 'Vesta',
-            'Part of Fortune', 'Vertex'
-        ]
-
-        # Use asyncio.gather with return_exceptions=True to handle potential errors in parallel calls
-        specialist_tasks_results = await asyncio.gather(
-            *[run_specialist_for_point(p) for p in points_to_analyze if p in s_pos_all],
-            return_exceptions=True
+        # Call 1: Chart Overview and Core Themes
+        chart_overview = await call1_chart_overview_and_themes(
+            llm, serialized_chart, chart_summary, unknown_time
         )
         
-        # Check results for exceptions and filter out None values (points with missing data)
-        combined_specialist_analysis_parts = []
-        for result in specialist_tasks_results:
-            if isinstance(result, Exception):
-                logger.error(f"Error during specialist analysis step: {result}", exc_info=result)
-                # Option 1: Raise the first exception encountered
-                raise result 
-            elif result is not None:  # Filter out None values (points with missing position data)
-                if isinstance(result, tuple):
-                    text, usage = result
-                    combined_specialist_analysis_parts.append(text)
-                    total_prompt_tokens += usage.get('prompt_tokens', 0)
-                    total_completion_tokens += usage.get('completion_tokens', 0)
-                else:
-                    combined_specialist_analysis_parts.append(result)
-        combined_specialist_analysis = "\n\n".join(combined_specialist_analysis_parts)
-
-
-        # --- Step 5: Analyze Tightest Aspects (Updated to 8) ---
-        s_tightest_aspects = chart_data.get('sidereal_aspects', [])[:8] # Changed from 5 to 8
-        aspect_data_for_prompt = []
-        for a in s_tightest_aspects:
-             p1_name_base = a['p1_name'].split(' in ')[0]
-             p2_name_base = a['p2_name'].split(' in ')[0]
-             p1_house = s_pos_all.get(p1_name_base, {}).get('house_num', 'N/A')
-             p2_house = s_pos_all.get(p2_name_base, {}).get('house_num', 'N/A')
-             p1_rx = " (Rx)" if s_pos_all.get(p1_name_base, {}).get('retrograde') else ""
-             p2_rx = " (Rx)" if s_pos_all.get(p2_name_base, {}).get('retrograde') else ""
-             aspect_data_for_prompt.append(f"- {a['p1_name']}{p1_rx} (House {p1_house}) {a['type']} {a['p2_name']}{p2_rx} (House {p2_house}) (orb {a['orb']}, score {a['score']})")
-
-
-        weaver_prompt = f"""
-You are The Weaver, an astrologer who sees the hidden connections in a chart. Your task is to synthesize the individual planetary analyses by interpreting ONLY the **eight** tightest aspects in the Sidereal chart overall.
-
-**Planetary & Point Analyses (Context Only):** (Briefly review the core meaning of bodies involved in the tightest aspects below if needed from this text block, but DO NOT reference this block directly in your output.)
-{combined_specialist_analysis} 
-
-**Top 8 Tightest Sidereal Aspects:**
-{'\n'.join(aspect_data_for_prompt)}
-
-**Your Task:**
-For each of the **eight** tightest aspects listed above, write a dedicated, detailed paragraph (**8 paragraphs total**). For every paragraph:
-- State the core tension, strength, or pattern in plain language before referencing astrology.
-- Include at least one concrete example of how this energy might show up in real life (relationships, work, leadership, creativity, etc.).
-- Avoid vague phrases like "you might sometimes feel" without naming a recognizable behavior or scenario.
-Explain how the aspect links the two bodies, referencing their signs and houses exactly as provided, and tie in relevant aspect patterns if applicable. Output ONLY these 8 paragraphs, clearly separated.
-"""
-        weaver_analysis, usage = await _run_gemini_prompt(weaver_prompt)
-        total_prompt_tokens += usage.get('prompt_tokens', 0)
-        total_completion_tokens += usage.get('completion_tokens', 0)
-        # Error check removed
-
-        # --- Step 6: Final Synthesis (Updated to 8 aspects) ---
-        storyteller_prompt = f"""
-You are The Synthesizer, an insightful astrological consultant who excels at weaving complex data into a clear and compelling narrative. Your skill is in explaining complex astrological data in a practical and grounded way. You will write a comprehensive, in-depth reading based *exclusively* on the structured analysis provided below. Your tone should be insightful and helpful, avoiding overly spiritual or "dreamy" language.
-
-Tone Guidelines:
-- Sound like a psychologically literate consultant speaking to an intelligent client.
-- Favor clear, concrete language over mystical phrasing.
-- Use second person ("you") throughout.
-- Avoid hedging like "you might possibly"; prefer confident but non-absolute phrases such as "you tend to" or "you are likely to."
-
-**CRITICAL RULE:** Base your reading *only* on the analysis provided. Do not invent any placements, planets, signs, or aspects that are not explicitly listed in the analysis.
-
-**Provided Analysis:**
----
-**ALIGNMENT MAP:**
-{cartographer_analysis}
----
-**FOUNDATIONAL THEMES:**
-{architect_analysis}
----
-**KARMIC PATH:**
-{navigator_analysis}
----
-**PLANETARY & POINT DEEP DIVE (3 paragraphs per body):** {combined_specialist_analysis}
----
-**TIGHTEST ASPECTS ANALYSIS (Top 8 Sidereal):**
-{weaver_analysis}
----
-
-**Your Task:**
-Write a comprehensive analysis. Structure your response exactly as follows, using plain text headings without markdown.
-
-**Snapshot: What Will Feel Most True About You**
-(Open the reading with 7 short bullet points. Each bullet must describe a concrete trait or pattern someone who knows this person well would instantly recognize. Avoid astrological jargon; speak directly to the reader in plain psychological/behavioral language using "you." These bullets should feel specific and uncanny, not generic.)
-
-**Chart Overview and Core Themes**
-(Under this heading, write an in-depth interpretive introduction. Focus on clarity, depth, and insight—not just listing placements. Your task:
-1. Identify exactly 5 core psychological or life themes based on the Foundational Themes, Nodes, Numerology, Ascendant contrast, and house context.
-2. Ensure the overview feels dense and focused: every sentence must add a fresh layer of meaning and avoid repetition. Aim for roughly 7 substantial paragraphs, prioritizing precision over length.
-3. For each theme, begin with 2 headline sentences in plain language that name the pattern clearly. Follow with 2 paragraphs explaining why this is true, referencing specific Sidereal, Tropical, nodal, aspect, house, and numerological signals. Do not re-explain the same idea across multiple themes.
-4. When mentioning a pattern, briefly cite which placements, houses, or aspects support it (e.g., "This is reinforced by your Sun–Saturn square, 10th-house emphasis, and dominant Earth element") without turning sentences into long lists.
-5. Integrate Numerology or Chinese Zodiac only when they directly reinforce an existing astrological pattern. Do not introduce conflicts or detached numerology themes.
-6. After addressing all 5 themes, end this section with a cohesive synthesis paragraph that weaves the five themes together, highlighting how they interact to shape the life path.)
-
-**Your Astrological Blueprint: Planets, Points, and Angles**
-(Under this heading, present the detailed analysis for each body. **For each body analyzed in the 'PLANETARY & POINT DEEP DIVE' section, you must present the THREE paragraphs (Sidereal Interpretation, Tropical Interpretation, Synthesis) exactly as they were generated.** Do not summarize or combine them. Ensure there is a clear separation between each body's section using a "--- BODY NAME ---" header and line breaks. Group them thematically: Luminaries (Sun, Moon), Personal Planets (Mercury, Venus, Mars), Generational Planets (Jupiter, Saturn, Uranus, Neptune, Pluto), Angles (Ascendant, Descendant, Midheaven, Imum Coeli), Nodes (True Node, South Node), Major Asteroids (Chiron, Ceres, Pallas, Juno, Vesta, Lilith), Other Points (Part of Fortune, Vertex). Create smooth, one-sentence transitions between each body's analysis.)
-
-**Major Life Dynamics: The Tightest Aspects**
-(Under this heading, insert the complete, unedited text from the 'TIGHTEST ASPECTS ANALYSIS' section, containing the **8** detailed paragraphs about the top 8 Sidereal aspects.)
-
-**Summary and Key Takeaways**
-(Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. Close this section with a short "Action Checklist" containing 7 bullet points. Each bullet must point to a concrete focus area or experiment that clearly connects back to themes/aspects discussed above. Avoid generic self-help cliches.)
-"""
-        final_reading, usage = await _run_gemini_prompt(storyteller_prompt)
-        total_prompt_tokens += usage.get('prompt_tokens', 0)
-        total_completion_tokens += usage.get('completion_tokens', 0)
+        # Call 2: Full Section Drafts
+        draft_reading = await call2_full_section_drafts(
+            llm, serialized_chart, chart_summary, chart_overview, unknown_time
+        )
         
-        # Calculate and log total cost
-        logger.info(">>> ENTERED get_gemini_reading (Known Time) AND ABOUT TO LOG COST <<<")
-        cost_info = calculate_gemini_cost(total_prompt_tokens, total_completion_tokens)
-        logger.info(f"=== GEMINI API COST SUMMARY (Known Time) ===")
-        logger.info(f"Total Input Tokens: {cost_info['prompt_tokens']:,}")
-        logger.info(f"Total Output Tokens: {cost_info['completion_tokens']:,}")
-        logger.info(f"Total Tokens: {cost_info['total_tokens']:,}")
+        # Call 3: Polish Reading
+        final_reading = await call3_polish_reading(
+            llm, draft_reading, chart_summary
+        )
+        
+        # Log final cost summary
+        summary = llm.get_summary()
+        logger.info(">>> ENTERED get_claude_reading AND ABOUT TO LOG COST <<<")
+        cost_info = calculate_claude_cost(summary['total_prompt_tokens'], summary['total_completion_tokens'])
+        logger.info(f"=== CLAUDE API COST SUMMARY ===")
+        logger.info(f"Total Calls: {summary['call_count']}")
+        logger.info(f"Total Input Tokens: {summary['total_prompt_tokens']:,}")
+        logger.info(f"Total Output Tokens: {summary['total_completion_tokens']:,}")
+        logger.info(f"Total Tokens: {summary['total_tokens']:,}")
         logger.info(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
         logger.info(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
         logger.info(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
         logger.info("=" * 50)
-        # Also print to stdout as fallback (Render always shows print output)
+        # Also print to stdout as fallback
         print(f"\n{'='*60}")
-        print(f"GEMINI API COST SUMMARY (Known Time)")
-        print(f"Total Input Tokens: {cost_info['prompt_tokens']:,}")
-        print(f"Total Output Tokens: {cost_info['completion_tokens']:,}")
-        print(f"Total Tokens: {cost_info['total_tokens']:,}")
+        print(f"CLAUDE API COST SUMMARY")
+        print(f"Total Calls: {summary['call_count']}")
+        print(f"Total Input Tokens: {summary['total_prompt_tokens']:,}")
+        print(f"Total Output Tokens: {summary['total_completion_tokens']:,}")
+        print(f"Total Tokens: {summary['total_tokens']:,}")
         print(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
         print(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
         print(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
         print(f"{'='*60}\n")
         
-        # Error check removed
         return final_reading
-
+        
     except Exception as e:
-        # Catch errors from any step in the known-time process
-        logger.error(f"Error during multi-step Gemini reading (known time): {e}", exc_info=True)
-        # Raise the exception to be handled by the endpoint
+        logger.error(f"Error during Claude reading generation: {e}", exc_info=True)
+        # Log which call failed if possible
+        if "call1" in str(e).lower():
+            logger.error("Call 1 (Chart Overview) failed")
+        elif "call2" in str(e).lower():
+            logger.error("Call 2 (Full Section Drafts) failed")
+        elif "call3" in str(e).lower():
+            logger.error("Call 3 (Polish Reading) failed")
         raise Exception(f"An error occurred while generating the detailed AI reading: {e}")
 
 
@@ -1513,13 +1301,13 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
         
         # Generate the reading
         try:
-            gemini_reading = await get_gemini_reading(chart_data, unknown_time)
-            logger.info(f"AI Reading successfully generated for: {chart_name} (length: {len(gemini_reading)} characters)")
+            claude_reading = await get_claude_reading(chart_data, unknown_time)
+            logger.info(f"AI Reading successfully generated for: {chart_name} (length: {len(claude_reading)} characters)")
             
             # Store reading in cache for frontend retrieval
             chart_hash = generate_chart_hash(chart_data, unknown_time)
             reading_cache[chart_hash] = {
-                'reading': gemini_reading,
+                'reading': claude_reading,
                 'timestamp': datetime.now(),
                 'chart_name': chart_name
             }
@@ -1572,7 +1360,7 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
         # Generate PDF report
         try:
             logger.info("Generating PDF report...")
-            pdf_bytes = generate_pdf_report(chart_data, gemini_reading, user_inputs)
+            pdf_bytes = generate_pdf_report(chart_data, claude_reading, user_inputs)
             logger.info(f"PDF generated successfully ({len(pdf_bytes)} bytes)")
         except Exception as e:
             logger.error(f"Error generating PDF: {e}", exc_info=True)
@@ -1617,7 +1405,7 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
         logger.error(f"Error in background task: {e}", exc_info=True)
 
 
-async def send_emails_in_background(chart_data: Dict, gemini_reading: str, user_inputs: Dict):
+async def send_emails_in_background(chart_data: Dict, claude_reading: str, user_inputs: Dict):
     """Background task to send emails with PDF attachments to user and admin."""
     try:
         logger.info("="*60)
@@ -1647,7 +1435,7 @@ async def send_emails_in_background(chart_data: Dict, gemini_reading: str, user_
         # Generate PDF report
         try:
             logger.info("Generating PDF report...")
-            pdf_bytes = generate_pdf_report(chart_data, gemini_reading, user_inputs)
+            pdf_bytes = generate_pdf_report(chart_data, claude_reading, user_inputs)
             logger.info(f"PDF generated successfully ({len(pdf_bytes)} bytes)")
         except Exception as e:
             logger.error(f"Error generating PDF: {e}", exc_info=True)
@@ -1708,7 +1496,7 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
         if not os.path.exists(ephe_path):
             logger.warning(f"Ephemeris path '{ephe_path}' not found. Falling back to application root.")
             ephe_path = BASE_DIR
-        swe.set_ephe_path(ephe_path)
+        swe.set_ephe_path(ephe_path) 
 
         opencage_key = os.getenv("OPENCAGE_KEY")
         if not opencage_key:
