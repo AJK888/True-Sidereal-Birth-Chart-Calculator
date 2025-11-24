@@ -446,6 +446,12 @@ Identify the foundational blueprint of a soul. Analyze the provided chart data a
 2. Identify exactly 5 most powerful and interconnected themes that define the core of this chart.
 3. For each theme, list the specific Sidereal, Tropical, and Numerological/Zodiacal data points that serve as evidence.
 4. Output this as a structured list. Do not write a narrative.
+
+When choosing the 5 themes, prioritize:
+- Themes that involve the Sun, Moon, Ascendant analogs (if available), or Nodes.
+- Themes where Sidereal and Tropical placements sharply contrast (different element or modality) as shown in the Alignment Analysis.
+- Themes supported by multiple signals at once (e.g., dominant element plus planetary placements plus numerology pointing the same direction).
+Avoid themes that sound generic or disconnected from specific evidence.
 """
             architect_analysis = await _run_gemini_prompt(architect_prompt)
             
@@ -571,13 +577,23 @@ You are The Weaver, an astrologer who sees the hidden connections in a chart. Yo
 {chr(10).join([f"- {p.get('description', '')}" for p in s_aspect_patterns]) if s_aspect_patterns else "No major aspect patterns detected."}
 
 **Your Task:**
-**Analyze Tightest Aspects:** For each of the **eight** tightest aspects listed above, write a dedicated, detailed paragraph (**8 paragraphs total**). Explain the dynamic it creates between the two bodies involved, referencing their signs as provided. Describe how this specific aspect energy is likely to manifest as a core life theme or psychological dynamic, representing a central challenge, strength, or unique characteristic for the individual. Focus on providing insightful interpretation for each aspect individually. If aspect patterns are listed, reference them where relevant. Output ONLY these 8 paragraphs, clearly separated.
+For each of the **eight** tightest aspects listed above, write a dedicated, detailed paragraph (**8 paragraphs total**). For every paragraph:
+- State the core tension, strength, or pattern in plain language before referencing astrology.
+- Include at least one concrete example of how this energy might show up in real life (relationships, work, creativity, etc.).
+- Avoid vague phrases like "you might sometimes feel" without naming a specific behavior or scenario.
+Explain the dynamic created between the two bodies, referencing their signs as provided, and tie in any relevant aspect patterns. Output ONLY these 8 paragraphs, clearly separated.
 """
             weaver_analysis = await _run_gemini_prompt(weaver_prompt)
             
             # --- Step 6: Final Synthesis ---
             storyteller_prompt = f"""
 You are The Synthesizer, an insightful astrological consultant who excels at weaving complex data into a clear and compelling narrative. Your skill is in explaining complex astrological data in a practical and grounded way. You will write a comprehensive, in-depth reading based *exclusively* on the structured analysis provided below. Your tone should be insightful and helpful, avoiding overly spiritual or "dreamy" language.
+
+Tone Guidelines:
+- Sound like a psychologically literate consultant speaking to an intelligent client.
+- Favor clear, concrete language over mystical phrasing.
+- Use second person ("you") throughout.
+- Avoid hedging like "you might possibly"; prefer confident but non-absolute phrases such as "you tend to" or "you are likely to."
 
 **CRITICAL RULE:** Base your reading *only* on the analysis provided. Do not invent any placements, planets, signs, or aspects that are not explicitly listed in the analysis. **IMPORTANT: Birth time is unknown, so you must completely avoid mentioning the Ascendant, Midheaven (MC), Chart Ruler, or any House placements, as they are unknown and cannot be used.**
 
@@ -601,16 +617,19 @@ You are The Synthesizer, an insightful astrological consultant who excels at wea
 **Your Task:**
 Write a comprehensive analysis. Structure your response exactly as follows, using plain text headings without markdown.
 
+**Snapshot: What Will Feel Most True About You**
+(Open the reading with 5–7 short bullet points. Each bullet must describe a concrete trait or pattern someone who knows this person well would instantly recognize. Avoid astrological jargon; speak directly to the reader in plain psychological/behavioral language using "you." These bullets should feel specific and uncanny, not generic.)
+
+After the Snapshot, include a short 3–4 sentence paragraph that explains the birth time is unknown, so the interpretation focuses on sign-level and aspect-level patterns rather than precise houses or angles. Reassure the reader that the core psychological and karmic signatures remain accurate despite missing timing data. Keep this framing brief and non-technical.
+
 **Chart Overview and Core Themes**
-(Under this heading, write an in-depth interpretive introduction (minimum 4 paragraphs). Focus on clarity, depth, and insight—not just listing placements. Your task:
-1. Identify 5 core psychological or life themes based on the Foundational Themes, Nodes, Numerology, and Sidereal-Tropical contrasts.
-2. For each theme, explain it fully: how it arises, what internal tension or motivation it represents, and what its life lesson is.
-3. Draw explicitly from both the Sidereal and Tropical layers, showing how the soul path and personality expression either support or challenge each other.
-4. Integrate Numerology and Chinese Zodiac only if they reinforce the astrology—not as separate trivia.
-5. Avoid listing too many placements without explanation. Instead, choose a few powerful combinations (e.g., Sun/Moon, key aspects, nodal placements) and explain them in rich psychological detail.
-6. Use metaphors, examples, or hypothetical behaviors where appropriate to make each theme emotionally resonant and memorable.
-7. Ensure this overview is at least 700–900 words long. Prioritize depth over breadth.
-8. After presenting all 5 themes, conclude this section with a long, comprehensive paragraph (minimum 200 words) that synthesizes and summarizes how these five themes interconnect, complement, and sometimes challenge each other. Explain how they work together as a unified system to shape the individual's life path, personality development, and spiritual evolution. This summary should weave the themes into a cohesive narrative that shows the bigger picture of how these forces operate in harmony and tension throughout the person's life journey.)
+(Under this heading, write an in-depth interpretive introduction. Focus on clarity, depth, and insight—not just listing placements. Your task:
+1. Identify exactly 5 core psychological or life themes based on the Foundational Themes, Nodes, Numerology, and Sidereal-Tropical contrasts.
+2. Ensure the overview feels dense and focused: every sentence must add a fresh layer of meaning and avoid repetition. Aim for roughly 5–7 substantial paragraphs, prioritizing precision over length.
+3. For each theme, begin with 1–2 headline sentences in plain language that name the pattern clearly. Follow with 1–2 paragraphs explaining why this is true, referencing specific Sidereal, Tropical, nodal, aspect, and numerological signals. Do not re-explain the same idea across multiple themes.
+4. When mentioning a pattern, briefly cite which placements or aspects support it (e.g., "This is reinforced by your Sun–Saturn square and dominant Earth emphasis") without turning sentences into long lists.
+5. Integrate Numerology or Chinese Zodiac only when they directly reinforce an existing astrological pattern. Do not introduce conflicts or detached numerology themes.
+6. After addressing all 5 themes, end this section with a cohesive synthesis paragraph that weaves the five themes together, highlighting how they interact to shape the life path.)
 
 **Your Astrological Blueprint: Planets, Points, and Angles**
 (Under this heading, present the detailed analysis for each body. **For each body analyzed in the 'PLANETARY & POINT DEEP DIVE' section, you must present the THREE paragraphs (Sidereal Interpretation, Tropical Interpretation, Synthesis) exactly as they were generated.** Do not summarize or combine them. Ensure there is a clear separation between each body's section using a "--- BODY NAME ---" header and line breaks. Group them thematically: Luminaries (Sun, Moon), Personal Planets (Mercury, Venus, Mars), Generational Planets (Jupiter, Saturn, Uranus, Neptune, Pluto), Nodes (True Node, South Node), Major Asteroids (Chiron, Ceres, Pallas, Juno, Vesta, Lilith). Create smooth, one-sentence transitions between each body's analysis. **Remember: Do not mention houses, Ascendant, MC, or Chart Ruler as birth time is unknown.**)
@@ -619,7 +638,7 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
 (Under this heading, insert the complete, unedited text from the 'TIGHTEST ASPECTS ANALYSIS' section, containing the **8** detailed paragraphs about the top 8 Sidereal aspects.)
 
 **Summary and Key Takeaways**
-(Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. This section should be at least 500 words.)
+(Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. Close this section with a short "Action Checklist" containing 5–7 bullet points. Each bullet must point to a concrete focus area or experiment that clearly connects back to themes/aspects discussed above. Avoid generic self-help cliches.)
 """
             final_reading = await _run_gemini_prompt(storyteller_prompt)
             return final_reading
@@ -697,6 +716,12 @@ Identify the foundational blueprint of a soul. Analyze the provided chart data a
 2. Identify exactly 5 most powerful and interconnected themes that define the core of this chart.
 3. For each theme, list the specific Sidereal, Tropical, and Numerological/Zodiacal data points that serve as evidence.
 4. Output this as a structured list. Do not write a narrative.
+
+When choosing the 5 themes, prioritize:
+- Themes that involve the Sun, Moon, Ascendant, Chart Ruler, or Nodes.
+- Themes where Sidereal and Tropical placements sharply contrast (different element or modality) as shown in the Alignment Analysis.
+- Themes supported by multiple signals at once (e.g., dominant element plus key placements plus numerology all aligning).
+Avoid generic statements that could apply to anyone.
 """
         architect_analysis = await _run_gemini_prompt(architect_prompt)
         # Error check removed
@@ -852,7 +877,11 @@ You are The Weaver, an astrologer who sees the hidden connections in a chart. Yo
 {'\n'.join(aspect_data_for_prompt)}
 
 **Your Task:**
-**Analyze Tightest Aspects:** For each of the **eight** tightest aspects listed above, write a dedicated, detailed paragraph (**8 paragraphs total**). Explain the dynamic it creates between the two bodies involved, referencing their signs and houses as provided in the aspect string. Describe how this specific aspect energy is likely to manifest as a core life theme or psychological dynamic, representing a central challenge, strength, or unique characteristic for the individual. Focus on providing insightful interpretation for each aspect individually. Output ONLY these 8 paragraphs, clearly separated.
+For each of the **eight** tightest aspects listed above, write a dedicated, detailed paragraph (**8 paragraphs total**). For every paragraph:
+- State the core tension, strength, or pattern in plain language before referencing astrology.
+- Include at least one concrete example of how this energy might show up in real life (relationships, work, leadership, creativity, etc.).
+- Avoid vague phrases like "you might sometimes feel" without naming a recognizable behavior or scenario.
+Explain how the aspect links the two bodies, referencing their signs and houses exactly as provided, and tie in relevant aspect patterns if applicable. Output ONLY these 8 paragraphs, clearly separated.
 """
         weaver_analysis = await _run_gemini_prompt(weaver_prompt)
         # Error check removed
@@ -860,6 +889,12 @@ You are The Weaver, an astrologer who sees the hidden connections in a chart. Yo
         # --- Step 6: Final Synthesis (Updated to 8 aspects) ---
         storyteller_prompt = f"""
 You are The Synthesizer, an insightful astrological consultant who excels at weaving complex data into a clear and compelling narrative. Your skill is in explaining complex astrological data in a practical and grounded way. You will write a comprehensive, in-depth reading based *exclusively* on the structured analysis provided below. Your tone should be insightful and helpful, avoiding overly spiritual or "dreamy" language.
+
+Tone Guidelines:
+- Sound like a psychologically literate consultant speaking to an intelligent client.
+- Favor clear, concrete language over mystical phrasing.
+- Use second person ("you") throughout.
+- Avoid hedging like "you might possibly"; prefer confident but non-absolute phrases such as "you tend to" or "you are likely to."
 
 **CRITICAL RULE:** Base your reading *only* on the analysis provided. Do not invent any placements, planets, signs, or aspects that are not explicitly listed in the analysis.
 
@@ -883,16 +918,17 @@ You are The Synthesizer, an insightful astrological consultant who excels at wea
 **Your Task:**
 Write a comprehensive analysis. Structure your response exactly as follows, using plain text headings without markdown.
 
+**Snapshot: What Will Feel Most True About You**
+(Open the reading with 5–7 short bullet points. Each bullet must describe a concrete trait or pattern someone who knows this person well would instantly recognize. Avoid astrological jargon; speak directly to the reader in plain psychological/behavioral language using "you." These bullets should feel specific and uncanny, not generic.)
+
 **Chart Overview and Core Themes**
-(Under this heading, write an in-depth interpretive introduction (minimum 4 paragraphs). Focus on clarity, depth, and insight—not just listing placements. Your task:
-1. Identify 5 core psychological or life themes based on the Foundational Themes, Nodes, Numerology, and Ascendant contrast.
-2. For each theme, explain it fully: how it arises, what internal tension or motivation it represents, and what its life lesson is.
-3. Draw explicitly from both the Sidereal and Tropical layers, showing how the soul path and personality expression either support or challenge each other.
-4. Integrate Numerology and Chinese Zodiac only if they reinforce the astrology—not as separate trivia.
-5. Avoid listing too many placements without explanation. Instead, choose a few powerful combinations (e.g., Sun/Moon/Ascendant, key aspects, nodal placements) and explain them in rich psychological detail.
-6. Use metaphors, examples, or hypothetical behaviors where appropriate to make each theme emotionally resonant and memorable.
-7. Ensure this overview is at least 700–900 words long. Prioritize depth over breadth.
-8. After presenting all 5 themes, conclude this section with a long, comprehensive paragraph (minimum 200 words) that synthesizes and summarizes how these five themes interconnect, complement, and sometimes challenge each other. Explain how they work together as a unified system to shape the individual's life path, personality development, and spiritual evolution. This summary should weave the themes into a cohesive narrative that shows the bigger picture of how these forces operate in harmony and tension throughout the person's life journey.)
+(Under this heading, write an in-depth interpretive introduction. Focus on clarity, depth, and insight—not just listing placements. Your task:
+1. Identify exactly 5 core psychological or life themes based on the Foundational Themes, Nodes, Numerology, Ascendant contrast, and house context.
+2. Ensure the overview feels dense and focused: every sentence must add a fresh layer of meaning and avoid repetition. Aim for roughly 5–7 substantial paragraphs, prioritizing precision over length.
+3. For each theme, begin with 1–2 headline sentences in plain language that name the pattern clearly. Follow with 1–2 paragraphs explaining why this is true, referencing specific Sidereal, Tropical, nodal, aspect, house, and numerological signals. Do not re-explain the same idea across multiple themes.
+4. When mentioning a pattern, briefly cite which placements, houses, or aspects support it (e.g., "This is reinforced by your Sun–Saturn square, 10th-house emphasis, and dominant Earth element") without turning sentences into long lists.
+5. Integrate Numerology or Chinese Zodiac only when they directly reinforce an existing astrological pattern. Do not introduce conflicts or detached numerology themes.
+6. After addressing all 5 themes, end this section with a cohesive synthesis paragraph that weaves the five themes together, highlighting how they interact to shape the life path.)
 
 **Your Astrological Blueprint: Planets, Points, and Angles**
 (Under this heading, present the detailed analysis for each body. **For each body analyzed in the 'PLANETARY & POINT DEEP DIVE' section, you must present the THREE paragraphs (Sidereal Interpretation, Tropical Interpretation, Synthesis) exactly as they were generated.** Do not summarize or combine them. Ensure there is a clear separation between each body's section using a "--- BODY NAME ---" header and line breaks. Group them thematically: Luminaries (Sun, Moon), Personal Planets (Mercury, Venus, Mars), Generational Planets (Jupiter, Saturn, Uranus, Neptune, Pluto), Angles (Ascendant, Descendant, Midheaven, Imum Coeli), Nodes (True Node, South Node), Major Asteroids (Chiron, Ceres, Pallas, Juno, Vesta, Lilith), Other Points (Part of Fortune, Vertex). Create smooth, one-sentence transitions between each body's analysis.)
@@ -901,7 +937,7 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
 (Under this heading, insert the complete, unedited text from the 'TIGHTEST ASPECTS ANALYSIS' section, containing the **8** detailed paragraphs about the top 8 Sidereal aspects.)
 
 **Summary and Key Takeaways**
-(Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. This section should be at least 500 words.)
+(Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. Close this section with a short "Action Checklist" containing 5–7 bullet points. Each bullet must point to a concrete focus area or experiment that clearly connects back to themes/aspects discussed above. Avoid generic self-help cliches.)
 """
         final_reading = await _run_gemini_prompt(storyteller_prompt)
         # Error check removed
