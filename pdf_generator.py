@@ -1,8 +1,3 @@
-"""
-PDF Generation Module for Astrology Charts
-Generates PDF reports with properly formatted chart images and text.
-"""
-
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch

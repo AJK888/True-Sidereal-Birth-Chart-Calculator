@@ -536,7 +536,7 @@ Write three clearly separated, detailed paragraphs:
                 if isinstance(result, Exception):
                     logger.error(f"Error during specialist analysis step (noon chart): {result}", exc_info=result)
                     continue
-                elif result:
+                elif result is not None:  # Filter out None values (points with missing position data)
                     combined_specialist_analysis_parts.append(result)
             combined_specialist_analysis = "\n\n".join(combined_specialist_analysis_parts)
             
@@ -726,6 +726,10 @@ Interpret the soul's journey from its past to its future potential, based on the
             s_point = s_pos_all.get(point_name, {})
             t_point = t_pos_all.get(point_name, {})
 
+            # Skip if position data is missing or invalid
+            if not s_point.get('position') or s_point.get('position') == 'N/A' or not t_point.get('position') or t_point.get('position') == 'N/A':
+                return None
+
             has_retrograde = point_name not in ['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'True Node', 'South Node', 'Part of Fortune', 'Vertex']
             retrograde_status = 'Yes' if has_retrograde and s_point.get('retrograde') else ('No' if has_retrograde else 'N/A')
 
@@ -803,14 +807,14 @@ Write three clearly separated, detailed paragraphs:
             return_exceptions=True
         )
         
-        # Check results for exceptions
+        # Check results for exceptions and filter out None values (points with missing data)
         combined_specialist_analysis_parts = []
         for result in specialist_tasks_results:
             if isinstance(result, Exception):
                 logger.error(f"Error during specialist analysis step: {result}", exc_info=result)
                 # Option 1: Raise the first exception encountered
                 raise result 
-            else:
+            elif result is not None:  # Filter out None values (points with missing position data)
                 combined_specialist_analysis_parts.append(result)
         combined_specialist_analysis = "\n\n".join(combined_specialist_analysis_parts)
 
