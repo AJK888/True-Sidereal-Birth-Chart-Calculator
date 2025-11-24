@@ -4,11 +4,15 @@ import json
 import requests
 import sys
 import time
+import os
 from pathlib import Path
 from datetime import datetime
 
 API_BASE = "https://true-sidereal-api.onrender.com"
-ADMIN_SECRET = "my-super-secret-key-12345"
+ADMIN_SECRET = os.getenv("ADMIN_SECRET_KEY")
+if not ADMIN_SECRET:
+    print("Error: ADMIN_SECRET_KEY environment variable not set")
+    sys.exit(1)
 
 def log(msg):
     timestamp = datetime.now().strftime("%H:%M:%S")

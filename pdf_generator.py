@@ -184,13 +184,20 @@ def svg_to_png(svg_string: str, width: int = 800, height: int = 800) -> bytes:
     except Exception as e:
         logger.error(f"Error converting SVG to PNG: {e}", exc_info=True)
         # Return a placeholder image
-        from PIL import Image, ImageDraw, ImageFont
-        img = Image.new('RGB', (width, height), color='#242943')
-        draw = ImageDraw.Draw(img)
-        draw.text((width//2, height//2), "Chart Image Error", fill='white')
-        img_bytes = io.BytesIO()
-        img.save(img_bytes, format='PNG')
-        return img_bytes.getvalue()
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+            # Convert hex color #242943 to RGB tuple (36, 41, 67)
+            bg_color = (0x24, 0x29, 0x43)
+            img = Image.new('RGB', (width, height), color=bg_color)
+            draw = ImageDraw.Draw(img)
+            draw.text((width//2, height//2), "Chart Image Error", fill='white')
+            img_bytes = io.BytesIO()
+            img.save(img_bytes, format='PNG')
+            return img_bytes.getvalue()
+        except Exception as fallback_error:
+            logger.error(f"Error creating fallback placeholder image: {fallback_error}", exc_info=True)
+            # Last resort: return a minimal 1x1 pixel PNG
+            return b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\tpHYs\x00\x00\x0b\x13\x00\x00\x0b\x13\x01\x00\x9a\x9c\x18\x00\x00\x00\nIDATx\x9cc\xf8\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00IEND\xaeB`\x82'
 
 
 def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_inputs: Dict[str, Any]) -> bytes:

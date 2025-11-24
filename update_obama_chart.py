@@ -2,9 +2,13 @@
 """Update Obama's chart data only (keep existing reading)"""
 import json
 import requests
+import os
 
 API_BASE = "https://true-sidereal-api.onrender.com"
-ADMIN_SECRET = "my-super-secret-key-12345"
+ADMIN_SECRET = os.getenv("ADMIN_SECRET_KEY")
+if not ADMIN_SECRET:
+    print("Error: ADMIN_SECRET_KEY environment variable not set")
+    exit(1)
 
 print("Calculating chart for Barack Obama...")
 

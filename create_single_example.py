@@ -4,10 +4,14 @@ import json
 import requests
 import sys
 import time
+import os
 from pathlib import Path
 
 API_BASE = "https://true-sidereal-api.onrender.com"
-ADMIN_SECRET = "my-super-secret-key-12345"  # Admin secret to bypass rate limits
+ADMIN_SECRET = os.getenv("ADMIN_SECRET_KEY")
+if not ADMIN_SECRET:
+    print("Error: ADMIN_SECRET_KEY environment variable not set")
+    sys.exit(1)
 
 def create_example(name, year, month, day, hour, minute, location):
     """Create an example JSON file"""

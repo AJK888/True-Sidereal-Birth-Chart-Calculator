@@ -226,6 +226,9 @@ class NatalChart:
         if self.ascendant_data.get("sidereal_asc") is None: return
         if not unknown_time:
             self._determine_day_night()
+        else:
+            # Set day_night_info to Undetermined when birth time is unknown
+            self.day_night_info = {"status": "Undetermined"}
         self._calculate_all_points()
         self._calculate_aspects(); self._detect_aspect_patterns()
         self._calculate_tropical_aspects(); self._detect_tropical_aspect_patterns()
@@ -285,7 +288,9 @@ class NatalChart:
         sun = next((p for p in self.celestial_bodies if p.name == 'Sun'), None)
         moon = next((p for p in self.celestial_bodies if p.name == 'Moon'), None)
         pof_obj = None
-        if sun and sun.degree is not None and moon and moon.degree is not None and self.day_night_info.get('status') != 'Undetermined':
+        # Only calculate Part of Fortune when birth time is known (status exists and is not 'Undetermined')
+        day_night_status = self.day_night_info.get('status')
+        if sun and sun.degree is not None and moon and moon.degree is not None and day_night_status and day_night_status != 'Undetermined':
             is_day = self.day_night_info.get('status') == 'Day Birth'
             pof_deg = (asc_obj.degree + moon.degree - sun.degree + 360) % 360 if is_day else (asc_obj.degree + sun.degree - moon.degree + 360) % 360
             pof_obj = CelestialBody("Part of Fortune", pof_deg, False, sidereal_asc, False)

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Quick test to see if API is responding"""
+import os
 import requests
 
 API_BASE = "https://true-sidereal-api.onrender.com"
-ADMIN_SECRET = "my-super-secret-key-12345"
+ADMIN_SECRET = os.getenv("ADMIN_SECRET_KEY")
+if not ADMIN_SECRET:
+    print("Warning: ADMIN_SECRET_KEY environment variable not set. Rate limiting may apply.")
 
 print("Testing API connection...")
 print(f"URL: {API_BASE}/ping")

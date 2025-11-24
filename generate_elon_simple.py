@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """Simplified script with better error handling and progress"""
 import json
+import os
 import requests
 import sys
 import time
 from pathlib import Path
 
 API_BASE = "https://true-sidereal-api.onrender.com"
-ADMIN_SECRET = "my-super-secret-key-12345"
+ADMIN_SECRET = os.getenv("ADMIN_SECRET_KEY")
+if not ADMIN_SECRET:
+    print("Error: ADMIN_SECRET_KEY environment variable not set")
+    sys.exit(1)
 
 def create_example():
     name = "Elon Musk"

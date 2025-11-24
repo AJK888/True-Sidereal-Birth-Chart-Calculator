@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate Elon example with logging to file"""
 import json
+import os
 import requests
 import sys
 import time
@@ -8,7 +9,10 @@ from pathlib import Path
 from datetime import datetime
 
 API_BASE = "https://true-sidereal-api.onrender.com"
-ADMIN_SECRET = "my-super-secret-key-12345"
+ADMIN_SECRET = os.getenv("ADMIN_SECRET_KEY")
+if not ADMIN_SECRET:
+    print("Error: ADMIN_SECRET_KEY environment variable not set")
+    sys.exit(1)
 
 def log(msg):
     """Log to both console and file"""

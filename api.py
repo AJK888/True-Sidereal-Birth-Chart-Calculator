@@ -809,7 +809,8 @@ async def send_emails_in_background(chart_data: Dict, gemini_reading: str, user_
 # --- API Endpoints ---
 
 @app.post("/calculate_chart")
-async def calculate_chart_endpoint(data: ChartRequest):
+@limiter.limit("50/day")
+async def calculate_chart_endpoint(request: Request, data: ChartRequest):
     try:
         log_data = data.dict()
         if 'full_name' in log_data:
