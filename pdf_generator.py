@@ -216,8 +216,11 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         canvas_obj.saveState()
         canvas_obj.setFont('Helvetica', 9)
         canvas_obj.setFillColor(colors.HexColor('#666666'))
-        # Position at bottom right
-        canvas_obj.drawRightString(letter[0] - 0.75*inch, 0.5*inch, text)
+        # Position at bottom right - use page width from letter size
+        page_width = letter[0]  # 8.5 inches = 612 points
+        x_position = page_width - 0.75*inch  # Right margin
+        y_position = 0.5*inch  # Bottom margin  
+        canvas_obj.drawRightString(x_position, y_position, text)
         canvas_obj.restoreState()
     
     doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.75*inch, bottomMargin=1.0*inch,
@@ -417,6 +420,11 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
             ('TOPPADDING', (0, 0), (-1, 0), 6),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
             ('BACKGROUND', (0, 1), (-1, 1), blue_box),
+            # Explicitly remove borders
+            ('LINEBELOW', (0, 0), (-1, -1), 0, colors.white),
+            ('LINEABOVE', (0, 0), (-1, -1), 0, colors.white),
+            ('LINEBEFORE', (0, 0), (-1, -1), 0, colors.white),
+            ('LINEAFTER', (0, 0), (-1, -1), 0, colors.white),
         ]))
         
         story.append(chart_table)
@@ -490,20 +498,25 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
                 matched_section = section
                 break
         
-        # Check if this looks like a heading (more strict criteria)
+        # Check if this looks like a heading (very strict criteria to avoid false positives)
         # Only treat as heading if:
         # 1. It's a major section (already handled above)
-        # 2. It's very short (under 60 chars), ALL CAPS, and doesn't end with punctuation
-        # 3. It's wrapped in ** markers (markdown bold)
-        # 4. It's a short line (under 50 chars) with no punctuation and starts with capital
-        is_heading = (
-            is_major_section or
-            (len(line) < 60 and line.isupper() and not line.endswith(('.', '!', '?', ':', ';')) and line.count(' ') < 8) or
-            (line.startswith('**') and line.endswith('**') and len(line) < 100) or
-            (len(line) < 50 and line[0].isupper() and line.count(' ') < 4 and 
-             not line.endswith(('.', '!', '?', ':', ';', ',')) and
-             not any(char.isdigit() for char in line))  # Exclude lines with numbers
-        )
+        # 2. It's wrapped in ** markers (markdown bold) AND very short
+        # 3. It's ALL CAPS, very short (under 40 chars), no punctuation, and looks like a title
+        is_heading = False
+        if is_major_section:
+            is_heading = True
+        elif line.startswith('**') and line.endswith('**') and len(line) < 80:
+            # Markdown bold heading
+            is_heading = True
+        elif (len(line) < 40 and line.isupper() and 
+              not line.endswith(('.', '!', '?', ':', ';', ',', ')')) and
+              line.count(' ') < 6 and
+              not any(char.isdigit() for char in line) and
+              not line.startswith(('The ', 'A ', 'An ', 'This ', 'That ', 'These ', 'Those '))):
+            # Very short ALL CAPS title-like text
+            is_heading = True
+        # Don't treat regular sentences as headings, even if they're short
         
         # Handle major section headers (with page breaks)
         if is_major_section:

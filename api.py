@@ -1345,7 +1345,7 @@ def send_chart_email_via_sendgrid(pdf_bytes: bytes, recipient_email: str, subjec
                     <li>Full astrological data and positions</li>
                 </ul>
                 <p>We hope this report provides valuable insights into your personality, life patterns, and spiritual growth.</p>
-                <p>Best regards,<br>Synthesis Astrology</p>
+                <p>Best regards,<br>Synthesis Astrology<br><a href="https://synthesisastrology.com" style="color: #1b6ca8;">synthesisastrology.com</a></p>
             </body>
             </html>
             """
@@ -1474,7 +1474,7 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
                             <p>Dear {chart_name},</p>
                             <p>We encountered an error while generating your astrology reading. Please try again or contact support.</p>
                             <p>Error: {str(e)}</p>
-                            <p>Best regards,<br>Synthesis Astrology</p>
+                            <p>Best regards,<br>Synthesis Astrology<br><a href="https://synthesisastrology.com" style="color: #1b6ca8;">synthesisastrology.com</a></p>
                         </body>
                         </html>
                         """
