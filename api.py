@@ -28,16 +28,28 @@ import base64
 from pdf_generator import generate_pdf_report
 
 # --- SETUP THE LOGGER ---
-handler = None
+import sys
+
+# Always log to stdout so Render shows the logs
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Ensure logs propagate to root logger
+logger.propagate = True
+
+# Always add a StreamHandler to stdout for Render visibility
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
+
+# Optionally also log to Logtail if configured
 logtail_token = os.getenv("LOGTAIL_SOURCE_TOKEN")
 if logtail_token:
     ingesting_host = "https://s1450016.eu-nbg-2.betterstackdata.com"
-    handler = LogtailHandler(source_token=logtail_token, host=ingesting_host)
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-if handler:
-    logger.addHandler(handler)
+    logtail_handler = LogtailHandler(source_token=logtail_token, host=ingesting_host)
+    logger.addHandler(logtail_handler)
 
 # --- SETUP GEMINI ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -930,6 +942,7 @@ After the Snapshot, include a short 4 sentence paragraph that explains the birth
             total_completion_tokens += usage.get('completion_tokens', 0)
             
             # Calculate and log total cost
+            logger.info(">>> ENTERED get_gemini_reading (Unknown Time) AND ABOUT TO LOG COST <<<")
             cost_info = calculate_gemini_cost(total_prompt_tokens, total_completion_tokens)
             logger.info(f"=== GEMINI API COST SUMMARY (Unknown Time) ===")
             logger.info(f"Total Input Tokens: {cost_info['prompt_tokens']:,}")
@@ -939,6 +952,16 @@ After the Snapshot, include a short 4 sentence paragraph that explains the birth
             logger.info(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
             logger.info(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
             logger.info("=" * 50)
+            # Also print to stdout as fallback (Render always shows print output)
+            print(f"\n{'='*60}")
+            print(f"GEMINI API COST SUMMARY (Unknown Time)")
+            print(f"Total Input Tokens: {cost_info['prompt_tokens']:,}")
+            print(f"Total Output Tokens: {cost_info['completion_tokens']:,}")
+            print(f"Total Tokens: {cost_info['total_tokens']:,}")
+            print(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
+            print(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
+            print(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
+            print(f"{'='*60}\n")
             
             return final_reading
             
@@ -1257,6 +1280,7 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
         total_completion_tokens += usage.get('completion_tokens', 0)
         
         # Calculate and log total cost
+        logger.info(">>> ENTERED get_gemini_reading (Known Time) AND ABOUT TO LOG COST <<<")
         cost_info = calculate_gemini_cost(total_prompt_tokens, total_completion_tokens)
         logger.info(f"=== GEMINI API COST SUMMARY (Known Time) ===")
         logger.info(f"Total Input Tokens: {cost_info['prompt_tokens']:,}")
@@ -1266,6 +1290,16 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
         logger.info(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
         logger.info(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
         logger.info("=" * 50)
+        # Also print to stdout as fallback (Render always shows print output)
+        print(f"\n{'='*60}")
+        print(f"GEMINI API COST SUMMARY (Known Time)")
+        print(f"Total Input Tokens: {cost_info['prompt_tokens']:,}")
+        print(f"Total Output Tokens: {cost_info['completion_tokens']:,}")
+        print(f"Total Tokens: {cost_info['total_tokens']:,}")
+        print(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
+        print(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
+        print(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
+        print(f"{'='*60}\n")
         
         # Error check removed
         return final_reading
