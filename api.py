@@ -322,6 +322,17 @@ def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inp
     
     return f"<html><head><style>body {{ font-family: sans-serif; }} pre {{ white-space: pre-wrap; word-wrap: break-word; }} img {{ max-width: 100%; height: auto; }}</style></head><body>{html}</body></html>"
 
+def _safe_get_tokens(usage: dict, key: str) -> int:
+    """Safely extract token count from usage metadata, handling None and invalid values."""
+    if not usage or not isinstance(usage, dict):
+        return 0
+    value = usage.get(key, 0)
+    try:
+        return int(value) if value is not None else 0
+    except (TypeError, ValueError):
+        return 0
+
+
 def calculate_gemini_cost(prompt_tokens: int, completion_tokens: int, 
                           input_price_per_million: float = 1.25, 
                           output_price_per_million: float = 10.00) -> dict:
@@ -340,18 +351,38 @@ def calculate_gemini_cost(prompt_tokens: int, completion_tokens: int,
     
     Returns a dict with cost breakdown.
     """
-    input_cost = (prompt_tokens / 1_000_000) * input_price_per_million
-    output_cost = (completion_tokens / 1_000_000) * output_price_per_million
-    total_cost = input_cost + output_cost
-    
-    return {
-        'prompt_tokens': prompt_tokens,
-        'completion_tokens': completion_tokens,
-        'total_tokens': prompt_tokens + completion_tokens,
-        'input_cost_usd': round(input_cost, 6),
-        'output_cost_usd': round(output_cost, 6),
-        'total_cost_usd': round(total_cost, 6)
-    }
+    try:
+        # Ensure tokens are valid integers
+        prompt_tokens = int(prompt_tokens) if prompt_tokens is not None else 0
+        completion_tokens = int(completion_tokens) if completion_tokens is not None else 0
+        
+        # Ensure non-negative
+        prompt_tokens = max(0, prompt_tokens)
+        completion_tokens = max(0, completion_tokens)
+        
+        input_cost = (prompt_tokens / 1_000_000) * input_price_per_million
+        output_cost = (completion_tokens / 1_000_000) * output_price_per_million
+        total_cost = input_cost + output_cost
+        
+        return {
+            'prompt_tokens': prompt_tokens,
+            'completion_tokens': completion_tokens,
+            'total_tokens': prompt_tokens + completion_tokens,
+            'input_cost_usd': round(input_cost, 6),
+            'output_cost_usd': round(output_cost, 6),
+            'total_cost_usd': round(total_cost, 6)
+        }
+    except (TypeError, ValueError) as e:
+        logger.error(f"Error calculating Gemini cost: {e}. Tokens: prompt={prompt_tokens}, completion={completion_tokens}")
+        # Return safe defaults
+        return {
+            'prompt_tokens': 0,
+            'completion_tokens': 0,
+            'total_tokens': 0,
+            'input_cost_usd': 0.0,
+            'output_cost_usd': 0.0,
+            'total_cost_usd': 0.0
+        }
 
 
 async def _run_gemini_prompt(prompt_text: str) -> tuple[str, dict]:
@@ -383,29 +414,70 @@ async def _run_gemini_prompt(prompt_text: str) -> tuple[str, dict]:
             'completion_tokens': 0,
             'total_tokens': 0
         }
-        if hasattr(response, 'usage_metadata'):
-            usage_metadata = {
-                'prompt_tokens': getattr(response.usage_metadata, 'prompt_token_count', 0),
-                'completion_tokens': getattr(response.usage_metadata, 'candidates_token_count', 0),
-                'total_tokens': getattr(response.usage_metadata, 'total_token_count', 0)
-            }
-            logger.info(f"Token usage - Input: {usage_metadata['prompt_tokens']}, Output: {usage_metadata['completion_tokens']}, Total: {usage_metadata['total_tokens']}")
+        if hasattr(response, 'usage_metadata') and response.usage_metadata:
+            try:
+                # Try multiple possible attribute names for token counts
+                usage_metadata = {
+                    'prompt_tokens': getattr(response.usage_metadata, 'prompt_token_count', 0) or 0,
+                    'completion_tokens': getattr(response.usage_metadata, 'candidates_token_count', 
+                                                getattr(response.usage_metadata, 'completion_token_count', 0)) or 0,
+                    'total_tokens': getattr(response.usage_metadata, 'total_token_count', 0) or 0
+                }
+                # Ensure all values are integers, not None
+                usage_metadata = {k: int(v) if v is not None else 0 for k, v in usage_metadata.items()}
+                logger.info(f"Token usage - Input: {usage_metadata['prompt_tokens']}, Output: {usage_metadata['completion_tokens']}, Total: {usage_metadata['total_tokens']}")
+            except Exception as meta_error:
+                logger.warning(f"Error extracting usage metadata: {meta_error}. Using defaults.")
+                usage_metadata = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
         
-        return response.text.strip(), usage_metadata
+        # Safely extract response text
+        if not hasattr(response, 'text') or response.text is None:
+            # Try to get text from parts
+            text_parts = []
+            if hasattr(response, 'parts') and response.parts:
+                for part in response.parts:
+                    if hasattr(part, 'text') and part.text:
+                        text_parts.append(part.text)
+            response_text = ' '.join(text_parts).strip() if text_parts else ""
+            if not response_text:
+                raise Exception("Gemini response has no text content available")
+        else:
+            response_text = response.text.strip()
+        
+        return response_text, usage_metadata
     except Exception as e:
         logger.error(f"Error in Gemini API call: {e}", exc_info=True)
-        # Propagate specific error messages if available
+        # Check for specific error types
+        error_str = str(e).lower()
         error_message = f"An error occurred during a Gemini API call: {e}"
-        if "response was blocked" in str(e):
-             reason = "Safety settings"
-             try:
-                 block_reason = getattr(e, 'block_reason', 'Unknown')
-                 if hasattr(e, 'response') and hasattr(e.response, 'prompt_feedback'):
-                      block_reason = e.response.prompt_feedback.block_reason
-                 reason = str(block_reason)
-             except Exception:
-                 pass
-             error_message = f"Error: The AI's response was blocked due to {reason}. Please try rephrasing or contact support."
+        
+        # Handle quota/credit errors
+        if any(keyword in error_str for keyword in ['quota', 'credit', 'billing', 'payment', 'insufficient']):
+            error_message = "API quota or credits exhausted. Please check your Gemini API billing and quota limits."
+            logger.error("Gemini API quota/credit error detected")
+        
+        # Handle rate limiting
+        elif any(keyword in error_str for keyword in ['rate limit', '429', 'too many requests']):
+            error_message = "API rate limit exceeded. Please wait a moment and try again."
+            logger.error("Gemini API rate limit error detected")
+        
+        # Handle permission/authentication errors
+        elif any(keyword in error_str for keyword in ['permission', 'unauthorized', 'authentication', 'invalid api key', 'api key']):
+            error_message = "API authentication error. Please check your Gemini API key configuration."
+            logger.error("Gemini API authentication error detected")
+        
+        # Handle blocked responses
+        elif "response was blocked" in error_str or "blocked" in error_str:
+            reason = "Safety settings"
+            try:
+                block_reason = getattr(e, 'block_reason', 'Unknown')
+                if hasattr(e, 'response') and hasattr(e.response, 'prompt_feedback'):
+                    block_reason = e.response.prompt_feedback.block_reason
+                reason = str(block_reason)
+            except Exception:
+                pass
+            error_message = f"Error: The AI's response was blocked due to {reason}. Please try rephrasing or contact support."
+        
         # Raise exception instead of returning error string
         raise Exception(error_message)
 
