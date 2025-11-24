@@ -633,6 +633,7 @@ class NatalChart:
             "numerology_analysis": {
                 "life_path_number": numerology.get("life_path_number", "N/A"),
                 "day_number": numerology.get("day_number", "N/A"),
+                "lucky_number": numerology.get("lucky_number", "N/A"),
                 "name_numerology": name_numerology
             },
             "unknown_time": unknown_time,
