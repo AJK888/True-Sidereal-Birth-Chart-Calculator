@@ -322,7 +322,43 @@ def format_full_report_for_email(chart_data: dict, gemini_reading: str, user_inp
     
     return f"<html><head><style>body {{ font-family: sans-serif; }} pre {{ white-space: pre-wrap; word-wrap: break-word; }} img {{ max-width: 100%; height: auto; }}</style></head><body>{html}</body></html>"
 
-async def _run_gemini_prompt(prompt_text: str) -> str:
+def calculate_gemini_cost(prompt_tokens: int, completion_tokens: int, 
+                          input_price_per_million: float = 1.25, 
+                          output_price_per_million: float = 10.00) -> dict:
+    """
+    Calculate the cost of a Gemini API call based on token usage.
+    
+    Default prices are for Gemini 2.5 Pro (for prompts <= 200k tokens):
+    - Input: $1.25 per 1M tokens
+    - Output: $10.00 per 1M tokens (including thinking tokens)
+    
+    Note: For prompts > 200k tokens, prices are:
+    - Input: $2.50 per 1M tokens
+    - Output: $15.00 per 1M tokens
+    
+    You should verify current pricing at: https://ai.google.dev/pricing
+    
+    Returns a dict with cost breakdown.
+    """
+    input_cost = (prompt_tokens / 1_000_000) * input_price_per_million
+    output_cost = (completion_tokens / 1_000_000) * output_price_per_million
+    total_cost = input_cost + output_cost
+    
+    return {
+        'prompt_tokens': prompt_tokens,
+        'completion_tokens': completion_tokens,
+        'total_tokens': prompt_tokens + completion_tokens,
+        'input_cost_usd': round(input_cost, 6),
+        'output_cost_usd': round(output_cost, 6),
+        'total_cost_usd': round(total_cost, 6)
+    }
+
+
+async def _run_gemini_prompt(prompt_text: str) -> tuple[str, dict]:
+    """
+    Run a Gemini API prompt and return both the response text and usage metadata.
+    Returns: (response_text, usage_metadata) where usage_metadata contains 'prompt_tokens' and 'completion_tokens'
+    """
     try:
         if not GEMINI_API_KEY:
             logger.error("Gemini API key not configured - cannot call Gemini API")
@@ -340,7 +376,22 @@ async def _run_gemini_prompt(prompt_text: str) -> str:
             logger.error(f"Gemini response blocked or empty. Safety Feedback: {safety_feedback}. Prompt: {prompt_text[:500]}...") # Log beginning of prompt
             # Raise exception instead of returning error string
             raise Exception(f"Gemini response was blocked or empty. Feedback: {safety_feedback}")
-        return response.text.strip()
+        
+        # Extract usage metadata if available
+        usage_metadata = {
+            'prompt_tokens': 0,
+            'completion_tokens': 0,
+            'total_tokens': 0
+        }
+        if hasattr(response, 'usage_metadata'):
+            usage_metadata = {
+                'prompt_tokens': getattr(response.usage_metadata, 'prompt_token_count', 0),
+                'completion_tokens': getattr(response.usage_metadata, 'candidates_token_count', 0),
+                'total_tokens': getattr(response.usage_metadata, 'total_token_count', 0)
+            }
+            logger.info(f"Token usage - Input: {usage_metadata['prompt_tokens']}, Output: {usage_metadata['completion_tokens']}, Total: {usage_metadata['total_tokens']}")
+        
+        return response.text.strip(), usage_metadata
     except Exception as e:
         logger.error(f"Error in Gemini API call: {e}", exc_info=True)
         # Propagate specific error messages if available
@@ -366,6 +417,10 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
         raise Exception("Gemini API key not configured. AI reading is unavailable.")
     
     logger.info("Starting Gemini reading generation...")
+    
+    # Track total token usage and costs across all API calls
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
 
     # --- Unknown Time Handling - Enhanced Multi-Step Process ---
     if unknown_time:
@@ -406,7 +461,9 @@ Analyze the provided Sidereal and Tropical placements to identify the primary po
 2. Label each finding with one of the following classifications: "High Alignment" (same sign), "Moderate Tension" (adjacent signs), or "High Contrast" (signs in different elements/modalities).
 3. Output nothing but this list.
 """
-            cartographer_analysis = await _run_gemini_prompt(cartographer_prompt)
+            cartographer_analysis, usage = await _run_gemini_prompt(cartographer_prompt)
+            total_prompt_tokens += usage.get('prompt_tokens', 0)
+            total_completion_tokens += usage.get('completion_tokens', 0)
             
             # --- Step 2: Identify Foundational Blueprint (5 themes) ---
             architect_data = []
@@ -453,7 +510,9 @@ When choosing the 5 themes, prioritize:
 - Themes supported by multiple signals at once (e.g., dominant element plus planetary placements plus numerology pointing the same direction).
 Avoid themes that sound generic or disconnected from specific evidence.
 """
-            architect_analysis = await _run_gemini_prompt(architect_prompt)
+            architect_analysis, usage = await _run_gemini_prompt(architect_prompt)
+            total_prompt_tokens += usage.get('prompt_tokens', 0)
+            total_completion_tokens += usage.get('completion_tokens', 0)
             
             # --- Step 3: Interpret Karmic Path (Nodes without houses) ---
             s_north_node = s_pos_all.get('True Node', {})
@@ -478,7 +537,9 @@ Interpret the soul's journey from its past to its future potential, based on the
 2. **Interpret the North Node:** Describe the soul's mission, growth potential, and the qualities it must develop in this lifetime, as shown by the North Node's position in both zodiacs.
 3. **Synthesize:** In a concluding paragraph, explain how the Sidereal (soul path) and Tropical (personality expression) Nodal placements work together. In your synthesis, highlight how the nodal axis is supported or challenged by the chart's dominant element.
 """
-            navigator_analysis = await _run_gemini_prompt(navigator_prompt)
+            navigator_analysis, usage = await _run_gemini_prompt(navigator_prompt)
+            total_prompt_tokens += usage.get('prompt_tokens', 0)
+            total_completion_tokens += usage.get('completion_tokens', 0)
             
             # --- Step 4: Deep-Dive Planetary Analysis (without houses) ---
             async def run_specialist_for_point_noon(point_name):
@@ -537,8 +598,8 @@ Write three clearly separated, detailed paragraphs:
 **Synthesis:**
 (In this paragraph, compare the Sidereal vs. Tropical expressions for {point_name}. Are they aligned, in tension, or complementary? How do these two layers of meaning work together to shape this person's experience?)
 """
-                result_text = await _run_gemini_prompt(specialist_prompt)
-                return f"--- {point_name.upper()} ---\n{result_text}"
+                result_text, usage = await _run_gemini_prompt(specialist_prompt)
+                return (f"--- {point_name.upper()} ---\n{result_text}", usage)
             
             points_to_analyze = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'True Node', 'Chiron', 'Lilith', 'Ceres', 'Pallas', 'Juno', 'Vesta']
             
@@ -553,7 +614,13 @@ Write three clearly separated, detailed paragraphs:
                     logger.error(f"Error during specialist analysis step (noon chart): {result}", exc_info=result)
                     continue
                 elif result is not None:  # Filter out None values (points with missing position data)
-                    combined_specialist_analysis_parts.append(result)
+                    if isinstance(result, tuple):
+                        text, usage = result
+                        combined_specialist_analysis_parts.append(text)
+                        total_prompt_tokens += usage.get('prompt_tokens', 0)
+                        total_completion_tokens += usage.get('completion_tokens', 0)
+                    else:
+                        combined_specialist_analysis_parts.append(result)
             combined_specialist_analysis = "\n\n".join(combined_specialist_analysis_parts)
             
             # --- Step 5: Analyze Tightest Aspects (Top 8, without houses) ---
@@ -583,7 +650,9 @@ For each of the **eight** tightest aspects listed above, write a dedicated, deta
 - Avoid vague phrases like "you might sometimes feel" without naming a specific behavior or scenario.
 Explain the dynamic created between the two bodies, referencing their signs as provided, and tie in any relevant aspect patterns. Output ONLY these 8 paragraphs, clearly separated.
 """
-            weaver_analysis = await _run_gemini_prompt(weaver_prompt)
+            weaver_analysis, usage = await _run_gemini_prompt(weaver_prompt)
+            total_prompt_tokens += usage.get('prompt_tokens', 0)
+            total_completion_tokens += usage.get('completion_tokens', 0)
             
             # --- Step 6: Final Synthesis ---
             storyteller_prompt = f"""
@@ -640,7 +709,21 @@ After the Snapshot, include a short 4 sentence paragraph that explains the birth
 **Summary and Key Takeaways**
 (Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. Close this section with a short "Action Checklist" containing 7 bullet points. Each bullet must point to a concrete focus area or experiment that clearly connects back to themes/aspects discussed above. Avoid generic self-help cliches.)
 """
-            final_reading = await _run_gemini_prompt(storyteller_prompt)
+            final_reading, usage = await _run_gemini_prompt(storyteller_prompt)
+            total_prompt_tokens += usage.get('prompt_tokens', 0)
+            total_completion_tokens += usage.get('completion_tokens', 0)
+            
+            # Calculate and log total cost
+            cost_info = calculate_gemini_cost(total_prompt_tokens, total_completion_tokens)
+            logger.info(f"=== GEMINI API COST SUMMARY (Unknown Time) ===")
+            logger.info(f"Total Input Tokens: {cost_info['prompt_tokens']:,}")
+            logger.info(f"Total Output Tokens: {cost_info['completion_tokens']:,}")
+            logger.info(f"Total Tokens: {cost_info['total_tokens']:,}")
+            logger.info(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
+            logger.info(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
+            logger.info(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
+            logger.info("=" * 50)
+            
             return final_reading
             
         except Exception as e:
@@ -677,7 +760,9 @@ Analyze the provided Sidereal and Tropical placements to identify the primary po
 2. Label each finding with one of the following classifications: "High Alignment" (same sign), "Moderate Tension" (adjacent signs), or "High Contrast" (signs in different elements/modalities).
 3. Output nothing but this list.
 """
-        cartographer_analysis = await _run_gemini_prompt(cartographer_prompt)
+        cartographer_analysis, usage = await _run_gemini_prompt(cartographer_prompt)
+        total_prompt_tokens += usage.get('prompt_tokens', 0)
+        total_completion_tokens += usage.get('completion_tokens', 0)
         # Error check removed, will be caught by outer try/except
 
         # --- Step 2: Identify Foundational Blueprint ---
@@ -723,7 +808,9 @@ When choosing the 5 themes, prioritize:
 - Themes supported by multiple signals at once (e.g., dominant element plus key placements plus numerology all aligning).
 Avoid generic statements that could apply to anyone.
 """
-        architect_analysis = await _run_gemini_prompt(architect_prompt)
+        architect_analysis, usage = await _run_gemini_prompt(architect_prompt)
+        total_prompt_tokens += usage.get('prompt_tokens', 0)
+        total_completion_tokens += usage.get('completion_tokens', 0)
         # Error check removed
 
         # --- Step 3: Interpret Karmic Path ---
@@ -753,7 +840,9 @@ Interpret the soul's journey from its past to its future potential, based on the
 2.  **Interpret the North Node:** Describe the soul's mission, growth potential, and the qualities it must develop in this lifetime, as shown by the North Node's position in both zodiacs and its house placement.
 3.  **Synthesize:** In a concluding paragraph, explain how the Sidereal (soul path) and Tropical (personality expression) Nodal placements work together. In your synthesis, highlight how the nodal axis is supported or challenged by the chart's dominant element.
 """
-        navigator_analysis = await _run_gemini_prompt(navigator_prompt)
+        navigator_analysis, usage = await _run_gemini_prompt(navigator_prompt)
+        total_prompt_tokens += usage.get('prompt_tokens', 0)
+        total_completion_tokens += usage.get('completion_tokens', 0)
         # Error check removed
 
         # --- Step 4: Perform Deep-Dive Point Analysis ---
@@ -825,8 +914,8 @@ Write three clearly separated, detailed paragraphs:
 (In this paragraph, compare the Sidereal vs. Tropical expressions for {point_name}. Are they aligned, in tension, or complementary? How does the house placement in one system support or challenge the other?)
 """
             # Error handling inside _run_gemini_prompt will raise exception on failure
-            result_text = await _run_gemini_prompt(specialist_prompt)
-            return f"--- {point_name.upper()} ---\n{result_text}"
+            result_text, usage = await _run_gemini_prompt(specialist_prompt)
+            return (f"--- {point_name.upper()} ---\n{result_text}", usage)
 
         points_to_analyze = [
             'Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto',
@@ -850,7 +939,13 @@ Write three clearly separated, detailed paragraphs:
                 # Option 1: Raise the first exception encountered
                 raise result 
             elif result is not None:  # Filter out None values (points with missing position data)
-                combined_specialist_analysis_parts.append(result)
+                if isinstance(result, tuple):
+                    text, usage = result
+                    combined_specialist_analysis_parts.append(text)
+                    total_prompt_tokens += usage.get('prompt_tokens', 0)
+                    total_completion_tokens += usage.get('completion_tokens', 0)
+                else:
+                    combined_specialist_analysis_parts.append(result)
         combined_specialist_analysis = "\n\n".join(combined_specialist_analysis_parts)
 
 
@@ -883,7 +978,9 @@ For each of the **eight** tightest aspects listed above, write a dedicated, deta
 - Avoid vague phrases like "you might sometimes feel" without naming a recognizable behavior or scenario.
 Explain how the aspect links the two bodies, referencing their signs and houses exactly as provided, and tie in relevant aspect patterns if applicable. Output ONLY these 8 paragraphs, clearly separated.
 """
-        weaver_analysis = await _run_gemini_prompt(weaver_prompt)
+        weaver_analysis, usage = await _run_gemini_prompt(weaver_prompt)
+        total_prompt_tokens += usage.get('prompt_tokens', 0)
+        total_completion_tokens += usage.get('completion_tokens', 0)
         # Error check removed
 
         # --- Step 6: Final Synthesis (Updated to 8 aspects) ---
@@ -939,7 +1036,21 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
 **Summary and Key Takeaways**
 (Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. Close this section with a short "Action Checklist" containing 7 bullet points. Each bullet must point to a concrete focus area or experiment that clearly connects back to themes/aspects discussed above. Avoid generic self-help cliches.)
 """
-        final_reading = await _run_gemini_prompt(storyteller_prompt)
+        final_reading, usage = await _run_gemini_prompt(storyteller_prompt)
+        total_prompt_tokens += usage.get('prompt_tokens', 0)
+        total_completion_tokens += usage.get('completion_tokens', 0)
+        
+        # Calculate and log total cost
+        cost_info = calculate_gemini_cost(total_prompt_tokens, total_completion_tokens)
+        logger.info(f"=== GEMINI API COST SUMMARY (Known Time) ===")
+        logger.info(f"Total Input Tokens: {cost_info['prompt_tokens']:,}")
+        logger.info(f"Total Output Tokens: {cost_info['completion_tokens']:,}")
+        logger.info(f"Total Tokens: {cost_info['total_tokens']:,}")
+        logger.info(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
+        logger.info(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
+        logger.info(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
+        logger.info("=" * 50)
+        
         # Error check removed
         return final_reading
 

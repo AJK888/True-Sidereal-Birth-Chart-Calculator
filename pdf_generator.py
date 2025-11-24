@@ -321,9 +321,9 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         sidereal_png = svg_to_png(sidereal_svg, width=600, height=600)
         tropical_png = svg_to_png(tropical_svg, width=600, height=600)
         
-        # Create images
-        sidereal_img = Image(io.BytesIO(sidereal_png), width=3*inch, height=3*inch)
-        tropical_img = Image(io.BytesIO(tropical_png), width=3*inch, height=3*inch)
+        # Create images (slightly smaller to fit within blue background with padding)
+        sidereal_img = Image(io.BytesIO(sidereal_png), width=2.9*inch, height=2.9*inch)
+        tropical_img = Image(io.BytesIO(tropical_png), width=2.9*inch, height=2.9*inch)
         
         chart_table = Table([
             [Paragraph("<b>Sidereal</b>", body_style), Paragraph("<b>Tropical</b>", body_style)],
@@ -334,12 +334,15 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         chart_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 10),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-            ('TOPPADDING', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('LEFTPADDING', (0, 1), (-1, 1), 15),
+            ('RIGHTPADDING', (0, 1), (-1, 1), 15),
+            ('TOPPADDING', (0, 1), (-1, 1), 15),
+            ('BOTTOMPADDING', (0, 1), (-1, 1), 15),
+            ('LEFTPADDING', (0, 0), (-1, 0), 6),
+            ('RIGHTPADDING', (0, 0), (-1, 0), 6),
+            ('TOPPADDING', (0, 0), (-1, 0), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
             ('BACKGROUND', (0, 1), (-1, 1), blue_box),
-            ('BOX', (0, 1), (-1, 1), 1, colors.HexColor('#1d4e89')),
         ]))
         
         story.append(chart_table)
