@@ -1222,6 +1222,117 @@ def send_chart_email_via_sendgrid(pdf_bytes: bytes, recipient_email: str, subjec
         return False
 
 
+async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, user_inputs: Dict):
+    """Background task to generate reading and send emails with PDF attachments."""
+    try:
+        logger.info("="*60)
+        logger.info("Starting background task for reading generation and email sending.")
+        logger.info("="*60)
+        chart_name = user_inputs.get('full_name', 'N/A')
+        user_email = user_inputs.get('user_email')
+        # Strip whitespace if email is provided
+        if user_email and isinstance(user_email, str):
+            user_email = user_email.strip() or None  # Convert empty string to None
+        
+        logger.info(f"Generating AI reading for: {chart_name}")
+        
+        # Generate the reading
+        try:
+            gemini_reading = await get_gemini_reading(chart_data, unknown_time)
+            logger.info(f"AI Reading successfully generated for: {chart_name} (length: {len(gemini_reading)} characters)")
+        except Exception as e:
+            logger.error(f"Error generating reading: {e}", exc_info=True)
+            # Still try to send an error notification email if possible
+            if user_email and SENDGRID_API_KEY and SENDGRID_FROM_EMAIL:
+                try:
+                    from sendgrid import SendGridAPIClient
+                    from sendgrid.helpers.mail import Mail
+                    error_message = Mail(
+                        from_email=SENDGRID_FROM_EMAIL,
+                        to_emails=user_email,
+                        subject=f"Error Generating Your Astrology Report",
+                        html_content=f"""
+                        <html>
+                        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                            <h2 style="color: #e53e3e;">Error Generating Report</h2>
+                            <p>Dear {chart_name},</p>
+                            <p>We encountered an error while generating your astrology reading. Please try again or contact support.</p>
+                            <p>Error: {str(e)}</p>
+                            <p>Best regards,<br>Synthesis Astrology</p>
+                        </body>
+                        </html>
+                        """
+                    )
+                    sg = SendGridAPIClient(SENDGRID_API_KEY)
+                    sg.send(error_message)
+                    logger.info(f"Error notification email sent to {user_email}")
+                except Exception as email_error:
+                    logger.error(f"Failed to send error notification email: {email_error}")
+            return
+        
+        logger.info(f"Email task - User email provided: {bool(user_email)}, Admin email configured: {bool(ADMIN_EMAIL)}")
+        logger.info(f"SendGrid API key configured: {bool(SENDGRID_API_KEY)}, From email configured: {bool(SENDGRID_FROM_EMAIL)}")
+        
+        # Validate SendGrid configuration
+        if not SENDGRID_API_KEY:
+            error_msg = "❌ SENDGRID_API_KEY is not set. Cannot send emails. Please set this environment variable in Render."
+            logger.error(error_msg)
+            logger.error("="*60)
+            return
+        if not SENDGRID_FROM_EMAIL:
+            error_msg = "❌ SENDGRID_FROM_EMAIL is not set. Cannot send emails. Please set this environment variable in Render."
+            logger.error(error_msg)
+            logger.error("="*60)
+            return
+
+        # Generate PDF report
+        try:
+            logger.info("Generating PDF report...")
+            pdf_bytes = generate_pdf_report(chart_data, gemini_reading, user_inputs)
+            logger.info(f"PDF generated successfully ({len(pdf_bytes)} bytes)")
+        except Exception as e:
+            logger.error(f"Error generating PDF: {e}", exc_info=True)
+            import traceback
+            logger.error(f"PDF generation traceback: {traceback.format_exc()}")
+            return  # Don't send emails if PDF generation fails
+
+        # Send email to the user (if provided and not empty)
+        if user_email:
+            logger.info(f"Attempting to send email to user: {user_email}")
+            email_sent = send_chart_email_via_sendgrid(
+                pdf_bytes, 
+                user_email, 
+                f"Your Astrology Chart Report for {chart_name}",
+                chart_name
+            )
+            if email_sent:
+                logger.info(f"Email successfully sent to user: {user_email}")
+            else:
+                logger.warning(f"Failed to send email to user: {user_email}")
+        else:
+            logger.info("No user email provided, skipping user email.")
+            
+        # Send email to the admin (if configured)
+        if ADMIN_EMAIL:
+            logger.info(f"Attempting to send email to admin: {ADMIN_EMAIL}")
+            email_sent = send_chart_email_via_sendgrid(
+                pdf_bytes, 
+                ADMIN_EMAIL, 
+                f"New Chart Generated: {chart_name}",
+                chart_name
+            )
+            if email_sent:
+                logger.info(f"Email successfully sent to admin: {ADMIN_EMAIL}")
+            else:
+                logger.warning(f"Failed to send email to admin: {ADMIN_EMAIL}")
+        else:
+            logger.info("No admin email configured, skipping admin email.")
+        
+        logger.info(f"Background task completed for {chart_name}.")
+    except Exception as e:
+        logger.error(f"Error in background task: {e}", exc_info=True)
+
+
 async def send_emails_in_background(chart_data: Dict, gemini_reading: str, user_inputs: Dict):
     """Background task to send emails with PDF attachments to user and admin."""
     try:
@@ -1399,34 +1510,45 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
 @limiter.limit("3/month")
 async def generate_reading_endpoint(request: Request, reading_data: ReadingRequest, background_tasks: BackgroundTasks):
     """
-    This endpoint runs the AI generation synchronously and returns the result to the user.
-    Email sending is handled in the background via SendGrid with PDF attachments.
+    This endpoint queues the reading generation and email sending in the background.
+    Returns immediately so users can close the browser and still receive their reading via email.
     """
     try:
         user_inputs = reading_data.user_inputs
         chart_name = user_inputs.get('full_name', 'N/A')
-        logger.info(f"Starting AI reading generation for: {chart_name}")
-        
-        # Run AI generation synchronously
-        gemini_reading = await get_gemini_reading(reading_data.chart_data, reading_data.unknown_time)
-        
-        logger.info(f"AI Reading successfully generated for: {chart_name} (length: {len(gemini_reading)} characters)")
-
-        # Add email sending to background task
         user_email = user_inputs.get('user_email', '')
-        logger.info(f"Adding email background task. User email in inputs: {bool(user_email)}")
+        
+        logger.info(f"Queueing AI reading generation for: {chart_name}")
+        
+        # Validate that user email is provided (required for background processing)
+        if not user_email or not user_email.strip():
+            raise HTTPException(
+                status_code=400, 
+                detail="Email address is required. Your reading will be sent to your email when complete."
+            )
+        
+        # Add reading generation and email sending to background task
+        # This allows users to close the browser immediately
         background_tasks.add_task(
-            send_emails_in_background,
+            generate_reading_and_send_email,
             chart_data=reading_data.chart_data,
-            gemini_reading=gemini_reading,
+            unknown_time=reading_data.unknown_time,
             user_inputs=user_inputs
         )
-        logger.info("Email background task added successfully.")
+        logger.info("Background task queued successfully. User can close browser now.")
 
-        return {"gemini_reading": gemini_reading}
+        # Return immediately - user can close browser
+        return {
+            "status": "processing",
+            "message": "Your comprehensive astrology reading is being generated. This thorough analysis takes up to 15 minutes to complete.",
+            "instructions": "You can safely close this page - your reading will be sent to your email when ready. If you choose to wait, the reading will also populate on this page when complete.",
+            "email": user_email,
+            "estimated_time": "up to 15 minutes"
+        }
     
-    # Handle exceptions specifically from get_gemini_reading
+    except HTTPException:
+        raise
     except Exception as e: 
-        logger.error(f"Error during AI reading generation in endpoint: {e}", exc_info=True)
+        logger.error(f"Error queueing reading generation: {e}", exc_info=True)
         # Raise HTTPException to send error detail back to frontend
         raise HTTPException(status_code=500, detail=str(e))
