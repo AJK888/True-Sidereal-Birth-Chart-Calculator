@@ -105,6 +105,12 @@ async def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExc
 def ping():
     return {"message": "ok"}
 
+
+@app.get("/")
+def root():
+    """Simple root endpoint so uptime monitors don't hit a 404."""
+    return {"message": "ok"}
+
 @app.get("/check_email_config")
 def check_email_config():
     """Diagnostic endpoint to check SendGrid email configuration."""
