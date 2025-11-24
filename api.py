@@ -491,7 +491,7 @@ class LLMClient:
             
             # Make the API call
             api_kwargs = {
-                "model": "claude-3-5-sonnet-20241022",  # Latest Claude 3.5 Sonnet model
+                "model": "claude-3-5-sonnet-20240620",  # Claude 3.5 Sonnet model
                 "max_tokens": max_tokens,
                 "temperature": temperature,
                 "messages": messages
