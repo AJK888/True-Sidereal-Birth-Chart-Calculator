@@ -18,6 +18,9 @@ from logtail import LogtailHandler
 import google.generativeai as genai
 import asyncio
 from slowapi import Limiter
+import hashlib
+import json
+from datetime import datetime, timedelta
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi.responses import JSONResponse
@@ -67,6 +70,28 @@ DEFAULT_SWISS_EPHEMERIS_PATH = os.path.join(BASE_DIR, "swiss_ephemeris")
 
 # --- Admin Secret Key for bypassing rate limit ---
 ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
+
+# --- Reading Cache for Frontend Polling ---
+# In-memory cache to store completed readings (key: chart_hash, value: {reading, timestamp})
+reading_cache: Dict[str, Dict[str, Any]] = {}
+CACHE_EXPIRY_HOURS = 24  # Readings expire after 24 hours
+
+def generate_chart_hash(chart_data: Dict, unknown_time: bool) -> str:
+    """Generate a unique hash from chart data for caching."""
+    # Create a stable representation of the chart data
+    key_data = {
+        'unknown_time': unknown_time,
+        'major_positions': chart_data.get('sidereal_major_positions', []),
+        'aspects': chart_data.get('sidereal_aspects', [])
+    }
+    # Sort lists to ensure consistent hashing
+    if isinstance(key_data['major_positions'], list):
+        key_data['major_positions'] = sorted(key_data['major_positions'], key=lambda x: x.get('name', ''))
+    if isinstance(key_data['aspects'], list):
+        key_data['aspects'] = sorted(key_data['aspects'], key=lambda x: (x.get('p1_name', ''), x.get('p2_name', '')))
+    
+    key_string = json.dumps(key_data, sort_keys=True)
+    return hashlib.sha256(key_string.encode()).hexdigest()[:16]  # Use first 16 chars
 
 # --- Rate Limiter Key Function ---
 def get_rate_limit_key(request: Request) -> str:
@@ -1490,6 +1515,15 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
         try:
             gemini_reading = await get_gemini_reading(chart_data, unknown_time)
             logger.info(f"AI Reading successfully generated for: {chart_name} (length: {len(gemini_reading)} characters)")
+            
+            # Store reading in cache for frontend retrieval
+            chart_hash = generate_chart_hash(chart_data, unknown_time)
+            reading_cache[chart_hash] = {
+                'reading': gemini_reading,
+                'timestamp': datetime.now(),
+                'chart_name': chart_name
+            }
+            logger.info(f"Reading stored in cache with hash: {chart_hash}")
         except Exception as e:
             logger.error(f"Error generating reading: {e}", exc_info=True)
             # Still try to send an error notification email if possible
@@ -1785,6 +1819,9 @@ async def generate_reading_endpoint(request: Request, reading_data: ReadingReque
                 detail="Email address is required. Your reading will be sent to your email when complete."
             )
         
+        # Generate chart hash for polling
+        chart_hash = generate_chart_hash(reading_data.chart_data, reading_data.unknown_time)
+        
         # Add reading generation and email sending to background task
         # This allows users to close the browser immediately
         background_tasks.add_task(
@@ -1801,7 +1838,8 @@ async def generate_reading_endpoint(request: Request, reading_data: ReadingReque
             "message": "Your comprehensive astrology reading is being generated. This thorough analysis takes up to 15 minutes to complete.",
             "instructions": "You can safely close this page - your reading will be sent to your email when ready. If you choose to wait, the reading will also populate on this page when complete.",
             "email": user_email,
-            "estimated_time": "up to 15 minutes"
+            "estimated_time": "up to 15 minutes",
+            "chart_hash": chart_hash  # Include hash for polling
         }
     
     except HTTPException:
@@ -1810,3 +1848,35 @@ async def generate_reading_endpoint(request: Request, reading_data: ReadingReque
         logger.error(f"Error queueing reading generation: {e}", exc_info=True)
         # Raise HTTPException to send error detail back to frontend
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/get_reading/{chart_hash}")
+@limiter.limit("100/hour")
+async def get_reading_endpoint(request: Request, chart_hash: str):
+    """
+    Retrieve a completed reading from the cache by chart hash.
+    Used by frontend to poll for completed readings.
+    """
+    # Clean up expired cache entries
+    now = datetime.now()
+    expired_keys = [
+        key for key, value in reading_cache.items()
+        if now - value['timestamp'] > timedelta(hours=CACHE_EXPIRY_HOURS)
+    ]
+    for key in expired_keys:
+        del reading_cache[key]
+        logger.info(f"Removed expired reading from cache: {key}")
+    
+    # Check if reading exists in cache
+    if chart_hash in reading_cache:
+        cached_data = reading_cache[chart_hash]
+        return {
+            "status": "completed",
+            "reading": cached_data['reading'],
+            "chart_name": cached_data.get('chart_name', 'N/A')
+        }
+    else:
+        return {
+            "status": "processing",
+            "message": "Reading is still being generated. Please check again in a moment."
+        }
