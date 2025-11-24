@@ -73,6 +73,12 @@ origins = [
     "https://synthesisastrology.com",
     "https://www.synthesisastrology.com",
     "https://true-sidereal-birth-chart.onrender.com",
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://localhost:8080",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:8000",
+    "http://127.0.0.1:8080",
 ]
 
 app.add_middleware(
@@ -319,48 +325,266 @@ async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
     
     logger.info("Starting Gemini reading generation...")
 
-    # --- Unknown Time Handling ---
+    # --- Unknown Time Handling - Enhanced Multi-Step Process ---
     if unknown_time:
-        # ... (rest of the unknown time logic remains the same) ...
-        s_analysis = chart_data.get("sidereal_chart_analysis", {})
-        numerology_analysis = chart_data.get("numerology_analysis", {})
-        s_positions = chart_data.get("sidereal_major_positions", [])
-        s_aspects = chart_data.get("sidereal_aspects", [])
-        s_retrogrades = chart_data.get("sidereal_retrogrades", [])
-        sun = next((p for p in s_positions if p['name'] == 'Sun'), None)
-        moon = next((p for p in s_positions if p['name'] == 'Moon'), None)
-        
-        prompt_parts = [
-            "You are a wise astrologer providing a reading for a chart where the exact birth time is unknown. "
-            "This is called a 'Noon Chart'.\n"
-            "**Your most important rule is to completely avoid mentioning the Ascendant, Midheaven (MC), Chart Ruler, or any House placements, as they are unknown and cannot be used.** "
-            "You must focus exclusively on the placement of planets in their signs, the aspects between them, and the numerology.",
-            "\n**Anonymized Chart Data (Noon Calculation - Time-Sensitive Data Excluded):**"
-        ]
-        if sun: prompt_parts.append(f"- Sun: {sun['position']} ({sun['percentage']}%)")
-        if moon: prompt_parts.append(f"- Moon: {moon['position']} ({moon['percentage']}%)")
-        if s_analysis.get('dominant_element'): prompt_parts.append(f"- Dominant Element: {s_analysis.get('dominant_element')}")
-        if numerology_analysis.get('life_path_number'): prompt_parts.append(f"- Life Path Number: {numerology_analysis.get('life_path_number')}")
-        if numerology_analysis.get('day_number'): prompt_parts.append(f"- Day Number: {numerology_analysis.get('day_number')}")
-        if numerology_analysis.get('name_numerology', {}).get('expression_number'): prompt_parts.append(f"- Expression Number: {numerology_analysis.get('name_numerology', {}).get('expression_number')}")
-        if s_retrogrades:
-            retro_list = ", ".join([p['name'] for p in s_retrogrades])
-            prompt_parts.append(f"- Retrograde Planets: {retro_list}")
-        if s_aspects and len(s_aspects) >= 3:
-            prompt_parts.append(f"- Three Tightest Aspects: {s_aspects[0]['p1_name']} {s_aspects[0]['type']} {s_aspects[0]['p2_name']}, {s_aspects[1]['p1_name']} {s_aspects[1]['type']} {s_aspects[1]['p2_name']}, {s_aspects[2]['p1_name']} {s_aspects[2]['type']} {s_aspects[2]['p2_name']}")
+        try:
+            # Get all available data (excluding house-dependent information)
+            s_analysis = chart_data.get("sidereal_chart_analysis", {})
+            t_analysis = chart_data.get("tropical_chart_analysis", {})
+            numerology_analysis = chart_data.get("numerology_analysis", {})
+            s_positions = chart_data.get("sidereal_major_positions", [])
+            t_positions = chart_data.get("tropical_major_positions", [])
+            s_aspects = chart_data.get("sidereal_aspects", [])
+            s_aspect_patterns = chart_data.get("sidereal_aspect_patterns", [])
+            s_retrogrades = chart_data.get("sidereal_retrogrades", [])
+            
+            s_pos_all = {p['name']: p for p in s_positions}
+            t_pos_all = {p['name']: p for p in t_positions}
+            
+            # --- Step 1: Analyze Sidereal-Tropical Alignments (without houses) ---
+            cartographer_data = []
+            bodies_for_alignment = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'Chiron', 'True Node', 'Lilith', 'Ceres', 'Pallas', 'Juno', 'Vesta']
+            for body in bodies_for_alignment:
+                s_body_data = s_pos_all.get(body)
+                t_body_data = t_pos_all.get(body)
+                if s_body_data and t_body_data and s_body_data.get('position') and t_body_data.get('position'):
+                    s_sign = s_body_data['position'].split(' ')[-1]
+                    t_sign = t_body_data['position'].split(' ')[-1]
+                    if s_sign != 'N/A' and t_sign != 'N/A':
+                        cartographer_data.append(f"- {body}: Sidereal {s_sign}, Tropical {t_sign}")
+            
+            cartographer_prompt = f"""
+Analyze the provided Sidereal and Tropical placements to identify the primary points of alignment, tension, and contrast. Do not interpret the meaning. Your output must be a simple, structured list.
 
-        prompt_parts.append("\n**Your Task:**")
-        prompt_parts.append("""
-First, perform a silent internal analysis to identify the most powerful themes from the limited data. Then, structure your final response **exactly as follows, using plain text without any markdown like '#' or '**'.**
+**Data to Analyze:**
+{'\n'.join(cartographer_data) if cartographer_data else "No alignment data available."}
 
-Key Themes in Your Chart
-(Under this plain text heading, list the 2-3 most important themes you identified.)
+**Your Task:**
+1. For each body, state the relationship between its Sidereal and Tropical sign placements.
+2. Label each finding with one of the following classifications: "High Alignment" (same sign), "Moderate Tension" (adjacent signs), or "High Contrast" (signs in different elements/modalities).
+3. Output nothing but this list.
+"""
+            cartographer_analysis = await _run_gemini_prompt(cartographer_prompt)
+            
+            # --- Step 2: Identify Foundational Blueprint (5 themes) ---
+            architect_data = []
+            for body in ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']:
+                s_body = s_pos_all.get(body, {})
+                t_body = t_pos_all.get(body, {})
+                if s_body.get('position') and t_body.get('position'):
+                    architect_data.append(f"- {body}: Sidereal {s_body.get('position')}, Tropical {t_body.get('position')}")
+            
+            if s_analysis.get('dominant_element'): architect_data.append(f"- Dominant Element (Sidereal): {s_analysis.get('dominant_element')}")
+            if t_analysis.get('dominant_element'): architect_data.append(f"- Dominant Element (Tropical): {t_analysis.get('dominant_element')}")
+            if s_analysis.get('dominant_planet'): architect_data.append(f"- Dominant Planet (Sidereal): {s_analysis.get('dominant_planet')}")
+            if t_analysis.get('dominant_planet'): architect_data.append(f"- Dominant Planet (Tropical): {t_analysis.get('dominant_planet')}")
+            if numerology_analysis.get('life_path_number'): architect_data.append(f"- Life Path Number: {numerology_analysis.get('life_path_number')}")
+            if numerology_analysis.get('day_number'): architect_data.append(f"- Day Number: {numerology_analysis.get('day_number')}")
+            if numerology_analysis.get('lucky_number'): architect_data.append(f"- Lucky Number: {numerology_analysis.get('lucky_number')}")
+            if numerology_analysis.get('name_numerology', {}).get('expression_number'): architect_data.append(f"- Expression Number: {numerology_analysis.get('name_numerology', {}).get('expression_number')}")
+            if numerology_analysis.get('name_numerology', {}).get('soul_urge_number'): architect_data.append(f"- Soul Urge Number: {numerology_analysis.get('name_numerology', {}).get('soul_urge_number')}")
+            if numerology_analysis.get('name_numerology', {}).get('personality_number'): architect_data.append(f"- Personality Number: {numerology_analysis.get('name_numerology', {}).get('personality_number')}")
+            if chart_data.get('chinese_zodiac'): architect_data.append(f"- Chinese Zodiac: {chart_data.get('chinese_zodiac')}")
+            
+            architect_prompt = f"""
+Identify the foundational blueprint of a soul. Analyze the provided chart data and the alignment map to determine the 5 central themes of this person's life. Note: Birth time is unknown, so house placements and the Ascendant/MC are unavailable.
 
-The Story of Your Inner World
-(Under this plain text heading, write a multi-paragraph narrative weaving together the Sun, Moon, numerology, and the three tightest aspects to explain the core themes. Do not use sub-labels like 'Introduction' or 'Body'.)
-""")
-        # Error handling now happens implicitly via raise in _run_gemini_prompt
-        return await _run_gemini_prompt("\n".join(prompt_parts))
+**Zodiac Definitions:**
+- The **Sidereal** placements represent the soul's deeper karmic blueprint, innate spiritual gifts, and ultimate life purpose.
+- The **Tropical** placements represent the personality's expression, psychological patterns, and how the soul's purpose manifests in this lifetime.
+
+**Alignment Analysis:**
+{cartographer_analysis}
+
+**Core Chart Data:**
+{'\n'.join(architect_data) if architect_data else "No chart data available."}
+
+**Your Task:**
+1. Review all provided data.
+2. Identify exactly 5 most powerful and interconnected themes that define the core of this chart.
+3. For each theme, list the specific Sidereal, Tropical, and Numerological/Zodiacal data points that serve as evidence.
+4. Output this as a structured list. Do not write a narrative.
+"""
+            architect_analysis = await _run_gemini_prompt(architect_prompt)
+            
+            # --- Step 3: Interpret Karmic Path (Nodes without houses) ---
+            s_north_node = s_pos_all.get('True Node', {})
+            t_north_node = t_pos_all.get('True Node', {})
+            
+            navigator_data = []
+            if s_north_node.get('position'): navigator_data.append(f"- Sidereal North Node: {s_north_node.get('position')}")
+            if t_north_node.get('position'): navigator_data.append(f"- Tropical North Node: {t_north_node.get('position')}")
+            if s_analysis.get('dominant_element'): navigator_data.append(f"- Dominant Element: {s_analysis.get('dominant_element')}")
+            
+            navigator_prompt = f"""
+Interpret the soul's journey from its past to its future potential, based on the Nodal Axis (True Node and implied South Node). Use the provided foundational themes to guide your interpretation. Note: Birth time is unknown, so house placements are unavailable.
+
+**Foundational Themes:**
+{architect_analysis}
+
+**Nodal Axis Data:**
+{'\n'.join(navigator_data) if navigator_data else "No nodal data available."}
+
+**Your Task:**
+1. **Interpret the South Node:** Describe the past-life comfort zones, karmic patterns, and innate gifts represented by the South Node's position in both zodiacs (opposite the North Node).
+2. **Interpret the North Node:** Describe the soul's mission, growth potential, and the qualities it must develop in this lifetime, as shown by the North Node's position in both zodiacs.
+3. **Synthesize:** In a concluding paragraph, explain how the Sidereal (soul path) and Tropical (personality expression) Nodal placements work together. In your synthesis, highlight how the nodal axis is supported or challenged by the chart's dominant element.
+"""
+            navigator_analysis = await _run_gemini_prompt(navigator_prompt)
+            
+            # --- Step 4: Deep-Dive Planetary Analysis (without houses) ---
+            async def run_specialist_for_point_noon(point_name):
+                s_point = s_pos_all.get(point_name, {})
+                t_point = t_pos_all.get(point_name, {})
+                
+                if not s_point.get('position') or not t_point.get('position'):
+                    return None
+                
+                has_retrograde = point_name not in ['True Node', 'South Node', 'Lilith', 'Ceres', 'Pallas', 'Juno', 'Vesta']
+                retrograde_status = 'Yes' if has_retrograde and s_point.get('retrograde') else ('No' if has_retrograde else 'N/A')
+                
+                specialist_data = [
+                    f"- Sidereal Placement: {s_point.get('position')}",
+                    f"- Tropical Placement: {t_point.get('position')}",
+                ]
+                if has_retrograde:
+                    specialist_data.append(f"- Retrograde Status: {retrograde_status}")
+                
+                interpretation_focus = f"soul's core essence and karmic purpose related to {point_name}"
+                if point_name == 'True Node':
+                    interpretation_focus = "soul's evolutionary direction and path of growth"
+                elif point_name == 'South Node':
+                    interpretation_focus = "past life patterns, comfort zones, and innate gifts"
+                elif point_name == 'Lilith':
+                    interpretation_focus = "shadow self, raw instincts, and areas of potential repression or taboo"
+                elif point_name == 'Ceres':
+                    interpretation_focus = "themes of nurturing, self-care, and the mother-child dynamic"
+                elif point_name == 'Pallas':
+                    interpretation_focus = "themes of wisdom, strategy, creative intelligence, and father-daughter dynamics"
+                elif point_name == 'Juno':
+                    interpretation_focus = "themes of committed partnership, marriage, and balance in relationships"
+                elif point_name == 'Vesta':
+                    interpretation_focus = "themes of devotion, sacred focus, purity, and where one's 'inner flame' is dedicated"
+                elif point_name == 'Chiron':
+                    interpretation_focus = "the 'wounded healer' archetype, showing the soul's deepest wound and its greatest gift of healing"
+                
+                specialist_prompt = f"""
+You are an expert astrologer trained in both Sidereal and Tropical systems. For the point/body '{point_name}', you must write three separate, detailed paragraphs: one for its Sidereal interpretation, one for its Tropical interpretation, and a third for synthesizing these views. Use precise astrological terminology and explain your reasoning. Note: Birth time is unknown, so house placements are unavailable.
+
+**Foundational Themes (Context Only):**
+{architect_analysis}
+
+**{point_name} Data:**
+{'\n'.join(specialist_data)}
+
+**Your Task:**
+Write three clearly separated, detailed paragraphs:
+
+**Sidereal Interpretation:**
+(In this paragraph, explain the {interpretation_focus} within the Sidereal zodiac. Analyze its placement in its sign. Discuss relevant factors like element and modality. If Retrograde Status is 'Yes', explain the impact of its internalized energy.)
+
+**Tropical Interpretation:**
+(In this paragraph, explain how the Sidereal energy manifests through the personality via {point_name} in the Tropical zodiac. Analyze its placement in its sign. Explain how the Tropical placement affects its behavioral expression and interaction with the Sidereal placement.)
+
+**Synthesis:**
+(In this paragraph, compare the Sidereal vs. Tropical expressions for {point_name}. Are they aligned, in tension, or complementary? How do these two layers of meaning work together to shape this person's experience?)
+"""
+                result_text = await _run_gemini_prompt(specialist_prompt)
+                return f"--- {point_name.upper()} ---\n{result_text}"
+            
+            points_to_analyze = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto', 'True Node', 'Chiron', 'Lilith', 'Ceres', 'Pallas', 'Juno', 'Vesta']
+            
+            specialist_tasks_results = await asyncio.gather(
+                *[run_specialist_for_point_noon(p) for p in points_to_analyze if p in s_pos_all],
+                return_exceptions=True
+            )
+            
+            combined_specialist_analysis_parts = []
+            for result in specialist_tasks_results:
+                if isinstance(result, Exception):
+                    logger.error(f"Error during specialist analysis step (noon chart): {result}", exc_info=result)
+                    continue
+                elif result:
+                    combined_specialist_analysis_parts.append(result)
+            combined_specialist_analysis = "\n\n".join(combined_specialist_analysis_parts)
+            
+            # --- Step 5: Analyze Tightest Aspects (Top 8, without houses) ---
+            s_tightest_aspects = s_aspects[:8] if s_aspects else []
+            aspect_data_for_prompt = []
+            for a in s_tightest_aspects:
+                p1_rx = " (Rx)" if any(p.get('name') == a['p1_name'].split(' in ')[0] and p.get('retrograde') for p in s_positions) else ""
+                p2_rx = " (Rx)" if any(p.get('name') == a['p2_name'].split(' in ')[0] and p.get('retrograde') for p in s_positions) else ""
+                aspect_data_for_prompt.append(f"- {a['p1_name']}{p1_rx} {a['type']} {a['p2_name']}{p2_rx} (orb {a['orb']}, score {a['score']})")
+            
+            weaver_prompt = f"""
+You are The Weaver, an astrologer who sees the hidden connections in a chart. Your task is to synthesize the individual planetary analyses by interpreting ONLY the **eight** tightest aspects in the Sidereal chart overall. Note: Birth time is unknown, so house placements are unavailable.
+
+**Planetary & Point Analyses (Context Only):** (Briefly review the core meaning of bodies involved in the tightest aspects below if needed from this text block, but DO NOT reference this block directly in your output.)
+{combined_specialist_analysis} 
+
+**Top 8 Tightest Sidereal Aspects:**
+{'\n'.join(aspect_data_for_prompt) if aspect_data_for_prompt else "No aspects available."}
+
+**Aspect Patterns Detected:**
+{chr(10).join([f"- {p.get('description', '')}" for p in s_aspect_patterns]) if s_aspect_patterns else "No major aspect patterns detected."}
+
+**Your Task:**
+**Analyze Tightest Aspects:** For each of the **eight** tightest aspects listed above, write a dedicated, detailed paragraph (**8 paragraphs total**). Explain the dynamic it creates between the two bodies involved, referencing their signs as provided. Describe how this specific aspect energy is likely to manifest as a core life theme or psychological dynamic, representing a central challenge, strength, or unique characteristic for the individual. Focus on providing insightful interpretation for each aspect individually. If aspect patterns are listed, reference them where relevant. Output ONLY these 8 paragraphs, clearly separated.
+"""
+            weaver_analysis = await _run_gemini_prompt(weaver_prompt)
+            
+            # --- Step 6: Final Synthesis ---
+            storyteller_prompt = f"""
+You are The Synthesizer, an insightful astrological consultant who excels at weaving complex data into a clear and compelling narrative. Your skill is in explaining complex astrological data in a practical and grounded way. You will write a comprehensive, in-depth reading based *exclusively* on the structured analysis provided below. Your tone should be insightful and helpful, avoiding overly spiritual or "dreamy" language.
+
+**CRITICAL RULE:** Base your reading *only* on the analysis provided. Do not invent any placements, planets, signs, or aspects that are not explicitly listed in the analysis. **IMPORTANT: Birth time is unknown, so you must completely avoid mentioning the Ascendant, Midheaven (MC), Chart Ruler, or any House placements, as they are unknown and cannot be used.**
+
+**Provided Analysis:**
+---
+**ALIGNMENT MAP:**
+{cartographer_analysis}
+---
+**FOUNDATIONAL THEMES:**
+{architect_analysis}
+---
+**KARMIC PATH:**
+{navigator_analysis}
+---
+**PLANETARY & POINT DEEP DIVE (3 paragraphs per body):** {combined_specialist_analysis}
+---
+**TIGHTEST ASPECTS ANALYSIS (Top 8 Sidereal):**
+{weaver_analysis}
+---
+
+**Your Task:**
+Write a comprehensive analysis. Structure your response exactly as follows, using plain text headings without markdown.
+
+**Chart Overview and Core Themes**
+(Under this heading, write an in-depth interpretive introduction (minimum 4 paragraphs). Focus on clarity, depth, and insight—not just listing placements. Your task:
+1. Identify 5 core psychological or life themes based on the Foundational Themes, Nodes, Numerology, and Sidereal-Tropical contrasts.
+2. For each theme, explain it fully: how it arises, what internal tension or motivation it represents, and what its life lesson is.
+3. Draw explicitly from both the Sidereal and Tropical layers, showing how the soul path and personality expression either support or challenge each other.
+4. Integrate Numerology and Chinese Zodiac only if they reinforce the astrology—not as separate trivia.
+5. Avoid listing too many placements without explanation. Instead, choose a few powerful combinations (e.g., Sun/Moon, key aspects, nodal placements) and explain them in rich psychological detail.
+6. Use metaphors, examples, or hypothetical behaviors where appropriate to make each theme emotionally resonant and memorable.
+7. Ensure this overview is at least 700–900 words long. Prioritize depth over breadth.
+8. After presenting all 5 themes, conclude this section with a long, comprehensive paragraph (minimum 200 words) that synthesizes and summarizes how these five themes interconnect, complement, and sometimes challenge each other. Explain how they work together as a unified system to shape the individual's life path, personality development, and spiritual evolution. This summary should weave the themes into a cohesive narrative that shows the bigger picture of how these forces operate in harmony and tension throughout the person's life journey.)
+
+**Your Astrological Blueprint: Planets, Points, and Angles**
+(Under this heading, present the detailed analysis for each body. **For each body analyzed in the 'PLANETARY & POINT DEEP DIVE' section, you must present the THREE paragraphs (Sidereal Interpretation, Tropical Interpretation, Synthesis) exactly as they were generated.** Do not summarize or combine them. Ensure there is a clear separation between each body's section using a "--- BODY NAME ---" header and line breaks. Group them thematically: Luminaries (Sun, Moon), Personal Planets (Mercury, Venus, Mars), Generational Planets (Jupiter, Saturn, Uranus, Neptune, Pluto), Nodes (True Node, South Node), Major Asteroids (Chiron, Ceres, Pallas, Juno, Vesta, Lilith). Create smooth, one-sentence transitions between each body's analysis. **Remember: Do not mention houses, Ascendant, MC, or Chart Ruler as birth time is unknown.**)
+
+**Major Life Dynamics: The Tightest Aspects**
+(Under this heading, insert the complete, unedited text from the 'TIGHTEST ASPECTS ANALYSIS' section, containing the **8** detailed paragraphs about the top 8 Sidereal aspects.)
+
+**Summary and Key Takeaways**
+(Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. This section should be at least 500 words.)
+"""
+            final_reading = await _run_gemini_prompt(storyteller_prompt)
+            return final_reading
+            
+        except Exception as e:
+            logger.error(f"Error during multi-step Gemini reading (unknown time): {e}", exc_info=True)
+            raise Exception(f"An error occurred while generating the detailed AI reading: {e}")
 
 
     # --- Known Time - Multi-Step Process ---
@@ -651,23 +875,50 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
 
 def send_chart_email_via_sendgrid(pdf_bytes: bytes, recipient_email: str, subject: str, chart_name: str):
     """Send email with PDF attachment using SendGrid API."""
+    from datetime import datetime
+    
+    # Create log file path
+    log_file_path = "sendgrid_connection.log"
+    
+    def write_to_log(message: str, is_error: bool = False):
+        """Write message to both logger and log file."""
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_entry = f"[{timestamp}] {message}\n"
+        logger.info(message) if not is_error else logger.error(message)
+        try:
+            with open(log_file_path, "a", encoding="utf-8") as f:
+                f.write(log_entry)
+        except Exception as log_error:
+            logger.error(f"Failed to write to log file: {log_error}")
+    
+    write_to_log("="*60)
+    write_to_log("SendGrid Email Sending Attempt")
+    write_to_log("="*60)
+    
     if not SENDGRID_API_KEY:
-        logger.error("SendGrid API key not configured. Cannot send email.")
+        error_msg = "SendGrid API key not configured. Cannot send email."
+        write_to_log(error_msg, is_error=True)
+        write_to_log(f"  SENDGRID_API_KEY value: {SENDGRID_API_KEY}")
+        write_to_log(f"  SENDGRID_API_KEY length: {len(SENDGRID_API_KEY) if SENDGRID_API_KEY else 0}")
         return False
     
     if not SENDGRID_FROM_EMAIL:
-        logger.error("SendGrid FROM email not configured. Cannot send email.")
+        error_msg = "SendGrid FROM email not configured. Cannot send email."
+        write_to_log(error_msg, is_error=True)
+        write_to_log(f"  SENDGRID_FROM_EMAIL value: {SENDGRID_FROM_EMAIL}")
         return False
     
-    logger.info(f"Preparing to send email via SendGrid")
-    logger.info(f"  From: {SENDGRID_FROM_EMAIL}")
-    logger.info(f"  To: {recipient_email}")
-    logger.info(f"  Subject: {subject}")
-    logger.info(f"  Chart name: {chart_name}")
-    logger.info(f"  PDF size: {len(pdf_bytes)} bytes")
+    write_to_log(f"SendGrid Configuration Check:")
+    write_to_log(f"  API Key present: Yes (length: {len(SENDGRID_API_KEY)} characters)")
+    write_to_log(f"  From Email: {SENDGRID_FROM_EMAIL}")
+    write_to_log(f"  To Email: {recipient_email}")
+    write_to_log(f"  Subject: {subject}")
+    write_to_log(f"  Chart name: {chart_name}")
+    write_to_log(f"  PDF size: {len(pdf_bytes)} bytes")
 
     try:
         # Create email message
+        write_to_log("Creating email message object...")
         message = Mail(
             from_email=SENDGRID_FROM_EMAIL,
             to_emails=recipient_email,
@@ -690,8 +941,10 @@ def send_chart_email_via_sendgrid(pdf_bytes: bytes, recipient_email: str, subjec
             </html>
             """
         )
+        write_to_log("Email message object created successfully")
         
         # Attach PDF
+        write_to_log("Encoding PDF attachment...")
         encoded_pdf = base64.b64encode(pdf_bytes).decode()
         attachment = Attachment(
             FileContent(encoded_pdf),
@@ -700,38 +953,79 @@ def send_chart_email_via_sendgrid(pdf_bytes: bytes, recipient_email: str, subjec
             Disposition('attachment')
         )
         message.add_attachment(attachment)
+        write_to_log(f"PDF attachment added (encoded size: {len(encoded_pdf)} characters)")
         
-        logger.info(f"Initializing SendGrid client...")
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        logger.info(f"Sending email via SendGrid...")
-        response = sg.send(message)
-        logger.info(f"SendGrid response received: status_code={response.status_code}")
+        # Initialize SendGrid client
+        write_to_log("Initializing SendGrid client...")
+        try:
+            sg = SendGridAPIClient(SENDGRID_API_KEY)
+            write_to_log("SendGrid client initialized successfully")
+        except Exception as init_error:
+            error_msg = f"Failed to initialize SendGrid client: {type(init_error).__name__}: {init_error}"
+            write_to_log(error_msg, is_error=True)
+            import traceback
+            write_to_log(f"Initialization traceback: {traceback.format_exc()}", is_error=True)
+            return False
         
-        if response.status_code in [200, 202]:
-            logger.info(f"Email with PDF sent successfully via SendGrid to {recipient_email} (status: {response.status_code})")
-            return True
-        else:
-            # Get response body properly - SendGrid response has body as bytes
-            try:
-                if hasattr(response, 'body'):
+        # Attempt to send email
+        write_to_log("Attempting to send email via SendGrid API...")
+        try:
+            response = sg.send(message)
+            write_to_log(f"SendGrid API call completed")
+            write_to_log(f"Response status code: {response.status_code}")
+            
+            # Log response details
+            if hasattr(response, 'headers'):
+                write_to_log(f"Response headers: {dict(response.headers)}")
+            if hasattr(response, 'body'):
+                try:
                     if isinstance(response.body, bytes):
                         response_body = response.body.decode('utf-8')
                     else:
                         response_body = str(response.body)
-                else:
-                    response_body = f"No body attribute. Response: {response}"
-            except Exception as decode_error:
-                response_body = f"Error decoding response body: {decode_error}. Response object: {response}"
+                    write_to_log(f"Response body: {response_body[:500]}")  # First 500 chars
+                except Exception as decode_error:
+                    write_to_log(f"Could not decode response body: {decode_error}")
             
-            logger.error(f"SendGrid returned non-success status: {response.status_code}")
-            logger.error(f"SendGrid response body: {response_body}")
-            logger.error(f"SendGrid response headers: {getattr(response, 'headers', 'N/A')}")
+            if response.status_code in [200, 202]:
+                success_msg = f"Email with PDF sent successfully via SendGrid to {recipient_email} (status: {response.status_code})"
+                write_to_log(success_msg)
+                write_to_log("="*60)
+                return True
+            else:
+                # Get response body properly - SendGrid response has body as bytes
+                try:
+                    if hasattr(response, 'body'):
+                        if isinstance(response.body, bytes):
+                            response_body = response.body.decode('utf-8')
+                        else:
+                            response_body = str(response.body)
+                    else:
+                        response_body = f"No body attribute. Response: {response}"
+                except Exception as decode_error:
+                    response_body = f"Error decoding response body: {decode_error}. Response object: {response}"
+                
+                error_msg = f"SendGrid returned non-success status: {response.status_code}"
+                write_to_log(error_msg, is_error=True)
+                write_to_log(f"SendGrid response body: {response_body}", is_error=True)
+                write_to_log(f"SendGrid response headers: {getattr(response, 'headers', 'N/A')}", is_error=True)
+                write_to_log("="*60)
+                return False
+                
+        except Exception as send_error:
+            error_msg = f"Exception during SendGrid send() call: {type(send_error).__name__}: {send_error}"
+            write_to_log(error_msg, is_error=True)
+            import traceback
+            write_to_log(f"Send error traceback: {traceback.format_exc()}", is_error=True)
+            write_to_log("="*60)
             return False
             
     except Exception as e:
-        logger.error(f"Error sending email via SendGrid to {recipient_email}: {e}", exc_info=True)
+        error_msg = f"Error sending email via SendGrid to {recipient_email}: {type(e).__name__}: {e}"
+        write_to_log(error_msg, is_error=True)
         import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
+        write_to_log(f"Full traceback: {traceback.format_exc()}", is_error=True)
+        write_to_log("="*60)
         return False
 
 

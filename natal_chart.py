@@ -322,17 +322,58 @@ class NatalChart:
         patterns: List[Dict[str, Any]] = []
         planets = {b.name: b for b in self.celestial_bodies if b.is_main_planet and b.degree is not None}; names = list(planets.keys())
         def find_aspect(p1, p2, type): return any(a.type == type and ((a.p1.name == p1 and a.p2.name == p2) or (a.p1.name == p2 and a.p2.name == p1)) for a in self.aspects)
+        
+        # T-Square detection
         if len(names) >= 3:
             for p1, p2, p3 in combinations(names, 3):
                 if find_aspect(p1, p2, 'Opposition') and find_aspect(p1, p3, 'Square') and find_aspect(p2, p3, 'Square'):
                     modalities = {MODALITY_MAPPING.get(planets[p].sign) for p in [p1, p2, p3]}; modality = modalities.pop() if len(modalities) == 1 else "Mixed"
                     self.aspect_patterns.append({"description": f"{p1} opp {p2}, focal {p3} ({modality} T-Square)"})
+        
+        # Sign stellium detection
         sign_groups = {};
         for name, p in planets.items(): sign_groups.setdefault(p.sign, []).append(name)
         for sign, members in sign_groups.items():
             if len(members) >= 3:
                 el = ELEMENT_MAPPING.get(sign, ''); mod = MODALITY_MAPPING.get(sign, '')
                 self.aspect_patterns.append({"description": f"{len(members)} bodies in {sign} ({el}, {mod} Sign Stellium)"})
+        
+        # House stellium detection (only if birth time is known)
+        if self.ascendant_data.get("sidereal_asc") is not None:
+            house_groups = {};
+            for name, p in planets.items():
+                if p.house_num > 0:  # Only count planets with valid house numbers
+                    house_groups.setdefault(p.house_num, []).append(name)
+            for house_num, members in house_groups.items():
+                if len(members) >= 3:
+                    self.aspect_patterns.append({"description": f"{len(members)} bodies in House {house_num} (House Stellium)"})
+        
+        # Grand Trine detection (3 planets forming trines to each other)
+        if len(names) >= 3:
+            for p1, p2, p3 in combinations(names, 3):
+                if find_aspect(p1, p2, 'Trine') and find_aspect(p1, p3, 'Trine') and find_aspect(p2, p3, 'Trine'):
+                    elements = {ELEMENT_MAPPING.get(planets[p].sign) for p in [p1, p2, p3]}
+                    element = elements.pop() if len(elements) == 1 else "Mixed"
+                    self.aspect_patterns.append({"description": f"{p1}, {p2}, {p3} ({element} Grand Trine)"})
+        
+        # Grand Cross detection (4 planets forming 2 oppositions and 4 squares)
+        if len(names) >= 4:
+            for p1, p2, p3, p4 in combinations(names, 4):
+                opp_count = sum([find_aspect(p1, p2, 'Opposition'), find_aspect(p3, p4, 'Opposition')])
+                square_count = sum([
+                    find_aspect(p1, p3, 'Square'), find_aspect(p1, p4, 'Square'),
+                    find_aspect(p2, p3, 'Square'), find_aspect(p2, p4, 'Square')
+                ])
+                if opp_count >= 2 and square_count >= 4:
+                    modalities = {MODALITY_MAPPING.get(planets[p].sign) for p in [p1, p2, p3, p4]}
+                    modality = modalities.pop() if len(modalities) == 1 else "Mixed"
+                    self.aspect_patterns.append({"description": f"{p1}, {p2}, {p3}, {p4} ({modality} Grand Cross)"})
+        
+        # Yod detection (2 planets in sextile, both quincunx a third)
+        if len(names) >= 3:
+            for p1, p2, p3 in combinations(names, 3):
+                if find_aspect(p1, p2, 'Sextile') and find_aspect(p1, p3, 'Quincunx') and find_aspect(p2, p3, 'Quincunx'):
+                    self.aspect_patterns.append({"description": f"{p1} sextile {p2}, both quincunx {p3} (Yod)"})
     def _calculate_house_sign_distributions(self) -> None:
         asc = self.ascendant_data.get("sidereal_asc")
         if asc is None: return
@@ -379,12 +420,16 @@ class NatalChart:
         names = list(planets.keys())
         def find_aspect(p1, p2, type): 
             return any(a.type == type and ((a.p1.name == p1 and a.p2.name == p2) or (a.p1.name == p2 and a.p2.name == p1)) for a in self.tropical_aspects)
+        
+        # T-Square detection
         if len(names) >= 3:
             for p1, p2, p3 in combinations(names, 3):
                 if find_aspect(p1, p2, 'Opposition') and find_aspect(p1, p3, 'Square') and find_aspect(p2, p3, 'Square'):
                     modalities = {MODALITY_MAPPING.get(planets[p].sign) for p in [p1, p2, p3]}
                     modality = modalities.pop() if len(modalities) == 1 else "Mixed"
                     self.tropical_aspect_patterns.append({"description": f"{p1} opp {p2}, focal {p3} ({modality} T-Square)"})
+        
+        # Sign stellium detection
         sign_groups = {}
         for name, p in planets.items():
             sign_groups.setdefault(p.sign, []).append(name)
@@ -393,6 +438,43 @@ class NatalChart:
                 el = ELEMENT_MAPPING.get(sign, '')
                 mod = MODALITY_MAPPING.get(sign, '')
                 self.tropical_aspect_patterns.append({"description": f"{len(members)} bodies in {sign} ({el}, {mod} Sign Stellium)"})
+        
+        # House stellium detection (only if birth time is known)
+        if self.ascendant_data.get("tropical_asc") is not None:
+            house_groups = {};
+            for name, p in planets.items():
+                if p.house_num > 0:  # Only count planets with valid house numbers
+                    house_groups.setdefault(p.house_num, []).append(name)
+            for house_num, members in house_groups.items():
+                if len(members) >= 3:
+                    self.tropical_aspect_patterns.append({"description": f"{len(members)} bodies in House {house_num} (House Stellium)"})
+        
+        # Grand Trine detection (3 planets forming trines to each other)
+        if len(names) >= 3:
+            for p1, p2, p3 in combinations(names, 3):
+                if find_aspect(p1, p2, 'Trine') and find_aspect(p1, p3, 'Trine') and find_aspect(p2, p3, 'Trine'):
+                    elements = {ELEMENT_MAPPING.get(planets[p].sign) for p in [p1, p2, p3]}
+                    element = elements.pop() if len(elements) == 1 else "Mixed"
+                    self.tropical_aspect_patterns.append({"description": f"{p1}, {p2}, {p3} ({element} Grand Trine)"})
+        
+        # Grand Cross detection (4 planets forming 2 oppositions and 4 squares)
+        if len(names) >= 4:
+            for p1, p2, p3, p4 in combinations(names, 4):
+                opp_count = sum([find_aspect(p1, p2, 'Opposition'), find_aspect(p3, p4, 'Opposition')])
+                square_count = sum([
+                    find_aspect(p1, p3, 'Square'), find_aspect(p1, p4, 'Square'),
+                    find_aspect(p2, p3, 'Square'), find_aspect(p2, p4, 'Square')
+                ])
+                if opp_count >= 2 and square_count >= 4:
+                    modalities = {MODALITY_MAPPING.get(planets[p].sign) for p in [p1, p2, p3, p4]}
+                    modality = modalities.pop() if len(modalities) == 1 else "Mixed"
+                    self.tropical_aspect_patterns.append({"description": f"{p1}, {p2}, {p3}, {p4} ({modality} Grand Cross)"})
+        
+        # Yod detection (2 planets in sextile, both quincunx a third)
+        if len(names) >= 3:
+            for p1, p2, p3 in combinations(names, 3):
+                if find_aspect(p1, p2, 'Sextile') and find_aspect(p1, p3, 'Quincunx') and find_aspect(p2, p3, 'Quincunx'):
+                    self.tropical_aspect_patterns.append({"description": f"{p1} sextile {p2}, both quincunx {p3} (Yod)"})
     
     def _analyze_tropical_dominance(self) -> None:
         """Analyze dominance in tropical chart."""
