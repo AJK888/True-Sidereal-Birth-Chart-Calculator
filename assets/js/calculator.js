@@ -216,7 +216,7 @@ const AstrologyCalculator = {
 				this.geminiOutput.innerHTML = `
 					<div style="padding: 20px; background-color: #f0f7ff; border-left: 4px solid #1b6ca8; margin-bottom: 15px;">
 						<h3 style="margin-top: 0; color: #1b6ca8;">⏳ ${message}</h3>
-						<p style="margin-bottom: 10px; color: #2c3e50;"><strong>Estimated time:</strong> ${estimatedTime}</p>
+						<p style="margin-bottom: 10px; color: #2c3e50;"><strong style="color: #2c3e50;">Estimated time:</strong> ${estimatedTime}</p>
 						<p style="margin-bottom: 0; color: #2c3e50;">${instructions}</p>
 						${email ? `<p style="margin-top: 10px; font-size: 0.9em; color: #34495e;">Your reading will be sent to: <strong style="color: #1b6ca8;">${email}</strong></p>` : ''}
 						<p id="pollingStatus" style="margin-top: 10px; font-size: 0.85em; color: #666; font-style: italic;">Checking for completed reading...</p>
