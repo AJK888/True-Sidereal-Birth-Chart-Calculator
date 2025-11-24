@@ -301,8 +301,13 @@ const AstrologyCalculator = {
 	copyReadingToClipboard() {
         if (!this.geminiOutput) return;
 
-        // Convert <br> back to newlines for plain text copy
-        const textToCopy = this.geminiOutput.innerHTML.replace(/<br\s*\/?>/gi, '\n'); 
+        // Create a temporary div to decode HTML entities
+        const tempDiv = document.createElement('div');
+        // Convert <br> tags to newlines first, then decode HTML entities
+        const htmlWithNewlines = this.geminiOutput.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+        tempDiv.innerHTML = htmlWithNewlines;
+        // textContent automatically decodes HTML entities (&lt; -> <, &gt; -> >, &amp; -> &, etc.)
+        const textToCopy = tempDiv.textContent || tempDiv.innerText || '';
 
         const textArea = document.createElement('textarea');
         textArea.value = textToCopy;
