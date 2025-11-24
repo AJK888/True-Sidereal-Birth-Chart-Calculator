@@ -18,6 +18,8 @@ const AstrologyCalculator = {
 		this.addEventListeners();
 		// Email is now required - ensure it's set as required
 		this.ensureEmailRequired();
+		// Initialize polling interval tracker
+		this.pollingInterval = null;
 	},
 
 	ensureEmailRequired() {
@@ -209,6 +211,7 @@ const AstrologyCalculator = {
 				const instructions = readingResult.instructions || "You can safely close this page - your reading will be sent to your email when ready.";
 				const estimatedTime = readingResult.estimated_time || "up to 15 minutes";
 				const email = readingResult.email || "your email";
+				const chartHash = readingResult.chart_hash;
 				
 				this.geminiOutput.innerHTML = `
 					<div style="padding: 20px; background-color: #f0f7ff; border-left: 4px solid #1b6ca8; margin-bottom: 15px;">
@@ -216,10 +219,16 @@ const AstrologyCalculator = {
 						<p style="margin-bottom: 10px; color: #2c3e50;"><strong>Estimated time:</strong> ${estimatedTime}</p>
 						<p style="margin-bottom: 0; color: #2c3e50;">${instructions}</p>
 						${email ? `<p style="margin-top: 10px; font-size: 0.9em; color: #34495e;">Your reading will be sent to: <strong style="color: #1b6ca8;">${email}</strong></p>` : ''}
+						<p id="pollingStatus" style="margin-top: 10px; font-size: 0.85em; color: #666; font-style: italic;">Checking for completed reading...</p>
 					</div>
 				`;
 				if (this.copyReadingBtn) {
 					this.copyReadingBtn.style.display = 'none'; // Hide copy button while processing
+				}
+				
+				// Start polling for the completed reading if we have a chart hash
+				if (chartHash) {
+					this.startPollingForReading(chartHash);
 				}
 				return; // Exit early after showing processing message
 			} else if (readingResult && readingResult.gemini_reading) {
@@ -263,6 +272,83 @@ const AstrologyCalculator = {
 		} finally {
             this.setLoadingState(false); // Stop loading indicator here
         }
+	},
+
+	startPollingForReading(chartHash) {
+		// Clear any existing polling interval
+		if (this.pollingInterval) {
+			clearInterval(this.pollingInterval);
+		}
+		
+		let pollCount = 0;
+		const maxPolls = 180; // Poll for up to 15 minutes (180 * 5 seconds = 15 minutes)
+		const pollInterval = 5000; // Poll every 5 seconds
+		
+		const pollForReading = async () => {
+			pollCount++;
+			
+			try {
+				const response = await fetch(`${this.API_URLS.reading.replace('/generate_reading', '')}/get_reading/${chartHash}`);
+				
+				if (!response.ok) {
+					console.warn(`Polling attempt ${pollCount} failed with status: ${response.status}`);
+					if (pollCount >= maxPolls) {
+						this.stopPolling();
+						const statusEl = document.getElementById('pollingStatus');
+						if (statusEl) {
+							statusEl.textContent = "Reading generation is taking longer than expected. Please check your email.";
+						}
+					}
+					return;
+				}
+				
+				const result = await response.json();
+				
+				if (result.status === "completed" && result.reading) {
+					// Reading is ready!
+					this.stopPolling();
+					this.geminiOutput.innerHTML = result.reading.replace(/\n/g, '<br>');
+					if (this.copyReadingBtn) {
+						this.copyReadingBtn.style.display = 'inline-block'; // Show copy button
+					}
+					console.log("Reading successfully retrieved and displayed!");
+				} else {
+					// Still processing
+					const statusEl = document.getElementById('pollingStatus');
+					if (statusEl) {
+						const elapsedMinutes = Math.floor((pollCount * pollInterval) / 60000);
+						statusEl.textContent = `Still generating... (${elapsedMinutes} minutes elapsed)`;
+					}
+					
+					if (pollCount >= maxPolls) {
+						this.stopPolling();
+						if (statusEl) {
+							statusEl.textContent = "Reading generation is taking longer than expected. Please check your email.";
+						}
+					}
+				}
+			} catch (error) {
+				console.error(`Polling error (attempt ${pollCount}):`, error);
+				if (pollCount >= maxPolls) {
+					this.stopPolling();
+					const statusEl = document.getElementById('pollingStatus');
+					if (statusEl) {
+						statusEl.textContent = "Unable to check reading status. Please check your email.";
+					}
+				}
+			}
+		};
+		
+		// Start polling immediately, then every 5 seconds
+		pollForReading();
+		this.pollingInterval = setInterval(pollForReading, pollInterval);
+	},
+
+	stopPolling() {
+		if (this.pollingInterval) {
+			clearInterval(this.pollingInterval);
+			this.pollingInterval = null;
+		}
 	},
 
 	async loadAndDrawTransitChart() {
