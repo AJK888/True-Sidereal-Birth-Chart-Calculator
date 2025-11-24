@@ -618,15 +618,15 @@ Tone Guidelines:
 Write a comprehensive analysis. Structure your response exactly as follows, using plain text headings without markdown.
 
 **Snapshot: What Will Feel Most True About You**
-(Open the reading with 5–7 short bullet points. Each bullet must describe a concrete trait or pattern someone who knows this person well would instantly recognize. Avoid astrological jargon; speak directly to the reader in plain psychological/behavioral language using "you." These bullets should feel specific and uncanny, not generic.)
+(Open the reading with 7 short bullet points. Each bullet must describe a concrete trait or pattern someone who knows this person well would instantly recognize. Avoid astrological jargon; speak directly to the reader in plain psychological/behavioral language using "you." These bullets should feel specific and uncanny, not generic.)
 
-After the Snapshot, include a short 3–4 sentence paragraph that explains the birth time is unknown, so the interpretation focuses on sign-level and aspect-level patterns rather than precise houses or angles. Reassure the reader that the core psychological and karmic signatures remain accurate despite missing timing data. Keep this framing brief and non-technical.
+After the Snapshot, include a short 4 sentence paragraph that explains the birth time is unknown, so the interpretation focuses on sign-level and aspect-level patterns rather than precise houses or angles. Reassure the reader that the core psychological and karmic signatures remain accurate despite missing timing data. Keep this framing brief and non-technical.
 
 **Chart Overview and Core Themes**
 (Under this heading, write an in-depth interpretive introduction. Focus on clarity, depth, and insight—not just listing placements. Your task:
 1. Identify exactly 5 core psychological or life themes based on the Foundational Themes, Nodes, Numerology, and Sidereal-Tropical contrasts.
-2. Ensure the overview feels dense and focused: every sentence must add a fresh layer of meaning and avoid repetition. Aim for roughly 5–7 substantial paragraphs, prioritizing precision over length.
-3. For each theme, begin with 1–2 headline sentences in plain language that name the pattern clearly. Follow with 1–2 paragraphs explaining why this is true, referencing specific Sidereal, Tropical, nodal, aspect, and numerological signals. Do not re-explain the same idea across multiple themes.
+2. Ensure the overview feels dense and focused: every sentence must add a fresh layer of meaning and avoid repetition. Aim for roughly 7 substantial paragraphs, prioritizing precision over length.
+3. For each theme, begin with 2 headline sentences in plain language that name the pattern clearly. Follow with 2 paragraphs explaining why this is true, referencing specific Sidereal, Tropical, nodal, aspect, and numerological signals. Do not re-explain the same idea across multiple themes.
 4. When mentioning a pattern, briefly cite which placements or aspects support it (e.g., "This is reinforced by your Sun–Saturn square and dominant Earth emphasis") without turning sentences into long lists.
 5. Integrate Numerology or Chinese Zodiac only when they directly reinforce an existing astrological pattern. Do not introduce conflicts or detached numerology themes.
 6. After addressing all 5 themes, end this section with a cohesive synthesis paragraph that weaves the five themes together, highlighting how they interact to shape the life path.)
@@ -638,7 +638,7 @@ After the Snapshot, include a short 3–4 sentence paragraph that explains the b
 (Under this heading, insert the complete, unedited text from the 'TIGHTEST ASPECTS ANALYSIS' section, containing the **8** detailed paragraphs about the top 8 Sidereal aspects.)
 
 **Summary and Key Takeaways**
-(Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. Close this section with a short "Action Checklist" containing 5–7 bullet points. Each bullet must point to a concrete focus area or experiment that clearly connects back to themes/aspects discussed above. Avoid generic self-help cliches.)
+(Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. Close this section with a short "Action Checklist" containing 7 bullet points. Each bullet must point to a concrete focus area or experiment that clearly connects back to themes/aspects discussed above. Avoid generic self-help cliches.)
 """
             final_reading = await _run_gemini_prompt(storyteller_prompt)
             return final_reading
@@ -919,13 +919,13 @@ Tone Guidelines:
 Write a comprehensive analysis. Structure your response exactly as follows, using plain text headings without markdown.
 
 **Snapshot: What Will Feel Most True About You**
-(Open the reading with 5–7 short bullet points. Each bullet must describe a concrete trait or pattern someone who knows this person well would instantly recognize. Avoid astrological jargon; speak directly to the reader in plain psychological/behavioral language using "you." These bullets should feel specific and uncanny, not generic.)
+(Open the reading with 7 short bullet points. Each bullet must describe a concrete trait or pattern someone who knows this person well would instantly recognize. Avoid astrological jargon; speak directly to the reader in plain psychological/behavioral language using "you." These bullets should feel specific and uncanny, not generic.)
 
 **Chart Overview and Core Themes**
 (Under this heading, write an in-depth interpretive introduction. Focus on clarity, depth, and insight—not just listing placements. Your task:
 1. Identify exactly 5 core psychological or life themes based on the Foundational Themes, Nodes, Numerology, Ascendant contrast, and house context.
-2. Ensure the overview feels dense and focused: every sentence must add a fresh layer of meaning and avoid repetition. Aim for roughly 5–7 substantial paragraphs, prioritizing precision over length.
-3. For each theme, begin with 1–2 headline sentences in plain language that name the pattern clearly. Follow with 1–2 paragraphs explaining why this is true, referencing specific Sidereal, Tropical, nodal, aspect, house, and numerological signals. Do not re-explain the same idea across multiple themes.
+2. Ensure the overview feels dense and focused: every sentence must add a fresh layer of meaning and avoid repetition. Aim for roughly 7 substantial paragraphs, prioritizing precision over length.
+3. For each theme, begin with 2 headline sentences in plain language that name the pattern clearly. Follow with 2 paragraphs explaining why this is true, referencing specific Sidereal, Tropical, nodal, aspect, house, and numerological signals. Do not re-explain the same idea across multiple themes.
 4. When mentioning a pattern, briefly cite which placements, houses, or aspects support it (e.g., "This is reinforced by your Sun–Saturn square, 10th-house emphasis, and dominant Earth element") without turning sentences into long lists.
 5. Integrate Numerology or Chinese Zodiac only when they directly reinforce an existing astrological pattern. Do not introduce conflicts or detached numerology themes.
 6. After addressing all 5 themes, end this section with a cohesive synthesis paragraph that weaves the five themes together, highlighting how they interact to shape the life path.)
@@ -937,7 +937,7 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
 (Under this heading, insert the complete, unedited text from the 'TIGHTEST ASPECTS ANALYSIS' section, containing the **8** detailed paragraphs about the top 8 Sidereal aspects.)
 
 **Summary and Key Takeaways**
-(Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. Close this section with a short "Action Checklist" containing 5–7 bullet points. Each bullet must point to a concrete focus area or experiment that clearly connects back to themes/aspects discussed above. Avoid generic self-help cliches.)
+(Under this heading, write a practical, empowering conclusion that summarizes the most important takeaways from the chart. Offer guidance on key areas for personal growth and self-awareness based *only* on the preceding analysis. Close this section with a short "Action Checklist" containing 7 bullet points. Each bullet must point to a concrete focus area or experiment that clearly connects back to themes/aspects discussed above. Avoid generic self-help cliches.)
 """
         final_reading = await _run_gemini_prompt(storyteller_prompt)
         # Error check removed
