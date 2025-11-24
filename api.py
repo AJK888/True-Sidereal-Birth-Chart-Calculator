@@ -101,6 +101,38 @@ async def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExc
 def ping():
     return {"message": "ok"}
 
+@app.get("/check_email_config")
+def check_email_config():
+    """Diagnostic endpoint to check SendGrid email configuration."""
+    config_status = {
+        "sendgrid_api_key": {
+            "configured": bool(SENDGRID_API_KEY),
+            "length": len(SENDGRID_API_KEY) if SENDGRID_API_KEY else 0,
+            "preview": f"{SENDGRID_API_KEY[:10]}..." if SENDGRID_API_KEY and len(SENDGRID_API_KEY) > 10 else "Not set"
+        },
+        "sendgrid_from_email": {
+            "configured": bool(SENDGRID_FROM_EMAIL),
+            "value": SENDGRID_FROM_EMAIL if SENDGRID_FROM_EMAIL else "Not set"
+        },
+        "admin_email": {
+            "configured": bool(ADMIN_EMAIL),
+            "value": ADMIN_EMAIL if ADMIN_EMAIL else "Not set"
+        },
+        "email_sending_ready": bool(SENDGRID_API_KEY and SENDGRID_FROM_EMAIL)
+    }
+    
+    # Log the configuration check
+    logger.info("="*60)
+    logger.info("Email Configuration Check")
+    logger.info("="*60)
+    logger.info(f"SENDGRID_API_KEY configured: {config_status['sendgrid_api_key']['configured']} (length: {config_status['sendgrid_api_key']['length']})")
+    logger.info(f"SENDGRID_FROM_EMAIL configured: {config_status['sendgrid_from_email']['configured']} (value: {config_status['sendgrid_from_email']['value']})")
+    logger.info(f"ADMIN_EMAIL configured: {config_status['admin_email']['configured']} (value: {config_status['admin_email']['value']})")
+    logger.info(f"Email sending ready: {config_status['email_sending_ready']}")
+    logger.info("="*60)
+    
+    return config_status
+
 # --- Pydantic Models ---
 class ChartRequest(BaseModel):
     full_name: str
@@ -1046,10 +1078,14 @@ async def send_emails_in_background(chart_data: Dict, gemini_reading: str, user_
         
         # Validate SendGrid configuration
         if not SENDGRID_API_KEY:
-            logger.error("SENDGRID_API_KEY is not set. Cannot send emails.")
+            error_msg = "❌ SENDGRID_API_KEY is not set. Cannot send emails. Please set this environment variable in Render."
+            logger.error(error_msg)
+            logger.error("="*60)
             return
         if not SENDGRID_FROM_EMAIL:
-            logger.error("SENDGRID_FROM_EMAIL is not set. Cannot send emails.")
+            error_msg = "❌ SENDGRID_FROM_EMAIL is not set. Cannot send emails. Please set this environment variable in Render."
+            logger.error(error_msg)
+            logger.error("="*60)
             return
 
         # Generate PDF report
