@@ -410,6 +410,150 @@ async def _run_gemini_prompt(prompt_text: str) -> tuple[str, dict]:
         raise Exception(error_message)
 
 
+def _sign_from_position(pos: str | None) -> str | None:
+    """Extract sign from a position string like '12°34' Virgo'."""
+    if not pos or pos == "N/A":
+        return None
+    parts = pos.split()
+    return parts[-1] if parts else None
+
+
+def get_quick_highlights(chart_data: dict, unknown_time: bool) -> str:
+    """
+    Generate quick highlights from chart data without using AI.
+    Returns a plain text string with bullet points about key chart features.
+    """
+    # Prepare lookups
+    s_pos = {p["name"]: p for p in chart_data.get("sidereal_major_positions", [])}
+    t_pos = {p["name"]: p for p in chart_data.get("tropical_major_positions", [])}
+    s_extra = {p["name"]: p for p in chart_data.get("sidereal_additional_points", [])}
+    t_extra = {p["name"]: p for p in chart_data.get("tropical_additional_points", [])}
+    s_analysis = chart_data.get("sidereal_chart_analysis", {}) or {}
+    t_analysis = chart_data.get("tropical_chart_analysis", {}) or {}
+    numerology = chart_data.get("numerology_analysis", {}) or {}
+    
+    lines = []
+    
+    # Identity triad line (Sun, Moon, Asc)
+    sun_s = _sign_from_position(s_pos.get("Sun", {}).get("position"))
+    sun_t = _sign_from_position(t_pos.get("Sun", {}).get("position"))
+    moon_s = _sign_from_position(s_pos.get("Moon", {}).get("position"))
+    moon_t = _sign_from_position(t_pos.get("Moon", {}).get("position"))
+    
+    if not unknown_time:
+        asc_s = _sign_from_position(s_pos.get("Ascendant", {}).get("position"))
+        asc_t = _sign_from_position(t_pos.get("Ascendant", {}).get("position"))
+    else:
+        asc_s = asc_t = None
+    
+    headline_parts = []
+    if sun_s:
+        headline_parts.append(f"Sidereal Sun in {sun_s}")
+    if sun_t:
+        headline_parts.append(f"Tropical Sun in {sun_t}")
+    if moon_s:
+        headline_parts.append(f"Sidereal Moon in {moon_s}")
+    if moon_t:
+        headline_parts.append(f"Tropical Moon in {moon_t}")
+    if not unknown_time and asc_s:
+        headline_parts.append(f"Sidereal Ascendant in {asc_s}")
+    if not unknown_time and asc_t:
+        headline_parts.append(f"Tropical Ascendant in {asc_t}")
+    
+    if headline_parts:
+        lines.append(" • " + " | ".join(headline_parts))
+    
+    # Dominant element & planet
+    dom_elem_s = s_analysis.get("dominant_element")
+    dom_planet_s = s_analysis.get("dominant_planet")
+    
+    if dom_elem_s or dom_planet_s:
+        text = "You have a strong "
+        if dom_elem_s:
+            text += dom_elem_s.lower() + " emphasis"
+        if dom_elem_s and dom_planet_s:
+            text += " and a "
+        if dom_planet_s:
+            text += f"{dom_planet_s} signature"
+        text += ", which shapes how you instinctively move through life."
+        lines.append(" • " + text)
+    
+    # Nodal / life direction headline
+    nn_pos = s_pos.get("True Node", {}) or {}
+    nn_sign = _sign_from_position(nn_pos.get("position"))
+    
+    if nn_sign:
+        lines.append(
+            f" • Your Sidereal North Node in {nn_sign} points to a lifetime of growing into the qualities of that sign."
+        )
+    
+    # Numerology quick hook
+    life_path = numerology.get("life_path_number")
+    if life_path:
+        lines.append(
+            f" • Life Path {life_path} adds a repeating lesson about how you define success and meaning in this life."
+        )
+    
+    # One or two strongest aspects
+    aspects = chart_data.get("sidereal_aspects", []) or []
+    if aspects:
+        def _parse_aspect_score(score_val):
+            """Convert score string to float."""
+            if isinstance(score_val, (int, float)):
+                return float(score_val)
+            if isinstance(score_val, str):
+                try:
+                    return float(score_val)
+                except (ValueError, TypeError):
+                    return 0.0
+            return 0.0
+        
+        def _parse_aspect_orb(orb_val):
+            """Convert orb string (e.g., '2.34°') to float."""
+            if isinstance(orb_val, (int, float)):
+                return abs(float(orb_val))
+            if isinstance(orb_val, str):
+                try:
+                    # Remove degree symbol and any whitespace, then convert
+                    orb_clean = orb_val.replace('°', '').strip()
+                    return abs(float(orb_clean))
+                except (ValueError, TypeError):
+                    return 999.0
+            return 999.0
+        
+        aspects_sorted = sorted(
+            aspects,
+            key=lambda a: (-_parse_aspect_score(a.get("score", 0)), _parse_aspect_orb(a.get("orb", 999)))
+        )
+        top_aspects = aspects_sorted[:2]
+        
+        for a in top_aspects:
+            p1 = a.get("p1_name", "Body 1")
+            p2 = a.get("p2_name", "Body 2")
+            atype = a.get("type", "aspect")
+            atype_lower = atype.lower() if atype else ""
+            
+            if atype_lower in ("conjunction", "trine", "sextile"):
+                vibe = "natural talent or ease"
+            elif atype_lower in ("square", "opposition"):
+                vibe = "core tension you are learning to work with"
+            else:
+                vibe = "distinct pattern in your personality"
+            
+            lines.append(
+                f" • {p1} {atype} {p2} marks a {vibe} that keeps showing up across your life."
+            )
+    
+    # Fallback if nothing available
+    if not lines:
+        return "Quick highlights are unavailable for this chart."
+    
+    # Return final text
+    intro = "Quick Highlights From Your Chart"
+    body = "\n".join(lines)
+    return f"{intro}\n{body}"
+
+
 async def get_gemini_reading(chart_data: dict, unknown_time: bool) -> str:
     if not GEMINI_API_KEY:
         # Raise exception instead of returning error string
@@ -1490,6 +1634,14 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
         chinese_zodiac = get_chinese_zodiac_and_element(data.year, data.month, data.day)
         
         full_response = chart.get_full_chart_data(numerology, name_numerology, chinese_zodiac, data.unknown_time)
+        
+        # Add quick highlights to the response
+        try:
+            quick_highlights = get_quick_highlights(full_response, data.unknown_time)
+            full_response["quick_highlights"] = quick_highlights
+        except Exception as e:
+            logger.warning(f"Could not generate quick highlights: {e}")
+            full_response["quick_highlights"] = "Quick highlights are unavailable for this chart."
             
         return full_response
 

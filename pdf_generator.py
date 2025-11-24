@@ -203,16 +203,21 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     """
     buffer = io.BytesIO()
     
+    # Track sections for table of contents
+    toc_sections = []
+    current_page = [1]  # Use list to allow modification in nested function
+    
     # Custom page template for page numbers
     def add_page_number(canvas_obj, doc):
         """Add page numbers to each page."""
         page_num = canvas_obj.getPageNumber()
+        current_page[0] = page_num
         text = f"Page {page_num}"
         canvas_obj.saveState()
         canvas_obj.setFont('Helvetica', 9)
         canvas_obj.setFillColor(colors.HexColor('#666666'))
-        # Position at bottom center
-        canvas_obj.drawCentredString(letter[0] / 2.0, 0.5*inch, text)
+        # Position at bottom right
+        canvas_obj.drawRightString(letter[0] - 0.75*inch, 0.5*inch, text)
         canvas_obj.restoreState()
     
     doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.75*inch, bottomMargin=1.0*inch,
@@ -298,6 +303,26 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         bulletIndent=10
     )
     
+    toc_title_style = ParagraphStyle(
+        'TocTitle',
+        parent=styles['Heading1'],
+        fontSize=22,
+        textColor=colors.HexColor('#1b263b'),
+        alignment=TA_CENTER,
+        spaceAfter=20
+    )
+    
+    toc_item_style = ParagraphStyle(
+        'TocItem',
+        parent=styles['BodyText'],
+        fontSize=11,
+        textColor=colors.HexColor('#333333'),
+        leading=14,
+        alignment=TA_LEFT,
+        spaceAfter=6,
+        leftIndent=0
+    )
+    
     story = []
     
     # Cover page
@@ -323,7 +348,29 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     
     story.append(PageBreak())
     
+    # Table of Contents
+    story.append(Paragraph("Table of Contents", toc_title_style))
+    story.append(Spacer(1, 0.3*inch))
+    
+    # TOC items - we'll track actual page numbers as we build
+    toc_items = [
+        "Chart Overview",
+        "AI Astrological Synthesis",
+        "Glossary",
+        "Full Astrological Data"
+    ]
+    
+    # Add TOC items (page numbers will be approximate/placeholder)
+    # Note: Exact page numbers require a two-pass build, so we'll use section order
+    for i, item in enumerate(toc_items, start=3):  # Start at page 3 (after cover and TOC)
+        # Create a simple TOC entry
+        toc_text = f"{item} ................ {i}"
+        story.append(Paragraph(toc_text, toc_item_style))
+    
+    story.append(PageBreak())
+    
     # Chart overview section
+    toc_sections.append(("Chart Overview", 3))  # Track for reference
     story.append(Paragraph("Chart Overview", section_heading_style))
     
     if user_inputs.get('full_name'):
@@ -377,6 +424,7 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     story.append(PageBreak())
     
     # AI Astrological Synthesis
+    toc_sections.append(("AI Astrological Synthesis", 4))  # Track for reference
     story.append(Paragraph("AI Astrological Synthesis", section_heading_style))
     story.append(Spacer(1, 0.15*inch))
     
@@ -442,14 +490,19 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
                 matched_section = section
                 break
         
-        # Check if this looks like a heading
+        # Check if this looks like a heading (more strict criteria)
+        # Only treat as heading if:
+        # 1. It's a major section (already handled above)
+        # 2. It's very short (under 60 chars), ALL CAPS, and doesn't end with punctuation
+        # 3. It's wrapped in ** markers (markdown bold)
+        # 4. It's a short line (under 50 chars) with no punctuation and starts with capital
         is_heading = (
             is_major_section or
-            (len(line) < 80 and (
-                line.isupper() or 
-                line.startswith('**') and line.endswith('**') or
-                (line[0].isupper() and line.count(' ') < 5 and not line.endswith('.'))
-            ))
+            (len(line) < 60 and line.isupper() and not line.endswith(('.', '!', '?', ':', ';')) and line.count(' ') < 8) or
+            (line.startswith('**') and line.endswith('**') and len(line) < 100) or
+            (len(line) < 50 and line[0].isupper() and line.count(' ') < 4 and 
+             not line.endswith(('.', '!', '?', ':', ';', ',')) and
+             not any(char.isdigit() for char in line))  # Exclude lines with numbers
         )
         
         # Handle major section headers (with page breaks)
@@ -541,6 +594,7 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     story.append(PageBreak())
     
     # Glossary Section
+    toc_sections.append(("Glossary", None))  # Page number will vary
     story.append(Paragraph("Glossary", section_heading_style))
     story.append(Spacer(1, 0.2*inch))
     
@@ -569,6 +623,7 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     story.append(PageBreak())
     
     # Full Report Section
+    toc_sections.append(("Full Astrological Data", None))  # Page number will vary
     story.append(Paragraph("Full Astrological Data", section_heading_style))
     
     # Sidereal Report
