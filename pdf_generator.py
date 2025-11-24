@@ -408,29 +408,34 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         sidereal_png = svg_to_png(sidereal_svg, width=600, height=600)
         tropical_png = svg_to_png(tropical_svg, width=600, height=600)
         
-        # Create images (slightly smaller to fit within blue background with padding)
-        sidereal_img = Image(io.BytesIO(sidereal_png), width=2.9*inch, height=2.9*inch)
-        tropical_img = Image(io.BytesIO(tropical_png), width=2.9*inch, height=2.9*inch)
+        # Create images - sized to fit comfortably within blue background with adequate padding
+        # Image size: 2.8 inches (allows for 20 points padding on each side = 0.278 inches)
+        # Column width: 3.75 inches (provides 0.475 inches total padding per side)
+        sidereal_img = Image(io.BytesIO(sidereal_png), width=2.8*inch, height=2.8*inch)
+        tropical_img = Image(io.BytesIO(tropical_png), width=2.8*inch, height=2.8*inch)
         
         chart_table = Table([
             [Paragraph("<b>Sidereal</b>", body_style), Paragraph("<b>Tropical</b>", body_style)],
             [sidereal_img, tropical_img]
-        ], colWidths=[3.5*inch, 3.5*inch])
+        ], colWidths=[3.75*inch, 3.75*inch])
         
         blue_box = colors.HexColor('#102a43')
         chart_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('LEFTPADDING', (0, 1), (-1, 1), 15),
-            ('RIGHTPADDING', (0, 1), (-1, 1), 15),
-            ('TOPPADDING', (0, 1), (-1, 1), 15),
-            ('BOTTOMPADDING', (0, 1), (-1, 1), 15),
+            # Generous padding for image row to ensure charts are fully visible
+            ('LEFTPADDING', (0, 1), (-1, 1), 20),
+            ('RIGHTPADDING', (0, 1), (-1, 1), 20),
+            ('TOPPADDING', (0, 1), (-1, 1), 20),
+            ('BOTTOMPADDING', (0, 1), (-1, 1), 20),
+            # Header row padding
             ('LEFTPADDING', (0, 0), (-1, 0), 6),
             ('RIGHTPADDING', (0, 0), (-1, 0), 6),
             ('TOPPADDING', (0, 0), (-1, 0), 6),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            # Blue background for image row only
             ('BACKGROUND', (0, 1), (-1, 1), blue_box),
-            # Explicitly remove borders
+            # Explicitly remove all borders to prevent clipping
             ('LINEBELOW', (0, 0), (-1, -1), 0, colors.white),
             ('LINEABOVE', (0, 0), (-1, -1), 0, colors.white),
             ('LINEBEFORE', (0, 0), (-1, -1), 0, colors.white),
