@@ -49,6 +49,10 @@ SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL")  # Verified sender email in SendGrid
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")  # Admin email for receiving copies
 
+# --- Swiss Ephemeris configuration ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_SWISS_EPHEMERIS_PATH = os.path.join(BASE_DIR, "swiss_ephemeris")
+
 # --- Admin Secret Key for bypassing rate limit ---
 ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
 
@@ -1152,12 +1156,11 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
         logger.info("New chart request received", extra=log_data)
 
         # Ensure ephemeris files are accessible
-        ephe_path = os.getenv("SWEP_PATH", ".") # Allow overriding path via env var if needed
+        ephe_path = os.getenv("SWEP_PATH") or DEFAULT_SWISS_EPHEMERIS_PATH
         if not os.path.exists(ephe_path):
-             logger.warning(f"Ephemeris path '{ephe_path}' not found. Falling back to default.")
-             ephe_path = "." # Fallback just in case
-        # FIX: Remove .encode('utf-8') - pyswisseph expects a string path
-        swe.set_ephe_path(ephe_path) 
+            logger.warning(f"Ephemeris path '{ephe_path}' not found. Falling back to application root.")
+            ephe_path = BASE_DIR
+        swe.set_ephe_path(ephe_path)
 
         opencage_key = os.getenv("OPENCAGE_KEY")
         if not opencage_key:
