@@ -16,20 +16,21 @@ const AstrologyCalculator = {
 	init() {
 		this.cacheDOMElements();
 		this.addEventListeners();
-		this.updateEmailFieldAsOptional(); // Revert email field to optional
+		// Email is now required - ensure it's set as required
+		this.ensureEmailRequired();
 	},
 
-	updateEmailFieldAsOptional() {
+	ensureEmailRequired() {
         const emailInput = document.getElementById('userEmail');
         const emailLabel = document.querySelector('label[for="userEmail"]');
 
         if (emailInput) {
-            emailInput.required = false; // Make email optional again
+            emailInput.required = true; // Ensure email is required
         }
 
         if (emailLabel) {
-            // Updated text to reflect optional nature (email is used for sending PDF report)
-            emailLabel.innerHTML = 'Your Email <span class="field-note">Optional: To receive a copy of your chart via email.</span>';
+            // Updated text to reflect required nature
+            emailLabel.innerHTML = 'Your Email <span class="field-note">Required: Your comprehensive reading will be sent to this email address.</span>';
         }
     },
 
@@ -180,14 +181,29 @@ const AstrologyCalculator = {
 			});
 
 			if (!readingRes.ok) {
-                const errorData = await readingRes.json().catch(() => ({ detail: 'AI Reading service failed to respond correctly.' }));
+                let errorData;
+                try {
+                    errorData = await readingRes.json();
+                } catch (jsonErr) {
+                    const text = await readingRes.text();
+                    console.error("Failed to parse error response as JSON:", text);
+                    errorData = { detail: 'AI Reading service failed to respond correctly.' };
+                }
                 throw new Error(errorData.detail || 'AI Reading service failed.');
             }
 
-			const readingResult = await readingRes.json();
+			let readingResult;
+			try {
+				readingResult = await readingRes.json();
+				console.log("Reading response received:", readingResult); // Debug log
+			} catch (jsonErr) {
+				const text = await readingRes.text();
+				console.error("Failed to parse response as JSON:", text);
+				throw new Error("Invalid response format from server. Please try again.");
+			}
             
 			// Check if this is the new async processing response
-			if (readingResult.status === "processing") {
+			if (readingResult && readingResult.status === "processing") {
 				// Display the processing message with instructions
 				const message = readingResult.message || "Your comprehensive astrology reading is being generated.";
 				const instructions = readingResult.instructions || "You can safely close this page - your reading will be sent to your email when ready.";
@@ -205,22 +221,42 @@ const AstrologyCalculator = {
 				if (this.copyReadingBtn) {
 					this.copyReadingBtn.style.display = 'none'; // Hide copy button while processing
 				}
-			} else if (readingResult.gemini_reading) {
+				return; // Exit early after showing processing message
+			} else if (readingResult && readingResult.gemini_reading) {
 				// Legacy format: reading is immediately available
 				this.geminiOutput.innerHTML = readingResult.gemini_reading.replace(/\n/g, '<br>');
 				if (this.copyReadingBtn) {
 					this.copyReadingBtn.style.display = 'inline-block'; // Show copy button
 				}
 			} else {
-				// No reading available
-				this.geminiOutput.innerHTML = "The AI reading could not be generated at this time.";
+				// No reading available - log for debugging
+				console.warn("Unexpected response format:", readingResult);
+				console.warn("Response status:", readingResult?.status);
+				console.warn("Has gemini_reading:", !!readingResult?.gemini_reading);
+				
+				// Check if there's an error message in the response
+				if (readingResult && readingResult.detail) {
+					this.geminiOutput.innerHTML = `<div style="padding: 15px; background-color: #fee; border-left: 4px solid #e53e3e; color: #c33;">
+						<strong>Error:</strong> ${readingResult.detail}
+					</div>`;
+				} else {
+					this.geminiOutput.innerHTML = "The AI reading could not be generated at this time.";
+				}
 				if (this.copyReadingBtn) {
 					this.copyReadingBtn.style.display = 'none'; // Hide copy button
 				}
 			}
 
 		} catch (err) {
-			this.geminiOutput.innerText = "Error: The AI reading is currently unavailable. " + err.message;
+			console.error("Error in fetchAndDisplayAIReading:", err);
+			console.error("Error details:", {
+				message: err.message,
+				stack: err.stack,
+				name: err.name
+			});
+			this.geminiOutput.innerHTML = `<div style="padding: 15px; background-color: #fee; border-left: 4px solid #e53e3e; color: #c33;">
+				<strong>Error:</strong> The AI reading is currently unavailable. ${err.message}
+			</div>`;
             if (this.copyReadingBtn) {
                 this.copyReadingBtn.style.display = 'none'; // Hide copy button on error
             }
