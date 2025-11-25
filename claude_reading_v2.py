@@ -11,9 +11,6 @@ import json
 import os
 from typing import Dict, Any
 
-# Import shared components from api.py
-from api import LLMClient, calculate_claude_cost, AI_MODE, CLAUDE_API_KEY
-
 # Import chart serialization and schema utilities
 from llm_schemas import (
     GlobalReadingBlueprint,
@@ -25,13 +22,35 @@ from llm_schemas import (
 # Setup logger
 logger = logging.getLogger(__name__)
 
+# Lazy imports to avoid circular dependency
+# These will be imported inside functions that need them
+def _get_llm_client():
+    """Lazy import of LLMClient to avoid circular dependency."""
+    from api import LLMClient
+    return LLMClient
+
+def _get_calculate_claude_cost():
+    """Lazy import of calculate_claude_cost to avoid circular dependency."""
+    from api import calculate_claude_cost
+    return calculate_claude_cost
+
+def _get_ai_mode():
+    """Lazy import of AI_MODE to avoid circular dependency."""
+    from api import AI_MODE
+    return AI_MODE
+
+def _get_claude_api_key():
+    """Lazy import of CLAUDE_API_KEY to avoid circular dependency."""
+    from api import CLAUDE_API_KEY
+    return CLAUDE_API_KEY
+
 
 # ============================================================================
 # Call 0: Global Blueprint
 # ============================================================================
 
 async def call0_global_blueprint(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     unknown_time: bool
@@ -124,7 +143,7 @@ Output ONLY the JSON object. Start with {{ and end with }}."""
 # ============================================================================
 
 async def call1_cover_and_orientation(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any],
@@ -184,7 +203,7 @@ Use plain text headings (no markdown). Do not interpret specific placements yet.
 
 
 async def call2_chart_overview_and_core_themes(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any],
@@ -254,7 +273,7 @@ Use plain text headings (no markdown)."""
 
 
 async def call3_foundational_pillars(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any],
@@ -311,7 +330,7 @@ For each planet, include concrete behavioral examples. Use plain text headings (
 
 
 async def call4_personal_planets(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any],
@@ -358,7 +377,7 @@ Emphasize concrete behavioral examples. Use plain text headings (no markdown).""
 
 
 async def call5_social_planets(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any],
@@ -403,7 +422,7 @@ Emphasize how expansion (Jupiter) and discipline (Saturn) interact in both soul-
 
 
 async def call6_outer_and_nodes(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any],
@@ -453,7 +472,7 @@ Use plain text headings (no markdown)."""
 
 
 async def call7_houses_and_domains(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any],
@@ -515,7 +534,7 @@ Use plain text headings (no markdown)."""
 
 
 async def call8_aspects_and_patterns(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any]
@@ -572,7 +591,7 @@ Use plain text headings (no markdown)."""
 
 
 async def call9_themes_love_and_relationships(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any],
@@ -621,7 +640,7 @@ Write several pages of detailed analysis. Use plain text headings (no markdown).
 
 
 async def call10_themes_work_money_vocation(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any],
@@ -671,7 +690,7 @@ Write several pages of detailed analysis. Use plain text headings (no markdown).
 
 
 async def call11_themes_emotional_family_healing(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any],
@@ -721,7 +740,7 @@ Write several pages of detailed analysis. Use plain text headings (no markdown).
 
 
 async def call12_themes_spiritual_path_meaning(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any],
@@ -771,7 +790,7 @@ Write several pages of detailed analysis. Use plain text headings (no markdown).
 
 
 async def call13_shadow_and_growth(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any]
@@ -834,7 +853,7 @@ Use plain text headings (no markdown)."""
 
 
 async def call14_timing_stub(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any]
@@ -856,7 +875,7 @@ To explore timing, consider consulting with an astrologer who can analyze curren
 
 
 async def call15_final_integration(
-    llm: LLMClient,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any]
@@ -924,7 +943,7 @@ Explicitly reference the life thesis and main axes throughout. Use plain text he
 # ============================================================================
 
 async def polish_section(
-    llm: LLMClient,
+    llm,
     section_text: str,
     section_label: str
 ) -> str:
@@ -975,6 +994,12 @@ async def get_claude_reading_v2(chart_data: dict, unknown_time: bool) -> str:
     - Polish each section individually
     - Combine into final reading
     """
+    # Lazy import to avoid circular dependency
+    AI_MODE = _get_ai_mode()
+    CLAUDE_API_KEY = _get_claude_api_key()
+    LLMClient = _get_llm_client()
+    calculate_claude_cost = _get_calculate_claude_cost()
+    
     if not CLAUDE_API_KEY and AI_MODE != "stub":
         logger.error("Claude API key not configured - AI reading unavailable")
         raise Exception("Claude API key not configured. AI reading is unavailable.")
