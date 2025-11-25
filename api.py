@@ -491,8 +491,9 @@ class LLMClient:
             
             # Make the API call
             # Try different model name formats - Anthropic may use different naming
-            # Common formats: claude-3-5-sonnet, claude-3-5-sonnet-20240620, claude-3-sonnet-20240229
-            claude_model = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet")  # Default to model without date suffix
+            # Common formats: claude-4-sonnet-latest, claude-3-5-sonnet, claude-3-sonnet-20240229
+            # Default to claude-4-sonnet-latest
+            claude_model = os.getenv("CLAUDE_MODEL", "claude-4-sonnet-latest")
             logger.info(f"[{call_label}] Using Claude model: {claude_model}")
             api_kwargs = {
                 "model": claude_model,
