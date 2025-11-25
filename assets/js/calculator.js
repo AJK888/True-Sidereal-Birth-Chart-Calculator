@@ -84,6 +84,17 @@ const AstrologyCalculator = {
 
 		try {
 			const chartData = await this.fetchChartData();
+			
+			// Store chart data globally for saving later
+			window.currentChartData = chartData;
+			window.currentUserInputs = {
+				full_name: this.form.querySelector("[name='fullName']").value,
+				birth_date: this.form.querySelector("[name='birthDate']").value,
+				birth_time: this.form.querySelector("[name='birthTime']").value,
+				location: this.form.querySelector("[name='location']").value,
+				user_email: this.form.querySelector("[name='userEmail']").value
+			};
+			
 			this.displayInitialResults(chartData);
 			// Fetch and display AI reading directly on the page
 			await this.fetchAndDisplayAIReading(chartData);
@@ -425,6 +436,12 @@ const AstrologyCalculator = {
         if(this.copyReadingBtn) { // Hide copy button initially
             this.copyReadingBtn.style.display = 'none';
         }
+		
+		// Add save chart button if AuthManager is available
+		if (typeof AuthManager !== 'undefined') {
+			AuthManager.addSaveChartButton();
+			AuthManager.updateSaveChartButton(false);
+		}
 
 
 		const chartWheelsWrapper = document.querySelector('#results .chart-wheels-wrapper');
