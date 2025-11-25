@@ -301,97 +301,44 @@ pre {
 }
 
 /* ============================================================
-   8. AUTH BUTTONS & HEADER INTEGRATION
+   8. AUTH MENU INTEGRATION
    ============================================================ */
 
-.auth-buttons-container {
-    position: fixed;
-    top: 1rem;
-    right: 7rem; /* Increased to avoid overlapping menu button */
-    display: flex;
-    gap: 0.75rem;
-    z-index: 10001;
-    align-items: center;
+.auth-menu-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    margin-top: 1rem !important;
+    padding-top: 1rem !important;
 }
 
-.auth-btn {
-    padding: 0.5rem 1.25rem;
-    font-size: 0.85rem;
+.auth-menu-section .auth-menu-divider {
+    display: none; /* Hide the divider li, using border-top instead */
+}
+
+.auth-menu-section .auth-menu-user {
+    color: #9f7aea;
     font-weight: 600;
-    border-radius: 4px;
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    background: transparent;
-    color: #ffffff;
-    cursor: pointer;
-    transition: all 0.25s ease;
+    padding: 0.5rem 1.5rem;
+    font-size: 0.9em;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
 }
 
-.auth-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: #ffffff;
+.auth-menu-section a i {
+    margin-right: 0.5rem;
+    width: 1.25em;
+    text-align: center;
 }
 
-.auth-btn.primary {
-    background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
-    border-color: #9f7aea;
+.auth-menu-section a[id="registerBtn"] {
+    color: #9f7aea;
 }
 
-.auth-btn.primary:hover {
-    background: linear-gradient(135deg, #b794f4 0%, #9f7aea 100%);
-    transform: translateY(-1px);
+.auth-menu-section a[id="registerBtn"]:hover {
+    color: #b794f4;
 }
 
-.auth-btn.dashboard-btn {
-    background: rgba(128, 90, 213, 0.3);
-    border-color: #9f7aea;
-    padding: 0.5rem 1rem;
-}
-
-.auth-btn.dashboard-btn .user-name {
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.auth-btn.logout-btn {
-    padding: 0.5rem 0.75rem;
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-.auth-btn.logout-btn:hover {
-    border-color: #e53e3e;
+.auth-menu-section a[id="logoutBtn"]:hover {
     color: #fc8181;
-}
-
-@media screen and (max-width: 980px) {
-    .auth-buttons-container {
-        right: 5.5rem; /* More space for menu button on tablets */
-    }
-    .auth-btn .user-name {
-        display: none;
-    }
-}
-
-@media screen and (max-width: 736px) {
-    .auth-buttons-container {
-        top: 0.75rem;
-        right: 4.5rem; /* More space for menu button on mobile */
-        gap: 0.35rem;
-    }
-    .auth-btn {
-        padding: 0.35rem 0.6rem;
-        font-size: 0.7rem;
-        letter-spacing: 0.05em;
-    }
-    .auth-btn.logout-btn {
-        padding: 0.35rem 0.5rem;
-    }
 }
 
 /* ============================================================
@@ -812,7 +759,7 @@ pre {
     align-self: flex-start;
 }
 
-.advisor-avatar {
+.astrologer-avatar {
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -823,7 +770,7 @@ pre {
     flex-shrink: 0;
 }
 
-.advisor-avatar i {
+.astrologer-avatar i {
     color: #ffffff;
     font-size: 1rem;
 }
@@ -864,7 +811,7 @@ pre {
     color: rgba(255, 255, 255, 0.85);
 }
 
-.chat-message.error .advisor-avatar {
+.chat-message.error .astrologer-avatar {
     background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
 }
 
@@ -959,6 +906,15 @@ pre {
 
 .chat-send-btn i {
     font-size: 1.1rem;
+}
+
+.chat-disclaimer {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.4;
 }
 
 /* ============================================================

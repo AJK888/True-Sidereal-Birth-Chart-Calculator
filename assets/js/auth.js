@@ -340,18 +340,26 @@ const AuthManager = {
     // ============================================================
     
     bindEvents() {
-        // Auth button clicks
+        // Auth menu link clicks
         document.addEventListener('click', (e) => {
             if (e.target.matches('#loginBtn, #loginBtn *')) {
+                e.preventDefault();
+                this.closeMenu();
                 this.showLoginModal();
             }
             if (e.target.matches('#registerBtn, #registerBtn *')) {
+                e.preventDefault();
+                this.closeMenu();
                 this.showRegisterModal();
             }
             if (e.target.matches('#logoutBtn, #logoutBtn *')) {
+                e.preventDefault();
+                this.closeMenu();
                 this.logout();
             }
             if (e.target.matches('#dashboardBtn, #dashboardBtn *')) {
+                e.preventDefault();
+                this.closeMenu();
                 this.showDashboard();
             }
             if (e.target.matches('.modal-close, .modal-close *')) {
@@ -442,43 +450,24 @@ const AuthManager = {
     },
     
     updateUI() {
-        const headerNav = document.querySelector('#header nav');
-        const authContainer = document.getElementById('auth-buttons');
-        
-        if (!authContainer) {
-            // Create auth buttons container if it doesn't exist
-            this.createAuthButtonsContainer();
-        }
-        
-        const container = document.getElementById('auth-buttons');
-        if (!container) return;
+        const authMenuSection = document.getElementById('authMenuSection');
+        if (!authMenuSection) return;
         
         if (this.isLoggedIn()) {
-            container.innerHTML = `
-                <button id="dashboardBtn" class="auth-btn dashboard-btn" title="My Charts">
-                    <i class="fas fa-user-circle"></i>
-                    <span class="user-name">${this.currentUser.full_name || this.currentUser.email.split('@')[0]}</span>
-                </button>
-                <button id="logoutBtn" class="auth-btn logout-btn" title="Logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
+            const userName = this.currentUser.full_name || this.currentUser.email.split('@')[0];
+            authMenuSection.innerHTML = `
+                <li class="auth-menu-divider"></li>
+                <li class="auth-menu-user"><i class="fas fa-user-circle"></i> ${userName}</li>
+                <li><a href="#" id="dashboardBtn"><i class="fas fa-chart-pie"></i> My Charts</a></li>
+                <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             `;
         } else {
-            container.innerHTML = `
-                <button id="loginBtn" class="auth-btn">Login</button>
-                <button id="registerBtn" class="auth-btn primary">Sign Up</button>
+            authMenuSection.innerHTML = `
+                <li class="auth-menu-divider"></li>
+                <li><a href="#" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+                <li><a href="#" id="registerBtn"><i class="fas fa-user-plus"></i> Sign Up</a></li>
             `;
         }
-    },
-    
-    createAuthButtonsContainer() {
-        const header = document.getElementById('header');
-        if (!header) return;
-        
-        const container = document.createElement('div');
-        container.id = 'auth-buttons';
-        container.className = 'auth-buttons-container';
-        header.appendChild(container);
     },
     
     showLoginModal() {
@@ -489,7 +478,7 @@ const AuthManager = {
             <div class="modal-content">
                 <button class="modal-close">&times;</button>
                 <h2>Welcome Back</h2>
-                <p class="modal-subtitle">Login to access your saved charts and chat with your AI advisor</p>
+                <p class="modal-subtitle">Login to access your saved charts and explore them with our astrologer</p>
                 <form id="loginForm">
                     <div class="form-error" style="display: none;"></div>
                     <div class="form-group">
@@ -588,7 +577,7 @@ const AuthManager = {
                 <div class="empty-state">
                     <i class="fas fa-chart-pie"></i>
                     <h3>No saved charts yet</h3>
-                    <p>Generate a chart and save it to access it here and chat with your AI advisor about it.</p>
+                    <p>Generate a chart and save it to access it here and explore it with our astrologer.</p>
                 </div>
             `;
             return;
@@ -666,21 +655,22 @@ const AuthManager = {
             <div class="modal-content chat-content">
                 <button class="modal-close">&times;</button>
                 <div class="chat-header">
-                    <h2><i class="fas fa-stars"></i> Chart Advisor</h2>
+                    <h2><i class="fas fa-stars"></i> Your Astrologer</h2>
                     <p>Chatting about: <strong>${chart.chart_name}</strong></p>
                 </div>
                 <div class="chat-messages" id="chatMessages">
                     <div class="welcome-message">
-                        <div class="advisor-avatar"><i class="fas fa-sun"></i></div>
+                        <div class="astrologer-avatar"><i class="fas fa-sun"></i></div>
                         <div class="message-content">
-                            <p>Hello! I'm your personal astrological advisor. I have access to ${chart.chart_name}'s complete birth chart and I'm here to help you understand the patterns, potentials, and growth opportunities revealed in the stars.</p>
-                            <p>What would you like to explore? You could ask me about:</p>
+                            <p>Hello! I'm here to help you explore and understand ${chart.chart_name}'s birth chart. I can discuss the patterns, tendencies, and themes revealed through astrological symbolism.</p>
+                            <p>What would you like to explore? You could ask about:</p>
                             <ul>
-                                <li>Specific placements (e.g., "What does my Moon in Scorpio mean?")</li>
-                                <li>Life areas (e.g., "What does my chart say about relationships?")</li>
-                                <li>Personal growth (e.g., "How can I work with my Saturn challenges?")</li>
-                                <li>Current energies (e.g., "How can I best navigate this period?")</li>
+                                <li>Specific placements (e.g., "What does my Moon in Scorpio suggest?")</li>
+                                <li>Life themes (e.g., "What patterns does my chart show around relationships?")</li>
+                                <li>Self-reflection (e.g., "What does my Saturn placement suggest I'm learning?")</li>
+                                <li>Understanding aspects (e.g., "What does my Sun square Mars mean?")</li>
                             </ul>
+                            <p class="chat-disclaimer"><em>Note: Astrology is a symbolic tool for self-reflection, not a predictive science. These interpretations are for entertainment and personal insight only, not professional advice.</em></p>
                         </div>
                     </div>
                 </div>
@@ -713,7 +703,7 @@ const AuthManager = {
         const loadingEl = document.createElement('div');
         loadingEl.className = 'chat-message assistant-message loading';
         loadingEl.innerHTML = `
-            <div class="advisor-avatar"><i class="fas fa-sun"></i></div>
+            <div class="astrologer-avatar"><i class="fas fa-sun"></i></div>
             <div class="message-content">
                 <div class="typing-indicator">
                     <span></span><span></span><span></span>
@@ -737,7 +727,7 @@ const AuthManager = {
             const assistantMsgEl = document.createElement('div');
             assistantMsgEl.className = 'chat-message assistant-message';
             assistantMsgEl.innerHTML = `
-                <div class="advisor-avatar"><i class="fas fa-sun"></i></div>
+                <div class="astrologer-avatar"><i class="fas fa-sun"></i></div>
                 <div class="message-content">${this.formatChatResponse(response.response)}</div>
             `;
             messagesContainer.appendChild(assistantMsgEl);
@@ -749,7 +739,7 @@ const AuthManager = {
             const errorMsgEl = document.createElement('div');
             errorMsgEl.className = 'chat-message assistant-message error';
             errorMsgEl.innerHTML = `
-                <div class="advisor-avatar"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="astrologer-avatar"><i class="fas fa-exclamation-triangle"></i></div>
                 <div class="message-content">I'm sorry, I encountered an error. Please try again.</div>
             `;
             messagesContainer.appendChild(errorMsgEl);
@@ -761,6 +751,14 @@ const AuthManager = {
             modal.classList.remove('active');
             setTimeout(() => modal.remove(), 300);
         });
+    },
+    
+    closeMenu() {
+        // Close the Forty theme's sidebar menu
+        const body = document.body;
+        if (body.classList.contains('is-menu-visible')) {
+            body.classList.remove('is-menu-visible');
+        }
     },
     
     // Add "Save Chart" button to results
