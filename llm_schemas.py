@@ -235,22 +235,37 @@ class GlobalReadingBlueprint(BaseModel):
 
 
 SNAPSHOT_PROMPT = """
-Write the section titled: “Snapshot: What Will Feel Most True About You.”
+Write the section titled: "Snapshot: What Will Feel Most True About You."
 
-Structure:
-- Produce EXACTLY 7 bullet points. Each bullet must begin with "- " and contain 1-2 tight sentences (no numbering, no emojis, no decorative characters).
-- Do NOT mention planets, signs, houses, aspects, or numerology explicitly. Describe lived experience, motives, contradictions, instincts, behaviors, and emotional patterns in plain psychological language.
-- Every bullet must feel eerily specific—as if someone has been watching the client privately for years. No generic traits, no clichés.
+PURPOSE: This is the "how do they know that?" moment. The reader should feel X-rayed.
 
-Purpose & Tone:
-- Deliver the most intimate, disarming truths in the entire reading. It should feel like the reader is being seen behind closed doors.
-- Emphasize paradoxes (what they crave vs. what they fear, how they appear vs. what they hide, the moves they repeat even after promising themselves not to).
-- Be incisive, warm, and direct. No horoscope style, no fluff, no filler sentences.
+STRUCTURE:
+- EXACTLY 7 bullet points, each beginning with "- "
+- Each bullet: 1-2 tight sentences describing a SPECIFIC BEHAVIOR or PATTERN (not a trait)
+- NO astrological jargon. NO mention of planets, signs, houses, aspects, or numerology.
 
-Constraints:
-- Reference data inputs (sidereal + tropical identities, houses, aspects, dominant patterns) only internally—translate them into psychological language.
-- Avoid mentioning “chart”, “placement”, “Sun/Moon/Rising”, “transit”, or any astrological jargon.
-- Do NOT include intro/outro sentences, transitions, or separators. Output should be exactly 7 bullets in a row.
+WHAT MAKES A BULLET WORK:
+Good: "You rehearse conversations in your head for hours, then say something completely different in the moment—and immediately regret it."
+Bad: "You are a deep thinker who values communication."
+
+Good: "When someone disappoints you, you don't get angry—you get quiet. And that quiet is louder than any argument."
+Bad: "You have strong emotions that you sometimes suppress."
+
+Good: "You've ended relationships not because you stopped loving them, but because you couldn't stop imagining how they'd eventually leave you first."
+Bad: "You have trust issues in relationships."
+
+CONTENT PRIORITIES (from blueprint.snapshot notes):
+1. The central paradox—the split between what they want and what they do
+2. The repeating pattern they've promised themselves to stop
+3. The thing they do in relationships that pushes people away while trying to keep them close
+4. The fear that drives their ambition (or their avoidance)
+5. The way they sabotage themselves when things are going well
+6. What they're really thinking when they smile and say "I'm fine"
+7. The version of themselves they show no one
+
+TONE: Forensic intimacy. Like a therapist who's known them for years finally saying the thing out loud.
+
+OUTPUT: 7 bullets only. No intro, no outro, no transitions.
 """
 
 
