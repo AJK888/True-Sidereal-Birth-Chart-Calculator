@@ -205,30 +205,265 @@ def svg_to_png(svg_string: str, width: int = 800, height: int = 800) -> bytes:
             return b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\tpHYs\x00\x00\x0b\x13\x00\x00\x0b\x13\x01\x00\x9a\x9c\x18\x00\x00\x00\nIDATx\x9cc\xf8\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00IEND\xaeB`\x82'
 
 
+# ============================================================================
+# SECTION PARSING UTILITIES
+# ============================================================================
+
+# Pre-defined sections in exact order - the PDF will use these headers regardless
+# of how the AI formats them. Content is extracted by matching section boundaries.
+PDF_SECTIONS = [
+    {"key": "snapshot", "title": "Snapshot: What Will Feel Most True About You", "style": "major", "bullets": True},
+    {"key": "what_we_know", "title": "What We Know / What We Don't Know", "style": "major", "bullets": False},
+    {"key": "overview", "title": "Chart Overview & Core Themes", "style": "major", "bullets": False},
+    {"key": "pillars", "title": "Foundational Pillars: Sun – Moon – Ascendant", "style": "major", "bullets": False},
+    {"key": "personal_social", "title": "Personal & Social Planets", "style": "major", "bullets": False},
+    {"key": "houses", "title": "Houses & Life Domains Summary", "style": "major", "bullets": False},
+    {"key": "love", "title": "Love, Relationships & Attachment", "style": "major", "bullets": False},
+    {"key": "work", "title": "Work, Money & Vocation", "style": "major", "bullets": False},
+    {"key": "emotional", "title": "Emotional Life, Family & Healing", "style": "major", "bullets": False},
+    {"key": "spiritual", "title": "Spiritual Path & Meaning", "style": "major", "bullets": False},
+    {"key": "aspects", "title": "Major Life Dynamics: The Tightest Aspects & Patterns", "style": "major", "bullets": False},
+    {"key": "shadow", "title": "Shadow, Contradictions & Growth Edges", "style": "major", "bullets": False},
+    {"key": "owners_manual", "title": "Owner's Manual: Final Integration", "style": "major", "bullets": False},
+    {"key": "action_checklist", "title": "Action Checklist", "style": "subsection", "bullets": True},
+]
+
+# Patterns to match section headers in the AI output (case-insensitive)
+SECTION_PATTERNS = {
+    "snapshot": [r"snapshot.*what will feel", r"snapshot:?\s*$", r"what will feel most true"],
+    "what_we_know": [r"what we know.*what we don'?t", r"what we know.*don'?t know"],
+    "overview": [r"chart overview.*core themes", r"overview.*themes", r"core themes"],
+    "pillars": [r"foundational pillars", r"sun.*moon.*ascendant", r"pillars:?\s*sun"],
+    "personal_social": [r"personal.*social planets", r"personal planets", r"social planets"],
+    "houses": [r"houses.*life domains", r"houses.*domains", r"life domains summary"],
+    "love": [r"love.*relationships.*attachment", r"love.*relationships", r"relationships.*attachment"],
+    "work": [r"work.*money.*vocation", r"work.*vocation", r"money.*vocation", r"career.*vocation"],
+    "emotional": [r"emotional.*family.*healing", r"emotional life.*healing", r"family.*healing"],
+    "spiritual": [r"spiritual path.*meaning", r"spiritual.*meaning", r"spiritual path"],
+    "aspects": [r"major life dynamics.*aspects", r"tightest aspects.*patterns", r"aspects.*patterns"],
+    "shadow": [r"shadow.*contradictions.*growth", r"shadow.*growth edges", r"contradictions.*growth"],
+    "owners_manual": [r"owner'?s manual.*integration", r"final integration", r"owner'?s manual"],
+    "action_checklist": [r"action checklist", r"checklist:?\s*$"],
+}
+
+
+def parse_reading_into_sections(reading_text: str) -> Dict[str, str]:
+    """
+    Parse the AI reading into pre-defined sections.
+    Returns a dict mapping section keys to their content.
+    """
+    sections = {}
+    lines = reading_text.split('\n')
+    
+    # Clean up lines - remove markdown artifacts
+    cleaned_lines = []
+    for line in lines:
+        # Remove markdown bold markers
+        line = line.replace('**', '')
+        # Remove decorative stars/dashes
+        line = re.sub(r'^\*{2,}$', '', line)
+        line = re.sub(r'^-{3,}$', '', line)
+        line = re.sub(r'^\#{1,6}\s*', '', line)  # Remove markdown headers
+        cleaned_lines.append(line)
+    
+    # Find section boundaries
+    section_starts = []  # [(line_idx, section_key), ...]
+    
+    for i, line in enumerate(cleaned_lines):
+        line_lower = line.strip().lower()
+        if not line_lower:
+            continue
+        
+        for section_key, patterns in SECTION_PATTERNS.items():
+            for pattern in patterns:
+                if re.search(pattern, line_lower):
+                    section_starts.append((i, section_key))
+                    break
+            else:
+                continue
+            break
+    
+    # Sort by line index and remove duplicates (keep first occurrence)
+    section_starts.sort(key=lambda x: x[0])
+    seen_keys = set()
+    unique_starts = []
+    for idx, key in section_starts:
+        if key not in seen_keys:
+            seen_keys.add(key)
+            unique_starts.append((idx, key))
+    section_starts = unique_starts
+    
+    # Extract content for each section
+    for i, (start_idx, section_key) in enumerate(section_starts):
+        # Find end index (next section start or end of document)
+        if i + 1 < len(section_starts):
+            end_idx = section_starts[i + 1][0]
+        else:
+            end_idx = len(cleaned_lines)
+        
+        # Extract content (skip the header line itself)
+        content_lines = cleaned_lines[start_idx + 1:end_idx]
+        content = '\n'.join(content_lines).strip()
+        sections[section_key] = content
+    
+    # If no sections found, put everything in a fallback
+    if not sections:
+        sections["_fallback"] = '\n'.join(cleaned_lines)
+    
+    return sections
+
+
+def format_section_content(content: str, is_bullet_section: bool, styles_dict: dict, story: list):
+    """
+    Format section content and add to story.
+    Handles bullets, theme headings, subsections, and regular paragraphs.
+    """
+    lines = content.split('\n')
+    current_para = []
+    
+    body_style = styles_dict['body']
+    bullet_style = styles_dict['bullet']
+    heading_style = styles_dict['heading']
+    subsection_style = styles_dict['subsection']
+    theme_style = styles_dict['theme']
+    
+    def is_bullet_line(line: str) -> tuple:
+        """Check if line is a bullet point."""
+        line_clean = line.strip()
+        patterns = [
+            r'^[-•*]\s+(.+)',
+            r'^\d+[.)]\s+(.+)',
+        ]
+        for pattern in patterns:
+            match = re.match(pattern, line_clean)
+            if match:
+                return True, match.group(1).strip()
+        return False, line
+    
+    def is_theme_heading(line: str) -> bool:
+        """Check if line is a Theme heading."""
+        return bool(re.match(r'^Theme \d+\s*[–—\-]\s+\w', line.strip(), re.IGNORECASE))
+    
+    def is_subsection_heading(line: str) -> bool:
+        """Check for specific subsection patterns."""
+        patterns = [
+            r'^why this shows up in your chart:?\s*$',
+            r'^how it tends to feel and play out:?\s*$',
+            r'^internal process:?\s*$',
+            r'^external expression:?\s*$',
+            r'^the core (conflict|dynamic|pattern):?\s*$',
+            r'^concrete.*scenario:?\s*$',
+            r'^guidance:?\s*$',
+            r'^integration:?\s*$',
+        ]
+        line_lower = line.strip().lower()
+        return any(re.match(p, line_lower) for p in patterns)
+    
+    def is_planet_heading(line: str) -> bool:
+        """Check if line is a planet/body heading."""
+        planets = ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 
+                   'uranus', 'neptune', 'pluto', 'chiron', 'north node', 'south node',
+                   'ascendant', 'midheaven', 'mc', 'ic', 'descendant']
+        line_clean = line.strip().lower()
+        # Match patterns like "The Sun:" or "--- SUN ---" or just "SUN" on its own
+        if re.match(r'^---\s+\w+\s+---$', line.strip()):
+            return True
+        if line_clean.startswith('the '):
+            line_clean = line_clean[4:]
+        for planet in planets:
+            if line_clean.startswith(planet) and len(line_clean) < 50:
+                return True
+        return False
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            # Flush current paragraph
+            if current_para:
+                para_text = ' '.join(current_para)
+                story.append(Paragraph(para_text, body_style))
+                story.append(Spacer(1, 0.1*inch))
+                current_para = []
+            continue
+        
+        # Check for bullets first
+        is_bullet, bullet_text = is_bullet_line(line)
+        if is_bullet or (is_bullet_section and len(line) < 150 and not line.endswith(':')):
+            if current_para:
+                para_text = ' '.join(current_para)
+                story.append(Paragraph(para_text, body_style))
+                story.append(Spacer(1, 0.08*inch))
+                current_para = []
+            
+            text_to_use = bullet_text if is_bullet else line
+            story.append(Paragraph(f"• {text_to_use}", bullet_style))
+            continue
+        
+        # Check for theme headings
+        if is_theme_heading(line):
+            if current_para:
+                para_text = ' '.join(current_para)
+                story.append(Paragraph(para_text, body_style))
+                story.append(Spacer(1, 0.1*inch))
+                current_para = []
+            story.append(Spacer(1, 0.15*inch))
+            story.append(Paragraph(f"<b>{line}</b>", theme_style))
+            story.append(Spacer(1, 0.08*inch))
+            continue
+        
+        # Check for subsection headings
+        if is_subsection_heading(line):
+            if current_para:
+                para_text = ' '.join(current_para)
+                story.append(Paragraph(para_text, body_style))
+                story.append(Spacer(1, 0.08*inch))
+                current_para = []
+            story.append(Paragraph(f"<i>{line}</i>", subsection_style))
+            story.append(Spacer(1, 0.05*inch))
+            continue
+        
+        # Check for planet headings
+        if is_planet_heading(line):
+            if current_para:
+                para_text = ' '.join(current_para)
+                story.append(Paragraph(para_text, body_style))
+                story.append(Spacer(1, 0.1*inch))
+                current_para = []
+            # Clean up "--- BODY ---" format
+            clean_heading = re.sub(r'^---\s+|\s+---$', '', line).strip()
+            story.append(Spacer(1, 0.12*inch))
+            story.append(Paragraph(f"<b>{clean_heading}</b>", heading_style))
+            story.append(Spacer(1, 0.08*inch))
+            continue
+        
+        # Regular paragraph text
+        current_para.append(line)
+    
+    # Flush remaining paragraph
+    if current_para:
+        para_text = ' '.join(current_para)
+        story.append(Paragraph(para_text, body_style))
+        story.append(Spacer(1, 0.1*inch))
+
+
 def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_inputs: Dict[str, Any]) -> bytes:
     """
     Generate a PDF report with chart images and formatted text.
-    Matches the webpage formatting as closely as possible.
+    Uses a template-based approach with pre-defined section headers.
     """
     buffer = io.BytesIO()
-    
-    # Track sections for table of contents
-    toc_sections = []
-    current_page = [1]  # Use list to allow modification in nested function
     
     # Custom page template for page numbers
     def add_page_number(canvas_obj, doc):
         """Add page numbers to each page."""
         page_num = canvas_obj.getPageNumber()
-        current_page[0] = page_num
         text = f"Page {page_num}"
         canvas_obj.saveState()
         canvas_obj.setFont('Helvetica', 9)
         canvas_obj.setFillColor(colors.HexColor('#666666'))
-        # Position at bottom right - use page width from letter size
-        page_width = letter[0]  # 8.5 inches = 612 points
-        x_position = page_width - 0.75*inch  # Right margin
-        y_position = 0.5*inch  # Bottom margin  
+        page_width = letter[0]
+        x_position = page_width - 0.75*inch
+        y_position = 0.5*inch
         canvas_obj.drawRightString(x_position, y_position, text)
         canvas_obj.restoreState()
     
@@ -238,116 +473,92 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     
     styles = getSampleStyleSheet()
     
-    # Custom styles matching webpage
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=24,
-        textColor=colors.HexColor('#2c3e50'),
-        spaceAfter=12,
-        alignment=TA_CENTER
-    )
-    
-    heading_style = ParagraphStyle(
-        'CustomHeading',
-        parent=styles['Heading2'],
-        fontSize=18,
-        textColor=colors.HexColor('#34495e'),
-        spaceAfter=10,
-        spaceBefore=20
-    )
-    
-    subsection_style = ParagraphStyle(
-        'SubsectionStyle',
-        parent=styles['Heading3'],
-        fontSize=14,
-        textColor=colors.HexColor('#2c3e50'),
-        spaceAfter=8,
-        spaceBefore=12,
-        leftIndent=0
-    )
-    
-    section_heading_style = ParagraphStyle(
-        'SectionHeading',
-        parent=styles['Heading1'],
-        fontSize=20,
-        textColor=colors.HexColor('#1b263b'),
-        alignment=TA_LEFT,
-        spaceAfter=14
-    )
-    
-    body_style = ParagraphStyle(
-        'CustomBody',
-        parent=styles['BodyText'],
-        fontSize=11,
-        textColor=colors.HexColor('#333333'),
-        leading=16,
-        alignment=TA_JUSTIFY,
-        spaceAfter=12
-    )
+    # =========================================================================
+    # STYLE DEFINITIONS
+    # =========================================================================
     
     cover_title_style = ParagraphStyle(
-        'CoverTitle',
-        parent=styles['Heading1'],
-        fontSize=32,
-        textColor=colors.HexColor('#0b1f3a'),
-        alignment=TA_CENTER,
-        spaceAfter=12
+        'CoverTitle', parent=styles['Heading1'],
+        fontSize=32, textColor=colors.HexColor('#0b1f3a'),
+        alignment=TA_CENTER, spaceAfter=12
     )
     
     cover_subtitle_style = ParagraphStyle(
-        'CoverSubtitle',
-        parent=styles['Heading2'],
-        fontSize=16,
-        textColor=colors.HexColor('#1b6ca8'),
-        alignment=TA_CENTER,
-        spaceAfter=24
+        'CoverSubtitle', parent=styles['Heading2'],
+        fontSize=16, textColor=colors.HexColor('#1b6ca8'),
+        alignment=TA_CENTER, spaceAfter=24
     )
     
     cover_info_style = ParagraphStyle(
-        'CoverInfo',
-        parent=styles['BodyText'],
-        fontSize=12,
-        textColor=colors.HexColor('#1f2933'),
-        alignment=TA_CENTER,
-        spaceAfter=8
-    )
-    
-    bullet_style = ParagraphStyle(
-        'BulletStyle',
-        parent=styles['BodyText'],
-        fontSize=11,
-        textColor=colors.HexColor('#333333'),
-        leading=16,
-        alignment=TA_LEFT,
-        spaceAfter=8,
-        leftIndent=20,
-        bulletIndent=10
+        'CoverInfo', parent=styles['BodyText'],
+        fontSize=12, textColor=colors.HexColor('#1f2933'),
+        alignment=TA_CENTER, spaceAfter=8
     )
     
     toc_title_style = ParagraphStyle(
-        'TocTitle',
-        parent=styles['Heading1'],
-        fontSize=22,
-        textColor=colors.HexColor('#1b263b'),
-        alignment=TA_CENTER,
-        spaceAfter=20
+        'TocTitle', parent=styles['Heading1'],
+        fontSize=22, textColor=colors.HexColor('#1b263b'),
+        alignment=TA_CENTER, spaceAfter=20
     )
     
     toc_item_style = ParagraphStyle(
-        'TocItem',
-        parent=styles['BodyText'],
-        fontSize=11,
-        textColor=colors.HexColor('#333333'),
-        leading=14,
-        alignment=TA_LEFT,
-        spaceAfter=6,
-        leftIndent=0
+        'TocItem', parent=styles['BodyText'],
+        fontSize=11, textColor=colors.HexColor('#333333'),
+        leading=18, alignment=TA_LEFT, spaceAfter=4
     )
+    
+    section_heading_style = ParagraphStyle(
+        'SectionHeading', parent=styles['Heading1'],
+        fontSize=18, textColor=colors.HexColor('#1b263b'),
+        alignment=TA_LEFT, spaceAfter=12, spaceBefore=6
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading', parent=styles['Heading2'],
+        fontSize=14, textColor=colors.HexColor('#34495e'),
+        spaceAfter=8, spaceBefore=14
+    )
+    
+    theme_style = ParagraphStyle(
+        'ThemeHeading', parent=styles['Heading2'],
+        fontSize=13, textColor=colors.HexColor('#2c3e50'),
+        spaceAfter=6, spaceBefore=10
+    )
+    
+    subsection_style = ParagraphStyle(
+        'SubsectionStyle', parent=styles['Heading3'],
+        fontSize=11, textColor=colors.HexColor('#4a5568'),
+        spaceAfter=4, spaceBefore=8, leftIndent=0
+    )
+    
+    body_style = ParagraphStyle(
+        'CustomBody', parent=styles['BodyText'],
+        fontSize=10, textColor=colors.HexColor('#333333'),
+        leading=14, alignment=TA_JUSTIFY, spaceAfter=8
+    )
+    
+    bullet_style = ParagraphStyle(
+        'BulletStyle', parent=styles['BodyText'],
+        fontSize=10, textColor=colors.HexColor('#333333'),
+        leading=14, alignment=TA_LEFT, spaceAfter=6,
+        leftIndent=18, bulletIndent=8
+    )
+    
+    # Bundle styles for section formatting
+    styles_dict = {
+        'body': body_style,
+        'bullet': bullet_style,
+        'heading': heading_style,
+        'theme': theme_style,
+        'subsection': subsection_style,
+    }
     
     story = []
     
-    # Cover page
+    # =========================================================================
+    # COVER PAGE
+    # =========================================================================
+    
     story.append(Spacer(1, 1.5*inch))
     story.append(Paragraph("Synthesis Astrology", cover_title_style))
     story.append(Paragraph("True Sidereal Birth Chart Report", cover_subtitle_style))
@@ -362,37 +573,48 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         cover_details.append(f"Birth Time: {user_inputs['birth_time']}")
     if user_inputs.get('location'):
         cover_details.append(f"Location: {user_inputs['location']}")
-    
-    cover_details.append("Generated by the Synthesis Astrology API")
+    cover_details.append("Generated by Synthesis Astrology")
     
     for detail in cover_details:
         story.append(Paragraph(detail, cover_info_style))
     
     story.append(PageBreak())
     
-    # Table of Contents
+    # =========================================================================
+    # TABLE OF CONTENTS
+    # =========================================================================
+    
     story.append(Paragraph("Table of Contents", toc_title_style))
     story.append(Spacer(1, 0.3*inch))
     
-    # TOC items - we'll track actual page numbers as we build
-    toc_items = [
-        "Chart Overview",
-        "AI Astrological Synthesis",
-        "Glossary",
-        "Full Astrological Data"
+    toc_entries = [
+        ("Chart Overview", 3),
+        ("Snapshot: What Will Feel Most True About You", 4),
+        ("Chart Overview & Core Themes", 5),
+        ("Foundational Pillars", 6),
+        ("Personal & Social Planets", 7),
+        ("Houses & Life Domains", 8),
+        ("Love, Relationships & Attachment", 9),
+        ("Work, Money & Vocation", 10),
+        ("Emotional Life, Family & Healing", 11),
+        ("Spiritual Path & Meaning", 12),
+        ("Major Life Dynamics: Aspects & Patterns", 13),
+        ("Shadow, Contradictions & Growth Edges", 14),
+        ("Owner's Manual: Final Integration", 15),
+        ("Glossary", 16),
+        ("Full Astrological Data", 17),
     ]
     
-    # Add TOC items (page numbers will be approximate/placeholder)
-    # Note: Exact page numbers require a two-pass build, so we'll use section order
-    for i, item in enumerate(toc_items, start=3):  # Start at page 3 (after cover and TOC)
-        # Create a simple TOC entry
-        toc_text = f"{item} ................ {i}"
-        story.append(Paragraph(toc_text, toc_item_style))
+    for title, page_num in toc_entries:
+        dots = "." * max(5, 50 - len(title))
+        story.append(Paragraph(f"{title} {dots} {page_num}", toc_item_style))
     
     story.append(PageBreak())
     
-    # Chart overview section
-    toc_sections.append(("Chart Overview", 3))  # Track for reference
+    # =========================================================================
+    # CHART OVERVIEW PAGE
+    # =========================================================================
+    
     story.append(Paragraph("Chart Overview", section_heading_style))
     
     if user_inputs.get('full_name'):
@@ -406,23 +628,16 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     
     story.append(Spacer(1, 0.3*inch))
     
-    # Chart Wheels with blue background
+    # Chart wheels
     if not chart_data.get('unknown_time'):
         story.append(Paragraph("Natal Chart Wheels", heading_style))
         
-        # Generate chart wheel SVGs and convert to PNG
         sidereal_svg = generate_chart_wheel_svg(chart_data, 'sidereal')
         tropical_svg = generate_chart_wheel_svg(chart_data, 'tropical')
         
-        # Convert SVG to PNG - use larger size to preserve detail and prevent clipping
-        # SVG is now 1100x1100, so we'll render at 800x800 for better quality
         sidereal_png = svg_to_png(sidereal_svg, width=800, height=800)
         tropical_png = svg_to_png(tropical_svg, width=800, height=800)
         
-        # Create images - sized to fit comfortably within blue background with adequate padding
-        # Image size: 2.7 inches (allows for 25 points padding on each side = 0.347 inches)
-        # Column width: 3.8 inches (provides 0.55 inches total padding per side for safety)
-        # Reduced image size slightly to ensure no clipping occurs
         sidereal_img = Image(io.BytesIO(sidereal_png), width=2.7*inch, height=2.7*inch)
         tropical_img = Image(io.BytesIO(tropical_png), width=2.7*inch, height=2.7*inch)
         
@@ -435,251 +650,73 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         chart_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            # Generous padding for image row to ensure charts are fully visible
-            # Increased padding to 25 points (0.347 inches) on each side for extra safety
             ('LEFTPADDING', (0, 1), (-1, 1), 25),
             ('RIGHTPADDING', (0, 1), (-1, 1), 25),
             ('TOPPADDING', (0, 1), (-1, 1), 25),
             ('BOTTOMPADDING', (0, 1), (-1, 1), 25),
-            # Header row padding
             ('LEFTPADDING', (0, 0), (-1, 0), 6),
             ('RIGHTPADDING', (0, 0), (-1, 0), 6),
             ('TOPPADDING', (0, 0), (-1, 0), 6),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
-            # Blue background for image row only
             ('BACKGROUND', (0, 1), (-1, 1), blue_box),
-            # Explicitly remove all borders to prevent clipping
-            ('LINEBELOW', (0, 0), (-1, -1), 0, colors.white),
-            ('LINEABOVE', (0, 0), (-1, -1), 0, colors.white),
-            ('LINEBEFORE', (0, 0), (-1, -1), 0, colors.white),
-            ('LINEAFTER', (0, 0), (-1, -1), 0, colors.white),
         ]))
         
         story.append(chart_table)
     
     story.append(PageBreak())
     
-    # AI Astrological Synthesis
-    toc_sections.append(("AI Astrological Synthesis", 4))  # Track for reference
-    story.append(Paragraph("AI Astrological Synthesis", section_heading_style))
-    story.append(Spacer(1, 0.15*inch))
+    # =========================================================================
+    # PARSE AI READING INTO SECTIONS
+    # =========================================================================
     
-    # Format the reading with proper paragraph breaks
-    # The reading comes as plain text with headings and paragraphs
-    lines = gemini_reading.split('\n')
-    current_para = []
-    in_bullet_section = False  # Track if we're in a section that contains bullets
-    content_added = False  # Track if we've added content to avoid page break on first section
-    major_sections = [
-        'Snapshot: What Will Feel Most True About You',
-        'Chart Overview and Core Themes',
-        'Your Astrological Blueprint: Planets, Points, and Angles',
-        'Major Life Dynamics: The Tightest Aspects',
-        'Summary and Key Takeaways'
-    ]
+    parsed_sections = parse_reading_into_sections(gemini_reading)
     
-    # Sections that typically contain bullet points
-    bullet_section_keywords = ['snapshot', 'action checklist', 'checklist', 'key takeaways']
+    # =========================================================================
+    # RENDER EACH PRE-DEFINED SECTION
+    # =========================================================================
     
-    def is_bullet_line(line: str) -> tuple[bool, str]:
-        """Check if a line is a bullet point and return (is_bullet, cleaned_text)."""
-        # First, strip markdown header markers (#) that might prefix bullets
-        line_cleaned = line.strip()
-        if line_cleaned.startswith('#'):
-            # Remove markdown header markers (one or more #)
-            line_cleaned = re.sub(r'^#+\s*', '', line_cleaned).strip()
+    for section_def in PDF_SECTIONS:
+        section_key = section_def["key"]
+        section_title = section_def["title"]
+        is_bullet_section = section_def.get("bullets", False)
         
-        bullet_patterns = [
-            r'^[-•*]\s+(.+)',  # Starts with -, •, or *
-            r'^\d+[.)]\s+(.+)',  # Starts with number followed by . or )
-            r'^[•]\s+(.+)',  # Starts with bullet character
-        ]
+        # Get content for this section (may be empty)
+        content = parsed_sections.get(section_key, "")
         
-        for pattern in bullet_patterns:
-            match = re.match(pattern, line_cleaned)
-            if match:
-                bullet_text = match.group(1) if match.groups() else line_cleaned
-                return True, bullet_text.strip()
-        
-        return False, line
-    
-    for i, line in enumerate(lines):
-        line = line.strip()
-        if not line:
-            # Empty line - end current paragraph
-            if current_para:
-                para_text = ' '.join(current_para)
-                story.append(Paragraph(para_text, body_style))
-                story.append(Spacer(1, 0.12*inch))  # Space between paragraphs
-                current_para = []
-                content_added = True
-            # Check if we should exit bullet section after empty line
-            # (we'll re-enter if next line is a bullet)
+        # Skip empty sections (except houses which may be intentionally empty for unknown time)
+        if not content and section_key != "houses":
             continue
         
-        # IMPORTANT: Check for bullets FIRST, before heading detection
-        # This prevents bullet points (especially those with markdown # prefix) from being treated as headings
-        is_bullet, bullet_text = is_bullet_line(line)
-        
-        # If this is a bullet, skip heading detection entirely and process it immediately
-        if is_bullet:
-            in_bullet_section = True
-            # Finish any current paragraph before starting bullets
-            if current_para:
-                para_text = ' '.join(current_para)
-                story.append(Paragraph(para_text, body_style))
-                story.append(Spacer(1, 0.12*inch))
-                current_para = []
-                content_added = True
-            # Format as bullet point
-            story.append(Paragraph(f"• {bullet_text}", bullet_style))
-            content_added = True
-            continue  # Skip the rest of the processing for this line
-        
-        # Check if this is a major section header
-        is_major_section = False
-        matched_section = None
-        line_clean = line.replace('**', '').strip()
-        # Remove markdown # prefixes for section matching
-        line_for_section_check = re.sub(r'^#+\s*', '', line_clean)
-        for section in major_sections:
-            # Check various patterns for section matching
-            section_keywords = section.lower().split()
-            if (section.lower() in line_for_section_check.lower() or 
-                any(keyword in line_for_section_check.lower() for keyword in section_keywords if len(keyword) > 4) or
-                line_for_section_check.startswith(section) or
-                (len(line_for_section_check) < 100 and section.lower().replace(':', '') in line_for_section_check.lower())):
-                is_major_section = True
-                matched_section = section
-                break
-        
-        # Check if this looks like a heading (very strict criteria to avoid false positives)
-        # BUT skip if it's a bullet point
-        # Only treat as heading if:
-        # 1. It's a major section (already handled above)
-        # 2. It's wrapped in ** markers (markdown bold) AND very short
-        # 3. It matches "Theme X – [Title]" pattern
-        # 4. It's a subsection label like "Why this shows up in your chart:" or "How it tends to feel and play out:"
-        # 5. It's ALL CAPS, very short (under 40 chars), no punctuation, and looks like a title
-        is_heading = False
-        is_subsection = False
-        
-        if is_major_section:
-            is_heading = True
-        elif line.startswith('**') and line.endswith('**') and len(line) < 80:
-            # Markdown bold heading
-            is_heading = True
-        elif re.match(r'^Theme \d+\s*[–—\-]\s+\w', line, re.IGNORECASE):
-            # Theme heading like "Theme 1 – [Title]" or "Theme 2 — [Title]"
-            # Must start with "Theme", have a number, dash, and a word character
-            is_heading = True
-        elif re.match(r'^---\s+.+\s+---\s*$', line):
-            # Body name headers like "--- SUN ---" or "--- MOON ---"
-            is_heading = True
-        elif re.match(r'^(Why this shows up in your chart|How it tends to feel and play out):\s*$', line, re.IGNORECASE):
-            # Subsection labels - treat as smaller heading
-            is_subsection = True
-            is_heading = True
-        elif (len(line) < 40 and line.isupper() and 
-              not line.endswith(('.', '!', '?', ':', ';', ',', ')')) and
-              line.count(' ') < 6 and
-              not any(char.isdigit() for char in line) and
-              not line.startswith(('The ', 'A ', 'An ', 'This ', 'That ', 'These ', 'Those ')) and
-              not is_bullet):  # Don't treat bullets as headings
-            # Very short ALL CAPS title-like text
-            is_heading = True
-        # Don't treat regular sentences as headings, even if they're short
-        # Also don't treat bullets as headings
-        if is_bullet:
-            is_heading = False
-        
-        # Handle major section headers (with page breaks)
-        if is_major_section:
-            # Finish any current paragraph
-            if current_para:
-                para_text = ' '.join(current_para)
-                story.append(Paragraph(para_text, body_style))
-                story.append(Spacer(1, 0.12*inch))
-                current_para = []
-            
-            # Check if entering a section that typically contains bullets
-            in_bullet_section = any(keyword in line.lower() for keyword in bullet_section_keywords)
-            
-            # Add page break before major section (except for the very first one)
-            if content_added:  # We've already added content, so this is a new section
-                story.append(PageBreak())
-            
-            heading_text = line_clean
-            story.append(Paragraph(f"<b>{heading_text}</b>", section_heading_style))
-            story.append(Spacer(1, 0.12*inch))
-            content_added = True
+        # Skip houses section for unknown time charts
+        if section_key == "houses" and chart_data.get('unknown_time'):
             continue
         
-        if is_heading and not is_major_section:
-            # Regular heading (not major section)
-            if current_para:
-                para_text = ' '.join(current_para)
-                story.append(Paragraph(para_text, body_style))
-                story.append(Spacer(1, 0.1*inch))
-                current_para = []
-                content_added = True
-            heading_text = line.replace('**', '').strip()
-            
-            # Clean up "--- BODY NAME ---" format
-            if re.match(r'^---\s+.+\s+---\s*$', heading_text):
-                # Extract body name from "--- BODY NAME ---"
-                body_name = re.sub(r'^---\s+|\s+---\s*$', '', heading_text).strip()
-                heading_text = body_name
-            
-            # Use subsection style for subsection labels, regular heading style for theme headings
-            if is_subsection:
-                story.append(Paragraph(f"<b>{heading_text}</b>", subsection_style))
-                story.append(Spacer(1, 0.08*inch))
-            else:
-                story.append(Paragraph(f"<b>{heading_text}</b>", heading_style))
-                story.append(Spacer(1, 0.12*inch))
-            content_added = True
-            # Check if this heading indicates a bullet section
-            if any(keyword in heading_text.lower() for keyword in bullet_section_keywords):
-                in_bullet_section = True
-        else:
-            # Regular text processing (bullets already handled above)
-            if in_bullet_section:
-                # We were in bullet section, but this line doesn't match bullet pattern
-                # Check if it's a short line that might still be part of bullet list
-                # (sometimes bullets don't have explicit markers, especially in Action Checklist)
-                is_likely_bullet = (len(line) < 120 and 
-                                   not line.endswith('.') and 
-                                   not line.endswith(':') and
-                                   not line.endswith('!') and
-                                   line.count('.') < 2)  # Not a full sentence
-                
-                if is_likely_bullet:
-                    # Likely a bullet without marker, format it
-                    story.append(Paragraph(f"• {line}", bullet_style))
-                    content_added = True
-                else:
-                    # Exit bullet section, start regular paragraph
-                    in_bullet_section = False
-                    if current_para:
-                        current_para.append(line)
-                    else:
-                        current_para = [line]
-            else:
-                # Regular text - add to current paragraph
-                current_para.append(line)
+        # Skip "what we know" section for known time charts
+        if section_key == "what_we_know" and not chart_data.get('unknown_time'):
+            continue
+        
+        # Add page break before major sections (not subsections)
+        if section_def.get("style") == "major":
+            story.append(PageBreak())
+        
+        # Add section header
+        story.append(Paragraph(section_title, section_heading_style))
+        story.append(Spacer(1, 0.1*inch))
+        
+        # Format and add content
+        if content:
+            format_section_content(content, is_bullet_section, styles_dict, story)
     
-    # Add any remaining paragraph
-    if current_para:
-        para_text = ' '.join(current_para)
-        story.append(Paragraph(para_text, body_style))
-        story.append(Spacer(1, 0.12*inch))
-        content_added = True
+    # If we have fallback content (parsing failed), render it
+    if "_fallback" in parsed_sections:
+        story.append(PageBreak())
+        story.append(Paragraph("Astrological Synthesis", section_heading_style))
+        story.append(Spacer(1, 0.1*inch))
+        format_section_content(parsed_sections["_fallback"], False, styles_dict, story)
     
     story.append(PageBreak())
     
     # Glossary Section
-    toc_sections.append(("Glossary", None))  # Page number will vary
     story.append(Paragraph("Glossary", section_heading_style))
     story.append(Spacer(1, 0.2*inch))
     
@@ -708,7 +745,6 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     story.append(PageBreak())
     
     # Full Report Section
-    toc_sections.append(("Full Astrological Data", None))  # Page number will vary
     story.append(Paragraph("Full Astrological Data", section_heading_style))
     
     # Sidereal Report
