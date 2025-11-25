@@ -61,7 +61,7 @@ if logtail_token:
 
 # --- SETUP GEMINI ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI3_MODEL = os.getenv("GEMINI3_MODEL", "models/gemini-3.0-pro-exp-01")
+GEMINI3_MODEL = os.getenv("GEMINI3_MODEL", "gemini-3-pro-preview")
 if GEMINI_API_KEY:
     try:
         genai.configure(api_key=GEMINI_API_KEY)
@@ -435,7 +435,7 @@ class Gemini3Client:
         self.total_completion_tokens = 0
         self.total_cost_usd = 0.0
         self.call_count = 0
-        self.model_name = GEMINI3_MODEL or "models/gemini-3.0-pro-exp-01"
+        self.model_name = GEMINI3_MODEL or "gemini-3-pro-preview"
         self.default_max_tokens = int(os.getenv("GEMINI3_MAX_OUTPUT_TOKENS", "65000"))
         self.model = None
         if GEMINI_API_KEY and AI_MODE != "stub":
