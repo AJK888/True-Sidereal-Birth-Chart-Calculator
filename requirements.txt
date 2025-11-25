@@ -13,3 +13,4 @@ slowapi
 reportlab
 cairosvg
 Pillow
+google-generativeai

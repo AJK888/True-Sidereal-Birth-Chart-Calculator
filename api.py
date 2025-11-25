@@ -16,6 +16,7 @@ import os
 import logging
 from logtail import LogtailHandler
 from anthropic import AsyncAnthropic
+import google.generativeai as genai
 import asyncio
 from slowapi import Limiter
 import hashlib
@@ -72,6 +73,18 @@ if CLAUDE_API_KEY:
         claude_client = None
 else:
     logger.warning("CLAUDE_API_KEY not configured - AI reading will be unavailable unless AI_MODE=stub")
+
+# --- SETUP GEMINI ---
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI3_MODEL = os.getenv("GEMINI3_MODEL", "gemini-1.5-pro-latest")
+if GEMINI_API_KEY:
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        logger.info("Gemini API client configured successfully")
+    except Exception as e:
+        logger.error(f"Failed to configure Gemini client: {e}")
+else:
+    logger.warning("GEMINI_API_KEY not configured - Gemini 3 readings unavailable unless AI_MODE=stub")
 
 # --- SETUP SENDGRID ---
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
@@ -433,6 +446,46 @@ def calculate_claude_cost(prompt_tokens: int, completion_tokens: int,
         }
 
 
+def calculate_gemini3_cost(prompt_tokens: int, completion_tokens: int,
+                           input_price_per_million: float = 2.00,
+                           output_price_per_million: float = 12.00) -> dict:
+    """
+    Calculate Gemini 3 Pro API cost based on token usage.
+    
+    Default pricing (per 1M tokens):
+    - Input: $2.00
+    - Output: $12.00
+    """
+    try:
+        prompt_tokens = int(prompt_tokens) if prompt_tokens is not None else 0
+        completion_tokens = int(completion_tokens) if completion_tokens is not None else 0
+        prompt_tokens = max(0, prompt_tokens)
+        completion_tokens = max(0, completion_tokens)
+        
+        input_cost = (prompt_tokens / 1_000_000) * input_price_per_million
+        output_cost = (completion_tokens / 1_000_000) * output_price_per_million
+        total_cost = input_cost + output_cost
+        
+        return {
+            'prompt_tokens': prompt_tokens,
+            'completion_tokens': completion_tokens,
+            'total_tokens': prompt_tokens + completion_tokens,
+            'input_cost_usd': round(input_cost, 6),
+            'output_cost_usd': round(output_cost, 6),
+            'total_cost_usd': round(total_cost, 6)
+        }
+    except (TypeError, ValueError) as e:
+        logger.error(f"Error calculating Gemini cost: {e}. Tokens: prompt={prompt_tokens}, completion={completion_tokens}")
+        return {
+            'prompt_tokens': 0,
+            'completion_tokens': 0,
+            'total_tokens': 0,
+            'input_cost_usd': 0.0,
+            'output_cost_usd': 0.0,
+            'total_cost_usd': 0.0
+        }
+
+
 # --- Unified LLM Client ---
 AI_MODE = os.getenv("AI_MODE", "real").lower()  # "real" or "stub" for local testing
 
@@ -600,6 +653,122 @@ class LLMClient:
         }
 
 
+class Gemini3Client:
+    """Gemini 3 client with token + cost tracking."""
+    
+    def __init__(self):
+        self.total_prompt_tokens = 0
+        self.total_completion_tokens = 0
+        self.total_cost_usd = 0.0
+        self.call_count = 0
+        self.model_name = GEMINI3_MODEL or "gemini-1.5-pro-latest"
+        self.default_max_tokens = int(os.getenv("GEMINI3_MAX_OUTPUT_TOKENS", "65000"))
+        self.model = None
+        if GEMINI_API_KEY and AI_MODE != "stub":
+            try:
+                self.model = genai.GenerativeModel(self.model_name)
+            except Exception as e:
+                logger.error(f"Error initializing Gemini model '{self.model_name}': {e}")
+                self.model = None
+    
+    async def generate(self, system: str, user: str, max_output_tokens: int, temperature: float, call_label: str) -> str:
+        self.call_count += 1
+        logger.info(f"[{call_label}] Starting Gemini call #{self.call_count}")
+        logger.info(f"[{call_label}] System prompt length: {len(system)} chars")
+        logger.info(f"[{call_label}] User content length: {len(user)} chars")
+        max_tokens = max_output_tokens or self.default_max_tokens
+        logger.info(f"[{call_label}] max_output_tokens set to {max_tokens}")
+        
+        if AI_MODE == "stub":
+            logger.info(f"[{call_label}] AI_MODE=stub: Returning stub response")
+            stub_response = f"[STUB GEMINI RESPONSE for {call_label}] System: {system[:120]}... User: {user[:120]}..."
+            self.total_prompt_tokens += len(system.split()) + len(user.split())
+            self.total_completion_tokens += len(stub_response.split())
+            return stub_response
+        
+        if not GEMINI_API_KEY:
+            logger.error(f"[{call_label}] GEMINI_API_KEY not configured - cannot call Gemini 3")
+            raise Exception("Gemini API key not configured")
+        
+        if self.model is None:
+            try:
+                self.model = genai.GenerativeModel(self.model_name)
+            except Exception as e:
+                logger.error(f"[{call_label}] Failed to initialize Gemini model '{self.model_name}': {e}")
+                raise
+        
+        prompt_sections = []
+        if system:
+            prompt_sections.append(f"[SYSTEM INSTRUCTIONS]\n{system.strip()}")
+        prompt_sections.append(f"[USER INPUT]\n{user.strip()}")
+        combined_prompt = "\n\n".join(prompt_sections)
+        
+        try:
+            logger.info(f"[{call_label}] Calling Gemini model '{self.model_name}'...")
+            generation_config = {
+                "temperature": temperature,
+                "max_output_tokens": max_tokens,
+            }
+            response = await self.model.generate_content_async(
+                combined_prompt,
+                generation_config=generation_config
+            )
+            logger.info(f"[{call_label}] Gemini API call completed successfully")
+        except Exception as e:
+            logger.error(f"[{call_label}] Gemini API error: {e}", exc_info=True)
+            raise
+        
+        usage_metadata = {
+            'prompt_tokens': 0,
+            'completion_tokens': 0,
+            'total_tokens': 0
+        }
+        if hasattr(response, 'usage_metadata') and response.usage_metadata:
+            try:
+                usage_metadata = {
+                    'prompt_tokens': int(getattr(response.usage_metadata, 'prompt_token_count', 0) or 0),
+                    'completion_tokens': int(getattr(response.usage_metadata, 'candidates_token_count',
+                                                     getattr(response.usage_metadata, 'completion_token_count', 0)) or 0),
+                    'total_tokens': int(getattr(response.usage_metadata, 'total_token_count', 0) or 0)
+                }
+                logger.info(f"[{call_label}] Token usage - Input: {usage_metadata['prompt_tokens']}, Output: {usage_metadata['completion_tokens']}, Total: {usage_metadata['total_tokens']}")
+            except Exception as meta_error:
+                logger.warning(f"[{call_label}] Failed to parse Gemini usage metadata: {meta_error}")
+                usage_metadata = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
+        
+        self.total_prompt_tokens += usage_metadata['prompt_tokens']
+        self.total_completion_tokens += usage_metadata['completion_tokens']
+        call_cost = calculate_gemini3_cost(usage_metadata['prompt_tokens'], usage_metadata['completion_tokens'])
+        self.total_cost_usd += call_cost['total_cost_usd']
+        logger.info(f"[{call_label}] Call cost: ${call_cost['total_cost_usd']:.6f} (Input: ${call_cost['input_cost_usd']:.6f}, Output: ${call_cost['output_cost_usd']:.6f})")
+        
+        response_text = ""
+        if hasattr(response, 'text') and response.text:
+            response_text = response.text.strip()
+        elif hasattr(response, 'candidates') and response.candidates:
+            for candidate in response.candidates:
+                if getattr(candidate, "content", None) and getattr(candidate.content, "parts", None):
+                    part_texts = [getattr(part, "text", "") for part in candidate.content.parts]
+                    response_text = " ".join(part_texts).strip()
+                    if response_text:
+                        break
+        if not response_text:
+            logger.error(f"[{call_label}] Gemini response empty or blocked")
+            raise Exception("Gemini response was empty or blocked")
+        
+        logger.info(f"[{call_label}] Response length: {len(response_text)} characters")
+        return response_text
+    
+    def get_summary(self) -> dict:
+        return {
+            'total_prompt_tokens': self.total_prompt_tokens,
+            'total_completion_tokens': self.total_completion_tokens,
+            'total_tokens': self.total_prompt_tokens + self.total_completion_tokens,
+            'total_cost_usd': self.total_cost_usd,
+            'call_count': self.call_count
+        }
+
+
 async def _run_gemini_prompt(prompt_text: str) -> tuple[str, dict]:
     """
     Run a Gemini API prompt and return both the response text and usage metadata.
@@ -695,6 +864,276 @@ async def _run_gemini_prompt(prompt_text: str) -> tuple[str, dict]:
         
         # Raise exception instead of returning error string
         raise Exception(error_message)
+
+
+def _blueprint_to_json(blueprint: Dict[str, Any]) -> str:
+    if blueprint.get("parsed"):
+        return json.dumps(blueprint['parsed'].model_dump(by_alias=True), indent=2)
+    return blueprint.get("raw_text", "")
+
+
+async def g0_global_blueprint(llm: Gemini3Client, serialized_chart: dict, chart_summary: str, unknown_time: bool) -> Dict[str, Any]:
+    """Gemini Call 0 - produce JSON planning blueprint."""
+    system_prompt = """You are a master true sidereal planning intelligence. Output ONLY JSON. No markdown or commentary outside the JSON object.
+Schema (all keys required):
+- life_thesis: string paragraph
+- core_axes: list of 3-4 objects {name, description, chart_factors[], immature_expression, mature_expression}
+- top_themes: list of 5 {label, text}
+- sun_moon_ascendant_plan: list of {body, sidereal_expression, tropical_expression, integration_notes}
+- planetary_clusters: list of {name, members[], description, implications}
+- houses_by_domain: list of {domain, summary, indicators[]}
+- aspect_highlights: list of {title, aspect, meaning, life_applications[]}
+- patterns: list of {name, description, involved_points[]}
+- themed_chapters: list of {chapter, thesis, subtopics[], supporting_factors[]}
+- shadow_contradictions: list of {tension, drivers[], integration_strategy}
+- growth_edges: list of {focus, description, practices[]}
+- final_principles_and_prompts: {principles[], prompts[]}
+All notes must be concise and cite specific chart factors (sidereal/tropical placements, aspects, nodes, numerology, dominant patterns)."""
+    
+    serialized_chart_json = json.dumps(serialized_chart, indent=2)
+    time_note = "Birth time is UNKNOWN. Avoid relying on houses/angles; focus on sign-level, planetary, and aspect evidence." if unknown_time else "Birth time is known. Houses and angles are available."
+    user_prompt = f"""Chart Summary:
+{chart_summary}
+
+Serialized Chart Data:
+{serialized_chart_json}
+
+Context:
+- {time_note}
+- Plan the entire premium reading. You are not writing prose sections yet—only outlining with analytic notes.
+- Use short, information-dense strings that reference the exact placements/aspects backing each note.
+
+Return ONLY the JSON object."""
+    
+    response_text = await llm.generate(
+        system=system_prompt,
+        user=user_prompt,
+        max_output_tokens=12000,
+        temperature=0.2,
+        call_label="G0_global_blueprint"
+    )
+    
+    blueprint_parsed = parse_json_response(response_text, GlobalReadingBlueprint)
+    if blueprint_parsed:
+        logger.info("G0 parsed blueprint successfully")
+        return {"parsed": blueprint_parsed, "raw_text": response_text}
+    
+    logger.warning("G0 blueprint parsing failed - returning raw JSON text fallback")
+    return {"parsed": None, "raw_text": response_text}
+
+
+async def g1_natal_foundation(
+    llm: Gemini3Client,
+    serialized_chart: dict,
+    chart_summary: str,
+    blueprint: Dict[str, Any],
+    unknown_time: bool
+) -> str:
+    """Gemini Call 1 - Natal foundations + personal/social planets."""
+    blueprint_json = _blueprint_to_json(blueprint)
+    serialized_chart_json = json.dumps(serialized_chart, indent=2)
+    time_note = "After the Snapshot, include a short 'What We Know / What We Don't Know' paragraph clarifying birth time is unknown. Avoid houses/angles entirely." if unknown_time else "You may cite houses and angles explicitly."
+    
+    system_prompt = """You are The Synthesizer, an expert true sidereal astrologer.
+Tone: psychologically literate consultant, clinical but warm, concrete, second person, confident but non-absolute.
+Scope for this call ONLY:
+- Cover & Orientation
+- Snapshot (7 bullets)
+- Chart Overview & Core Themes (strict structure)
+- Foundational Pillars: Sun, Moon, Ascendant
+- Personal & Social Planets (Mercury through Saturn)
+- Houses & Life Domains summary
+Rules:
+- Follow the blueprint exactly—do not invent placements.
+- Trace every statement back to explicit chart factors (sidereal vs tropical contrasts, nodes, numerology, dominant elements/patterns).
+- No fluff or repetition. Build depth quickly."""
+    
+    heading_block = "   WHAT WE KNOW / WHAT WE DON'T KNOW\n" if unknown_time else ""
+    
+    user_prompt = f"""[CHART SUMMARY]\n{chart_summary}\n
+[SERIALIZED CHART DATA]\n{serialized_chart_json}\n
+[BLUEPRINT JSON]\n{blueprint_json}\n
+Instructions:
+1. Use uppercase headings in this order:
+   COVER & ORIENTATION
+   SNAPSHOT: WHAT WILL FEEL MOST TRUE ABOUT YOU
+{heading_block}   CHART OVERVIEW & CORE THEMES
+   FOUNDATIONAL PILLARS: SUN - MOON - ASCENDANT
+   PERSONAL & SOCIAL PLANETS
+   HOUSES & LIFE DOMAINS SUMMARY
+2. Snapshot = exactly 7 bullets derived from top_themes + axes. Concrete, behavior-focused, no astrology jargon.
+3. Chart Overview & Core Themes: obey the existing specification (5 themes, each with heading `Theme X – [Title]`, 2 headline sentences, `Why this shows up in your chart`, `How it tends to feel and play out`). At least 2 themes must highlight Sidereal vs Tropical contrasts; at least 1 integrates Nodes. Use numerology only when reinforcing.
+4. Foundational Pillars: use sun_moon_ascendant_plan to craft two dense paragraphs per body (internal process + external expression).
+5. Personal & Social Planets:
+   - Mercury, Venus, Mars → cognition/communication, relating/attraction, drive/assertion. Include concrete examples.
+   - Jupiter, Saturn → expansion vs discipline interplay with real-life scenarios.
+6. Houses & Life Domains: synthesize houses_by_domain (skip houses entirely if unknown time). {time_note}
+7. Reference planetary_clusters, aspect_highlights, and patterns when relevant.
+8. Keep Action Checklist for later sections (do NOT include here)."""
+    
+    return await llm.generate(
+        system=system_prompt,
+        user=user_prompt,
+        max_output_tokens=45000,
+        temperature=0.7,
+        call_label="G1_natal_foundation"
+    )
+
+
+async def g2_deep_dive_chapters(
+    llm: Gemini3Client,
+    serialized_chart: dict,
+    chart_summary: str,
+    blueprint: Dict[str, Any],
+    natal_sections: str,
+    unknown_time: bool
+) -> str:
+    """Gemini Call 2 - Themed chapters, aspects, shadow, owner's manual."""
+    blueprint_json = _blueprint_to_json(blueprint)
+    serialized_chart_json = json.dumps(serialized_chart, indent=2)
+    
+    system_prompt = """You are continuing the same reading. 
+Scope for this call:
+- LOVE, RELATIONSHIPS & ATTACHMENT
+- WORK, MONEY & VOCATION
+- EMOTIONAL LIFE, FAMILY & HEALING
+- SPIRITUAL PATH & MEANING
+- MAJOR LIFE DYNAMICS: THE TIGHTEST ASPECTS & PATTERNS
+- SHADOW, CONTRADICTIONS & GROWTH EDGES
+- OWNER'S MANUAL: FINAL INTEGRATION
+Guardrails:
+- Read the earlier sections (provided) so you do not contradict prior content.
+- Use blueprint.themed_chapters, aspect_highlights, patterns, shadow_contradictions, growth_edges, and final_principles_and_prompts.
+- Every paragraph must include at least one concrete scenario or behavioral example.
+- Maintain the clinical-but-warm tone."""
+    
+    user_prompt = f"""[CHART SUMMARY]\n{chart_summary}\n
+[SERIALIZED CHART DATA]\n{serialized_chart_json}\n
+[BLUEPRINT JSON]\n{blueprint_json}\n
+[PRIOR SECTIONS ALREADY WRITTEN]\n{natal_sections}\n
+Section instructions:
+LOVE, RELATIONSHIPS & ATTACHMENT
+- Use Venus, Mars, Nodes, Juno, 5th/7th houses (if time known) plus relevant aspects/patterns.
+- Provide 2-3 concrete relational dynamics + guidance.
+
+WORK, MONEY & VOCATION
+- Integrate Midheaven/10th/2nd houses when available, Saturn/Jupiter signatures, dominant elements, numerology if reinforcing.
+
+EMOTIONAL LIFE, FAMILY & HEALING
+- Moon aspects, 4th/8th/12th houses, Chiron, blueprint emotional chapter notes.
+
+SPIRITUAL PATH & MEANING
+- Nodes, Neptune, Pluto, numerology, blueprint spiritual chapter.
+
+MAJOR LIFE DYNAMICS: THE TIGHTEST ASPECTS & PATTERNS
+- For each blueprint.aspect_highlights entry, deliver:
+   * Core tension/strength statement
+   * Why it exists (placements/aspects)
+   * One real-life example
+- Summarize blueprint.patterns afterwards (Grand Trines, T-Squares, Stelliums, Yods, etc.).
+
+SHADOW, CONTRADICTIONS & GROWTH EDGES
+- For each blueprint.shadow_contradictions item, describe the tension, identify drivers, provide integration strategy.
+- Weave blueprint.growth_edges as actionable experiments.
+
+OWNER'S MANUAL: FINAL INTEGRATION
+- Present 3-4 guiding principles plus the prompts from blueprint.final_principles_and_prompts.
+- End with ACTION CHECKLIST (7 bullets) referencing earlier content.
+
+Unknown time handling: {'Do NOT cite houses/angles; speak in terms of domains, signs, and aspects.' if unknown_time else 'You may cite houses/angles explicitly.'}
+Ensure everything builds on prior sections rather than repeating them verbatim."""
+    
+    return await llm.generate(
+        system=system_prompt,
+        user=user_prompt,
+        max_output_tokens=45000,
+        temperature=0.7,
+        call_label="G2_deep_dive_chapters"
+    )
+
+
+async def g3_polish_full_reading(
+    llm: Gemini3Client,
+    full_draft: str,
+    chart_summary: str
+) -> str:
+    """Gemini Call 3 - polish entire reading."""
+    system_prompt = """You are an editorial finisher.
+Goals:
+- Improve clarity, transitions, and rhythm.
+- Remove redundancy and tighten sentences.
+- Preserve all section headings, bullet counts, and astrological facts.
+- Maintain tone (psychologically literate consultant, second person, confident but not absolute)."""
+    
+    user_prompt = f"""Full draft to polish:
+{full_draft}
+
+Reference chart summary (for context only, do not restate):
+{chart_summary}
+
+Return the polished reading with identical structure and headings."""
+    
+    return await llm.generate(
+        system=system_prompt,
+        user=user_prompt,
+        max_output_tokens=65000,
+        temperature=0.4,
+        call_label="G3_polish_full_reading"
+    )
+
+
+async def get_gemini3_reading(chart_data: dict, unknown_time: bool) -> str:
+    """Four-call Gemini 3 pipeline."""
+    if not GEMINI_API_KEY and AI_MODE != "stub":
+        logger.error("Gemini API key not configured - AI reading unavailable")
+        raise Exception("Gemini API key not configured. AI reading is unavailable.")
+    
+    logger.info("="*60)
+    logger.info("Starting Gemini 3 reading generation...")
+    logger.info(f"AI_MODE: {AI_MODE}")
+    logger.info(f"Unknown time: {unknown_time}")
+    logger.info("="*60)
+    
+    llm = Gemini3Client()
+    
+    try:
+        serialized_chart = serialize_chart_for_llm(chart_data, unknown_time=unknown_time)
+        chart_summary = format_serialized_chart_for_prompt(serialized_chart)
+        
+        blueprint = await g0_global_blueprint(llm, serialized_chart, chart_summary, unknown_time)
+        natal_sections = await g1_natal_foundation(llm, serialized_chart, chart_summary, blueprint, unknown_time)
+        deep_sections = await g2_deep_dive_chapters(llm, serialized_chart, chart_summary, blueprint, natal_sections, unknown_time)
+        full_draft = f"{natal_sections}\n\n{deep_sections}"
+        final_reading = await g3_polish_full_reading(llm, full_draft, chart_summary)
+        
+        summary = llm.get_summary()
+        cost_info = calculate_gemini3_cost(summary['total_prompt_tokens'], summary['total_completion_tokens'])
+        
+        logger.info("=== GEMINI 3 API COST SUMMARY ===")
+        logger.info(f"Total Calls: {summary['call_count']}")
+        logger.info(f"Total Input Tokens: {summary['total_prompt_tokens']:,}")
+        logger.info(f"Total Output Tokens: {summary['total_completion_tokens']:,}")
+        logger.info(f"Total Tokens: {summary['total_tokens']:,}")
+        logger.info(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
+        logger.info(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
+        logger.info(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
+        logger.info("=" * 50)
+        
+        print(f"\n{'='*60}")
+        print("GEMINI 3 API COST SUMMARY")
+        print(f"Total Calls: {summary['call_count']}")
+        print(f"Total Input Tokens: {summary['total_prompt_tokens']:,}")
+        print(f"Total Output Tokens: {summary['total_completion_tokens']:,}")
+        print(f"Total Tokens: {summary['total_tokens']:,}")
+        print(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
+        print(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
+        print(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
+        print(f"{'='*60}\n")
+        
+        return final_reading
+    except Exception as e:
+        logger.error(f"Error during Gemini 3 reading generation: {e}", exc_info=True)
+        raise Exception(f"An error occurred while generating the detailed AI reading: {e}")
 
 
 def _sign_from_position(pos: str | None) -> str | None:
@@ -1309,8 +1748,10 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
         
         # Generate the reading
         try:
-            # Temporarily using V2 pipeline - can switch back to get_claude_reading for rollback
-            claude_reading = await get_claude_reading_v2(chart_data, unknown_time)
+            if AI_MODE == "gemini3":
+                claude_reading = await get_gemini3_reading(chart_data, unknown_time)
+            else:
+                claude_reading = await get_claude_reading_v2(chart_data, unknown_time)
             logger.info(f"AI Reading successfully generated for: {chart_name} (length: {len(claude_reading)} characters)")
             
             # Store reading in cache for frontend retrieval

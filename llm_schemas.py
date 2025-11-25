@@ -37,7 +37,7 @@ Example JSON Schema Output (Chart Overview):
 """
 
 from typing import Dict, List, Optional, Any, TypedDict, Type
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 import json
 import logging
 
@@ -130,17 +130,94 @@ class CoreThemeBullet(BaseModel):
     text: str = Field(..., description="The theme description text")
 
 
+class SunMoonAscendantPlan(BaseModel):
+    """Integration plan for Sun, Moon, and Ascendant."""
+    body: str = Field(..., description="One of: Sun, Moon, Ascendant")
+    sidereal_expression: str = Field(..., description="Short note on sidereal expression")
+    tropical_expression: str = Field(..., description="Short note on tropical expression")
+    integration_notes: str = Field(..., description="How to reconcile the two expressions in practice")
+
+
+class PlanetaryClusterPlan(BaseModel):
+    """Describes stelliums or functional clusters."""
+    name: str = Field(..., description="Cluster name (e.g., 'Aquarius Stellium')")
+    members: List[str] = Field(..., description="Bodies/points involved")
+    description: str = Field(..., description="What the cluster means psychologically")
+    implications: str = Field(..., description="Life areas impacted by this cluster")
+
+
+class HouseDomainPlan(BaseModel):
+    """Summaries for life domains or house groupings."""
+    domain: str = Field(..., description="Life domain label (e.g., 'Relationships', 'Career')")
+    summary: str = Field(..., description="Key insights for this domain")
+    indicators: List[str] = Field(..., description="Relevant houses/planets/aspects supporting this summary")
+
+
+class AspectHighlightPlan(BaseModel):
+    """Key aspect highlights for later expansion."""
+    title: str = Field(..., description="Short friendly label for the aspect dynamic")
+    aspect: str = Field(..., description="Exact aspect description (e.g., 'Sun square Saturn')")
+    meaning: str = Field(..., description="Core tension or talent described plainly")
+    life_applications: List[str] = Field(..., description="Concrete scenarios or arenas where it shows up")
+
+
+class PatternPlan(BaseModel):
+    """Major aspect pattern descriptions."""
+    name: str = Field(..., description="Pattern name (e.g., 'Grand Trine in Earth')")
+    description: str = Field(..., description="Summary of why this matters")
+    involved_points: List[str] = Field(..., description="Planets/points in the pattern")
+
+
+class ThemedChapterPlan(BaseModel):
+    """Outline for deep-dive thematic chapters."""
+    chapter: str = Field(..., description="Chapter name (love, work, emotional life, spirituality, etc.)")
+    thesis: str = Field(..., description="Core statement this chapter should argue")
+    subtopics: List[str] = Field(..., description="Specific angles or questions to cover")
+    supporting_factors: List[str] = Field(..., description="Chart factors that justify the thesis/subtopics")
+
+
+class ShadowContradictionPlan(BaseModel):
+    """Contradictions the reading must explore."""
+    tension: str = Field(..., description="Name or describe the contradiction/tension")
+    drivers: List[str] = Field(..., description="Chart factors driving this tension")
+    integration_strategy: str = Field(..., description="How to work with or alchemize the contradiction")
+
+
+class GrowthEdgePlan(BaseModel):
+    """Concrete growth edges or practices."""
+    focus: str = Field(..., description="What area the growth edge targets")
+    description: str = Field(..., description="Why this is important now")
+    practices: List[str] = Field(..., description="Actionable experiments or practices")
+
+
+class FinalPrinciplesPlan(BaseModel):
+    """Owner's manual principles and prompts."""
+    principles: List[str] = Field(..., description="Guiding statements distilled from the chart")
+    prompts: List[str] = Field(..., description="Reflection or action prompts tied to those principles")
+
+
 class GlobalReadingBlueprint(BaseModel):
     """Global blueprint for the entire reading - provides coherence across all sections."""
+    model_config = ConfigDict(populate_by_name=True)
+
     life_thesis: str = Field(..., description="One-paragraph life thesis summarizing the soul's core journey")
-    axes: List[LifeAxis] = Field(..., min_length=3, max_length=3, description="Exactly 3 core life axes")
+    core_axes: List[LifeAxis] = Field(..., min_length=3, max_length=4, alias="core_axes", description="3-4 core life axes to prioritize")
     top_themes: List[CoreThemeBullet] = Field(..., min_length=5, max_length=5, description="Exactly 5 top themes (emotional, relationship, work, spiritual, shadow)")
+    sun_moon_ascendant_plan: List[SunMoonAscendantPlan] = Field(..., description="Integration plan for Sun, Moon, Ascendant")
+    planetary_clusters: List[PlanetaryClusterPlan] = Field(..., description="List of stelliums or functional planet clusters")
+    houses_by_domain: List[HouseDomainPlan] = Field(..., description="House/domain summaries to reference later")
+    aspect_highlights: List[AspectHighlightPlan] = Field(..., description="Top aspects to expand later")
+    patterns: List[PatternPlan] = Field(..., description="Major aspect patterns that must be referenced")
+    themed_chapters: List[ThemedChapterPlan] = Field(..., description="Plans for themed deep-dive chapters")
+    shadow_contradictions: List[ShadowContradictionPlan] = Field(..., description="Key contradictions that need exploration")
+    growth_edges: List[GrowthEdgePlan] = Field(..., description="Specific growth edges / experiments to include")
+    final_principles_and_prompts: FinalPrinciplesPlan = Field(..., description="Owner's manual summary with actionable prompts")
     
-    @field_validator('axes')
+    @field_validator('core_axes')
     @classmethod
     def validate_axes_count(cls, v):
-        if len(v) != 3:
-            raise ValueError(f"Must have exactly 3 axes, got {len(v)}")
+        if len(v) < 3 or len(v) > 4:
+            raise ValueError(f"Must have 3-4 axes, got {len(v)}")
         return v
     
     @field_validator('top_themes')
@@ -149,6 +226,11 @@ class GlobalReadingBlueprint(BaseModel):
         if len(v) != 5:
             raise ValueError(f"Must have exactly 5 top themes, got {len(v)}")
         return v
+    
+    @property
+    def axes(self) -> List[LifeAxis]:
+        """Backward-compatible accessor for legacy code."""
+        return self.core_axes
 
 
 # ============================================================================

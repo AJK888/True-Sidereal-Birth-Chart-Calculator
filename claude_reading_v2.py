@@ -57,51 +57,31 @@ async def call0_global_blueprint(
 ) -> Dict[str, Any]:
     """
     Call 0: Produce a structured JSON blueprint for the entire reading.
-    Includes life thesis, 3 core life axes, and top 5 themes.
+    Must include life thesis, core axes, top themes, and extended planning sections
+    (Sun/Moon/Ascendant plan, clusters, domains, aspect highlights, patterns, themed chapters,
+    shadow/growth notes, and final principles/prompts).
     """
     logger.info("="*60)
     logger.info("CALL 0: Global Blueprint")
     logger.info("="*60)
     
-    system_prompt = """You are a master astrological planner. Your ONLY job is to analyze the chart and produce a structured JSON blueprint.
+    system_prompt = """You are a master astrological planner. Your ONLY job is to analyze the chart and produce a structured JSON blueprint for a premium reading.
+Output ONLY valid JSON with these keys (all required):
+- "life_thesis": string paragraph.
+- "core_axes": list of 3-4 objects with {name, description, chart_factors[], immature_expression, mature_expression}.
+- "top_themes": list of 5 objects with {label (emotional/relationship/work/spiritual/shadow), text}.
+- "sun_moon_ascendant_plan": list of {body, sidereal_expression, tropical_expression, integration_notes}.
+- "planetary_clusters": list of {name, members[], description, implications}.
+- "houses_by_domain": list of {domain, summary, indicators[]}.
+- "aspect_highlights": list of {title, aspect, meaning, life_applications[]}.
+- "patterns": list of {name, description, involved_points[]}.
+- "themed_chapters": list of {chapter, thesis, subtopics[], supporting_factors[]}.
+- "shadow_contradictions": list of {tension, drivers[], integration_strategy}.
+- "growth_edges": list of {focus, description, practices[]}.
+- "final_principles_and_prompts": object with {principles[], prompts[]}.
 
-You must output ONLY valid JSON matching this exact structure:
-{
-  "life_thesis": "One paragraph summarizing the soul's core journey...",
-  "axes": [
-    {
-      "name": "Axis name",
-      "description": "One paragraph description...",
-      "chart_factors": ["placement1", "placement2"],
-      "immature_expression": "How it shows when unresolved...",
-      "mature_expression": "How it shows when integrated..."
-    }
-  ],
-  "top_themes": [
-    {
-      "label": "emotional",
-      "text": "Theme description..."
-    },
-    {
-      "label": "relationship",
-      "text": "Theme description..."
-    },
-    {
-      "label": "work",
-      "text": "Theme description..."
-    },
-    {
-      "label": "spiritual",
-      "text": "Theme description..."
-    },
-    {
-      "label": "shadow",
-      "text": "Theme description..."
-    }
-  ]
-}
-
-You must output exactly 3 axes and exactly 5 top themes (emotional, relationship, work, spiritual, shadow).
+All notes must cite the exact sidereal/tropical placements, aspects, nodes, numerology, or dominant patterns that justify them.
+Do NOT include prose paragraphs—keep entries concise and analytic.
 Your response must start with { and end with }. No markdown, no explanations outside the JSON."""
     
     user_prompt = f"""**Chart Data Summary:**
@@ -110,12 +90,10 @@ Your response must start with { and end with }. No markdown, no explanations out
 **Note:** {"Birth time is unknown, so house placements and Ascendant/MC are unavailable." if unknown_time else "Full chart data including houses and angles is available."}
 
 **Your Task:**
-Analyze this chart and produce a global blueprint JSON with:
-1. **life_thesis**: One paragraph that captures the soul's core journey and purpose
-2. **axes**: Exactly 3 fundamental life axes (tensions/dynamics) that shape this person's experience
-3. **top_themes**: Exactly 5 theme bullets covering: emotional patterns, relationship dynamics, work/vocation, spiritual/meaning, shadow/growth areas
-
-Each axis must be grounded in specific chart placements. Each theme must be specific to this chart, not generic.
+Analyze this chart and produce a complete blueprint JSON that fills EVERY required key described above.
+- Use Sidereal vs Tropical contrasts, numerology, nodes, aspect patterns, and dominant elements to justify each entry.
+- If birth time is unknown, note that houses/angles are unavailable and lean on sign-level/aspect evidence.
+- Keep each string short but information-dense, naming the exact placements/aspects involved.
 
 Output ONLY the JSON object. Start with {{ and end with }}."""
     
@@ -123,7 +101,7 @@ Output ONLY the JSON object. Start with {{ and end with }}."""
         system=system_prompt,
         user=user_prompt,
         temperature=0.5,
-        max_output_tokens=4096,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call0_global_blueprint"
     )
     
@@ -194,7 +172,7 @@ Use plain text headings (no markdown). Do not interpret specific placements yet.
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=2000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call1_cover_and_orientation"
     )
     
@@ -229,7 +207,7 @@ Tone Guidelines:
     
     blueprint_json = ""
     if blueprint.get("parsed"):
-        blueprint_json = json.dumps(blueprint['parsed'].model_dump(), indent=2)
+        blueprint_json = json.dumps(blueprint['parsed'].model_dump(by_alias=True), indent=2)
     elif blueprint.get("raw_text"):
         blueprint_json = blueprint['raw_text']
     
@@ -264,7 +242,7 @@ Use plain text headings (no markdown)."""
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=6000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call2_chart_overview_and_core_themes"
     )
     
@@ -321,7 +299,7 @@ For each planet, include concrete behavioral examples. Use plain text headings (
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=6000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call3_foundational_pillars"
     )
     
@@ -368,7 +346,7 @@ Emphasize concrete behavioral examples. Use plain text headings (no markdown).""
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=6000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call4_personal_planets"
     )
     
@@ -413,7 +391,7 @@ Emphasize how expansion (Jupiter) and discipline (Saturn) interact in both soul-
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=6000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call5_social_planets"
     )
     
@@ -463,7 +441,7 @@ Use plain text headings (no markdown)."""
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=6000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call6_outer_and_nodes"
     )
     
@@ -525,7 +503,7 @@ Use plain text headings (no markdown)."""
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=6000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call7_houses_and_domains"
     )
     
@@ -582,7 +560,7 @@ Use plain text headings (no markdown)."""
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=8000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call8_aspects_and_patterns"
     )
     
@@ -631,7 +609,7 @@ Write several pages of detailed analysis. Use plain text headings (no markdown).
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=8000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call9_themes_love_and_relationships"
     )
     
@@ -681,7 +659,7 @@ Write several pages of detailed analysis. Use plain text headings (no markdown).
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=8000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call10_themes_work_money_vocation"
     )
     
@@ -731,7 +709,7 @@ Write several pages of detailed analysis. Use plain text headings (no markdown).
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=8000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call11_themes_emotional_family_healing"
     )
     
@@ -781,7 +759,7 @@ Write several pages of detailed analysis. Use plain text headings (no markdown).
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=8000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call12_themes_spiritual_path_meaning"
     )
     
@@ -844,7 +822,7 @@ Use plain text headings (no markdown)."""
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=8000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call13_shadow_and_growth"
     )
     
@@ -930,7 +908,7 @@ Explicitly reference the life thesis and main axes throughout. Use plain text he
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=6000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call15_final_integration"
     )
     
@@ -972,7 +950,7 @@ Polish this section for tone, flow, and clarity. Keep all headings, structure, a
         system=system_prompt,
         user=user_prompt,
         temperature=0.3,
-        max_output_tokens=6000,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label=f"polish_{section_label.lower().replace(' ', '_')}"
     )
     
