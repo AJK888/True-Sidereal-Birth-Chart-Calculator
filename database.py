@@ -11,6 +11,10 @@ import os
 # Database URL - use SQLite for simplicity (can switch to PostgreSQL for production)
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./synthesis_astrology.db")
 
+# Fix for Render: They provide postgres:// but SQLAlchemy requires postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 # For SQLite, we need to handle the connection args differently
 if DATABASE_URL.startswith("sqlite"):
     engine = create_engine(
@@ -18,7 +22,12 @@ if DATABASE_URL.startswith("sqlite"):
         connect_args={"check_same_thread": False}
     )
 else:
-    engine = create_engine(DATABASE_URL)
+    # PostgreSQL with connection pool settings for production
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,  # Verify connections before using
+        pool_recycle=300,    # Recycle connections every 5 minutes
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
