@@ -29,6 +29,8 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 import base64
 from pdf_generator import generate_pdf_report
+import re
+
 from llm_schemas import (
     ChartOverviewOutput, CoreTheme, serialize_chart_for_llm,
     format_serialized_chart_for_prompt, parse_json_response,
@@ -618,16 +620,17 @@ async def g1_natal_foundation(
     system_prompt = """You are The Synthesizer, an expert true sidereal astrologer.
 Tone: psychologically literate consultant, clinical but warm, concrete, second person, confident but non-absolute.
 Scope for this call ONLY:
-- Cover & Orientation
-- Snapshot (7 bullets)
+- Snapshot (7 bullets, no lead-in paragraph)
 - Chart Overview & Core Themes (strict structure)
 - Foundational Pillars: Sun, Moon, Ascendant
 - Personal & Social Planets (Mercury through Saturn)
 - Houses & Life Domains summary
 Rules:
+- Start immediately with the SNAPSHOT heading. Do NOT include any preliminary paragraphs, metadata (Chart/Location/Archetype), or decorative separators.
+- Absolutely NO markdown, bold/italic markers, emojis, or “***” separators. Use plain uppercase headings and standard sentences.
 - Follow the blueprint exactly—do not invent placements.
-- Trace every statement back to explicit chart factors (sidereal vs tropical contrasts, nodes, numerology, dominant elements/patterns).
-- No fluff or repetition. Build depth quickly."""
+- Every paragraph must synthesize multiple chart factors (sidereal + tropical + houses/aspects/nodes/numerology) instead of describing single placements in isolation.
+- Keep language tight, incisive, and specific. No fluff or repetition."""
     
     heading_block = "   WHAT WE KNOW / WHAT WE DON'T KNOW\n" if unknown_time else ""
     
@@ -642,25 +645,25 @@ Rules:
 [BLUEPRINT JSON]\n{blueprint_json}\n
 Instructions:
 1. Use uppercase headings in this order:
-   COVER & ORIENTATION
    SNAPSHOT: WHAT WILL FEEL MOST TRUE ABOUT YOU
 {heading_block}   CHART OVERVIEW & CORE THEMES
    FOUNDATIONAL PILLARS: SUN - MOON - ASCENDANT
    PERSONAL & SOCIAL PLANETS
    HOUSES & LIFE DOMAINS SUMMARY
-2. Follow this brief for the Snapshot section (use it verbatim):
+2. SNAPSHOT: Output must be exactly 7 bullets, no astro jargon, no placement references, no intro/outro sentences. Every bullet should make the reader think “how do they know that?!” by naming paradoxes, compulsions, sabotaging loops, and unspoken drives:
 {SNAPSHOT_PROMPT.strip()}
 
 Blueprint notes for Snapshot (use them to prioritize chart factors):
 {snapshot_notes}
-3. Chart Overview & Core Themes: obey the existing specification (5 themes, each with heading `Theme 1 – [Title]`, 2 headline sentences, `Why this shows up in your chart`, `How it tends to feel and play out`). At least 2 themes must highlight Sidereal vs Tropical contrasts; at least 1 integrates Nodes. Use numerology only when reinforcing.
-4. Foundational Pillars: use sun_moon_ascendant_plan to craft two dense paragraphs per body (internal process + external expression).
+3. Chart Overview & Core Themes: For EACH of the 5 themes you must interweave at least two concrete signals (sidereal vs tropical contrast + aspect + house/nodal/numerology evidence) and show the lived effect through a specific scenario. Call out contradictions explicitly and avoid reusing the same evidence unless you are adding a new layer. End with a synthesis paragraph that names the core tension and specific growth direction.
+4. Foundational Pillars: Use sun_moon_ascendant_plan to craft two dense paragraphs per body (inner process + outward behavior). Each paragraph must cite BOTH sidereal and tropical expressions plus at least one reinforcing aspect/house/numerology factor, and end with a vivid real-life example.
 5. Personal & Social Planets:
-   - Mercury, Venus, Mars → cognition/communication, relating/attraction, drive/assertion. Include concrete examples.
-   - Jupiter, Saturn → expansion vs discipline interplay with real-life scenarios.
-6. Houses & Life Domains: synthesize houses_by_domain (skip houses entirely if unknown time). {time_note}
-7. Reference planetary_clusters, aspect_highlights, and patterns when relevant.
-8. Keep Action Checklist for later sections (do NOT include here)."""
+   - Mercury/Venus/Mars → describe how their sidereal+tropical placements, dispositors, and aspects fuse into cognition, magnetism, and drive. Every paragraph must conclude with a concrete behavioral example or recognizable pattern.
+   - Jupiter/Saturn → show how expansion and discipline interplay, referencing nodes, numerology, or house emphasis where relevant.
+6. Houses & Life Domains: {time_note} Instead of listing houses, synthesize the blueprint’s houses_by_domain notes into powerful paragraphs that braid angular emphasis, dominant elements/modality, and pattern notes so each life area feels “engineered.” Give at least one “this is how it shows up” example per domain.
+7. Throughout, reference planetary_clusters, aspect_highlights, and patterns whenever they strengthen the point so the whole reading feels cross-referenced and intentional.
+8. No horizontal rules, decorative characters, or markdown anywhere in the response.
+9. Keep Action Checklist for later sections (do NOT include here)."""
     
     return await llm.generate(
         system=system_prompt,
@@ -695,8 +698,11 @@ Scope for this call:
 Guardrails:
 - Read the earlier sections (provided) so you do not contradict prior content.
 - Use blueprint.themed_chapters, aspect_highlights, patterns, shadow_contradictions, growth_edges, and final_principles_and_prompts.
-- Every paragraph must include at least one concrete scenario or behavioral example.
-- Maintain the clinical-but-warm tone."""
+- Every paragraph must include at least one concrete scenario or behavioral example rooted in specific chart factors (mix sidereal+tropical+houses/aspects/nodes/numerology).
+- Synthesize aggressively. Each paragraph should earn its existence by revealing tension/resolution across multiple placements rather than re-describing a single body.
+- Maintain the clinical-but-warm tone.
+- No markdown, bold/italic markers, emojis, or decorative separators. Use plain uppercase headings and paragraph text only.
+- Tie late revelations back to earlier sections when useful (“As hinted in Snapshot…”, “This echoes the Foundational Pillars tension…”)."""
     
     user_prompt = f"""[CHART SUMMARY]\n{chart_summary}\n
 [SERIALIZED CHART DATA]\n{serialized_chart_json}\n
@@ -705,34 +711,34 @@ Guardrails:
 Section instructions:
 LOVE, RELATIONSHIPS & ATTACHMENT
 - Use Venus, Mars, Nodes, Juno, 5th/7th houses (if time known) plus relevant aspects/patterns.
-- Provide 2-3 concrete relational dynamics + guidance.
+- Provide at least 3 concrete relational dynamics that show contradiction + lesson. Every paragraph must cite multiple signals (e.g., Venus/Mars aspect + nodal axis + numerology) and end with “so this often looks like…”.
 
 WORK, MONEY & VOCATION
-- Integrate Midheaven/10th/2nd houses when available, Saturn/Jupiter signatures, dominant elements, numerology if reinforcing.
+- Integrate Midheaven/10th/2nd houses when available, Saturn/Jupiter signatures, dominant elements, numerology if reinforcing. Show how internal motives (from earlier sections) become strategy, and call back to Mars/Saturn themes where relevant.
 
 EMOTIONAL LIFE, FAMILY & HEALING
-- Moon aspects, 4th/8th/12th houses, Chiron, blueprint emotional chapter notes.
+- Use Moon aspects, 4th/8th/12th houses, Chiron, blueprint notes. Reveal family imprints and healing arcs with visceral examples (e.g., “This is the moment you shut down during conflict…”).
 
 SPIRITUAL PATH & MEANING
-- Nodes, Neptune, Pluto, numerology, blueprint spiritual chapter.
+- Nodes, Neptune, Pluto, numerology, blueprint spiritual chapter. Explain how surrender vs control repeats everywhere, and prescribe tangible practices that tie back to numerology/Life Path.
 
 MAJOR LIFE DYNAMICS: THE TIGHTEST ASPECTS & PATTERNS
 - For each blueprint.aspect_highlights entry, deliver:
    * Core tension/strength statement
    * Why it exists (placements/aspects)
-   * One real-life example
-- Summarize blueprint.patterns afterwards (Grand Trines, T-Squares, Stelliums, Yods, etc.).
+   * One real-life example and the lever for growth
+- Summarize blueprint.patterns afterwards (Grand Trines, T-Squares, Stelliums, Yods, etc.), explicitly naming how they amplify or resolve earlier themes.
 
 SHADOW, CONTRADICTIONS & GROWTH EDGES
-- For each blueprint.shadow_contradictions item, describe the tension, identify drivers, provide integration strategy.
-- Weave blueprint.growth_edges as actionable experiments.
+- For each blueprint.shadow_contradictions item, describe the tension, identify drivers, provide integration strategy with a concrete “pattern interrupt.”
+- Weave blueprint.growth_edges as actionable experiments tied to daily life.
 
 OWNER'S MANUAL: FINAL INTEGRATION
-- Present 3-4 guiding principles plus the prompts from blueprint.final_principles_and_prompts.
-- End with ACTION CHECKLIST (7 bullets) referencing earlier content.
+- Present 3-4 guiding principles plus the prompts from blueprint.final_principles_and_prompts. Each principle must reference specific placements/themes so it feels anchored.
+- End with ACTION CHECKLIST (7 bullets) referencing earlier content. Each bullet must cite the section/theme it ties back to (“From Theme 2, practice…”).
 
 Unknown time handling: {'Do NOT cite houses/angles; speak in terms of domains, signs, and aspects.' if unknown_time else 'You may cite houses/angles explicitly.'}
-Ensure everything builds on prior sections rather than repeating them verbatim."""
+Ensure everything builds on prior sections rather than repeating them verbatim. Absolutely no markdown (**, *, __, etc.) or horizontal rules."""
     
     return await llm.generate(
         system=system_prompt,
@@ -749,12 +755,13 @@ async def g3_polish_full_reading(
     chart_summary: str
 ) -> str:
     """Gemini Call 3 - polish entire reading."""
-    system_prompt = """You are an editorial finisher.
+    system_prompt = """You are the final integrator and editor.
 Goals:
-- Improve clarity, transitions, and rhythm.
-- Remove redundancy and tighten sentences.
-- Preserve all section headings, bullet counts, and astrological facts.
-- Maintain tone (psychologically literate consultant, second person, confident but not absolute)."""
+- Read the entire draft and ensure every section references key revelations consistently. If a late insight belongs earlier, revise earlier language so the arc feels intentional.
+- Improve clarity, transitions, and rhythm while keeping tone psychologically literate, precise, and second-person.
+- Remove redundancy, collapse repetitive ideas, and make sure each section adds something new.
+- Preserve section headings and required bullet counts, but you may rewrite sentences anywhere to maintain coherence.
+- Ensure cross-references are explicit (e.g., if the Action Checklist references a theme, make sure that theme language appears earlier in the corresponding section)."""
     
     user_prompt = f"""Full draft to polish:
 {full_draft}
@@ -796,6 +803,7 @@ async def get_gemini3_reading(chart_data: dict, unknown_time: bool) -> str:
         deep_sections = await g2_deep_dive_chapters(llm, serialized_chart, chart_summary, blueprint, natal_sections, unknown_time)
         full_draft = f"{natal_sections}\n\n{deep_sections}"
         final_reading = await g3_polish_full_reading(llm, full_draft, chart_summary)
+        final_reading = sanitize_reading_text(final_reading).strip()
         
         summary = llm.get_summary()
         cost_info = calculate_gemini3_cost(summary['total_prompt_tokens'], summary['total_completion_tokens'])
@@ -825,6 +833,28 @@ async def get_gemini3_reading(chart_data: dict, unknown_time: bool) -> str:
     except Exception as e:
         logger.error(f"Error during Gemini 3 reading generation: {e}", exc_info=True)
         raise Exception(f"An error occurred while generating the detailed AI reading: {e}")
+
+
+def sanitize_reading_text(text: str) -> str:
+    """Remove leftover markdown markers or decorative separators from AI output."""
+    if not text:
+        return text
+    
+    patterns = [
+        (r'\*\*\*(.*?)\*\*\*', r'\1'),
+        (r'\*\*(.*?)\*\*', r'\1'),
+        (r'\*(.*?)\*', r'\1'),
+    ]
+    cleaned = text
+    for pattern, repl in patterns:
+        cleaned = re.sub(pattern, repl, cleaned, flags=re.DOTALL)
+    
+    # Remove standalone lines of asterisks or dashes
+    cleaned = re.sub(r'^\s*(\*{3,}|-{3,})\s*$', '', cleaned, flags=re.MULTILINE)
+    
+    # Collapse multiple blank lines
+    cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+    return cleaned
 
 
 def _sign_from_position(pos: str | None) -> str | None:

@@ -237,48 +237,20 @@ class GlobalReadingBlueprint(BaseModel):
 SNAPSHOT_PROMPT = """
 Write the section titled: “Snapshot: What Will Feel Most True About You.”
 
-This section must be 300–500 words and written in the second person (“you”).
+Structure:
+- Produce EXACTLY 7 bullet points. Each bullet must begin with "- " and contain 1-2 tight sentences (no numbering, no emojis, no decorative characters).
+- Do NOT mention planets, signs, houses, aspects, or numerology explicitly. Describe lived experience, motives, contradictions, instincts, behaviors, and emotional patterns in plain psychological language.
+- Every bullet must feel eerily specific—as if someone has been watching the client privately for years. No generic traits, no clichés.
 
-Purpose:
-Create a psychologically precise, deeply resonant profile that feels undeniably true to the client. 
-This is the thesis of the entire reading — it must hit harder than any other part. No clichés, no generalities, no vague language. Every sentence must feel intimate and specific.
+Purpose & Tone:
+- Deliver the most intimate, disarming truths in the entire reading. It should feel like the reader is being seen behind closed doors.
+- Emphasize paradoxes (what they crave vs. what they fear, how they appear vs. what they hide, the moves they repeat even after promising themselves not to).
+- Be incisive, warm, and direct. No horoscope style, no fluff, no filler sentences.
 
-Data Inputs:
-Use the client’s tropical chart, sidereal chart, house placements, aspects, and elemental/modality patterns. 
-Blend both systems seamlessly: tropical = psychological; sidereal = instinctual/subconscious.
-
-Tone Requirements:
-- Incisive, deep, analytical, intimate.
-- Every sentence must feel like it reveals something the client already knows but never had language for.
-- No horoscope-style writing.
-- No soft or generic statements.
-- Show their contradictions, shadow traits, motives, and unspoken desires.
-
-Structural Requirements:
-
-1. Lead Sentence:
-Open with a single sharp sentence capturing their core contradiction or recognizable life pattern.
-
-2. Core Drives:
-Write 2–3 sentences describing what motivates them, what they pursue even when they deny it, and what they consistently avoid or suppress.
-
-3. Internal Conflict:
-Describe the internal tension between two competing psychological currents shaped by their Sun, Moon, and Rising signs, plus any tight aspects involving them.
-
-4. Social and Relational Pattern:
-Describe how they show up around others, how people perceive them, what they seek in relationships, and what others consistently misunderstand about them.
-
-5. Shadow Pattern:
-Describe the trait or recurring behavior that causes the most self-sabotage. Explain how it manifests and why it repeats.
-
-6. High Expression:
-Describe what they become when aligned — their highest expression, how their contradictions become strengths, and what they are capable of when they trust their own deeper pattern.
-
-Depth Standard:
-If any sentence could apply to 30% of people, do not write it. 
-Be precise, paradox-aware, and rooted in the actual chart dynamics.
-
-End the section after the “High Expression” paragraph.
+Constraints:
+- Reference data inputs (sidereal + tropical identities, houses, aspects, dominant patterns) only internally—translate them into psychological language.
+- Avoid mentioning “chart”, “placement”, “Sun/Moon/Rising”, “transit”, or any astrological jargon.
+- Do NOT include intro/outro sentences, transitions, or separators. Output should be exactly 7 bullets in a row.
 """
 
 
