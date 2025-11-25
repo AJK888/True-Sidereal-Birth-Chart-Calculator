@@ -480,8 +480,10 @@ class Gemini3Client:
         try:
             logger.info(f"[{call_label}] Calling Gemini model '{self.model_name}'...")
             generation_config = {
-                "temperature": temperature,
-                "max_output_tokens": max_tokens,
+                "temperature": 0.85,
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 60000,
             }
             response = await self.model.generate_content_async(
                 combined_prompt,
