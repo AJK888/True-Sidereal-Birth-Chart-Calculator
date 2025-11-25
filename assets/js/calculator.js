@@ -416,7 +416,7 @@ const AstrologyCalculator = {
 	setLoadingState(isLoading) {
 		this.submitBtn.disabled = isLoading;
 		// Updated button text for synchronous loading
-		this.submitBtn.innerText = isLoading ? "Generating AI Synthesis..." : "Calculate Chart";
+		this.submitBtn.innerText = isLoading ? "Generating AI Synthesis..." : "Generate My Reading";
 
 		if (isLoading) {
 			this.resultsContainer.style.display = 'none';

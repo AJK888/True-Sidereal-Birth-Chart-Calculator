@@ -1,5 +1,300 @@
 /* Custom Styles to fully integrate the calculator with the Forty Theme */
 
+/* ============================================================
+   0. GLOBAL ENHANCEMENTS
+   ============================================================ */
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Cormorant Garamond for headings */
+h1, h2, h3, h4, h5, h6,
+.major h1, .major h2, .major h3,
+#banner .inner h1,
+#description-wrapper h2,
+#form-section h2,
+#transit-section h2,
+#results h2 {
+    font-family: 'Cormorant Garamond', Georgia, serif !important;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+/* Larger display headings */
+#banner .inner h1 {
+    font-size: 4rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+@media screen and (max-width: 736px) {
+    #banner .inner h1 {
+        font-size: 2.5rem;
+    }
+}
+
+/* ============================================================
+   0.1 SECTION GRADIENT TRANSITIONS
+   ============================================================ */
+
+/* Gradient transitions between sections */
+#description-wrapper::before,
+#transit-section::before,
+#form-section::after,
+#results::before,
+#legal::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 80px;
+    pointer-events: none;
+}
+
+#description-wrapper {
+    position: relative;
+}
+
+#description-wrapper::before {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(36, 41, 62, 0) 0%, rgba(36, 41, 62, 1) 100%);
+    transform: translateY(-100%);
+}
+
+#transit-section {
+    position: relative;
+}
+
+#transit-section::before {
+    top: 0;
+    background: linear-gradient(to bottom, transparent 0%, rgba(36, 41, 62, 0.5) 100%);
+}
+
+/* Decorative section dividers */
+#description-wrapper .inner::after,
+#transit-section .inner::after {
+    content: '✦';
+    display: block;
+    text-align: center;
+    font-size: 1.5rem;
+    color: rgba(159, 122, 234, 0.4);
+    margin-top: 3rem;
+    letter-spacing: 1rem;
+}
+
+/* ============================================================
+   0.2 FORM SECTION GLOW EFFECT
+   ============================================================ */
+
+#form-section {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Top glow line */
+#form-section .inner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, rgba(159, 122, 234, 0.8) 50%, transparent 100%);
+    border-radius: 2px;
+}
+
+/* Ambient glow behind form */
+#form-section .inner::after {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(159, 122, 234, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ============================================================
+   0.3 FORM INPUT FOCUS ANIMATIONS
+   ============================================================ */
+
+#form-section input[type="text"],
+#form-section input[type="email"] {
+    transition: all 0.3s ease;
+    min-height: 44px; /* Touch-friendly */
+}
+
+#form-section input[type="text"]:focus,
+#form-section input[type="email"]:focus {
+    border-color: #9f7aea !important;
+    box-shadow: 0 0 0 3px rgba(159, 122, 234, 0.2), 0 0 20px rgba(159, 122, 234, 0.15);
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Submit button glow effect */
+#form-section button[type="submit"],
+#submitBtn {
+    background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%) !important;
+    box-shadow: 0 4px 20px rgba(159, 122, 234, 0.3);
+    transition: all 0.3s ease !important;
+    min-height: 50px;
+    font-family: 'Cormorant Garamond', Georgia, serif !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.1em !important;
+}
+
+#form-section button[type="submit"]:hover,
+#submitBtn:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 30px rgba(159, 122, 234, 0.5) !important;
+}
+
+/* ============================================================
+   0.4 CHART WHEEL ANIMATIONS & EFFECTS
+   ============================================================ */
+
+/* Initial load rotation animation */
+@keyframes wheelRotateIn {
+    from {
+        opacity: 0;
+        transform: rotate(-30deg) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: rotate(0deg) scale(1);
+    }
+}
+
+#sidereal-wheel-container svg,
+#tropical-wheel-container svg,
+#sidereal-transit-wheel-container svg,
+#tropical-transit-wheel-container svg {
+    animation: wheelRotateIn 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    filter: drop-shadow(0 0 30px rgba(159, 122, 234, 0.15));
+    transition: transform 0.5s ease, filter 0.5s ease;
+}
+
+/* Stagger animation for second wheel */
+#tropical-wheel-container svg,
+#tropical-transit-wheel-container svg {
+    animation-delay: 0.3s;
+}
+
+/* Hover effects on chart wheels */
+#sidereal-wheel-container:hover svg,
+#tropical-wheel-container:hover svg,
+#sidereal-transit-wheel-container:hover svg,
+#tropical-transit-wheel-container:hover svg {
+    transform: scale(1.02);
+    filter: drop-shadow(0 0 40px rgba(159, 122, 234, 0.3));
+}
+
+/* Chart wheel container styling */
+#sidereal-wheel-container,
+#tropical-wheel-container,
+#sidereal-transit-wheel-container,
+#tropical-transit-wheel-container {
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+/* ============================================================
+   0.5 MOBILE SPECIFIC IMPROVEMENTS
+   ============================================================ */
+
+@media screen and (max-width: 980px) {
+    /* Stack chart wheels with proper spacing */
+    .chart-wheels-wrapper {
+        grid-template-columns: 1fr !important;
+        gap: 3rem !important;
+    }
+    
+    /* Add spacing between stacked wheels */
+    #sidereal-wheel-container,
+    #tropical-wheel-container,
+    #sidereal-transit-wheel-container,
+    #tropical-transit-wheel-container {
+        margin-bottom: 1rem;
+    }
+}
+
+@media screen and (max-width: 736px) {
+    /* Ensure touch-friendly input sizes */
+    #form-section input[type="text"],
+    #form-section input[type="email"],
+    #form-section input[type="checkbox"] + label::before {
+        min-height: 48px;
+    }
+    
+    #form-section button[type="submit"],
+    #submitBtn {
+        min-height: 54px;
+        font-size: 1rem !important;
+        width: 100%;
+    }
+    
+    /* Add bottom padding to prevent content cutoff */
+    #main > section:last-child {
+        padding-bottom: 4rem !important;
+    }
+    
+    footer {
+        padding-bottom: 2rem !important;
+    }
+    
+    /* Better spacing on mobile */
+    #form-section .inner {
+        padding-bottom: 3rem;
+    }
+    
+    /* Larger touch targets for checkboxes */
+    .name-numerology-toggle,
+    .time-checkbox-container {
+        padding: 0.5rem 0;
+    }
+    
+    .name-numerology-toggle label,
+    .time-checkbox-container label {
+        padding: 0.5rem;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Banner text adjustments */
+    #banner .inner h1 {
+        font-size: 2.25rem;
+        line-height: 1.2;
+    }
+    
+    #banner .content p {
+        font-size: 0.95rem;
+    }
+}
+
+/* Extra small screens */
+@media screen and (max-width: 480px) {
+    #banner .inner h1 {
+        font-size: 1.85rem;
+    }
+    
+    .chart-wheels-wrapper {
+        gap: 2rem !important;
+    }
+    
+    #form-section .field {
+        margin-bottom: 1.5rem;
+    }
+}
+
 /* 1. Header & Section Color Updates */
 #header {
     background-color: #805ad5; 
@@ -118,12 +413,9 @@ pre {
 .chart-wheels-wrapper h3 {
     text-align: center;
     margin-bottom: 1em;
+    font-family: 'Cormorant Garamond', Georgia, serif;
 }
-@media screen and (max-width: 980px) {
-    .chart-wheels-wrapper {
-        grid-template-columns: 1fr;
-    }
-}
+/* Mobile stacking handled in section 0.5 */
 
 
 /* 4. Form Styling */
