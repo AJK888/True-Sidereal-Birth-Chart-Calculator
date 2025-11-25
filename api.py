@@ -31,8 +31,10 @@ import base64
 from pdf_generator import generate_pdf_report
 from llm_schemas import (
     ChartOverviewOutput, CoreTheme, serialize_chart_for_llm,
-    format_serialized_chart_for_prompt, parse_json_response
+    format_serialized_chart_for_prompt, parse_json_response,
+    GlobalReadingBlueprint, LifeAxis, CoreThemeBullet
 )
+from claude_reading_v2 import get_claude_reading_v2
 
 # --- SETUP THE LOGGER ---
 import sys
@@ -484,8 +486,9 @@ class LLMClient:
             # Note: Claude requires system prompt as a separate parameter, not in messages array
             messages = [{"role": "user", "content": user}]
             
-            # Determine max_tokens (default to 4096, allow override)
-            max_tokens = max_output_tokens if max_output_tokens else 4096
+            # Determine max_tokens (default to 8192 for comprehensive readings, allow override)
+            # Claude 3.5 Sonnet supports up to 8192 output tokens maximum
+            max_tokens = max_output_tokens if max_output_tokens else 8192
             
             logger.info(f"[{call_label}] Claude model initialized, generating content (max_tokens={max_tokens})...")
             
@@ -911,7 +914,7 @@ When choosing the 5 themes, prioritize:
         system=system_prompt,
         user=user_prompt,
         temperature=0.7,
-        max_output_tokens=4096,
+        max_output_tokens=8192,  # Maximum for comprehensive readings
         call_label="call1_chart_overview_and_themes"
     )
     
@@ -1306,7 +1309,8 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
         
         # Generate the reading
         try:
-            claude_reading = await get_claude_reading(chart_data, unknown_time)
+            # Temporarily using V2 pipeline - can switch back to get_claude_reading for rollback
+            claude_reading = await get_claude_reading_v2(chart_data, unknown_time)
             logger.info(f"AI Reading successfully generated for: {chart_name} (length: {len(claude_reading)} characters)")
             
             # Store reading in cache for frontend retrieval
@@ -1592,7 +1596,7 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
 
 
 @app.post("/generate_reading")
-@limiter.limit("3/month")
+# Removed rate limit - user wants comprehensive readings without restrictions
 async def generate_reading_endpoint(request: Request, reading_data: ReadingRequest, background_tasks: BackgroundTasks):
     """
     This endpoint queues the reading generation and email sending in the background.

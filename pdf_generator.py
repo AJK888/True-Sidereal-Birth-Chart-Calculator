@@ -44,7 +44,15 @@ def generate_chart_wheel_svg(chart_data: Dict[str, Any], chart_type: str) -> str
     TROPICAL_ZODIAC_ORDER = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
                              'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces']
     
-    center_x, center_y = 500, 500
+    # Increase viewBox to accommodate planet glyphs that extend beyond zodiac_radius
+    # Planet glyphs are placed at outer_glyph_radius + 20 = zodiac_radius + 35 + 20 = 505
+    # So we need viewBox to be at least 1010x1010, but we'll use 1100x1100 for safety
+    svg_size = 1100
+    adjusted_center_x, adjusted_center_y = svg_size // 2, svg_size // 2  # 550, 550
+    
+    # Original center for calculations (we'll scale everything relative to new center)
+    original_center = 500
+    center_x, center_y = adjusted_center_x, adjusted_center_y
     zodiac_radius = 450
     house_ring_radius = 350
     inner_radius = 150
@@ -52,7 +60,7 @@ def generate_chart_wheel_svg(chart_data: Dict[str, Any], chart_type: str) -> str
     # Find ascendant for rotation
     ascendant = next((p for p in positions if p.get('name') == 'Ascendant'), None)
     if not ascendant or ascendant.get('degrees') is None:
-        return f'<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg"><text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text></svg>'
+        return f'<svg viewBox="0 0 {svg_size} {svg_size}" xmlns="http://www.w3.org/2000/svg"><text x="{adjusted_center_x}" y="{adjusted_center_y}" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text></svg>'
     
     rotation = ascendant.get('degrees', 0) - 180
     
@@ -62,7 +70,8 @@ def generate_chart_wheel_svg(chart_data: Dict[str, Any], chart_type: str) -> str
         y = center_y + radius * math.sin(angle_radians)
         return x, y
     
-    svg_parts = [f'<svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" style="background-color: #242943;">']
+    # Use larger viewBox to prevent clipping of planet glyphs and labels
+    svg_parts = [f'<svg viewBox="0 0 {svg_size} {svg_size}" xmlns="http://www.w3.org/2000/svg" style="background-color: #242943;">']
     svg_parts.append(f'<g transform="rotate({rotation} {center_x} {center_y})">')
     
     # Draw aspect lines
@@ -79,7 +88,7 @@ def generate_chart_wheel_svg(chart_data: Dict[str, Any], chart_type: str) -> str
     
     # Draw concentric circles
     for radius in [zodiac_radius, house_ring_radius, inner_radius]:
-        svg_parts.append(f'<circle cx="{center_x}" cy="{center_y}" r="{radius}" stroke="rgba(255,255,255,0.25)" stroke-width="2" fill="none"/>')
+        svg_parts.append(f'<circle cx="{adjusted_center_x}" cy="{adjusted_center_y}" r="{radius}" stroke="rgba(255,255,255,0.25)" stroke-width="2" fill="none"/>')
     
     # Draw zodiac signs
     glyph_radius = house_ring_radius + (zodiac_radius - house_ring_radius) / 2
@@ -405,29 +414,33 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         sidereal_svg = generate_chart_wheel_svg(chart_data, 'sidereal')
         tropical_svg = generate_chart_wheel_svg(chart_data, 'tropical')
         
-        sidereal_png = svg_to_png(sidereal_svg, width=600, height=600)
-        tropical_png = svg_to_png(tropical_svg, width=600, height=600)
+        # Convert SVG to PNG - use larger size to preserve detail and prevent clipping
+        # SVG is now 1100x1100, so we'll render at 800x800 for better quality
+        sidereal_png = svg_to_png(sidereal_svg, width=800, height=800)
+        tropical_png = svg_to_png(tropical_svg, width=800, height=800)
         
         # Create images - sized to fit comfortably within blue background with adequate padding
-        # Image size: 2.8 inches (allows for 20 points padding on each side = 0.278 inches)
-        # Column width: 3.75 inches (provides 0.475 inches total padding per side)
-        sidereal_img = Image(io.BytesIO(sidereal_png), width=2.8*inch, height=2.8*inch)
-        tropical_img = Image(io.BytesIO(tropical_png), width=2.8*inch, height=2.8*inch)
+        # Image size: 2.7 inches (allows for 25 points padding on each side = 0.347 inches)
+        # Column width: 3.8 inches (provides 0.55 inches total padding per side for safety)
+        # Reduced image size slightly to ensure no clipping occurs
+        sidereal_img = Image(io.BytesIO(sidereal_png), width=2.7*inch, height=2.7*inch)
+        tropical_img = Image(io.BytesIO(tropical_png), width=2.7*inch, height=2.7*inch)
         
         chart_table = Table([
             [Paragraph("<b>Sidereal</b>", body_style), Paragraph("<b>Tropical</b>", body_style)],
             [sidereal_img, tropical_img]
-        ], colWidths=[3.75*inch, 3.75*inch])
+        ], colWidths=[3.8*inch, 3.8*inch])
         
         blue_box = colors.HexColor('#102a43')
         chart_table.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             # Generous padding for image row to ensure charts are fully visible
-            ('LEFTPADDING', (0, 1), (-1, 1), 20),
-            ('RIGHTPADDING', (0, 1), (-1, 1), 20),
-            ('TOPPADDING', (0, 1), (-1, 1), 20),
-            ('BOTTOMPADDING', (0, 1), (-1, 1), 20),
+            # Increased padding to 25 points (0.347 inches) on each side for extra safety
+            ('LEFTPADDING', (0, 1), (-1, 1), 25),
+            ('RIGHTPADDING', (0, 1), (-1, 1), 25),
+            ('TOPPADDING', (0, 1), (-1, 1), 25),
+            ('BOTTOMPADDING', (0, 1), (-1, 1), 25),
             # Header row padding
             ('LEFTPADDING', (0, 0), (-1, 0), 6),
             ('RIGHTPADDING', (0, 0), (-1, 0), 6),
@@ -470,6 +483,12 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     
     def is_bullet_line(line: str) -> tuple[bool, str]:
         """Check if a line is a bullet point and return (is_bullet, cleaned_text)."""
+        # First, strip markdown header markers (#) that might prefix bullets
+        line_cleaned = line.strip()
+        if line_cleaned.startswith('#'):
+            # Remove markdown header markers (one or more #)
+            line_cleaned = re.sub(r'^#+\s*', '', line_cleaned).strip()
+        
         bullet_patterns = [
             r'^[-•*]\s+(.+)',  # Starts with -, •, or *
             r'^\d+[.)]\s+(.+)',  # Starts with number followed by . or )
@@ -477,9 +496,9 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         ]
         
         for pattern in bullet_patterns:
-            match = re.match(pattern, line)
+            match = re.match(pattern, line_cleaned)
             if match:
-                bullet_text = match.group(1) if match.groups() else line
+                bullet_text = match.group(1) if match.groups() else line_cleaned
                 return True, bullet_text.strip()
         
         return False, line
@@ -498,22 +517,44 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
             # (we'll re-enter if next line is a bullet)
             continue
         
+        # IMPORTANT: Check for bullets FIRST, before heading detection
+        # This prevents bullet points (especially those with markdown # prefix) from being treated as headings
+        is_bullet, bullet_text = is_bullet_line(line)
+        
+        # If this is a bullet, skip heading detection entirely and process it immediately
+        if is_bullet:
+            in_bullet_section = True
+            # Finish any current paragraph before starting bullets
+            if current_para:
+                para_text = ' '.join(current_para)
+                story.append(Paragraph(para_text, body_style))
+                story.append(Spacer(1, 0.12*inch))
+                current_para = []
+                content_added = True
+            # Format as bullet point
+            story.append(Paragraph(f"• {bullet_text}", bullet_style))
+            content_added = True
+            continue  # Skip the rest of the processing for this line
+        
         # Check if this is a major section header
         is_major_section = False
         matched_section = None
         line_clean = line.replace('**', '').strip()
+        # Remove markdown # prefixes for section matching
+        line_for_section_check = re.sub(r'^#+\s*', '', line_clean)
         for section in major_sections:
             # Check various patterns for section matching
             section_keywords = section.lower().split()
-            if (section.lower() in line.lower() or 
-                any(keyword in line.lower() for keyword in section_keywords if len(keyword) > 4) or
-                line_clean.startswith(section) or
-                (len(line) < 100 and section.lower().replace(':', '') in line.lower())):
+            if (section.lower() in line_for_section_check.lower() or 
+                any(keyword in line_for_section_check.lower() for keyword in section_keywords if len(keyword) > 4) or
+                line_for_section_check.startswith(section) or
+                (len(line_for_section_check) < 100 and section.lower().replace(':', '') in line_for_section_check.lower())):
                 is_major_section = True
                 matched_section = section
                 break
         
         # Check if this looks like a heading (very strict criteria to avoid false positives)
+        # BUT skip if it's a bullet point
         # Only treat as heading if:
         # 1. It's a major section (already handled above)
         # 2. It's wrapped in ** markers (markdown bold) AND very short
@@ -543,10 +584,14 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
               not line.endswith(('.', '!', '?', ':', ';', ',', ')')) and
               line.count(' ') < 6 and
               not any(char.isdigit() for char in line) and
-              not line.startswith(('The ', 'A ', 'An ', 'This ', 'That ', 'These ', 'Those '))):
+              not line.startswith(('The ', 'A ', 'An ', 'This ', 'That ', 'These ', 'Those ')) and
+              not is_bullet):  # Don't treat bullets as headings
             # Very short ALL CAPS title-like text
             is_heading = True
         # Don't treat regular sentences as headings, even if they're short
+        # Also don't treat bullets as headings
+        if is_bullet:
+            is_heading = False
         
         # Handle major section headers (with page breaks)
         if is_major_section:
@@ -598,23 +643,8 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
             if any(keyword in heading_text.lower() for keyword in bullet_section_keywords):
                 in_bullet_section = True
         else:
-            # Check if this line is a bullet point
-            is_bullet, bullet_text = is_bullet_line(line)
-            
-            # If we detect a bullet pattern, we're definitely in a bullet section
-            if is_bullet:
-                in_bullet_section = True
-                # Finish any current paragraph before starting bullets
-                if current_para:
-                    para_text = ' '.join(current_para)
-                    story.append(Paragraph(para_text, body_style))
-                    story.append(Spacer(1, 0.12*inch))
-                    current_para = []
-                    content_added = True
-                # Format as bullet point
-                story.append(Paragraph(f"• {bullet_text}", bullet_style))
-                content_added = True
-            elif in_bullet_section:
+            # Regular text processing (bullets already handled above)
+            if in_bullet_section:
                 # We were in bullet section, but this line doesn't match bullet pattern
                 # Check if it's a short line that might still be part of bullet list
                 # (sometimes bullets don't have explicit markers, especially in Action Checklist)

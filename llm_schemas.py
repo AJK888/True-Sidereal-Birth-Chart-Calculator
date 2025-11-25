@@ -112,6 +112,46 @@ class ChartOverviewOutput(BaseModel):
 
 
 # ============================================================================
+# Global Reading Blueprint (Call 0)
+# ============================================================================
+
+class LifeAxis(BaseModel):
+    """A core life axis representing a fundamental tension or dynamic."""
+    name: str = Field(..., description="Short name for the axis (e.g., 'Self vs Other', 'Security vs Adventure')")
+    description: str = Field(..., description="One-paragraph description of what this axis represents")
+    chart_factors: List[str] = Field(..., description="List of specific chart placements/aspects that create this axis")
+    immature_expression: str = Field(..., description="How this axis manifests when unresolved or immature")
+    mature_expression: str = Field(..., description="How this axis manifests when integrated and mature")
+
+
+class CoreThemeBullet(BaseModel):
+    """A single theme bullet point for the top themes list."""
+    label: str = Field(..., description="Category label (e.g., 'emotional', 'relationship', 'work', 'spiritual', 'shadow')")
+    text: str = Field(..., description="The theme description text")
+
+
+class GlobalReadingBlueprint(BaseModel):
+    """Global blueprint for the entire reading - provides coherence across all sections."""
+    life_thesis: str = Field(..., description="One-paragraph life thesis summarizing the soul's core journey")
+    axes: List[LifeAxis] = Field(..., min_length=3, max_length=3, description="Exactly 3 core life axes")
+    top_themes: List[CoreThemeBullet] = Field(..., min_length=5, max_length=5, description="Exactly 5 top themes (emotional, relationship, work, spiritual, shadow)")
+    
+    @field_validator('axes')
+    @classmethod
+    def validate_axes_count(cls, v):
+        if len(v) != 3:
+            raise ValueError(f"Must have exactly 3 axes, got {len(v)}")
+        return v
+    
+    @field_validator('top_themes')
+    @classmethod
+    def validate_themes_count(cls, v):
+        if len(v) != 5:
+            raise ValueError(f"Must have exactly 5 top themes, got {len(v)}")
+        return v
+
+
+# ============================================================================
 # Chart Serialization for LLM Input
 # ============================================================================
 
