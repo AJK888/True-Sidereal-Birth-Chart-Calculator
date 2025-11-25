@@ -7,10 +7,10 @@ requests
 pendulum
 logtail-python
 httpx
-anthropic
 sendgrid
 slowapi
 reportlab
 cairosvg
 Pillow
+google-generativeai
 google-generativeai

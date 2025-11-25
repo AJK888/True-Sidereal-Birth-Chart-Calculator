@@ -15,7 +15,6 @@ import pendulum
 import os
 import logging
 from logtail import LogtailHandler
-from anthropic import AsyncAnthropic
 import google.generativeai as genai
 import asyncio
 from slowapi import Limiter
@@ -33,9 +32,8 @@ from pdf_generator import generate_pdf_report
 from llm_schemas import (
     ChartOverviewOutput, CoreTheme, serialize_chart_for_llm,
     format_serialized_chart_for_prompt, parse_json_response,
-    GlobalReadingBlueprint, LifeAxis, CoreThemeBullet
+    GlobalReadingBlueprint, LifeAxis, CoreThemeBullet, SNAPSHOT_PROMPT
 )
-from claude_reading_v2 import get_claude_reading_v2
 
 # --- SETUP THE LOGGER ---
 import sys
@@ -60,19 +58,6 @@ if logtail_token:
     ingesting_host = "https://s1450016.eu-nbg-2.betterstackdata.com"
     logtail_handler = LogtailHandler(source_token=logtail_token, host=ingesting_host)
     logger.addHandler(logtail_handler)
-
-# --- SETUP CLAUDE ---
-CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
-claude_client = None
-if CLAUDE_API_KEY:
-    try:
-        claude_client = AsyncAnthropic(api_key=CLAUDE_API_KEY)
-        logger.info("Claude async API client initialized successfully")
-    except Exception as e:
-        logger.error(f"Failed to initialize Claude client: {e}")
-        claude_client = None
-else:
-    logger.warning("CLAUDE_API_KEY not configured - AI reading will be unavailable unless AI_MODE=stub")
 
 # --- SETUP GEMINI ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -360,7 +345,7 @@ def get_full_text_report(res: dict) -> str:
                     out += f"{line}\n"
     return out
 
-def format_full_report_for_email(chart_data: dict, claude_reading: str, user_inputs: dict, chart_image_base64: Optional[str], include_inputs: bool = True) -> str:
+def format_full_report_for_email(chart_data: dict, reading_text: str, user_inputs: dict, chart_image_base64: Optional[str], include_inputs: bool = True) -> str:
     # Note: This function is deprecated - PDF generation is used instead
     html = "<h1>Synthesis Astrology Report</h1>"
     
@@ -378,7 +363,7 @@ def format_full_report_for_email(chart_data: dict, claude_reading: str, user_inp
         html += "<hr>"
 
     html += "<h2>AI Astrological Synthesis</h2>"
-    html += f"<p>{claude_reading.replace('\\n', '<br><br>')}</p>"
+    html += f"<p>{reading_text.replace('\\n', '<br><br>')}</p>"
     html += "<hr>"
 
     full_text_report = get_full_text_report(chart_data)
@@ -396,54 +381,6 @@ def _safe_get_tokens(usage: dict, key: str) -> int:
         return int(value) if value is not None else 0
     except (TypeError, ValueError):
         return 0
-
-
-def calculate_claude_cost(prompt_tokens: int, completion_tokens: int, 
-                          input_price_per_million: float = 3.00, 
-                          output_price_per_million: float = 15.00) -> dict:
-    """
-    Calculate the cost of a Claude API call based on token usage.
-    
-    Default prices are for Claude 3.5 Sonnet:
-    - Input: $3.00 per 1M tokens
-    - Output: $15.00 per 1M tokens
-    
-    You should verify current pricing at: https://www.anthropic.com/pricing
-    
-    Returns a dict with cost breakdown.
-    """
-    try:
-        # Ensure tokens are valid integers
-        prompt_tokens = int(prompt_tokens) if prompt_tokens is not None else 0
-        completion_tokens = int(completion_tokens) if completion_tokens is not None else 0
-        
-        # Ensure non-negative
-        prompt_tokens = max(0, prompt_tokens)
-        completion_tokens = max(0, completion_tokens)
-        
-        input_cost = (prompt_tokens / 1_000_000) * input_price_per_million
-        output_cost = (completion_tokens / 1_000_000) * output_price_per_million
-        total_cost = input_cost + output_cost
-        
-        return {
-            'prompt_tokens': prompt_tokens,
-            'completion_tokens': completion_tokens,
-            'total_tokens': prompt_tokens + completion_tokens,
-            'input_cost_usd': round(input_cost, 6),
-            'output_cost_usd': round(output_cost, 6),
-            'total_cost_usd': round(total_cost, 6)
-        }
-    except (TypeError, ValueError) as e:
-        logger.error(f"Error calculating Claude cost: {e}. Tokens: prompt={prompt_tokens}, completion={completion_tokens}")
-        # Return safe defaults
-        return {
-            'prompt_tokens': 0,
-            'completion_tokens': 0,
-            'total_tokens': 0,
-            'input_cost_usd': 0.0,
-            'output_cost_usd': 0.0,
-            'total_cost_usd': 0.0
-        }
 
 
 def calculate_gemini3_cost(prompt_tokens: int, completion_tokens: int,
@@ -488,169 +425,6 @@ def calculate_gemini3_cost(prompt_tokens: int, completion_tokens: int,
 
 # --- Unified LLM Client ---
 AI_MODE = os.getenv("AI_MODE", "real").lower()  # "real" or "stub" for local testing
-
-class LLMClient:
-    """Unified LLM client with token and cost accumulation."""
-    
-    def __init__(self):
-        self.total_prompt_tokens = 0
-        self.total_completion_tokens = 0
-        self.total_cost_usd = 0.0
-        self.call_count = 0
-        
-    async def generate(self, system: str, user: str, temperature: float = 0.7, 
-                      max_output_tokens: Optional[int] = None, call_label: str = "unnamed",
-                      response_format: Optional[dict] = None) -> str:
-        """
-        Generate LLM response with token and cost tracking.
-        
-        Args:
-            system: System prompt
-            user: User prompt/content
-            temperature: Temperature setting (default 0.7)
-            max_output_tokens: Max output tokens (optional)
-            call_label: Label for logging (e.g., "call1_chart_overview")
-        
-        Returns:
-            Response text
-        """
-        self.call_count += 1
-        logger.info(f"[{call_label}] Starting LLM call #{self.call_count}")
-        logger.info(f"[{call_label}] System prompt length: {len(system)} chars")
-        logger.info(f"[{call_label}] User content length: {len(user)} chars")
-        
-        if AI_MODE == "stub":
-            logger.info(f"[{call_label}] AI_MODE=stub: Returning stub response")
-            stub_response = f"[STUB RESPONSE for {call_label}] This is a placeholder response for local testing. System: {system[:100]}... User: {user[:100]}..."
-            # Simulate token usage for stubs
-            self.total_prompt_tokens += len(system.split()) + len(user.split())
-            self.total_completion_tokens += len(stub_response.split())
-            return stub_response
-        
-        # Real LLM call
-        try:
-            if not CLAUDE_API_KEY or not claude_client:
-                logger.error(f"[{call_label}] Claude API key not configured or client not initialized - cannot call Claude API")
-                raise Exception("Claude API key not configured or client not initialized")
-            
-            logger.info(f"[{call_label}] Calling Claude API...")
-            
-            # Prepare messages for Claude API
-            # Note: Claude requires system prompt as a separate parameter, not in messages array
-            messages = [{"role": "user", "content": user}]
-            
-            # Determine max_tokens (default to 8192 for comprehensive readings, allow override)
-            # Claude 3.5 Sonnet supports up to 8192 output tokens maximum
-            max_tokens = max_output_tokens if max_output_tokens else 8192
-            
-            logger.info(f"[{call_label}] Claude model initialized, generating content (max_tokens={max_tokens})...")
-            
-            # Make the API call
-            # Try different model name formats - Anthropic may use different naming
-            # Common formats: claude-sonnet-4-5-20250929, claude-3-5-sonnet-latest, claude-3-5-sonnet-20241022
-            # Default to claude-sonnet-4-5-20250929
-            claude_model = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-5-20250929")
-            logger.info(f"[{call_label}] Using Claude model: {claude_model}")
-            api_kwargs = {
-                "model": claude_model,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-                "messages": messages
-            }
-            
-            # Add system parameter if provided (Claude requires this as a top-level parameter)
-            if system:
-                api_kwargs["system"] = system
-                logger.info(f"[{call_label}] System prompt provided ({len(system)} chars)")
-            
-            # Note: Claude doesn't support OpenAI-style response_format.
-            # For JSON mode, we rely on strong prompting in the system/user messages.
-            # If response_format is provided, we'll log it but not pass it to the API.
-            if response_format:
-                logger.info(f"[{call_label}] JSON mode requested - relying on prompt instructions for JSON output")
-            
-            # Make async API call - this is non-blocking and maintains FastAPI event loop
-            response = await claude_client.messages.create(**api_kwargs)
-            
-            logger.info(f"[{call_label}] Claude API call completed successfully")
-            
-            # Extract usage metadata
-            usage_metadata = {
-                'prompt_tokens': 0,
-                'completion_tokens': 0,
-                'total_tokens': 0
-            }
-            if hasattr(response, 'usage') and response.usage:
-                try:
-                    usage_metadata = {
-                        'prompt_tokens': getattr(response.usage, 'input_tokens', 0) or 0,
-                        'completion_tokens': getattr(response.usage, 'output_tokens', 0) or 0,
-                        'total_tokens': (getattr(response.usage, 'input_tokens', 0) or 0) + (getattr(response.usage, 'output_tokens', 0) or 0)
-                    }
-                    usage_metadata = {k: int(v) if v is not None else 0 for k, v in usage_metadata.items()}
-                    logger.info(f"[{call_label}] Token usage - Input: {usage_metadata['prompt_tokens']}, Output: {usage_metadata['completion_tokens']}, Total: {usage_metadata['total_tokens']}")
-                except Exception as meta_error:
-                    logger.warning(f"[{call_label}] Error extracting usage metadata: {meta_error}. Using defaults.")
-                    usage_metadata = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
-            
-            # Accumulate tokens
-            self.total_prompt_tokens += usage_metadata['prompt_tokens']
-            self.total_completion_tokens += usage_metadata['completion_tokens']
-            
-            # Calculate and accumulate cost
-            cost_info = calculate_claude_cost(usage_metadata['prompt_tokens'], usage_metadata['completion_tokens'])
-            self.total_cost_usd += cost_info['total_cost_usd']
-            logger.info(f"[{call_label}] Call cost: ${cost_info['total_cost_usd']:.6f} (Input: ${cost_info['input_cost_usd']:.6f}, Output: ${cost_info['output_cost_usd']:.6f})")
-            
-            # Extract response text
-            if not hasattr(response, 'content') or not response.content:
-                raise Exception("Claude response has no content available")
-            
-            # Claude returns content as a list of content blocks
-            text_parts = []
-            for content_block in response.content:
-                if hasattr(content_block, 'text') and content_block.text:
-                    text_parts.append(content_block.text)
-                elif hasattr(content_block, 'type') and content_block.type == 'text' and hasattr(content_block, 'text'):
-                    text_parts.append(content_block.text)
-            
-            response_text = ' '.join(text_parts).strip() if text_parts else ""
-            if not response_text:
-                raise Exception("Claude response has no text content available")
-            
-            logger.info(f"[{call_label}] Response length: {len(response_text)} characters")
-            return response_text
-            
-        except Exception as e:
-            logger.error(f"[{call_label}] Error in Claude API call: {e}", exc_info=True)
-            error_str = str(e).lower()
-            error_message = f"An error occurred during a Claude API call: {e}"
-            
-            # Handle specific error types
-            if any(keyword in error_str for keyword in ['quota', 'credit', 'billing', 'payment', 'insufficient']):
-                error_message = "API quota or credits exhausted. Please check your Claude API billing and quota limits."
-                logger.error(f"[{call_label}] Claude API quota/credit error detected")
-            elif any(keyword in error_str for keyword in ['rate limit', '429', 'too many requests']):
-                error_message = "API rate limit exceeded. Please wait a moment and try again."
-                logger.error(f"[{call_label}] Claude API rate limit error detected")
-            elif any(keyword in error_str for keyword in ['permission', 'unauthorized', 'authentication', 'invalid api key', 'api key']):
-                error_message = "API authentication error. Please check your Claude API key configuration."
-                logger.error(f"[{call_label}] Claude API authentication error detected")
-            elif "content_filter" in error_str or "safety" in error_str:
-                error_message = f"Error: The AI's response was filtered due to content policy. Please try rephrasing or contact support."
-                logger.error(f"[{call_label}] Claude content filter triggered")
-            
-            raise Exception(error_message)
-    
-    def get_summary(self) -> dict:
-        """Get summary of token usage and costs."""
-        return {
-            'total_prompt_tokens': self.total_prompt_tokens,
-            'total_completion_tokens': self.total_completion_tokens,
-            'total_tokens': self.total_prompt_tokens + self.total_completion_tokens,
-            'total_cost_usd': self.total_cost_usd,
-            'call_count': self.call_count
-        }
 
 
 class Gemini3Client:
@@ -769,103 +543,6 @@ class Gemini3Client:
         }
 
 
-async def _run_gemini_prompt(prompt_text: str) -> tuple[str, dict]:
-    """
-    Run a Gemini API prompt and return both the response text and usage metadata.
-    Returns: (response_text, usage_metadata) where usage_metadata contains 'prompt_tokens' and 'completion_tokens'
-    """
-    try:
-        if not GEMINI_API_KEY:
-            logger.error("Gemini API key not configured - cannot call Gemini API")
-            raise Exception("Gemini API key not configured")
-        
-        logger.info(f"Calling Gemini API with prompt length: {len(prompt_text)} characters")
-        model = genai.GenerativeModel('gemini-2.5-pro')
-        logger.info("Gemini model initialized, generating content...")
-        response = await model.generate_content_async(prompt_text)
-        logger.info("Gemini API call completed successfully")
-        # Add basic error checking for empty or blocked responses
-        if not response.parts:
-             # Check for safety feedback which might indicate blocking
-            safety_feedback = response.prompt_feedback if hasattr(response, 'prompt_feedback') else "No feedback available."
-            logger.error(f"Gemini response blocked or empty. Safety Feedback: {safety_feedback}. Prompt: {prompt_text[:500]}...") # Log beginning of prompt
-            # Raise exception instead of returning error string
-            raise Exception(f"Gemini response was blocked or empty. Feedback: {safety_feedback}")
-        
-        # Extract usage metadata if available
-        usage_metadata = {
-            'prompt_tokens': 0,
-            'completion_tokens': 0,
-            'total_tokens': 0
-        }
-        if hasattr(response, 'usage_metadata') and response.usage_metadata:
-            try:
-                # Try multiple possible attribute names for token counts
-                usage_metadata = {
-                    'prompt_tokens': getattr(response.usage_metadata, 'prompt_token_count', 0) or 0,
-                    'completion_tokens': getattr(response.usage_metadata, 'candidates_token_count', 
-                                                getattr(response.usage_metadata, 'completion_token_count', 0)) or 0,
-                    'total_tokens': getattr(response.usage_metadata, 'total_token_count', 0) or 0
-                }
-                # Ensure all values are integers, not None
-                usage_metadata = {k: int(v) if v is not None else 0 for k, v in usage_metadata.items()}
-                logger.info(f"Token usage - Input: {usage_metadata['prompt_tokens']}, Output: {usage_metadata['completion_tokens']}, Total: {usage_metadata['total_tokens']}")
-            except Exception as meta_error:
-                logger.warning(f"Error extracting usage metadata: {meta_error}. Using defaults.")
-                usage_metadata = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
-        
-        # Safely extract response text
-        if not hasattr(response, 'text') or response.text is None:
-            # Try to get text from parts
-            text_parts = []
-            if hasattr(response, 'parts') and response.parts:
-                for part in response.parts:
-                    if hasattr(part, 'text') and part.text:
-                        text_parts.append(part.text)
-            response_text = ' '.join(text_parts).strip() if text_parts else ""
-            if not response_text:
-                raise Exception("Gemini response has no text content available")
-        else:
-            response_text = response.text.strip()
-        
-        return response_text, usage_metadata
-    except Exception as e:
-        logger.error(f"Error in Gemini API call: {e}", exc_info=True)
-        # Check for specific error types
-        error_str = str(e).lower()
-        error_message = f"An error occurred during a Gemini API call: {e}"
-        
-        # Handle quota/credit errors
-        if any(keyword in error_str for keyword in ['quota', 'credit', 'billing', 'payment', 'insufficient']):
-            error_message = "API quota or credits exhausted. Please check your Gemini API billing and quota limits."
-            logger.error("Gemini API quota/credit error detected")
-        
-        # Handle rate limiting
-        elif any(keyword in error_str for keyword in ['rate limit', '429', 'too many requests']):
-            error_message = "API rate limit exceeded. Please wait a moment and try again."
-            logger.error("Gemini API rate limit error detected")
-        
-        # Handle permission/authentication errors
-        elif any(keyword in error_str for keyword in ['permission', 'unauthorized', 'authentication', 'invalid api key', 'api key']):
-            error_message = "API authentication error. Please check your Gemini API key configuration."
-            logger.error("Gemini API authentication error detected")
-        
-        # Handle blocked responses
-        elif "response was blocked" in error_str or "blocked" in error_str:
-             reason = "Safety settings"
-             try:
-                 block_reason = getattr(e, 'block_reason', 'Unknown')
-                 if hasattr(e, 'response') and hasattr(e.response, 'prompt_feedback'):
-                      block_reason = e.response.prompt_feedback.block_reason
-                 reason = str(block_reason)
-             except Exception:
-                 pass
-             error_message = f"Error: The AI's response was blocked due to {reason}. Please try rephrasing or contact support."
-        
-        # Raise exception instead of returning error string
-        raise Exception(error_message)
-
-
 def _blueprint_to_json(blueprint: Dict[str, Any]) -> str:
     if blueprint.get("parsed"):
         return json.dumps(blueprint['parsed'].model_dump(by_alias=True), indent=2)
@@ -888,6 +565,7 @@ Schema (all keys required):
 - shadow_contradictions: list of {tension, drivers[], integration_strategy}
 - growth_edges: list of {focus, description, practices[]}
 - final_principles_and_prompts: {principles[], prompts[]}
+- snapshot: short planning notes highlighting the contradictions, drives, social patterns, shadow, and high-expression arc to emphasize in the Snapshot section
 All notes must be concise and cite specific chart factors (sidereal/tropical placements, aspects, nodes, numerology, dominant patterns)."""
     
     serialized_chart_json = json.dumps(serialized_chart, indent=2)
@@ -902,6 +580,7 @@ Context:
 - {time_note}
 - Plan the entire premium reading. You are not writing prose sections yet—only outlining with analytic notes.
 - Use short, information-dense strings that reference the exact placements/aspects backing each note.
+- The snapshot field should capture the most intimate contradictions, motivations, relational behaviors, and shadow/high-expression arcs you observe so the writer can produce the required 300–500 word section later.
 
 Return ONLY the JSON object."""
     
@@ -950,6 +629,12 @@ Rules:
     
     heading_block = "   WHAT WE KNOW / WHAT WE DON'T KNOW\n" if unknown_time else ""
     
+    snapshot_notes = ""
+    if blueprint.get("parsed") and getattr(blueprint['parsed'], "snapshot", None):
+        snapshot_notes = blueprint['parsed'].snapshot
+    elif blueprint.get("raw_text"):
+        snapshot_notes = "Snapshot planning notes were not parsed; rely on the chart summary and SNAPSHOT_PROMPT."
+    
     user_prompt = f"""[CHART SUMMARY]\n{chart_summary}\n
 [SERIALIZED CHART DATA]\n{serialized_chart_json}\n
 [BLUEPRINT JSON]\n{blueprint_json}\n
@@ -961,8 +646,12 @@ Instructions:
    FOUNDATIONAL PILLARS: SUN - MOON - ASCENDANT
    PERSONAL & SOCIAL PLANETS
    HOUSES & LIFE DOMAINS SUMMARY
-2. Snapshot = exactly 7 bullets derived from top_themes + axes. Concrete, behavior-focused, no astrology jargon.
-3. Chart Overview & Core Themes: obey the existing specification (5 themes, each with heading `Theme X – [Title]`, 2 headline sentences, `Why this shows up in your chart`, `How it tends to feel and play out`). At least 2 themes must highlight Sidereal vs Tropical contrasts; at least 1 integrates Nodes. Use numerology only when reinforcing.
+2. Follow this brief for the Snapshot section (use it verbatim):
+{SNAPSHOT_PROMPT.strip()}
+
+Blueprint notes for Snapshot (use them to prioritize chart factors):
+{snapshot_notes}
+3. Chart Overview & Core Themes: obey the existing specification (5 themes, each with heading `Theme 1 – [Title]`, 2 headline sentences, `Why this shows up in your chart`, `How it tends to feel and play out`). At least 2 themes must highlight Sidereal vs Tropical contrasts; at least 1 integrates Nodes. Use numerology only when reinforcing.
 4. Foundational Pillars: use sun_moon_ascendant_plan to craft two dense paragraphs per body (internal process + external expression).
 5. Personal & Social Planets:
    - Mercury, Venus, Mars → cognition/communication, relating/attraction, drive/assertion. Include concrete examples.
@@ -1282,7 +971,7 @@ def get_quick_highlights(chart_data: dict, unknown_time: bool) -> str:
 
 # --- Three-Call Reading Generation Functions ---
 
-async def call1_chart_overview_and_themes(llm: LLMClient, serialized_chart: dict, chart_summary: str, 
+async def call1_chart_overview_and_themes(llm: Gemini3Client, serialized_chart: dict, chart_summary: str, 
                                          unknown_time: bool) -> dict:
     """
     Call 1: Generate structured chart overview and core themes.
@@ -1368,7 +1057,7 @@ When choosing the 5 themes, prioritize:
     return {"raw_text": response_text, "parsed": chart_overview_output}
 
 
-async def call2_full_section_drafts(llm: LLMClient, serialized_chart: dict, chart_summary: str,
+async def call2_full_section_drafts(llm: Gemini3Client, serialized_chart: dict, chart_summary: str,
                                    chart_overview: dict, unknown_time: bool) -> str:
     """
     Call 2: Generate full draft of all reading sections.
@@ -1442,7 +1131,7 @@ Write a comprehensive analysis. Structure your response exactly as follows, usin
     return response_text
 
 
-async def call3_polish_reading(llm: LLMClient, draft_reading: str, chart_summary: str) -> str:
+async def call3_polish_reading(llm: Gemini3Client, draft_reading: str, chart_summary: str) -> str:
     """
     Call 3: Polish the full draft reading for clarity and impact.
     
@@ -1489,86 +1178,6 @@ Output the polished reading with the exact same structure as the draft."""
     
     logger.info("Call 3 completed successfully")
     return response_text
-
-
-async def get_claude_reading(chart_data: dict, unknown_time: bool) -> str:
-    """
-    Generate comprehensive astrological reading using exactly 3 Claude API calls.
-    
-    Call 1: Deep Chart Analysis → Chart JSON blueprint
-    Call 2: Full Draft Reading (using JSON plan)
-    Call 3: Lightweight Polish
-    """
-    if not CLAUDE_API_KEY and AI_MODE != "stub":
-        logger.error("Claude API key not configured - AI reading unavailable")
-        raise Exception("Claude API key not configured. AI reading is unavailable.")
-
-    logger.info("="*60)
-    logger.info("Starting Claude reading generation...")
-    logger.info(f"AI_MODE: {AI_MODE}")
-    logger.info(f"Unknown time: {unknown_time}")
-    logger.info("="*60)
-    
-    # Initialize LLM client for token/cost tracking
-    llm = LLMClient()
-    
-    try:
-        # Serialize chart data for LLM consumption
-        serialized_chart = serialize_chart_for_llm(chart_data, unknown_time=unknown_time)
-        chart_summary = format_serialized_chart_for_prompt(serialized_chart)
-        
-        # Call 1: Chart Overview and Core Themes
-        chart_overview = await call1_chart_overview_and_themes(
-            llm, serialized_chart, chart_summary, unknown_time
-        )
-        
-        # Call 2: Full Section Drafts
-        draft_reading = await call2_full_section_drafts(
-            llm, serialized_chart, chart_summary, chart_overview, unknown_time
-        )
-        
-        # Call 3: Polish Reading
-        final_reading = await call3_polish_reading(
-            llm, draft_reading, chart_summary
-        )
-        
-        # Log final cost summary
-        summary = llm.get_summary()
-        logger.info(">>> ENTERED get_claude_reading AND ABOUT TO LOG COST <<<")
-        cost_info = calculate_claude_cost(summary['total_prompt_tokens'], summary['total_completion_tokens'])
-        logger.info(f"=== CLAUDE API COST SUMMARY ===")
-        logger.info(f"Total Calls: {summary['call_count']}")
-        logger.info(f"Total Input Tokens: {summary['total_prompt_tokens']:,}")
-        logger.info(f"Total Output Tokens: {summary['total_completion_tokens']:,}")
-        logger.info(f"Total Tokens: {summary['total_tokens']:,}")
-        logger.info(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
-        logger.info(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
-        logger.info(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
-        logger.info("=" * 50)
-        # Also print to stdout as fallback
-        print(f"\n{'='*60}")
-        print(f"CLAUDE API COST SUMMARY")
-        print(f"Total Calls: {summary['call_count']}")
-        print(f"Total Input Tokens: {summary['total_prompt_tokens']:,}")
-        print(f"Total Output Tokens: {summary['total_completion_tokens']:,}")
-        print(f"Total Tokens: {summary['total_tokens']:,}")
-        print(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
-        print(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
-        print(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
-        print(f"{'='*60}\n")
-        
-        return final_reading
-        
-    except Exception as e:
-        logger.error(f"Error during Claude reading generation: {e}", exc_info=True)
-        # Log which call failed if possible
-        if "call1" in str(e).lower():
-            logger.error("Call 1 (Chart Overview) failed")
-        elif "call2" in str(e).lower():
-            logger.error("Call 2 (Full Section Drafts) failed")
-        elif "call3" in str(e).lower():
-            logger.error("Call 3 (Polish Reading) failed")
-        raise Exception(f"An error occurred while generating the detailed AI reading: {e}")
 
 
 # --- Email Functions ---
@@ -1748,16 +1357,13 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
         
         # Generate the reading
         try:
-            if AI_MODE == "gemini3":
-                claude_reading = await get_gemini3_reading(chart_data, unknown_time)
-            else:
-                claude_reading = await get_claude_reading_v2(chart_data, unknown_time)
-            logger.info(f"AI Reading successfully generated for: {chart_name} (length: {len(claude_reading)} characters)")
+            reading_text = await get_gemini3_reading(chart_data, unknown_time)
+            logger.info(f"AI Reading successfully generated for: {chart_name} (length: {len(reading_text)} characters)")
             
             # Store reading in cache for frontend retrieval
             chart_hash = generate_chart_hash(chart_data, unknown_time)
             reading_cache[chart_hash] = {
-                'reading': claude_reading,
+                'reading': reading_text,
                 'timestamp': datetime.now(),
                 'chart_name': chart_name
             }
@@ -1810,7 +1416,7 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
         # Generate PDF report
         try:
             logger.info("Generating PDF report...")
-            pdf_bytes = generate_pdf_report(chart_data, claude_reading, user_inputs)
+            pdf_bytes = generate_pdf_report(chart_data, reading_text, user_inputs)
             logger.info(f"PDF generated successfully ({len(pdf_bytes)} bytes)")
         except Exception as e:
             logger.error(f"Error generating PDF: {e}", exc_info=True)
@@ -1855,7 +1461,7 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
         logger.error(f"Error in background task: {e}", exc_info=True)
 
 
-async def send_emails_in_background(chart_data: Dict, claude_reading: str, user_inputs: Dict):
+async def send_emails_in_background(chart_data: Dict, reading_text: str, user_inputs: Dict):
     """Background task to send emails with PDF attachments to user and admin."""
     try:
         logger.info("="*60)
@@ -1885,7 +1491,7 @@ async def send_emails_in_background(chart_data: Dict, claude_reading: str, user_
         # Generate PDF report
         try:
             logger.info("Generating PDF report...")
-            pdf_bytes = generate_pdf_report(chart_data, claude_reading, user_inputs)
+            pdf_bytes = generate_pdf_report(chart_data, reading_text, user_inputs)
             logger.info(f"PDF generated successfully ({len(pdf_bytes)} bytes)")
         except Exception as e:
             logger.error(f"Error generating PDF: {e}", exc_info=True)

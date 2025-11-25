@@ -212,6 +212,7 @@ class GlobalReadingBlueprint(BaseModel):
     shadow_contradictions: List[ShadowContradictionPlan] = Field(..., description="Key contradictions that need exploration")
     growth_edges: List[GrowthEdgePlan] = Field(..., description="Specific growth edges / experiments to include")
     final_principles_and_prompts: FinalPrinciplesPlan = Field(..., description="Owner's manual summary with actionable prompts")
+    snapshot: str = Field(..., description="Planning notes for the Snapshot section (key contradictions, drives, relational and shadow patterns to feature)")
     
     @field_validator('core_axes')
     @classmethod
@@ -231,6 +232,54 @@ class GlobalReadingBlueprint(BaseModel):
     def axes(self) -> List[LifeAxis]:
         """Backward-compatible accessor for legacy code."""
         return self.core_axes
+
+
+SNAPSHOT_PROMPT = """
+Write the section titled: “Snapshot: What Will Feel Most True About You.”
+
+This section must be 300–500 words and written in the second person (“you”).
+
+Purpose:
+Create a psychologically precise, deeply resonant profile that feels undeniably true to the client. 
+This is the thesis of the entire reading — it must hit harder than any other part. No clichés, no generalities, no vague language. Every sentence must feel intimate and specific.
+
+Data Inputs:
+Use the client’s tropical chart, sidereal chart, house placements, aspects, and elemental/modality patterns. 
+Blend both systems seamlessly: tropical = psychological; sidereal = instinctual/subconscious.
+
+Tone Requirements:
+- Incisive, deep, analytical, intimate.
+- Every sentence must feel like it reveals something the client already knows but never had language for.
+- No horoscope-style writing.
+- No soft or generic statements.
+- Show their contradictions, shadow traits, motives, and unspoken desires.
+
+Structural Requirements:
+
+1. Lead Sentence:
+Open with a single sharp sentence capturing their core contradiction or recognizable life pattern.
+
+2. Core Drives:
+Write 2–3 sentences describing what motivates them, what they pursue even when they deny it, and what they consistently avoid or suppress.
+
+3. Internal Conflict:
+Describe the internal tension between two competing psychological currents shaped by their Sun, Moon, and Rising signs, plus any tight aspects involving them.
+
+4. Social and Relational Pattern:
+Describe how they show up around others, how people perceive them, what they seek in relationships, and what others consistently misunderstand about them.
+
+5. Shadow Pattern:
+Describe the trait or recurring behavior that causes the most self-sabotage. Explain how it manifests and why it repeats.
+
+6. High Expression:
+Describe what they become when aligned — their highest expression, how their contradictions become strengths, and what they are capable of when they trust their own deeper pattern.
+
+Depth Standard:
+If any sentence could apply to 30% of people, do not write it. 
+Be precise, paradox-aware, and rooted in the actual chart dynamics.
+
+End the section after the “High Expression” paragraph.
+"""
 
 
 # ============================================================================
