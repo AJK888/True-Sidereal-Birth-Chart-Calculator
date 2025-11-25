@@ -280,19 +280,23 @@ const AstrologyCalculator = {
 			clearInterval(this.pollingInterval);
 		}
 		
-		let pollCount = 0;
-		const maxPolls = 180; // Poll for up to 15 minutes (180 * 5 seconds = 15 minutes)
+		// Track start time for accurate elapsed time calculation
+		const startTime = Date.now();
+		const maxElapsedMs = 15 * 60 * 1000; // 15 minutes in milliseconds
 		const pollInterval = 5000; // Poll every 5 seconds
 		
 		const pollForReading = async () => {
-			pollCount++;
+			// Calculate actual elapsed time
+			const elapsedMs = Date.now() - startTime;
+			const elapsedSeconds = Math.floor(elapsedMs / 1000);
+			const elapsedMinutes = Math.floor(elapsedSeconds / 60);
 			
 			try {
 				const response = await fetch(`${this.API_URLS.reading.replace('/generate_reading', '')}/get_reading/${chartHash}`);
 				
 				if (!response.ok) {
-					console.warn(`Polling attempt ${pollCount} failed with status: ${response.status}`);
-					if (pollCount >= maxPolls) {
+					console.warn(`Polling failed with status: ${response.status} (${elapsedSeconds}s elapsed)`);
+					if (elapsedMs >= maxElapsedMs) {
 						this.stopPolling();
 						const statusEl = document.getElementById('pollingStatus');
 						if (statusEl) {
@@ -316,11 +320,17 @@ const AstrologyCalculator = {
 					// Still processing
 					const statusEl = document.getElementById('pollingStatus');
 					if (statusEl) {
-						const elapsedMinutes = Math.floor((pollCount * pollInterval) / 60000);
-						statusEl.textContent = `Still generating... (${elapsedMinutes} minutes elapsed)`;
+						// Show seconds for first minute, then minutes
+						let elapsedText;
+						if (elapsedSeconds < 60) {
+							elapsedText = `${elapsedSeconds} second${elapsedSeconds !== 1 ? 's' : ''} elapsed`;
+						} else {
+							elapsedText = `${elapsedMinutes} minute${elapsedMinutes !== 1 ? 's' : ''} elapsed`;
+						}
+						statusEl.textContent = `Still generating... (${elapsedText})`;
 					}
 					
-					if (pollCount >= maxPolls) {
+					if (elapsedMs >= maxElapsedMs) {
 						this.stopPolling();
 						if (statusEl) {
 							statusEl.textContent = "Reading generation is taking longer than expected. Please check your email.";
@@ -328,8 +338,10 @@ const AstrologyCalculator = {
 					}
 				}
 			} catch (error) {
-				console.error(`Polling error (attempt ${pollCount}):`, error);
-				if (pollCount >= maxPolls) {
+				const elapsedMs = Date.now() - startTime;
+				const elapsedSeconds = Math.floor(elapsedMs / 1000);
+				console.error(`Polling error (${elapsedSeconds}s elapsed):`, error);
+				if (elapsedMs >= maxElapsedMs) {
 					this.stopPolling();
 					const statusEl = document.getElementById('pollingStatus');
 					if (statusEl) {
