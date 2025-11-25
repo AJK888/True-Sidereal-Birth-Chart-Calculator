@@ -37,6 +37,15 @@ from llm_schemas import (
     GlobalReadingBlueprint, LifeAxis, CoreThemeBullet, SNAPSHOT_PROMPT
 )
 
+# --- Import Auth & Database ---
+from database import init_db, get_db, User, SavedChart, ChatConversation, ChatMessage
+from auth import (
+    UserCreate, UserLogin, UserResponse, Token,
+    create_user, authenticate_user, get_user_by_email,
+    create_access_token, get_current_user, get_current_user_optional
+)
+from sqlalchemy.orm import Session
+
 # --- SETUP THE LOGGER ---
 import sys
 
@@ -120,6 +129,10 @@ def get_rate_limit_key(request: Request) -> str:
 limiter = Limiter(key_func=get_rate_limit_key)
 app = FastAPI(title="True Sidereal API", version="1.0")
 app.state.limiter = limiter
+
+# --- Initialize Database ---
+init_db()
+logger.info("Database initialized successfully")
 
 # --- CORS MIDDLEWARE (MUST BE ADDED BEFORE ROUTES) ---
 origins = [
@@ -1903,3 +1916,566 @@ async def get_reading_endpoint(request: Request, chart_hash: str):
             "status": "processing",
             "message": "Reading is still being generated. Please check again in a moment."
         }
+
+
+# ============================================================
+# USER AUTHENTICATION ENDPOINTS
+# ============================================================
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    full_name: Optional[str] = None
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+@app.post("/auth/register", response_model=Token)
+async def register_endpoint(data: RegisterRequest, db: Session = Depends(get_db)):
+    """Register a new user account."""
+    # Check if user already exists
+    existing_user = get_user_by_email(db, data.email)
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="An account with this email already exists."
+        )
+    
+    # Validate password
+    if len(data.password) < 8:
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 8 characters long."
+        )
+    
+    # Create the user
+    user_create = UserCreate(
+        email=data.email,
+        password=data.password,
+        full_name=data.full_name
+    )
+    user = create_user(db, user_create)
+    
+    # Create access token
+    access_token = create_access_token(data={"sub": user.id, "email": user.email})
+    
+    logger.info(f"New user registered: {user.email}")
+    
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
+
+
+@app.post("/auth/login", response_model=Token)
+async def login_endpoint(data: LoginRequest, db: Session = Depends(get_db)):
+    """Login and get access token."""
+    user = authenticate_user(db, data.email, data.password)
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password."
+        )
+    
+    if not user.is_active:
+        raise HTTPException(
+            status_code=400,
+            detail="This account has been deactivated."
+        )
+    
+    # Create access token
+    access_token = create_access_token(data={"sub": user.id, "email": user.email})
+    
+    logger.info(f"User logged in: {user.email}")
+    
+    return Token(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse.model_validate(user)
+    )
+
+
+@app.get("/auth/me", response_model=UserResponse)
+async def get_current_user_endpoint(current_user: User = Depends(get_current_user)):
+    """Get current authenticated user."""
+    return UserResponse.model_validate(current_user)
+
+
+# ============================================================
+# SAVED CHARTS ENDPOINTS
+# ============================================================
+
+class SaveChartRequest(BaseModel):
+    chart_name: str
+    birth_year: int
+    birth_month: int
+    birth_day: int
+    birth_hour: int
+    birth_minute: int
+    birth_location: str
+    unknown_time: bool = False
+    chart_data_json: Optional[str] = None
+    ai_reading: Optional[str] = None
+
+
+class SavedChartResponse(BaseModel):
+    id: int
+    chart_name: str
+    created_at: datetime
+    birth_year: int
+    birth_month: int
+    birth_day: int
+    birth_hour: int
+    birth_minute: int
+    birth_location: str
+    unknown_time: bool
+    has_reading: bool
+
+    class Config:
+        from_attributes = True
+
+
+@app.post("/charts/save")
+async def save_chart_endpoint(
+    data: SaveChartRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Save a chart for the authenticated user."""
+    # Create the saved chart
+    saved_chart = SavedChart(
+        user_id=current_user.id,
+        chart_name=data.chart_name,
+        birth_year=data.birth_year,
+        birth_month=data.birth_month,
+        birth_day=data.birth_day,
+        birth_hour=data.birth_hour,
+        birth_minute=data.birth_minute,
+        birth_location=data.birth_location,
+        unknown_time=data.unknown_time,
+        chart_data_json=data.chart_data_json,
+        ai_reading=data.ai_reading
+    )
+    db.add(saved_chart)
+    db.commit()
+    db.refresh(saved_chart)
+    
+    logger.info(f"Chart saved for user {current_user.email}: {data.chart_name}")
+    
+    return {
+        "id": saved_chart.id,
+        "message": "Chart saved successfully."
+    }
+
+
+@app.get("/charts/list")
+async def list_charts_endpoint(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """List all saved charts for the authenticated user."""
+    charts = db.query(SavedChart).filter(SavedChart.user_id == current_user.id).order_by(SavedChart.created_at.desc()).all()
+    
+    return [
+        {
+            "id": chart.id,
+            "chart_name": chart.chart_name,
+            "created_at": chart.created_at.isoformat(),
+            "birth_date": f"{chart.birth_month}/{chart.birth_day}/{chart.birth_year}",
+            "birth_location": chart.birth_location,
+            "unknown_time": chart.unknown_time,
+            "has_reading": chart.ai_reading is not None
+        }
+        for chart in charts
+    ]
+
+
+@app.get("/charts/{chart_id}")
+async def get_chart_endpoint(
+    chart_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific saved chart."""
+    chart = db.query(SavedChart).filter(
+        SavedChart.id == chart_id,
+        SavedChart.user_id == current_user.id
+    ).first()
+    
+    if not chart:
+        raise HTTPException(status_code=404, detail="Chart not found.")
+    
+    return {
+        "id": chart.id,
+        "chart_name": chart.chart_name,
+        "created_at": chart.created_at.isoformat(),
+        "birth_year": chart.birth_year,
+        "birth_month": chart.birth_month,
+        "birth_day": chart.birth_day,
+        "birth_hour": chart.birth_hour,
+        "birth_minute": chart.birth_minute,
+        "birth_location": chart.birth_location,
+        "unknown_time": chart.unknown_time,
+        "chart_data": json.loads(chart.chart_data_json) if chart.chart_data_json else None,
+        "ai_reading": chart.ai_reading
+    }
+
+
+@app.delete("/charts/{chart_id}")
+async def delete_chart_endpoint(
+    chart_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a saved chart."""
+    chart = db.query(SavedChart).filter(
+        SavedChart.id == chart_id,
+        SavedChart.user_id == current_user.id
+    ).first()
+    
+    if not chart:
+        raise HTTPException(status_code=404, detail="Chart not found.")
+    
+    db.delete(chart)
+    db.commit()
+    
+    logger.info(f"Chart deleted for user {current_user.email}: {chart.chart_name}")
+    
+    return {"message": "Chart deleted successfully."}
+
+
+# ============================================================
+# CHAT WITH GEMINI ENDPOINTS
+# ============================================================
+
+class ChatMessageRequest(BaseModel):
+    chart_id: int
+    message: str
+    conversation_id: Optional[int] = None
+
+
+class ChatMessageResponse(BaseModel):
+    role: str
+    content: str
+    created_at: str
+
+
+class ChatConversationResponse(BaseModel):
+    id: int
+    title: str
+    created_at: str
+    updated_at: str
+    messages: List[ChatMessageResponse]
+
+
+# System prompt for the chart advisor chatbot
+CHART_ADVISOR_SYSTEM_PROMPT = """You are a wise and compassionate astrological advisor who helps people understand their birth chart and how to apply its insights to improve their lives.
+
+CONTEXT:
+You have access to this specific user's complete birth chart data, including both Sidereal and Tropical placements, aspects, house positions, numerology, and Chinese zodiac information. You also have access to their COMPLETE personalized AI-generated reading that was created specifically for them. This reading contains deep insights about their personality, patterns, and life path.
+
+CRITICAL SECURITY NOTE:
+- You are ONLY discussing the chart of the person you are speaking with
+- The reading and chart data provided belongs to THIS user who is logged into their account
+- Never reference or discuss charts/readings of other users
+- All insights should be specific to the chart data and reading provided in the context
+
+YOUR ROLE:
+1. Answer questions about specific placements, aspects, or patterns in their chart
+2. Reference specific sections of their personalized reading when relevant
+3. Provide practical life advice based on their unique astrological blueprint
+4. Help them understand how different chart factors interact
+5. Offer guidance on personal growth, relationships, career, and spiritual development
+6. Explain astrological concepts in accessible, non-jargon language when needed
+7. Help them apply the insights from their reading to real-life situations
+
+COMMUNICATION STYLE:
+- Be warm, supportive, and encouraging
+- Ground astrological insights in practical, actionable advice
+- When answering questions, reference their specific placements and what their reading says about them
+- Speak confidently but avoid absolute predictions
+- Use "you tend to" or "your chart suggests" rather than deterministic language
+- Validate their experiences while offering new perspectives
+- Be specific to THEIR chart - avoid generic advice
+- Quote or paraphrase relevant parts of their reading when it directly addresses their question
+
+IMPORTANT GUIDELINES:
+- Always tie your advice back to specific factors in their chart or their reading
+- If they ask about something covered in their reading, reference what the reading says
+- Explain the "why" behind your insights using their chart data
+- Balance acknowledging challenges with highlighting opportunities for growth
+- If they ask about compatibility or other charts, focus on how THEIR chart dynamics apply
+- For health or medical questions, recommend consulting professionals while offering supportive insights
+- For legal or financial specifics, recommend professionals while discussing their chart's themes around those areas
+
+Remember: Your goal is to empower them to understand themselves better and make conscious choices aligned with their highest potential. You are their personal astrological guide with deep knowledge of THEIR specific chart."""
+
+
+async def get_gemini_chat_response(chart_data: dict, reading: Optional[str], conversation_history: List[dict], user_message: str, chart_name: str = "User") -> str:
+    """Generate a chat response using Gemini based on the user's chart.
+    
+    SECURITY: This function receives chart data that has already been verified
+    to belong to the authenticated user by the calling endpoint.
+    """
+    if not GEMINI_API_KEY and AI_MODE != "stub":
+        raise Exception("Gemini API key not configured. Chat is unavailable.")
+    
+    llm = Gemini3Client()
+    
+    # Build context from chart data
+    try:
+        serialized_chart = serialize_chart_for_llm(chart_data, unknown_time=chart_data.get('unknown_time', False))
+        chart_summary = format_serialized_chart_for_prompt(serialized_chart)
+    except Exception as e:
+        logger.warning(f"Could not serialize chart for chat: {e}")
+        chart_summary = json.dumps(chart_data, indent=2)
+    
+    # Build conversation context (last 10 messages for continuity)
+    conversation_context = ""
+    if conversation_history:
+        conversation_context = "\n\n=== PREVIOUS CONVERSATION ===\n"
+        for msg in conversation_history[-10:]:
+            role = "User" if msg['role'] == 'user' else "Advisor"
+            conversation_context += f"{role}: {msg['content']}\n"
+    
+    # Include the COMPLETE personalized reading as context
+    # This reading was generated specifically for this user's chart
+    reading_context = ""
+    if reading:
+        reading_context = f"""
+
+=== THIS USER'S COMPLETE PERSONALIZED READING ===
+The following is the full AI-generated astrological reading created specifically for {chart_name}.
+Reference this reading when answering questions - it contains deep insights about their chart.
+
+{reading}
+
+=== END OF PERSONALIZED READING ===
+"""
+    
+    user_prompt = f"""=== CHART OWNER: {chart_name} ===
+You are speaking directly with {chart_name} about THEIR chart. All data below belongs to them.
+
+=== CHART DATA ===
+{chart_summary}
+{reading_context}
+{conversation_context}
+
+=== USER'S CURRENT QUESTION ===
+{user_message}
+
+=== INSTRUCTIONS ===
+Provide a helpful, personalized response that:
+1. Addresses their specific question
+2. References their chart placements and aspects when relevant
+3. Quotes or paraphrases relevant parts of their reading if it applies to their question
+4. Offers practical, actionable insights based on their unique astrological blueprint
+5. Speaks directly to them as the owner of this chart"""
+    
+    response = await llm.generate(
+        system=CHART_ADVISOR_SYSTEM_PROMPT,
+        user=user_prompt,
+        max_output_tokens=2500,
+        temperature=0.7,
+        call_label="chart_chat"
+    )
+    
+    return response
+
+
+@app.post("/chat/send")
+async def send_chat_message_endpoint(
+    data: ChatMessageRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Send a chat message and get a response from the AI advisor.
+    
+    SECURITY: Only allows access to charts owned by the authenticated user.
+    The AI advisor will only have context from this user's chart and reading.
+    """
+    # SECURITY: Verify chart belongs to authenticated user
+    # This ensures users can only chat about their own charts
+    chart = db.query(SavedChart).filter(
+        SavedChart.id == data.chart_id,
+        SavedChart.user_id == current_user.id  # Critical: ownership check
+    ).first()
+    
+    if not chart:
+        raise HTTPException(status_code=404, detail="Chart not found.")
+    
+    # Get or create conversation
+    if data.conversation_id:
+        conversation = db.query(ChatConversation).filter(
+            ChatConversation.id == data.conversation_id,
+            ChatConversation.user_id == current_user.id,
+            ChatConversation.chart_id == chart.id
+        ).first()
+        
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found.")
+    else:
+        # Create new conversation
+        conversation = ChatConversation(
+            user_id=current_user.id,
+            chart_id=chart.id,
+            title=data.message[:50] + "..." if len(data.message) > 50 else data.message
+        )
+        db.add(conversation)
+        db.commit()
+        db.refresh(conversation)
+    
+    # Get conversation history
+    messages = db.query(ChatMessage).filter(
+        ChatMessage.conversation_id == conversation.id
+    ).order_by(ChatMessage.created_at).all()
+    
+    conversation_history = [
+        {"role": msg.role, "content": msg.content}
+        for msg in messages
+    ]
+    
+    # Save user message
+    user_msg = ChatMessage(
+        conversation_id=conversation.id,
+        role="user",
+        content=data.message
+    )
+    db.add(user_msg)
+    db.commit()
+    
+    # Parse chart data
+    chart_data = json.loads(chart.chart_data_json) if chart.chart_data_json else {}
+    
+    try:
+        # Get AI response - passing verified user's chart data
+        # Security: chart ownership already verified above (user_id check)
+        ai_response = await get_gemini_chat_response(
+            chart_data=chart_data,
+            reading=chart.ai_reading,
+            conversation_history=conversation_history,
+            user_message=data.message,
+            chart_name=chart.chart_name
+        )
+        
+        # Save AI response
+        assistant_msg = ChatMessage(
+            conversation_id=conversation.id,
+            role="assistant",
+            content=ai_response
+        )
+        db.add(assistant_msg)
+        
+        # Update conversation timestamp
+        conversation.updated_at = datetime.utcnow()
+        db.commit()
+        
+        logger.info(f"Chat response generated for user {current_user.email}")
+        
+        return {
+            "conversation_id": conversation.id,
+            "response": ai_response,
+            "message_id": assistant_msg.id
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating chat response: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to generate response: {str(e)}")
+
+
+@app.get("/chat/conversations/{chart_id}")
+async def list_conversations_endpoint(
+    chart_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """List all chat conversations for a specific chart.
+    
+    SECURITY: Only returns conversations for charts owned by the authenticated user.
+    """
+    # SECURITY: Verify chart belongs to authenticated user
+    chart = db.query(SavedChart).filter(
+        SavedChart.id == chart_id,
+        SavedChart.user_id == current_user.id  # Critical: ownership check
+    ).first()
+    
+    if not chart:
+        raise HTTPException(status_code=404, detail="Chart not found.")
+    
+    conversations = db.query(ChatConversation).filter(
+        ChatConversation.chart_id == chart_id,
+        ChatConversation.user_id == current_user.id
+    ).order_by(ChatConversation.updated_at.desc()).all()
+    
+    return [
+        {
+            "id": conv.id,
+            "title": conv.title,
+            "created_at": conv.created_at.isoformat(),
+            "updated_at": conv.updated_at.isoformat(),
+            "message_count": len(conv.messages)
+        }
+        for conv in conversations
+    ]
+
+
+@app.get("/chat/conversation/{conversation_id}")
+async def get_conversation_endpoint(
+    conversation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get a specific conversation with all messages."""
+    conversation = db.query(ChatConversation).filter(
+        ChatConversation.id == conversation_id,
+        ChatConversation.user_id == current_user.id
+    ).first()
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found.")
+    
+    messages = db.query(ChatMessage).filter(
+        ChatMessage.conversation_id == conversation_id
+    ).order_by(ChatMessage.created_at).all()
+    
+    return {
+        "id": conversation.id,
+        "title": conversation.title,
+        "chart_id": conversation.chart_id,
+        "created_at": conversation.created_at.isoformat(),
+        "updated_at": conversation.updated_at.isoformat(),
+        "messages": [
+            {
+                "id": msg.id,
+                "role": msg.role,
+                "content": msg.content,
+                "created_at": msg.created_at.isoformat()
+            }
+            for msg in messages
+        ]
+    }
+
+
+@app.delete("/chat/conversation/{conversation_id}")
+async def delete_conversation_endpoint(
+    conversation_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a chat conversation."""
+    conversation = db.query(ChatConversation).filter(
+        ChatConversation.id == conversation_id,
+        ChatConversation.user_id == current_user.id
+    ).first()
+    
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found.")
+    
+    db.delete(conversation)
+    db.commit()
+    
+    return {"message": "Conversation deleted successfully."}

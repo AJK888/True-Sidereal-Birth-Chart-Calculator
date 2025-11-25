@@ -13,4 +13,11 @@ reportlab
 cairosvg
 Pillow
 google-generativeai
-google-generativeai
+# Authentication & Database
+sqlalchemy
+aiosqlite
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+email-validator
+psycopg2-binary  # PostgreSQL driver (optional, for production)
