@@ -307,7 +307,7 @@ pre {
 .auth-buttons-container {
     position: fixed;
     top: 1rem;
-    right: 5rem;
+    right: 7rem; /* Increased to avoid overlapping menu button */
     display: flex;
     gap: 0.75rem;
     z-index: 10001;
@@ -371,7 +371,7 @@ pre {
 
 @media screen and (max-width: 980px) {
     .auth-buttons-container {
-        right: 4rem;
+        right: 5.5rem; /* More space for menu button on tablets */
     }
     .auth-btn .user-name {
         display: none;
@@ -381,12 +381,16 @@ pre {
 @media screen and (max-width: 736px) {
     .auth-buttons-container {
         top: 0.75rem;
-        right: 3.5rem;
-        gap: 0.5rem;
+        right: 4.5rem; /* More space for menu button on mobile */
+        gap: 0.35rem;
     }
     .auth-btn {
-        padding: 0.4rem 0.75rem;
-        font-size: 0.75rem;
+        padding: 0.35rem 0.6rem;
+        font-size: 0.7rem;
+        letter-spacing: 0.05em;
+    }
+    .auth-btn.logout-btn {
+        padding: 0.35rem 0.5rem;
     }
 }
 
