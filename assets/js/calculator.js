@@ -8,7 +8,7 @@ const AstrologyCalculator = {
 	TROPICAL_ZODIAC_ORDER: ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'],
 	PLANET_GLYPHS: {'Sun':'☉','Moon':'☽','Mercury':'☿','Venus':'♀','Mars':'♂','Jupiter':'♃','Saturn':'♄','Uranus':'♅','Neptune':'♆','Pluto':'♇','Chiron':'⚷','True Node':'☊','South Node':'☋','Ascendant':'AC','Midheaven (MC)':'MC','Descendant':'DC','Imum Coeli (IC)':'IC'},
 
-	form: null, submitBtn: null, noFullNameCheckbox: null,
+	form: null, submitBtn: null, isFullBirthNameCheckbox: null,
 	geminiTitle: null, geminiOutput: null, copyReadingBtn: null,
 	resultsTitle: null, wheelTitle: null, resultsContainer: null, 
 	siderealWheelSvg: null, tropicalWheelSvg: null,
@@ -39,7 +39,7 @@ const AstrologyCalculator = {
 	cacheDOMElements() {
 		this.form = document.getElementById("chartForm");
 		this.submitBtn = document.getElementById("submitBtn");
-		this.noFullNameCheckbox = document.getElementById("noFullName");
+		this.isFullBirthNameCheckbox = document.getElementById("isFullBirthName");
 		this.geminiTitle = document.getElementById('gemini-title');
 		this.geminiOutput = document.getElementById('gemini-output');
 		this.copyReadingBtn = document.getElementById('copyReadingBtn');
@@ -150,7 +150,7 @@ const AstrologyCalculator = {
 				location: this.form.querySelector("[name='location']").value,
 				unknown_time: this.form.querySelector("[name='unknownTime']").checked,
 				user_email: this.form.querySelector("[name='userEmail']").value,
-				no_full_name: this.form.querySelector("[name='noFullName']").checked
+				is_full_birth_name: this.form.querySelector("[name='isFullBirthName']").checked
 			}),
 		});
 
