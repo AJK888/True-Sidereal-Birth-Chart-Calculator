@@ -230,7 +230,7 @@ PDF_SECTIONS = [
 # Patterns to match section headers in the AI output (case-insensitive)
 SECTION_PATTERNS = {
     "snapshot": [r"snapshot.*what will feel", r"snapshot:?\s*$", r"what will feel most true"],
-    "thesis": [r"synthesis astrology'?s thesis", r"thesis on your chart", r"our thesis"],
+    "thesis": [r"synthesis:?\s*astrology'?s thesis", r"synthesis astrology'?s thesis", r"thesis on your chart", r"our thesis"],
     "what_we_know": [r"what we know.*what we don'?t", r"what we know.*don'?t know"],
     "overview": [r"chart overview.*core themes", r"overview.*themes", r"core themes"],
     "houses": [r"houses.*life domains", r"houses.*domains", r"life domains summary"],

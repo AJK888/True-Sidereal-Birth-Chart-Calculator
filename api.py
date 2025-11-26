@@ -718,7 +718,7 @@ Rules:
 Instructions:
 1. Use uppercase headings in this order:
    SNAPSHOT: WHAT WILL FEEL MOST TRUE ABOUT YOU
-   SYNTHESIS ASTROLOGY'S THESIS ON YOUR CHART
+   SYNTHESIS ASTROLOGY'S THESIS ON YOUR CHART (no colon in heading)
 {heading_block}   CHART OVERVIEW & CORE THEMES
    HOUSES & LIFE DOMAINS SUMMARY
 
@@ -746,7 +746,7 @@ Instructions:
 Blueprint notes for Snapshot (use them to prioritize chart factors):
 {snapshot_notes}
 
-3. SYNTHESIS ASTROLOGY'S THESIS ON YOUR CHART: Immediately after the Snapshot bullets, write a single powerful paragraph (4-6 sentences) that captures the CENTRAL THESIS of this person's chart. This is the "life_thesis" from the blueprint—the one core truth that everything else orbits around.
+3. SYNTHESIS ASTROLOGY'S THESIS ON YOUR CHART (write this heading exactly as shown, no colon after SYNTHESIS): Immediately after the Snapshot bullets, write a single powerful paragraph (4-6 sentences) that captures the CENTRAL THESIS of this person's chart. This is the "life_thesis" from the blueprint—the one core truth that everything else orbits around.
    
    FORMAT:
    - One paragraph, no bullets
