@@ -198,9 +198,10 @@ class FinalPrinciplesPlan(BaseModel):
 
 class GlobalReadingBlueprint(BaseModel):
     """Global blueprint for the entire reading - provides coherence across all sections."""
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra='ignore')  # Ignore extra fields from Gemini
 
     life_thesis: str = Field(..., description="One-paragraph life thesis summarizing the soul's core journey")
+    central_paradox: Optional[str] = Field(None, description="The core paradox or tension that defines this chart")
     core_axes: List[LifeAxis] = Field(..., min_length=3, max_length=4, alias="core_axes", description="3-4 core life axes to prioritize")
     top_themes: List[CoreThemeBullet] = Field(..., min_length=5, max_length=5, description="Exactly 5 top themes (emotional, relationship, work, spiritual, shadow)")
     sun_moon_ascendant_plan: List[SunMoonAscendantPlan] = Field(..., description="Integration plan for Sun, Moon, Ascendant")
@@ -212,7 +213,15 @@ class GlobalReadingBlueprint(BaseModel):
     shadow_contradictions: List[ShadowContradictionPlan] = Field(..., description="Key contradictions that need exploration")
     growth_edges: List[GrowthEdgePlan] = Field(..., description="Specific growth edges / experiments to include")
     final_principles_and_prompts: FinalPrinciplesPlan = Field(..., description="Owner's manual summary with actionable prompts")
-    snapshot: str = Field(..., description="Planning notes for the Snapshot section (key contradictions, drives, relational and shadow patterns to feature)")
+    snapshot: Any = Field(..., description="Planning notes for the Snapshot section (key contradictions, drives, relational and shadow patterns to feature)")
+    
+    @field_validator('snapshot')
+    @classmethod
+    def validate_snapshot(cls, v):
+        """Accept snapshot as string or list, convert list to string."""
+        if isinstance(v, list):
+            return "\n".join(str(item) for item in v)
+        return str(v)
     
     @field_validator('core_axes')
     @classmethod
