@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from database import get_db, User, SavedChart, ChatConversation, ChatMessage, CreditTransaction
-from auth import get_current_user, get_optional_current_user
+from auth import get_current_user, get_current_user_optional
 
 logger = logging.getLogger(__name__)
 
