@@ -380,6 +380,15 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
             r'^guiding principles:?\s*$',
             r'^integration prompts:?\s*$',
             r'^action checklist:?\s*$',
+            # Aspect section subsections
+            r'^core dynamic:?\s*$',
+            r'^why this matters:?\s*$',
+            r'^how it shows up:?\s*$',
+            r'^the growth edge:?\s*$',
+            r'^what this geometry creates:?\s*$',
+            r'^the life theme:?\s*$',
+            r'^real-life expression:?\s*$',
+            r'^aspect patterns in your chart:?\s*$',
         ]
         line_lower = line.strip().lower()
         return any(re.match(p, line_lower) for p in patterns)

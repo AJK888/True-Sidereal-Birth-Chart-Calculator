@@ -887,16 +887,41 @@ SPIRITUAL PATH & MEANING
 - Nodes, Neptune, Pluto, numerology, blueprint spiritual chapter. Explain how surrender vs control repeats everywhere, and prescribe tangible practices that tie back to numerology/Life Path.
 
 MAJOR LIFE DYNAMICS: THE TIGHTEST ASPECTS & PATTERNS
-- Cover AT LEAST 10 major aspects (the tightest orbs in the chart). For each aspect:
-   * Core tension/strength statement (1 sentence)
-   * Why it exists and what it creates psychologically (2-3 sentences)
-   * Two real-life examples showing how this plays out in different contexts
-   * The growth lever—what shifts when they work with this consciously
-- After the aspects, summarize ALL blueprint.patterns (Grand Trines, T-Squares, Stelliums, Yods, Kites, etc.):
-   * Name the pattern and which planets are involved
-   * Explain the psychological function of this geometry
-   * Show how it amplifies or resolves themes mentioned earlier in the reading
-   * Give a concrete example of how this pattern manifests in their life
+
+This section should be SUBSTANTIAL and well-formatted. Each aspect gets its own clearly separated subsection.
+
+FORMAT FOR EACH ASPECT (cover AT LEAST 10 major aspects):
+
+[PLANET 1] [ASPECT TYPE] [PLANET 2] ([orb]°)
+
+Core Dynamic: [1-2 sentences naming the fundamental tension or gift this creates]
+
+Why This Matters: [3-4 sentences explaining the psychological mechanism. What does this aspect create internally? How does it shape their default responses? Reference both sidereal and tropical contexts if relevant.]
+
+How It Shows Up:
+- In relationships: [specific example]
+- At work: [specific example]  
+- Internally: [what they experience in their own mind/emotions]
+
+The Growth Edge: [2-3 sentences on what shifts when they work with this consciously. What's the integrated expression vs the reactive pattern?]
+
+---
+
+[Leave a blank line and "---" separator between each aspect for readability]
+
+AFTER ALL ASPECTS, ADD A SECTION ON PATTERNS:
+
+ASPECT PATTERNS IN YOUR CHART
+
+For each pattern (Grand Trines, T-Squares, Stelliums, Yods, Kites, Grand Crosses):
+
+[PATTERN NAME]: [Planets involved]
+
+What This Geometry Creates: [3-4 sentences explaining the psychological function—how does this shape concentrate or distribute energy?]
+
+The Life Theme: [2-3 sentences connecting to earlier themes in the reading]
+
+Real-Life Expression: [Concrete example of how this pattern shows up in their daily life or major life decisions]
 
 SHADOW, CONTRADICTIONS & GROWTH EDGES
 - For each blueprint.shadow_contradictions item, describe the tension, identify drivers, provide integration strategy with a concrete “pattern interrupt.”
