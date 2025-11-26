@@ -9,32 +9,6 @@ html {
     scroll-behavior: smooth;
 }
 
-/* Cormorant Garamond for headings */
-h1, h2, h3, h4, h5, h6,
-.major h1, .major h2, .major h3,
-#banner .inner h1,
-#description-wrapper h2,
-#form-section h2,
-#transit-section h2,
-#results h2 {
-    font-family: 'Cormorant Garamond', Georgia, serif !important;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-}
-
-/* Larger display headings */
-#banner .inner h1 {
-    font-size: 4rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-}
-
-@media screen and (max-width: 736px) {
-    #banner .inner h1 {
-        font-size: 2.5rem;
-    }
-}
-
 /* ============================================================
    0.1 SECTION GRADIENT TRANSITIONS
    ============================================================ */
@@ -145,10 +119,6 @@ h1, h2, h3, h4, h5, h6,
     box-shadow: 0 4px 20px rgba(159, 122, 234, 0.3);
     transition: all 0.3s ease !important;
     min-height: 50px;
-    font-family: 'Cormorant Garamond', Georgia, serif !important;
-    font-size: 1.1rem !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.1em !important;
 }
 
 #form-section button[type="submit"]:hover,
@@ -413,7 +383,6 @@ pre {
 .chart-wheels-wrapper h3 {
     text-align: center;
     margin-bottom: 1em;
-    font-family: 'Cormorant Garamond', Georgia, serif;
 }
 /* Mobile stacking handled in section 0.5 */
 
