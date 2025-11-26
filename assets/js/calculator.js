@@ -234,15 +234,15 @@ const AstrologyCalculator = {
 					</div>
 					<div style="padding: 20px; background-color: #f8f4ff; border-left: 4px solid #7c3aed; margin-top: 15px; border-radius: 4px;">
 						<h4 style="margin-top: 0; color: #7c3aed; font-size: 1.1em;">💬 Want to Go Deeper Into Your Chart?</h4>
-						<p style="margin-bottom: 12px; color: #4a4a4a; line-height: 1.5;">
-							Click <strong>"Save Chart"</strong> to create a free account and unlock the ability to have an ongoing conversation with our AI astrologer about YOUR specific chart.
+						<p style="margin-bottom: 12px; color: #5b21b6; line-height: 1.5;">
+							Click <strong style="color: #7c3aed;">"Save Chart"</strong> to create a free account and unlock the ability to have an ongoing conversation with our AI astrologer about YOUR specific chart.
 						</p>
-						<ul style="margin: 0 0 12px 0; padding-left: 20px; color: #4a4a4a; line-height: 1.7;">
-							<li><strong>Ask follow-up questions</strong> – "Why do I self-sabotage when things are going well?"</li>
-							<li><strong>Explore your shadow patterns</strong> – Understand the unconscious behaviors holding you back</li>
-							<li><strong>Discover your highest potential</strong> – Find the specific path to becoming the best version of your unique self</li>
+						<ul style="margin: 0 0 12px 0; padding-left: 20px; color: #5b21b6; line-height: 1.7;">
+							<li><strong style="color: #7c3aed;">Ask follow-up questions</strong> – "Why do I self-sabotage when things are going well?"</li>
+							<li><strong style="color: #7c3aed;">Explore your shadow patterns</strong> – Understand the unconscious behaviors holding you back</li>
+							<li><strong style="color: #7c3aed;">Discover your highest potential</strong> – Find the specific path to becoming the best version of your unique self</li>
 						</ul>
-						<p style="margin-bottom: 0; font-size: 0.9em; color: #666;">
+						<p style="margin-bottom: 0; font-size: 0.9em; color: #7c3aed;">
 							<em>Your chart data stays private and is only used to provide you with personalized insights.</em>
 						</p>
 					</div>
