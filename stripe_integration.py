@@ -42,16 +42,12 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 # Price IDs from Stripe Dashboard (set these after creating products)
 STRIPE_PRICES = {
-    "starter": os.getenv("STRIPE_PRICE_STARTER"),      # 10 credits @ $4.99
-    "explorer": os.getenv("STRIPE_PRICE_EXPLORER"),    # 30 credits @ $9.99
-    "seeker": os.getenv("STRIPE_PRICE_SEEKER"),        # 100 credits @ $24.99
+    "credits_30": os.getenv("STRIPE_PRICE_30_CREDITS"),  # 30 credits @ $30.00
 }
 
 # Credit amounts per package
 CREDIT_PACKAGES = {
-    "starter": 10,
-    "explorer": 30,
-    "seeker": 100,
+    "credits_30": 30,
 }
 
 # Credit costs per feature
@@ -422,24 +418,11 @@ async def get_pricing():
     '''Get available credit packages and pricing.'''
     return {
         "packages": {
-            "starter": {
-                "credits": CREDIT_PACKAGES["starter"],
-                "price": 4.99,
-                "price_display": "$4.99",
-                "description": "Perfect for trying out the chat feature"
-            },
-            "explorer": {
-                "credits": CREDIT_PACKAGES["explorer"],
-                "price": 9.99,
-                "price_display": "$9.99",
-                "description": "Best value for regular users",
-                "badge": "POPULAR"
-            },
-            "seeker": {
-                "credits": CREDIT_PACKAGES["seeker"],
-                "price": 24.99,
-                "price_display": "$24.99",
-                "description": "For deep exploration and heavy usage"
+            "credits_30": {
+                "credits": CREDIT_PACKAGES["credits_30"],
+                "price": 30.00,
+                "price_display": "$30.00",
+                "description": "30 credits for chat conversations about your chart"
             }
         },
         "costs": {
