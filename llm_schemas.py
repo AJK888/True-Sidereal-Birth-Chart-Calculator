@@ -493,14 +493,15 @@ def serialize_chart_for_llm(chart_data: Dict[str, Any], unknown_time: bool) -> D
     }
     
     # Numerology
-    numerology = chart_data.get('numerology_analysis', {})
+    numerology = chart_data.get('numerology_analysis') or {}
+    name_numerology = numerology.get('name_numerology') or {}
     serialized["numerology"] = {
         "life_path_number": numerology.get('life_path_number'),
         "day_number": numerology.get('day_number'),
         "lucky_number": numerology.get('lucky_number'),
-        "expression_number": numerology.get('name_numerology', {}).get('expression_number'),
-        "soul_urge_number": numerology.get('name_numerology', {}).get('soul_urge_number'),
-        "personality_number": numerology.get('name_numerology', {}).get('personality_number')
+        "expression_number": name_numerology.get('expression_number'),
+        "soul_urge_number": name_numerology.get('soul_urge_number'),
+        "personality_number": name_numerology.get('personality_number')
     }
     
     # Nodes
