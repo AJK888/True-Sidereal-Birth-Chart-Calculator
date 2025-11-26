@@ -336,6 +336,26 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
                 return True, match.group(1).strip()
         return False, line
     
+    # Special handling for bullet sections (like Snapshot): if content is one paragraph,
+    # try to split it into sentences and treat each as a bullet
+    if is_bullet_section:
+        # Check if content has no line breaks but has multiple sentences
+        content_stripped = content.strip()
+        if '\n' not in content_stripped or content_stripped.count('\n') < 3:
+            # Content appears to be a single paragraph - split by sentence endings
+            # Look for patterns like ". You" or ". When" or ". The" that indicate new sentences
+            import re as regex
+            # Split on sentence boundaries that look like bullet transitions
+            sentence_splits = regex.split(r'(?<=[.!?])\s+(?=[A-Z])', content_stripped)
+            if len(sentence_splits) >= 5:  # Expect at least 5 bullets for Snapshot
+                for sentence in sentence_splits:
+                    sentence = sentence.strip()
+                    if sentence:
+                        # Remove leading bullet markers if present
+                        sentence = regex.sub(r'^[-•*]\s*', '', sentence)
+                        story.append(Paragraph(f"• {sentence}", bullet_style))
+                return  # Exit early, we've handled the content
+    
     def is_theme_heading(line: str) -> bool:
         """Check if line is a Theme heading."""
         return bool(re.match(r'^Theme \d+\s*[–—\-]\s+\w', line.strip(), re.IGNORECASE))
@@ -345,12 +365,19 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
         patterns = [
             r'^why this shows up in your chart:?\s*$',
             r'^how it tends to feel and play out:?\s*$',
+            r'^the evidence:?\s*$',
+            r'^the contradiction:?\s*$',
+            r'^integration hint:?\s*$',
             r'^internal process:?\s*$',
             r'^external expression:?\s*$',
             r'^the core (conflict|dynamic|pattern):?\s*$',
             r'^concrete.*scenario:?\s*$',
             r'^guidance:?\s*$',
             r'^integration:?\s*$',
+            r'^your operating system:?\s*$',
+            r'^guiding principles:?\s*$',
+            r'^integration prompts:?\s*$',
+            r'^action checklist:?\s*$',
         ]
         line_lower = line.strip().lower()
         return any(re.match(p, line_lower) for p in patterns)
@@ -595,8 +622,7 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         ("Major Life Dynamics: Aspects & Patterns", 11),
         ("Shadow, Contradictions & Growth Edges", 12),
         ("Owner's Manual: Final Integration", 13),
-        ("Glossary", 14),
-        ("Full Astrological Data", 15),
+        ("Full Astrological Data", 14),
     ]
     
     for title, page_num in toc_entries:
@@ -669,6 +695,8 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     # RENDER EACH PRE-DEFINED SECTION
     # =========================================================================
     
+    first_section = True  # Track if this is the first section to avoid leading page break
+    
     for section_def in PDF_SECTIONS:
         section_key = section_def["key"]
         section_title = section_def["title"]
@@ -689,9 +717,11 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         if section_key == "what_we_know" and not chart_data.get('unknown_time'):
             continue
         
-        # Add page break before major sections (not subsections)
-        if section_def.get("style") == "major":
+        # Add page break before major sections (not subsections), but not before the first section
+        if section_def.get("style") == "major" and not first_section:
             story.append(PageBreak())
+        
+        first_section = False
         
         # Add section header
         story.append(Paragraph(section_title, section_heading_style))
@@ -703,40 +733,15 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     
     # If we have fallback content (parsing failed), render it
     if "_fallback" in parsed_sections:
-        story.append(PageBreak())
+        if not first_section:  # Only add page break if we rendered other sections
+            story.append(PageBreak())
         story.append(Paragraph("Astrological Synthesis", section_heading_style))
         story.append(Spacer(1, 0.1*inch))
         format_section_content(parsed_sections["_fallback"], False, styles_dict, story)
     
-    story.append(PageBreak())
-    
-    # Glossary Section
-    story.append(Paragraph("Glossary", section_heading_style))
-    story.append(Spacer(1, 0.2*inch))
-    
-    glossary_terms = [
-        ("Sidereal Zodiac", "A zodiac system based on the actual positions of constellations in the sky. It represents the soul's deeper karmic blueprint and spiritual gifts."),
-        ("Tropical Zodiac", "The traditional Western zodiac system based on the seasons. It represents personality expression and how the soul's purpose manifests in this lifetime."),
-        ("Aspect", "A geometric angle between two planets or points in the chart, indicating how their energies interact (e.g., conjunction, square, trine)."),
-        ("House", "One of 12 divisions of the chart representing different areas of life (career, relationships, home, etc.). Only available when birth time is known."),
-        ("Ascendant (Rising Sign)", "The zodiac sign rising on the eastern horizon at the moment of birth. Represents how you present yourself to the world."),
-        ("Midheaven (MC)", "The highest point in the chart, representing career, public image, and life direction."),
-        ("North Node", "The point indicating your soul's growth direction and life lessons in this incarnation."),
-        ("South Node", "The point representing past-life patterns, comfort zones, and innate gifts."),
-        ("Retrograde", "When a planet appears to move backward in the sky. Indicates internalized or reflective energy."),
-        ("Chart Ruler", "The planet that rules the Ascendant sign, considered the most important planet in the chart."),
-        ("Aspect Pattern", "A geometric configuration formed by multiple aspects (e.g., T-Square, Grand Trine, Grand Cross)."),
-        ("Stellium", "Three or more planets in the same sign or house, creating a concentration of energy."),
-        ("Life Path Number", "A numerology calculation derived from your birth date, representing your life's purpose and challenges."),
-        ("Expression Number", "A numerology calculation from your full name, representing your natural talents and abilities."),
-    ]
-    
-    for term, definition in glossary_terms:
-        story.append(Paragraph(f"<b>{term}</b>", heading_style))
-        story.append(Paragraph(definition, body_style))
-        story.append(Spacer(1, 0.15*inch))
-    
-    story.append(PageBreak())
+    # Add page break before Full Astrological Data section
+    if not first_section or "_fallback" in parsed_sections:
+        story.append(PageBreak())
     
     # Full Report Section
     story.append(Paragraph("Full Astrological Data", section_heading_style))

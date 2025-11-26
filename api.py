@@ -218,7 +218,7 @@ class ChartRequest(BaseModel):
     location: str
     unknown_time: bool = False
     user_email: Optional[str] = None  # User email for sending chart report
-    no_full_name: bool = False
+    is_full_birth_name: bool = False  # If checked, calculate name numerology
 
 class ReadingRequest(BaseModel):
     chart_data: Dict[str, Any]
@@ -691,6 +691,15 @@ Rules:
     
     heading_block = "   WHAT WE KNOW / WHAT WE DON'T KNOW\n" if unknown_time else ""
     
+    if unknown_time:
+        houses_instruction = "SKIP THIS SECTION ENTIRELY. Since birth time is unknown, we cannot calculate houses. Do NOT write anything about houses or life domains. Do NOT mention that birth time is unknown here—that was already covered in the What We Know section. Simply omit this section completely."
+    else:
+        houses_instruction = """For each major life domain (Self/1st House, Relationships/7th House, Career/10th House, Home/4th House, Spirituality/9th & 12th Houses):
+   - Name the ruling planets and their sidereal/tropical states
+   - Show how the domain is "engineered" by multiple factors converging (house ruler + planets in house + aspects to cusp)
+   - Give one "this is exactly how it shows up" example
+   - Connect to numerology where relevant (e.g., "Your 2nd house emphasis + Life Path 8 = money is both security and spiritual test")"""
+    
     snapshot_notes = ""
     if blueprint.get("parsed") and getattr(blueprint['parsed'], "snapshot", None):
         snapshot_notes = blueprint['parsed'].snapshot
@@ -712,34 +721,33 @@ Instructions:
 Blueprint notes for Snapshot (use them to prioritize chart factors):
 {snapshot_notes}
 
-3. Chart Overview & Core Themes: Structure each of the 5 themes as:
+3. Chart Overview & Core Themes: This is the HEART of the reading. Structure each of the 5 themes as:
    
    THEME TITLE (plain language, no jargon)
    
-   Opening: 2 sentences stating the pattern in everyday language.
+   Opening: 2-3 sentences stating the pattern in everyday language. Make this vivid and specific.
    
-   The Evidence: "This shows up because [Sidereal X] creates [quality], while [Tropical Y] adds [quality], and this tension is [amplified/softened] by [Aspect Z at N° orb]. Your Life Path [N] [confirms/complicates] this by [specific connection]."
+   The Evidence (3-4 sentences): "This shows up because [Sidereal X] creates [quality], while [Tropical Y] adds [quality], and this tension is [amplified/softened] by [Aspect Z at N° orb]. Your Life Path [N] [confirms/complicates] this by [specific connection]. Additionally, [another chart factor] reinforces this pattern by [explanation]."
    
-   How It Plays Out: 2-3 sentences with a specific scenario (relationship moment, work situation, internal experience).
+   How It Plays Out (3-4 sentences): Describe multiple specific scenarios—a relationship moment, a work situation, AND an internal experience. Be concrete: "When your partner criticizes you, you..." or "In meetings, you tend to..."
    
-   The Contradiction: If sidereal and tropical pull in different directions, name the internal split explicitly: "Part of you [sidereal quality], while another part [tropical quality]. This is why you [specific behavior]."
+   The Contradiction (2-3 sentences): If sidereal and tropical pull in different directions, name the internal split explicitly: "Part of you [sidereal quality], while another part [tropical quality]. This creates an ongoing negotiation where [specific behavior]. You've probably noticed this most when [situation]."
+   
+   Integration Hint (1-2 sentences): What does growth look like for this specific theme?
    
    CRITICAL: Use blueprint.sun_moon_ascendant_plan extensively. At least 2 of the 5 themes MUST be anchored in Sun, Moon, or Ascendant dynamics. For each, reference:
    - The sidereal_expression and tropical_expression from the plan
    - The conflict_or_harmony field to determine if this is a tension or amplification
    - The integration_notes to inform the growth direction
    
-   End with a SYNTHESIS PARAGRAPH that names:
-   - The central paradox from the blueprint
-   - How the 5 themes interact to create it
-   - The growth direction (what integration looks like)
+   End with a SUBSTANTIAL SYNTHESIS PARAGRAPH (5-7 sentences) that:
+   - Names the central paradox from the blueprint
+   - Shows how the 5 themes interact and reinforce each other
+   - Identifies the ONE thing that would shift everything if they worked on it
+   - Describes what integration looks like in concrete daily terms
+   - Ends with an empowering but realistic statement about their potential
 
-4. Houses & Life Domains: {time_note}
-   For each major life domain (Self, Relationships, Career, Home, Spirituality):
-   - Name the ruling planets and their sidereal/tropical states
-   - Show how the domain is "engineered" by multiple factors converging
-   - Give one "this is exactly how it shows up" example
-   - Connect to numerology where relevant (e.g., "Your 2nd house emphasis + Life Path 8 = money is both security and spiritual test")
+4. Houses & Life Domains: {houses_instruction}
 
 5. EVIDENCE TRAIL: Every paragraph must make the reader feel the weight of analysis by naming specific factors. Use phrases like:
    - "because your [placement] at [degree] [aspect] your [other placement]"
@@ -841,11 +849,16 @@ SPIRITUAL PATH & MEANING
 - Nodes, Neptune, Pluto, numerology, blueprint spiritual chapter. Explain how surrender vs control repeats everywhere, and prescribe tangible practices that tie back to numerology/Life Path.
 
 MAJOR LIFE DYNAMICS: THE TIGHTEST ASPECTS & PATTERNS
-- For each blueprint.aspect_highlights entry, deliver:
-   * Core tension/strength statement
-   * Why it exists (placements/aspects)
-   * One real-life example and the lever for growth
-- Summarize blueprint.patterns afterwards (Grand Trines, T-Squares, Stelliums, Yods, etc.), explicitly naming how they amplify or resolve earlier themes.
+- Cover AT LEAST 10 major aspects (the tightest orbs in the chart). For each aspect:
+   * Core tension/strength statement (1 sentence)
+   * Why it exists and what it creates psychologically (2-3 sentences)
+   * Two real-life examples showing how this plays out in different contexts
+   * The growth lever—what shifts when they work with this consciously
+- After the aspects, summarize ALL blueprint.patterns (Grand Trines, T-Squares, Stelliums, Yods, Kites, etc.):
+   * Name the pattern and which planets are involved
+   * Explain the psychological function of this geometry
+   * Show how it amplifies or resolves themes mentioned earlier in the reading
+   * Give a concrete example of how this pattern manifests in their life
 
 SHADOW, CONTRADICTIONS & GROWTH EDGES
 - For each blueprint.shadow_contradictions item, describe the tension, identify drivers, provide integration strategy with a concrete “pattern interrupt.”
@@ -869,11 +882,19 @@ INTEGRATION PROMPTS (3-4 questions)
 Questions they should sit with, each tied to a specific chart dynamic.
 
 ACTION CHECKLIST (7 bullets)
+Format each bullet EXACTLY like this, starting with "- " on its own line:
+- [Action verb] [specific task] this week. This addresses [Theme/Section reference] which showed [specific pattern].
+
 Each bullet must:
-- Start with a specific action verb
-- Reference which section/theme it addresses
+- Start on a new line with "- " (dash space)
+- Begin with a specific action verb (Practice, Notice, Try, Schedule, Write, Ask, etc.)
 - Be concrete enough to do THIS WEEK
-Format: "[Action] because [Theme/Section reference] showed that [specific pattern]. This addresses your [sidereal/tropical/aspect] dynamic."
+- Reference which section/theme it addresses
+- Keep each bullet to 1-2 sentences maximum
+
+Example format:
+- Practice pausing for 3 breaths before responding to criticism this week. This addresses Theme 2 (The Reactive Protector) which showed your Mars-Moon square creates defensive reactions.
+- Notice when you're overexplaining yourself in conversations. This addresses the Mercury-Jupiter opposition from Major Aspects which creates a tendency to over-justify.
 
 Unknown time handling: {'Do NOT cite houses/angles; speak in terms of domains, signs, and aspects.' if unknown_time else 'You may cite houses/angles explicitly.'}
 
@@ -1799,13 +1820,16 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
         
         name_numerology = None
         name_parts = data.full_name.strip().split()
-        # Ensure name numerology is only calculated if requested and name seems valid
-        if not data.no_full_name and len(name_parts) >= 2: # Relaxed check slightly
+        # Only calculate name numerology if user confirms it's their full birth name
+        if data.is_full_birth_name and len(name_parts) >= 2:
             try:
                 name_numerology = calculate_name_numerology(data.full_name)
+                logger.info(f"Calculated name numerology for full birth name: {data.full_name}")
             except Exception as e:
-                 logger.warning(f"Could not calculate name numerology for '{data.full_name}': {e}")
-                 name_numerology = None # Ensure it's None if calculation fails
+                logger.warning(f"Could not calculate name numerology for '{data.full_name}': {e}")
+                name_numerology = None  # Ensure it's None if calculation fails
+        elif not data.is_full_birth_name:
+            logger.info(f"Skipping name numerology - user did not confirm full birth name")
             
         chinese_zodiac = get_chinese_zodiac_and_element(data.year, data.month, data.day)
         
