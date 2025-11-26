@@ -44,12 +44,17 @@ class User(Base):
     full_name = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
+    is_admin = Column(Boolean, default=False)  # Admin flag for developer access
+    credits = Column(Integer, default=3)  # Free credits for new users
     
     # Relationship to saved charts
     charts = relationship("SavedChart", back_populates="owner", cascade="all, delete-orphan")
     
     # Relationship to chat conversations
     conversations = relationship("ChatConversation", back_populates="owner", cascade="all, delete-orphan")
+    
+    # Relationship to credit transactions
+    credit_transactions = relationship("CreditTransaction", back_populates="user", cascade="all, delete-orphan")
 
 
 class SavedChart(Base):
@@ -118,8 +123,30 @@ class ChatMessage(Base):
     content = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
+    # Token/cost tracking for billing
+    tokens_used = Column(Integer, nullable=True)
+    credits_charged = Column(Integer, default=1)
+    
     # Relationship
     conversation = relationship("ChatConversation", back_populates="messages")
+
+
+class CreditTransaction(Base):
+    """Credit purchase and usage tracking."""
+    __tablename__ = "credit_transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Transaction details
+    amount = Column(Integer, nullable=False)  # positive = purchase, negative = usage
+    transaction_type = Column(String(50), nullable=False)  # 'purchase', 'reading', 'chat', 'bonus', 'refund'
+    stripe_payment_id = Column(String(255), nullable=True)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    user = relationship("User", back_populates="credit_transactions")
 
 
 def init_db():

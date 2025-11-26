@@ -38,13 +38,16 @@ from llm_schemas import (
 )
 
 # --- Import Auth & Database ---
-from database import init_db, get_db, User, SavedChart, ChatConversation, ChatMessage
+from database import init_db, get_db, User, SavedChart, ChatConversation, ChatMessage, CreditTransaction
 from auth import (
     UserCreate, UserLogin, UserResponse, Token,
     create_user, authenticate_user, get_user_by_email,
     create_access_token, get_current_user, get_current_user_optional
 )
 from sqlalchemy.orm import Session
+
+# --- Import Chat API Router ---
+from chat_api import router as chat_router
 
 # --- SETUP THE LOGGER ---
 import sys
@@ -129,6 +132,9 @@ def get_rate_limit_key(request: Request) -> str:
 limiter = Limiter(key_func=get_rate_limit_key)
 app = FastAPI(title="True Sidereal API", version="1.0")
 app.state.limiter = limiter
+
+# --- Include Chat API Router ---
+app.include_router(chat_router)
 
 # --- Initialize Database ---
 init_db()
