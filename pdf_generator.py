@@ -213,6 +213,7 @@ def svg_to_png(svg_string: str, width: int = 800, height: int = 800) -> bytes:
 # of how the AI formats them. Content is extracted by matching section boundaries.
 PDF_SECTIONS = [
     {"key": "snapshot", "title": "Snapshot: What Will Feel Most True About You", "style": "major", "bullets": True},
+    {"key": "thesis", "title": "Synthesis Astrology's Thesis on Your Chart", "style": "major", "bullets": False},
     {"key": "what_we_know", "title": "What We Know / What We Don't Know", "style": "major", "bullets": False},
     {"key": "overview", "title": "Chart Overview & Core Themes", "style": "major", "bullets": False},
     {"key": "houses", "title": "Houses & Life Domains Summary", "style": "major", "bullets": False},
@@ -229,6 +230,7 @@ PDF_SECTIONS = [
 # Patterns to match section headers in the AI output (case-insensitive)
 SECTION_PATTERNS = {
     "snapshot": [r"snapshot.*what will feel", r"snapshot:?\s*$", r"what will feel most true"],
+    "thesis": [r"synthesis astrology'?s thesis", r"thesis on your chart", r"our thesis"],
     "what_we_know": [r"what we know.*what we don'?t", r"what we know.*don'?t know"],
     "overview": [r"chart overview.*core themes", r"overview.*themes", r"core themes"],
     "houses": [r"houses.*life domains", r"houses.*domains", r"life domains summary"],
@@ -613,16 +615,17 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     toc_entries = [
         ("Chart Overview", 3),
         ("Snapshot: What Will Feel Most True About You", 4),
-        ("Chart Overview & Core Themes", 5),
-        ("Houses & Life Domains", 6),
-        ("Love, Relationships & Attachment", 7),
-        ("Work, Money & Vocation", 8),
-        ("Emotional Life, Family & Healing", 9),
-        ("Spiritual Path & Meaning", 10),
-        ("Major Life Dynamics: Aspects & Patterns", 11),
-        ("Shadow, Contradictions & Growth Edges", 12),
-        ("Owner's Manual: Final Integration", 13),
-        ("Full Astrological Data", 14),
+        ("Synthesis Astrology's Thesis on Your Chart", 5),
+        ("Chart Overview & Core Themes", 6),
+        ("Houses & Life Domains", 7),
+        ("Love, Relationships & Attachment", 8),
+        ("Work, Money & Vocation", 9),
+        ("Emotional Life, Family & Healing", 10),
+        ("Spiritual Path & Meaning", 11),
+        ("Major Life Dynamics: Aspects & Patterns", 12),
+        ("Shadow, Contradictions & Growth Edges", 13),
+        ("Owner's Manual: Final Integration", 14),
+        ("Full Astrological Data", 15),
     ]
     
     for title, page_num in toc_entries:

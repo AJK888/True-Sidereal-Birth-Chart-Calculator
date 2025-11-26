@@ -712,16 +712,48 @@ Rules:
 Instructions:
 1. Use uppercase headings in this order:
    SNAPSHOT: WHAT WILL FEEL MOST TRUE ABOUT YOU
+   SYNTHESIS ASTROLOGY'S THESIS ON YOUR CHART
 {heading_block}   CHART OVERVIEW & CORE THEMES
    HOUSES & LIFE DOMAINS SUMMARY
 
-2. SNAPSHOT: Output must be exactly 7 bullets, no astro jargon, no placement references, no intro/outro sentences. Every bullet should make the reader think "how do they know that?!" by naming paradoxes, compulsions, sabotaging loops, and unspoken drives:
+2. SNAPSHOT: THIS SECTION MUST BE A BULLETED LIST. FORMAT IS CRITICAL.
+   
+   OUTPUT FORMAT (follow exactly):
+   - [First bullet point sentence here]
+   - [Second bullet point sentence here]
+   - [Third bullet point sentence here]
+   - [Fourth bullet point sentence here]
+   - [Fifth bullet point sentence here]
+   - [Sixth bullet point sentence here]
+   - [Seventh bullet point sentence here]
+   
+   RULES:
+   - Exactly 7 bullets, each starting with "- " (dash space)
+   - Each bullet is 1-2 sentences about a SPECIFIC BEHAVIOR or PATTERN
+   - NO intro paragraph before the bullets
+   - NO outro paragraph after the bullets
+   - NO astrological jargon (no planets, signs, houses, aspects)
+   - Every bullet should make the reader think "how do they know that?!"
+   
 {SNAPSHOT_PROMPT.strip()}
 
 Blueprint notes for Snapshot (use them to prioritize chart factors):
 {snapshot_notes}
 
-3. Chart Overview & Core Themes: This is the HEART of the reading. Structure each of the 5 themes as:
+3. SYNTHESIS ASTROLOGY'S THESIS ON YOUR CHART: Immediately after the Snapshot bullets, write a single powerful paragraph (4-6 sentences) that captures the CENTRAL THESIS of this person's chart. This is the "life_thesis" from the blueprint—the one core truth that everything else orbits around.
+   
+   FORMAT:
+   - One paragraph, no bullets
+   - Start with a bold, direct statement about who this person IS at their core
+   - Reference the central_paradox from the blueprint
+   - Name the primary tension they navigate daily
+   - End with what integration/growth looks like for them
+   - Use "you" language, be direct and confident
+   - NO astrological jargon in this section—speak in psychological/behavioral terms
+   
+   This should feel like the "thesis statement" of their entire reading—if someone only read this paragraph, they'd understand the essence of the chart.
+
+4. Chart Overview & Core Themes: This is the HEART of the reading. Structure each of the 5 themes as:
    
    THEME TITLE (plain language, no jargon)
    
@@ -747,17 +779,17 @@ Blueprint notes for Snapshot (use them to prioritize chart factors):
    - Describes what integration looks like in concrete daily terms
    - Ends with an empowering but realistic statement about their potential
 
-4. Houses & Life Domains: {houses_instruction}
+5. Houses & Life Domains: {houses_instruction}
 
-5. EVIDENCE TRAIL: Every paragraph must make the reader feel the weight of analysis by naming specific factors. Use phrases like:
+6. EVIDENCE TRAIL: Every paragraph must make the reader feel the weight of analysis by naming specific factors. Use phrases like:
    - "because your [placement] at [degree] [aspect] your [other placement]"
    - "this is amplified by"
    - "the [numerology number] confirms this pattern"
    - "your [Chinese zodiac element] adds [quality] to this dynamic"
 
-6. No markdown, decorative characters, or horizontal rules.
+7. No markdown, decorative characters, or horizontal rules.
 
-7. Keep Action Checklist for later sections."""
+8. Keep Action Checklist for later sections."""
     
     return await llm.generate(
         system=system_prompt,

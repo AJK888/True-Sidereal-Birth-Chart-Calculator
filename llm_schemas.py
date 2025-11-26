@@ -235,26 +235,34 @@ class GlobalReadingBlueprint(BaseModel):
 
 
 SNAPSHOT_PROMPT = """
-Write the section titled: "Snapshot: What Will Feel Most True About You."
+EXACT OUTPUT FORMAT REQUIRED:
 
-PURPOSE: This is the "how do they know that?" moment. The reader should feel X-rayed.
+- [Your first insight about their behavior/pattern here]
+- [Your second insight about their behavior/pattern here]
+- [Your third insight about their behavior/pattern here]
+- [Your fourth insight about their behavior/pattern here]
+- [Your fifth insight about their behavior/pattern here]
+- [Your sixth insight about their behavior/pattern here]
+- [Your seventh insight about their behavior/pattern here]
 
-STRUCTURE:
-- EXACTLY 7 bullet points, each beginning with "- "
-- Each bullet: 1-2 tight sentences describing a SPECIFIC BEHAVIOR or PATTERN (not a trait)
-- NO astrological jargon. NO mention of planets, signs, houses, aspects, or numerology.
+CRITICAL FORMATTING RULES:
+1. Start IMMEDIATELY with the first bullet "- " (no heading, no intro)
+2. Each line MUST begin with "- " (dash followed by space)
+3. Exactly 7 bullets total
+4. NO paragraphs before or after the bullets
+5. NO astrological terms (no planets, signs, houses, aspects, numerology)
 
-WHAT MAKES A BULLET WORK:
-Good: "You rehearse conversations in your head for hours, then say something completely different in the moment—and immediately regret it."
-Bad: "You are a deep thinker who values communication."
+WHAT MAKES A GOOD BULLET:
+Good: "- You rehearse conversations in your head for hours, then say something completely different in the moment—and immediately regret it."
+Bad: "You are a deep thinker who values communication." (no dash, too generic)
 
-Good: "When someone disappoints you, you don't get angry—you get quiet. And that quiet is louder than any argument."
-Bad: "You have strong emotions that you sometimes suppress."
+Good: "- When someone disappoints you, you don't get angry—you get quiet. And that quiet is louder than any argument."
+Bad: "Your Moon in Scorpio makes you emotional." (uses astrology jargon)
 
-Good: "You've ended relationships not because you stopped loving them, but because you couldn't stop imagining how they'd eventually leave you first."
-Bad: "You have trust issues in relationships."
+Good: "- You've ended relationships not because you stopped loving them, but because you couldn't stop imagining how they'd eventually leave you first."
+Bad: "You have trust issues in relationships." (too generic, not specific behavior)
 
-CONTENT PRIORITIES (from blueprint.snapshot notes):
+CONTENT PRIORITIES:
 1. The central paradox—the split between what they want and what they do
 2. The repeating pattern they've promised themselves to stop
 3. The thing they do in relationships that pushes people away while trying to keep them close
@@ -264,8 +272,6 @@ CONTENT PRIORITIES (from blueprint.snapshot notes):
 7. The version of themselves they show no one
 
 TONE: Forensic intimacy. Like a therapist who's known them for years finally saying the thing out loud.
-
-OUTPUT: 7 bullets only. No intro, no outro, no transitions.
 """
 
 
