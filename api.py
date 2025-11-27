@@ -181,6 +181,84 @@ def root():
     """Simple root endpoint so uptime monitors don't hit a 404."""
     return {"message": "ok"}
 
+
+@app.get("/run_migration")
+def run_migration(secret: str = None):
+    """
+    One-time migration endpoint to add missing columns to the database.
+    Requires a secret key to prevent unauthorized access.
+    DELETE THIS ENDPOINT AFTER RUNNING THE MIGRATION.
+    """
+    import os
+    from sqlalchemy import text
+    
+    # Simple security - require a secret parameter
+    migration_secret = os.getenv("MIGRATION_SECRET", "run-migration-2024")
+    if secret != migration_secret:
+        return {"error": "Invalid or missing secret parameter. Use ?secret=YOUR_SECRET"}
+    
+    results = []
+    
+    try:
+        with engine.connect() as conn:
+            # Add is_admin column
+            try:
+                conn.execute(text('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE'))
+                results.append("✓ Added is_admin column")
+            except Exception as e:
+                results.append(f"is_admin: {str(e)}")
+            
+            # Add credits column
+            try:
+                conn.execute(text('ALTER TABLE users ADD COLUMN IF NOT EXISTS credits INTEGER DEFAULT 3'))
+                results.append("✓ Added credits column")
+            except Exception as e:
+                results.append(f"credits: {str(e)}")
+            
+            # Create credit_transactions table
+            try:
+                conn.execute(text('''
+                    CREATE TABLE IF NOT EXISTS credit_transactions (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                        amount INTEGER NOT NULL,
+                        transaction_type VARCHAR(50) NOT NULL,
+                        stripe_payment_id VARCHAR(255),
+                        description TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                '''))
+                results.append("✓ Created credit_transactions table")
+            except Exception as e:
+                results.append(f"credit_transactions: {str(e)}")
+            
+            # Add chat message columns
+            try:
+                conn.execute(text('ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS tokens_used INTEGER'))
+                results.append("✓ Added tokens_used column to chat_messages")
+            except Exception as e:
+                results.append(f"tokens_used: {str(e)}")
+            
+            try:
+                conn.execute(text('ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS credits_charged INTEGER DEFAULT 1'))
+                results.append("✓ Added credits_charged column to chat_messages")
+            except Exception as e:
+                results.append(f"credits_charged: {str(e)}")
+            
+            conn.commit()
+            
+        return {
+            "status": "Migration completed",
+            "results": results,
+            "next_step": "DELETE the /run_migration endpoint from api.py after confirming success"
+        }
+        
+    except Exception as e:
+        return {
+            "status": "Migration failed",
+            "error": str(e)
+        }
+
 @app.get("/check_email_config")
 def check_email_config():
     """Diagnostic endpoint to check SendGrid email configuration."""
@@ -2023,39 +2101,48 @@ class LoginRequest(BaseModel):
 @app.post("/auth/register", response_model=Token)
 async def register_endpoint(data: RegisterRequest, db: Session = Depends(get_db)):
     """Register a new user account."""
-    # Check if user already exists
-    existing_user = get_user_by_email(db, data.email)
-    if existing_user:
-        raise HTTPException(
-            status_code=400,
-            detail="An account with this email already exists."
+    try:
+        # Check if user already exists
+        existing_user = get_user_by_email(db, data.email)
+        if existing_user:
+            raise HTTPException(
+                status_code=400,
+                detail="An account with this email already exists."
+            )
+        
+        # Validate password
+        if len(data.password) < 8:
+            raise HTTPException(
+                status_code=400,
+                detail="Password must be at least 8 characters long."
+            )
+        
+        # Create the user
+        user_create = UserCreate(
+            email=data.email,
+            password=data.password,
+            full_name=data.full_name
         )
-    
-    # Validate password
-    if len(data.password) < 8:
-        raise HTTPException(
-            status_code=400,
-            detail="Password must be at least 8 characters long."
+        user = create_user(db, user_create)
+        
+        # Create access token
+        access_token = create_access_token(data={"sub": user.id, "email": user.email})
+        
+        logger.info(f"New user registered: {user.email}")
+        
+        return Token(
+            access_token=access_token,
+            token_type="bearer",
+            user=UserResponse.model_validate(user)
         )
-    
-    # Create the user
-    user_create = UserCreate(
-        email=data.email,
-        password=data.password,
-        full_name=data.full_name
-    )
-    user = create_user(db, user_create)
-    
-    # Create access token
-    access_token = create_access_token(data={"sub": user.id, "email": user.email})
-    
-    logger.info(f"New user registered: {user.email}")
-    
-    return Token(
-        access_token=access_token,
-        token_type="bearer",
-        user=UserResponse.model_validate(user)
-    )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Registration error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Registration failed: {str(e)}"
+        )
 
 
 @app.post("/auth/login", response_model=Token)
