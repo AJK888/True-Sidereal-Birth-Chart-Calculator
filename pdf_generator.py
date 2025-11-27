@@ -409,28 +409,73 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
                 return True
         return False
     
+    def is_aspect_heading(line: str) -> bool:
+        """Check if line is an aspect heading like 'SUN SQUARE SATURN (2.3°)' or 'MOON OPPOSITE VENUS'."""
+        aspects = ['conjunction', 'conjunct', 'opposite', 'opposition', 'square', 'trine', 
+                   'sextile', 'quincunx', 'semisextile', 'sesquiquadrate', 'semisquare',
+                   'quintile', 'biquintile']
+        line_clean = line.strip().lower()
+        # Check if line contains an aspect keyword and looks like a heading
+        for aspect in aspects:
+            if aspect in line_clean and len(line_clean) < 80:
+                # Should have at least 2 planet names
+                planets = ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 
+                           'uranus', 'neptune', 'pluto', 'chiron', 'north node', 'south node']
+                planet_count = sum(1 for p in planets if p in line_clean)
+                if planet_count >= 2:
+                    return True
+        return False
+    
+    def is_separator_line(line: str) -> bool:
+        """Check if line is a separator (---, ***, or similar)."""
+        line_clean = line.strip()
+        return bool(re.match(r'^[-*=_]{3,}$', line_clean))
+    
     for line in lines:
         line = line.strip()
         if not line:
-            # Flush current paragraph
+            # Flush current paragraph with generous spacing
             if current_para:
                 para_text = ' '.join(current_para)
                 story.append(Paragraph(para_text, body_style))
-                story.append(Spacer(1, 0.1*inch))
+                story.append(Spacer(1, 0.15*inch))  # Increased from 0.1
                 current_para = []
             continue
         
-        # Check for bullets first
+        # Check for separator lines (---, ***, etc.) - add vertical space
+        if is_separator_line(line):
+            if current_para:
+                para_text = ' '.join(current_para)
+                story.append(Paragraph(para_text, body_style))
+                story.append(Spacer(1, 0.15*inch))
+                current_para = []
+            story.append(Spacer(1, 0.25*inch))  # Visual break between aspects
+            continue
+        
+        # Check for aspect headings (like "SUN SQUARE SATURN (2.3°)")
+        if is_aspect_heading(line):
+            if current_para:
+                para_text = ' '.join(current_para)
+                story.append(Paragraph(para_text, body_style))
+                story.append(Spacer(1, 0.15*inch))
+                current_para = []
+            story.append(Spacer(1, 0.2*inch))  # Space before aspect heading
+            story.append(Paragraph(f"<b>{line}</b>", heading_style))
+            story.append(Spacer(1, 0.12*inch))  # Space after aspect heading
+            continue
+        
+        # Check for bullets
         is_bullet, bullet_text = is_bullet_line(line)
         if is_bullet or (is_bullet_section and len(line) < 150 and not line.endswith(':')):
             if current_para:
                 para_text = ' '.join(current_para)
                 story.append(Paragraph(para_text, body_style))
-                story.append(Spacer(1, 0.08*inch))
+                story.append(Spacer(1, 0.12*inch))
                 current_para = []
             
             text_to_use = bullet_text if is_bullet else line
             story.append(Paragraph(f"• {text_to_use}", bullet_style))
+            story.append(Spacer(1, 0.08*inch))  # Space between bullets
             continue
         
         # Check for theme headings
@@ -438,11 +483,11 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
             if current_para:
                 para_text = ' '.join(current_para)
                 story.append(Paragraph(para_text, body_style))
-                story.append(Spacer(1, 0.1*inch))
+                story.append(Spacer(1, 0.15*inch))
                 current_para = []
-            story.append(Spacer(1, 0.15*inch))
+            story.append(Spacer(1, 0.25*inch))  # Increased from 0.15
             story.append(Paragraph(f"<b>{line}</b>", theme_style))
-            story.append(Spacer(1, 0.08*inch))
+            story.append(Spacer(1, 0.12*inch))  # Increased from 0.08
             continue
         
         # Check for subsection headings
@@ -450,10 +495,11 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
             if current_para:
                 para_text = ' '.join(current_para)
                 story.append(Paragraph(para_text, body_style))
-                story.append(Spacer(1, 0.08*inch))
+                story.append(Spacer(1, 0.12*inch))
                 current_para = []
+            story.append(Spacer(1, 0.1*inch))  # Space before subsection
             story.append(Paragraph(f"<i>{line}</i>", subsection_style))
-            story.append(Spacer(1, 0.05*inch))
+            story.append(Spacer(1, 0.08*inch))
             continue
         
         # Check for planet headings
@@ -461,13 +507,13 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
             if current_para:
                 para_text = ' '.join(current_para)
                 story.append(Paragraph(para_text, body_style))
-                story.append(Spacer(1, 0.1*inch))
+                story.append(Spacer(1, 0.15*inch))
                 current_para = []
             # Clean up "--- BODY ---" format
             clean_heading = re.sub(r'^---\s+|\s+---$', '', line).strip()
-            story.append(Spacer(1, 0.12*inch))
+            story.append(Spacer(1, 0.2*inch))  # Increased from 0.12
             story.append(Paragraph(f"<b>{clean_heading}</b>", heading_style))
-            story.append(Spacer(1, 0.08*inch))
+            story.append(Spacer(1, 0.12*inch))  # Increased from 0.08
             continue
         
         # Regular paragraph text
@@ -477,7 +523,7 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
     if current_para:
         para_text = ' '.join(current_para)
         story.append(Paragraph(para_text, body_style))
-        story.append(Spacer(1, 0.1*inch))
+        story.append(Spacer(1, 0.15*inch))
 
 
 def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_inputs: Dict[str, Any]) -> bytes:
@@ -568,13 +614,13 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     body_style = ParagraphStyle(
         'CustomBody', parent=styles['BodyText'],
         fontSize=10, textColor=colors.HexColor('#333333'),
-        leading=14, alignment=TA_JUSTIFY, spaceAfter=8
+        leading=16, alignment=TA_JUSTIFY, spaceAfter=10  # Increased leading and spaceAfter
     )
     
     bullet_style = ParagraphStyle(
         'BulletStyle', parent=styles['BodyText'],
         fontSize=10, textColor=colors.HexColor('#333333'),
-        leading=14, alignment=TA_LEFT, spaceAfter=6,
+        leading=16, alignment=TA_LEFT, spaceAfter=8,  # Increased leading and spaceAfter
         leftIndent=18, bulletIndent=8
     )
     
@@ -737,11 +783,14 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
         
         # Add section header
         story.append(Paragraph(section_title, section_heading_style))
-        story.append(Spacer(1, 0.1*inch))
+        story.append(Spacer(1, 0.2*inch))  # Increased spacing after section header
         
         # Format and add content
         if content:
             format_section_content(content, is_bullet_section, styles_dict, story)
+        
+        # Add trailing space after section content (before next section)
+        story.append(Spacer(1, 0.15*inch))
     
     # If we have fallback content (parsing failed), render it
     if "_fallback" in parsed_sections:
