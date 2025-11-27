@@ -96,7 +96,14 @@ const AuthManager = {
                 })
             });
             
-            const data = await response.json();
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                // Server returned non-JSON response (possibly crashed)
+                console.error('Server response was not JSON:', jsonError);
+                throw new Error('Server error - please try again in a moment');
+            }
             
             if (!response.ok) {
                 throw new Error(data.detail || 'Registration failed');
@@ -109,6 +116,7 @@ const AuthManager = {
             
             return data;
         } catch (error) {
+            console.error('Registration error:', error);
             throw error;
         }
     },
