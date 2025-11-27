@@ -1002,8 +1002,36 @@ The Life Theme: [2-3 sentences connecting to earlier themes in the reading]
 Real-Life Expression: [Concrete example of how this pattern shows up in their daily life or major life decisions]
 
 SHADOW, CONTRADICTIONS & GROWTH EDGES
-- For each blueprint.shadow_contradictions item, describe the tension, identify drivers, provide integration strategy with a concrete “pattern interrupt.”
-- Weave blueprint.growth_edges as actionable experiments tied to daily life.
+
+FORMAT THIS SECTION WITH CLEAR SUBSECTIONS:
+
+For each shadow pattern, use this structure:
+
+SHADOW: [Name of the Shadow Pattern]
+
+The Pattern: [2-3 sentences describing what this looks like in behavior]
+
+The Driver: [2-3 sentences explaining WHY this pattern exists - what chart factors create it]
+
+The Cost: [1-2 sentences on what this costs them in life/relationships]
+
+The Integration: [2-3 sentences with a concrete "pattern interrupt" - what they can DO differently]
+
+---
+
+[Use "---" between each shadow pattern for visual separation]
+
+Cover at least 3 shadow patterns from blueprint.shadow_contradictions.
+
+GROWTH EDGES
+
+After the shadow patterns, add a section called "Growth Edges" with actionable experiments:
+
+- [Growth edge 1]: [Concrete experiment they can try, tied to a specific pattern]
+- [Growth edge 2]: [Concrete experiment they can try, tied to a specific pattern]
+- [Growth edge 3]: [Concrete experiment they can try, tied to a specific pattern]
+
+Each growth edge bullet must start with "- " and be 1-2 sentences.
 
 OWNER'S MANUAL: FINAL INTEGRATION
 This is the "so what do I do with all this?" section. Structure it as:

@@ -1,7 +1,7 @@
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, PageBreak, Table, TableStyle, KeepTogether
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, PageBreak, Table, TableStyle, KeepTogether, Frame, PageTemplate, BaseDocTemplate
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
 from reportlab.pdfgen import canvas
@@ -338,25 +338,49 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
                 return True, match.group(1).strip()
         return False, line
     
-    # Special handling for bullet sections (like Snapshot): if content is one paragraph,
-    # try to split it into sentences and treat each as a bullet
+    # Special handling for bullet sections (like Snapshot)
     if is_bullet_section:
-        # Check if content has no line breaks but has multiple sentences
+        import re as regex
         content_stripped = content.strip()
-        if '\n' not in content_stripped or content_stripped.count('\n') < 3:
-            # Content appears to be a single paragraph - split by sentence endings
-            # Look for patterns like ". You" or ". When" or ". The" that indicate new sentences
-            import re as regex
-            # Split on sentence boundaries that look like bullet transitions
+        
+        # First, try to detect if content already has bullet markers
+        # Split by lines and check for bullet patterns
+        potential_bullets = []
+        
+        # Try splitting by common bullet patterns first
+        # Pattern: lines starting with -, •, *, or numbered items
+        bullet_pattern = r'(?:^|\n)\s*[-•*]\s*'
+        if regex.search(bullet_pattern, content_stripped):
+            # Content has bullet markers - split on them
+            parts = regex.split(r'(?:^|\n)\s*[-•*]\s*', content_stripped)
+            potential_bullets = [p.strip() for p in parts if p.strip()]
+        
+        # If no bullet markers found, try splitting by newlines
+        if len(potential_bullets) < 3:
+            lines_split = [l.strip() for l in content_stripped.split('\n') if l.strip()]
+            # Filter out very short lines that might be headers
+            lines_split = [l for l in lines_split if len(l) > 20]
+            if len(lines_split) >= 5:
+                potential_bullets = lines_split
+        
+        # If still not enough, try splitting by sentence boundaries
+        if len(potential_bullets) < 5:
             sentence_splits = regex.split(r'(?<=[.!?])\s+(?=[A-Z])', content_stripped)
-            if len(sentence_splits) >= 5:  # Expect at least 5 bullets for Snapshot
-                for sentence in sentence_splits:
-                    sentence = sentence.strip()
-                    if sentence:
-                        # Remove leading bullet markers if present
-                        sentence = regex.sub(r'^[-•*]\s*', '', sentence)
-                        story.append(Paragraph(f"• {sentence}", bullet_style))
-                return  # Exit early, we've handled the content
+            if len(sentence_splits) >= 5:
+                potential_bullets = [s.strip() for s in sentence_splits if s.strip()]
+        
+        # If we found enough bullets, render them
+        if len(potential_bullets) >= 5:
+            for bullet in potential_bullets:
+                bullet = bullet.strip()
+                if bullet:
+                    # Remove any leading bullet markers
+                    bullet = regex.sub(r'^[-•*]\s*', '', bullet)
+                    # Remove trailing incomplete sentences if any
+                    if len(bullet) > 10:
+                        story.append(Paragraph(f"• {bullet}", bullet_style))
+                        story.append(Spacer(1, 0.1*inch))  # Space between bullets
+            return  # Exit early, we've handled the content
     
     def is_theme_heading(line: str) -> bool:
         """Check if line is a Theme heading."""
@@ -389,6 +413,12 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
             r'^the life theme:?\s*$',
             r'^real-life expression:?\s*$',
             r'^aspect patterns in your chart:?\s*$',
+            # Shadow section subsections
+            r'^the pattern:?\s*$',
+            r'^the driver:?\s*$',
+            r'^the cost:?\s*$',
+            r'^the integration:?\s*$',
+            r'^growth edges:?\s*$',
         ]
         line_lower = line.strip().lower()
         return any(re.match(p, line_lower) for p in patterns)
@@ -408,6 +438,11 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
             if line_clean.startswith(planet) and len(line_clean) < 50:
                 return True
         return False
+    
+    def is_shadow_heading(line: str) -> bool:
+        """Check if line is a SHADOW: heading like 'SHADOW: The Passive-Aggressive Peacemaker'."""
+        line_clean = line.strip().lower()
+        return line_clean.startswith('shadow:') and len(line_clean) < 100
     
     def is_aspect_heading(line: str) -> bool:
         """Check if line is an aspect heading like 'SUN SQUARE SATURN (2.3°)' or 'MOON OPPOSITE VENUS'."""
@@ -464,9 +499,24 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
             story.append(Spacer(1, 0.12*inch))  # Space after aspect heading
             continue
         
+        # Check for shadow headings (like "SHADOW: The Passive-Aggressive Peacemaker")
+        if is_shadow_heading(line):
+            if current_para:
+                para_text = ' '.join(current_para)
+                story.append(Paragraph(para_text, body_style))
+                story.append(Spacer(1, 0.15*inch))
+                current_para = []
+            story.append(Spacer(1, 0.2*inch))  # Space before shadow heading
+            story.append(Paragraph(f"<b>{line}</b>", heading_style))
+            story.append(Spacer(1, 0.12*inch))  # Space after shadow heading
+            continue
+        
         # Check for bullets
         is_bullet, bullet_text = is_bullet_line(line)
-        if is_bullet or (is_bullet_section and len(line) < 150 and not line.endswith(':')):
+        # For bullet sections, be more generous - accept longer lines as bullets
+        # unless they end with a colon (which indicates a heading)
+        is_bullet_section_line = is_bullet_section and not line.endswith(':') and len(line) < 500
+        if is_bullet or is_bullet_section_line:
             if current_para:
                 para_text = ' '.join(current_para)
                 story.append(Paragraph(para_text, body_style))
@@ -474,8 +524,10 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
                 current_para = []
             
             text_to_use = bullet_text if is_bullet else line
+            # Clean up any existing bullet markers
+            text_to_use = re.sub(r'^[-•*]\s*', '', text_to_use)
             story.append(Paragraph(f"• {text_to_use}", bullet_style))
-            story.append(Spacer(1, 0.08*inch))  # Space between bullets
+            story.append(Spacer(1, 0.1*inch))  # Space between bullets
             continue
         
         # Check for theme headings
@@ -533,23 +585,48 @@ def generate_pdf_report(chart_data: Dict[str, Any], gemini_reading: str, user_in
     """
     buffer = io.BytesIO()
     
-    # Custom page template for page numbers
+    # Page dimensions
+    page_width, page_height = letter
+    margin_left = 0.75*inch
+    margin_right = 0.75*inch
+    margin_top = 0.75*inch
+    margin_bottom = 1.0*inch
+    
+    # Custom function to add page numbers
     def add_page_number(canvas_obj, doc):
         """Add page numbers to each page."""
-        page_num = canvas_obj.getPageNumber()
-        text = f"Page {page_num}"
         canvas_obj.saveState()
         canvas_obj.setFont('Helvetica', 9)
         canvas_obj.setFillColor(colors.HexColor('#666666'))
-        page_width = letter[0]
-        x_position = page_width - 0.75*inch
+        page_num = doc.page
+        text = f"Page {page_num}"
+        x_position = page_width - margin_right
         y_position = 0.5*inch
         canvas_obj.drawRightString(x_position, y_position, text)
         canvas_obj.restoreState()
     
-    doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.75*inch, bottomMargin=1.0*inch,
-                            leftMargin=0.75*inch, rightMargin=0.75*inch,
-                            onFirstPage=add_page_number, onLaterPages=add_page_number)
+    # Create document with BaseDocTemplate for proper page number support
+    doc = BaseDocTemplate(
+        buffer, 
+        pagesize=letter,
+        topMargin=margin_top,
+        bottomMargin=margin_bottom,
+        leftMargin=margin_left,
+        rightMargin=margin_right
+    )
+    
+    # Create a frame for the content
+    frame = Frame(
+        margin_left,
+        margin_bottom,
+        page_width - margin_left - margin_right,
+        page_height - margin_top - margin_bottom,
+        id='normal'
+    )
+    
+    # Create page template with the frame and page number callback
+    template = PageTemplate(id='main', frames=frame, onPage=add_page_number)
+    doc.addPageTemplates([template])
     
     styles = getSampleStyleSheet()
     
