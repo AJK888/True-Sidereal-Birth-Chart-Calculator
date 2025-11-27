@@ -73,10 +73,17 @@ const AuthManager = {
             });
             
             if (!response.ok) {
-                this.logout();
+                // Only logout on 401 (unauthorized) - other errors might be temporary
+                if (response.status === 401) {
+                    console.log('Token invalid or expired, logging out');
+                    this.logout();
+                } else {
+                    console.warn('Token verification returned status:', response.status);
+                }
             }
         } catch (e) {
-            console.error('Token verification failed:', e);
+            // Network error - don't logout, might just be temporary connectivity issue
+            console.error('Token verification network error:', e);
         }
     },
     
@@ -173,9 +180,17 @@ const AuthManager = {
             if (response.ok) {
                 this.savedCharts = await response.json();
                 this.renderSavedChartsList();
+            } else {
+                console.error('Failed to load charts, status:', response.status);
+                // Show empty state on error
+                this.savedCharts = [];
+                this.renderSavedChartsList();
             }
         } catch (error) {
             console.error('Failed to load saved charts:', error);
+            // Show empty state on network error
+            this.savedCharts = [];
+            this.renderSavedChartsList();
         }
     },
     
