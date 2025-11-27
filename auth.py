@@ -68,14 +68,21 @@ class TokenData(BaseModel):
 
 # --- Password Utilities ---
 
+def _truncate_password(password: str) -> str:
+    """Truncate password to 72 bytes (bcrypt limitation)."""
+    # Encode to bytes, truncate, then decode back
+    # This handles multi-byte characters correctly
+    return password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(_truncate_password(plain_password), hashed_password)
 
 
 def get_password_hash(password: str) -> str:
     """Hash a password for storage."""
-    return pwd_context.hash(password)
+    return pwd_context.hash(_truncate_password(password))
 
 
 # --- JWT Token Utilities ---
