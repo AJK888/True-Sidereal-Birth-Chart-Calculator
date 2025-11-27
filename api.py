@@ -191,6 +191,7 @@ def run_migration(secret: str = None):
     """
     import os
     from sqlalchemy import text
+    from database import engine
     
     # Simple security - require a secret parameter
     migration_secret = os.getenv("MIGRATION_SECRET", "run-migration-2024")
