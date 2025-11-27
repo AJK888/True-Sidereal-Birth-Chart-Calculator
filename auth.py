@@ -101,14 +101,18 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 def decode_token(token: str) -> Optional[TokenData]:
     """Decode and validate a JWT token."""
+    import logging
+    logger = logging.getLogger(__name__)
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: int = payload.get("sub")
         email: str = payload.get("email")
         if user_id is None:
+            logger.warning(f"Token decode failed: user_id is None. Payload: {payload}")
             return None
         return TokenData(user_id=user_id, email=email)
-    except JWTError:
+    except JWTError as e:
+        logger.warning(f"Token decode JWTError: {str(e)}, token prefix: {token[:20] if token else 'None'}...")
         return None
 
 
