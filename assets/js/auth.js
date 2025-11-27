@@ -348,28 +348,8 @@ const AuthManager = {
     // ============================================================
     
     bindEvents() {
-        // Auth menu link clicks
+        // General click handlers (auth menu links are bound directly in bindAuthMenuLinks)
         document.addEventListener('click', (e) => {
-            if (e.target.matches('#loginBtn, #loginBtn *')) {
-                e.preventDefault();
-                this.closeMenu();
-                this.showLoginModal();
-            }
-            if (e.target.matches('#registerBtn, #registerBtn *')) {
-                e.preventDefault();
-                this.closeMenu();
-                this.showRegisterModal();
-            }
-            if (e.target.matches('#logoutBtn, #logoutBtn *')) {
-                e.preventDefault();
-                this.closeMenu();
-                this.logout();
-            }
-            if (e.target.matches('#dashboardBtn, #dashboardBtn *')) {
-                e.preventDefault();
-                this.closeMenu();
-                this.showDashboard();
-            }
             if (e.target.matches('.modal-close, .modal-close *')) {
                 this.closeModals();
             }
@@ -466,15 +446,70 @@ const AuthManager = {
             authMenuSection.innerHTML = `
                 <li class="auth-menu-divider"></li>
                 <li class="auth-menu-user"><i class="fas fa-user-circle"></i> ${userName}</li>
-                <li><a href="#" id="dashboardBtn"><i class="fas fa-chart-pie"></i> My Charts</a></li>
-                <li><a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                <li><a href="javascript:void(0)" id="dashboardBtn" class="auth-action"><i class="fas fa-chart-pie"></i> My Charts</a></li>
+                <li><a href="javascript:void(0)" id="logoutBtn" class="auth-action"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             `;
         } else {
             authMenuSection.innerHTML = `
                 <li class="auth-menu-divider"></li>
-                <li><a href="#" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Login</a></li>
-                <li><a href="#" id="registerBtn"><i class="fas fa-user-plus"></i> Sign Up</a></li>
+                <li><a href="javascript:void(0)" id="loginBtn" class="auth-action"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+                <li><a href="javascript:void(0)" id="registerBtn" class="auth-action"><i class="fas fa-user-plus"></i> Sign Up</a></li>
             `;
+        }
+        
+        // Bind click handlers directly to the auth links to bypass Forty theme's menu handler
+        this.bindAuthMenuLinks();
+    },
+    
+    bindAuthMenuLinks() {
+        // Direct click handlers that run before the theme's menu handler
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const dashboardBtn = document.getElementById('dashboardBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        if (loginBtn) {
+            loginBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                this.closeMenu();
+                setTimeout(() => this.showLoginModal(), 100);
+                return false;
+            };
+        }
+        
+        if (registerBtn) {
+            registerBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                this.closeMenu();
+                setTimeout(() => this.showRegisterModal(), 100);
+                return false;
+            };
+        }
+        
+        if (dashboardBtn) {
+            dashboardBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                this.closeMenu();
+                setTimeout(() => this.showDashboard(), 100);
+                return false;
+            };
+        }
+        
+        if (logoutBtn) {
+            logoutBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                this.closeMenu();
+                setTimeout(() => this.logout(), 100);
+                return false;
+            };
         }
     },
     
