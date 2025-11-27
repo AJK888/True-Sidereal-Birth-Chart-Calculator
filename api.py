@@ -2076,8 +2076,8 @@ async def register_endpoint(data: RegisterRequest, db: Session = Depends(get_db)
         )
         user = create_user(db, user_create)
         
-        # Create access token
-        access_token = create_access_token(data={"sub": user.id, "email": user.email})
+        # Create access token (sub must be a string for JWT)
+        access_token = create_access_token(data={"sub": str(user.id), "email": user.email})
         
         logger.info(f"New user registered: {user.email}")
         
@@ -2112,8 +2112,8 @@ async def login_endpoint(data: LoginRequest, db: Session = Depends(get_db)):
             detail="This account has been deactivated."
         )
     
-    # Create access token
-    access_token = create_access_token(data={"sub": user.id, "email": user.email})
+    # Create access token (sub must be a string for JWT)
+    access_token = create_access_token(data={"sub": str(user.id), "email": user.email})
     
     logger.info(f"User logged in: {user.email}")
     

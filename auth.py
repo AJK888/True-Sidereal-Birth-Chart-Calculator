@@ -105,14 +105,19 @@ def decode_token(token: str) -> Optional[TokenData]:
     logger = logging.getLogger(__name__)
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
+        sub = payload.get("sub")
         email: str = payload.get("email")
-        if user_id is None:
-            logger.warning(f"Token decode failed: user_id is None. Payload: {payload}")
+        if sub is None:
+            logger.warning(f"Token decode failed: sub is None. Payload: {payload}")
             return None
+        # Convert sub to int (it's stored as string in JWT)
+        user_id = int(sub) if isinstance(sub, str) else sub
         return TokenData(user_id=user_id, email=email)
     except JWTError as e:
         logger.warning(f"Token decode JWTError: {str(e)}, token prefix: {token[:20] if token else 'None'}...")
+        return None
+    except (ValueError, TypeError) as e:
+        logger.warning(f"Token decode error converting sub to int: {str(e)}")
         return None
 
 
