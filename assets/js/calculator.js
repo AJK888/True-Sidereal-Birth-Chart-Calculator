@@ -42,6 +42,8 @@ const AstrologyCalculator = {
 		this.isFullBirthNameCheckbox = document.getElementById("isFullBirthName");
 		this.geminiTitle = document.getElementById('gemini-title');
 		this.geminiOutput = document.getElementById('gemini-output');
+		this.snapshotOutput = document.getElementById('snapshot-output');
+		this.snapshotTitle = document.getElementById('snapshot-title');
 		this.copyReadingBtn = document.getElementById('copyReadingBtn');
 		this.resultsTitle = document.getElementById('results-title');
 		this.wheelTitle = document.getElementById('wheel-title');
@@ -441,6 +443,12 @@ const AstrologyCalculator = {
 	},
 
 	displayInitialResults(chartData) {
+        // Display snapshot reading if available
+		if (chartData.snapshot_reading) {
+			this.snapshotTitle.parentElement.style.display = 'block';
+			this.snapshotOutput.innerHTML = chartData.snapshot_reading.replace(/\n/g, '<br>');
+		}
+		
         // Updated initial message for synchronous loading
 		this.geminiOutput.innerHTML = "Generating AI Synthesis... This deep analysis can take up to 10 minutes. Please do not leave this page while it loads.";
 		this.renderTextResults(chartData);
