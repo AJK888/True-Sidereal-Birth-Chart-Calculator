@@ -1053,6 +1053,281 @@ Return the polished reading. Ensure:
     )
 
 
+def serialize_snapshot_data(chart_data: dict, unknown_time: bool) -> dict:
+    """
+    Serialize only the snapshot data: 2 tightest aspects, stelliums, Sun/Moon/Rising
+    from both sidereal and tropical systems. This is blinded (no name, birthdate, location).
+    """
+    snapshot = {
+        "metadata": {
+            "unknown_time": unknown_time
+        },
+        "core_identity": {
+            "sidereal": {},
+            "tropical": {}
+        },
+        "tightest_aspects": {
+            "sidereal": [],
+            "tropical": []
+        },
+        "stelliums": {
+            "sidereal": [],
+            "tropical": []
+        }
+    }
+    
+    # Extract Sun, Moon, Rising from sidereal
+    s_positions = {p['name']: p for p in chart_data.get('sidereal_major_positions', [])}
+    s_extra = {p['name']: p for p in chart_data.get('sidereal_additional_points', [])}
+    
+    def extract_sign_from_position(position_str):
+        """Extract sign name from position string like '25°30' Capricorn'"""
+        if not position_str:
+            return 'N/A'
+        parts = position_str.split()
+        return parts[-1] if parts else 'N/A'
+    
+    for body_name in ['Sun', 'Moon']:
+        if body_name in s_positions:
+            body = s_positions[body_name]
+            position_str = body.get('position', '')
+            snapshot["core_identity"]["sidereal"][body_name.lower()] = {
+                "sign": extract_sign_from_position(position_str),
+                "degree": body.get('degrees', 0),
+                "house": body.get('house_num') if not unknown_time else None,
+                "retrograde": body.get('retrograde', False)
+            }
+    
+    # Ascendant (if known time)
+    if not unknown_time and 'Ascendant' in s_extra:
+        asc = s_extra['Ascendant']
+        info_str = asc.get('info', '')
+        sign = extract_sign_from_position(info_str)
+        snapshot["core_identity"]["sidereal"]["ascendant"] = {
+            "sign": sign,
+            "degree": asc.get('info', '').split()[1] if info_str and len(info_str.split()) > 1 else 0
+        }
+    
+    # Extract Sun, Moon, Rising from tropical
+    t_positions = {p['name']: p for p in chart_data.get('tropical_major_positions', [])}
+    t_extra = {p['name']: p for p in chart_data.get('tropical_additional_points', [])}
+    
+    for body_name in ['Sun', 'Moon']:
+        if body_name in t_positions:
+            body = t_positions[body_name]
+            position_str = body.get('position', '')
+            snapshot["core_identity"]["tropical"][body_name.lower()] = {
+                "sign": extract_sign_from_position(position_str),
+                "degree": body.get('degrees', 0),
+                "house": body.get('house_num') if not unknown_time else None,
+                "retrograde": body.get('retrograde', False)
+            }
+    
+    # Ascendant (if known time)
+    if not unknown_time and 'Ascendant' in t_extra:
+        asc = t_extra['Ascendant']
+        info_str = asc.get('info', '')
+        sign = extract_sign_from_position(info_str)
+        snapshot["core_identity"]["tropical"]["ascendant"] = {
+            "sign": sign,
+            "degree": asc.get('info', '').split()[1] if info_str and len(info_str.split()) > 1 else 0
+        }
+    
+    # Get 2 tightest aspects from sidereal (sorted by score, then orb)
+    s_aspects = chart_data.get('sidereal_aspects', [])
+    if s_aspects:
+        def parse_score(score_val):
+            try:
+                if isinstance(score_val, str):
+                    return float(score_val)
+                return float(score_val)
+            except (ValueError, TypeError):
+                return 0.0
+        
+        def parse_orb(orb_val):
+            try:
+                if isinstance(orb_val, str):
+                    return abs(float(orb_val.replace('°', '').strip()))
+                return abs(float(orb_val))
+            except (ValueError, TypeError):
+                return 999.0
+        
+        sorted_s_aspects = sorted(
+            s_aspects,
+            key=lambda a: (-parse_score(a.get('score', 0)), parse_orb(a.get('orb', 999)))
+        )[:2]
+        
+        snapshot["tightest_aspects"]["sidereal"] = [
+            {
+                "p1": a.get('p1_name', ''),
+                "p2": a.get('p2_name', ''),
+                "type": a.get('type', ''),
+                "orb": a.get('orb', ''),
+                "score": a.get('score', '')
+            }
+            for a in sorted_s_aspects
+        ]
+    
+    # Get 2 tightest aspects from tropical
+    t_aspects = chart_data.get('tropical_aspects', [])
+    if t_aspects:
+        def parse_score(score_val):
+            try:
+                if isinstance(score_val, str):
+                    return float(score_val)
+                return float(score_val)
+            except (ValueError, TypeError):
+                return 0.0
+        
+        def parse_orb(orb_val):
+            try:
+                if isinstance(orb_val, str):
+                    return abs(float(orb_val.replace('°', '').strip()))
+                return abs(float(orb_val))
+            except (ValueError, TypeError):
+                return 999.0
+        
+        sorted_t_aspects = sorted(
+            t_aspects,
+            key=lambda a: (-parse_score(a.get('score', 0)), parse_orb(a.get('orb', 999)))
+        )[:2]
+        
+        snapshot["tightest_aspects"]["tropical"] = [
+            {
+                "p1": a.get('p1_name', ''),
+                "p2": a.get('p2_name', ''),
+                "type": a.get('type', ''),
+                "orb": a.get('orb', ''),
+                "score": a.get('score', '')
+            }
+            for a in sorted_t_aspects
+        ]
+    
+    # Get stelliums from sidereal
+    s_patterns = chart_data.get('sidereal_aspect_patterns', [])
+    stelliums_s = [p for p in s_patterns if 'stellium' in p.get('description', '').lower()]
+    snapshot["stelliums"]["sidereal"] = [p.get('description', '') for p in stelliums_s]
+    
+    # Get stelliums from tropical
+    t_patterns = chart_data.get('tropical_aspect_patterns', [])
+    stelliums_t = [p for p in t_patterns if 'stellium' in p.get('description', '').lower()]
+    snapshot["stelliums"]["tropical"] = [p.get('description', '') for p in stelliums_t]
+    
+    return snapshot
+
+
+def format_snapshot_for_prompt(snapshot: dict) -> str:
+    """Format the snapshot data as a human-readable string for LLM prompts."""
+    lines = []
+    
+    lines.append("=== SNAPSHOT CHART DATA ===")
+    lines.append(f"Unknown Time: {snapshot.get('metadata', {}).get('unknown_time', False)}")
+    lines.append("")
+    
+    # Core Identity
+    lines.append("=== CORE IDENTITY ===")
+    for system in ['sidereal', 'tropical']:
+        lines.append(f"\n{system.upper()}:")
+        core = snapshot.get('core_identity', {}).get(system, {})
+        for body in ['sun', 'moon', 'ascendant']:
+            if body in core:
+                info = core[body]
+                house_str = f", House {info['house']}" if info.get('house') else ""
+                retro_str = " (Rx)" if info.get('retrograde') else ""
+                degree_str = f" {info.get('degree', 0)}°" if info.get('degree') else ""
+                lines.append(f"  {body.capitalize()}: {info.get('sign', 'N/A')}{degree_str}{house_str}{retro_str}")
+    lines.append("")
+    
+    # Tightest Aspects
+    lines.append("=== TWO TIGHTEST ASPECTS ===")
+    for system in ['sidereal', 'tropical']:
+        lines.append(f"\n{system.upper()}:")
+        aspects = snapshot.get('tightest_aspects', {}).get(system, [])
+        if aspects:
+            for a in aspects:
+                lines.append(f"  {a.get('p1')} {a.get('type')} {a.get('p2')} (orb: {a.get('orb')}, score: {a.get('score')})")
+        else:
+            lines.append("  No aspects available")
+    lines.append("")
+    
+    # Stelliums
+    lines.append("=== STELLIUMS ===")
+    for system in ['sidereal', 'tropical']:
+        lines.append(f"\n{system.upper()}:")
+        stelliums = snapshot.get('stelliums', {}).get(system, [])
+        if stelliums:
+            for s in stelliums:
+                lines.append(f"  {s}")
+        else:
+            lines.append("  No stelliums detected")
+    lines.append("")
+    
+    return "\n".join(lines)
+
+
+async def generate_snapshot_reading(chart_data: dict, unknown_time: bool) -> str:
+    """
+    Generate a brief snapshot reading using only limited data:
+    - 2 tightest aspects (sidereal and tropical)
+    - Stelliums (sidereal and tropical)
+    - Sun, Moon, Rising (sidereal and tropical)
+    
+    This is blinded - no name, birthdate, or location is included.
+    """
+    if not GEMINI_API_KEY and AI_MODE != "stub":
+        logger.warning("Gemini API key not configured - snapshot reading unavailable")
+        return "Snapshot reading is temporarily unavailable."
+    
+    try:
+        # Serialize snapshot data
+        snapshot = serialize_snapshot_data(chart_data, unknown_time)
+        snapshot_summary = format_snapshot_for_prompt(snapshot)
+        
+        llm = Gemini3Client()
+        
+        system_prompt = """You are a master astrological analyst providing a brief, insightful snapshot reading.
+
+Your task is to synthesize the core identity (Sun, Moon, Rising), the two tightest aspects, and any stelliums from BOTH sidereal and tropical systems into a concise but comprehensive snapshot.
+
+GUIDELINES:
+1. Compare and contrast sidereal vs tropical placements - note where they align and where they differ
+2. Explain how the tightest aspects create core dynamics in the personality
+3. Describe how stelliums concentrate energy in specific signs/houses
+4. Synthesize these elements into a coherent picture of the person's core nature
+5. Be specific and insightful, but keep it concise (2-3 paragraphs)
+6. Use second person ("you", "your")
+7. Focus on psychological patterns and tendencies, not predictions
+
+OUTPUT FORMAT:
+Provide a brief but comprehensive snapshot reading in 2-3 paragraphs that synthesizes all the provided information."""
+        
+        user_prompt = f"""Chart Snapshot Data:
+{snapshot_summary}
+
+Generate a brief but comprehensive snapshot reading that:
+1. Synthesizes the Sun, Moon, and Rising placements from both sidereal and tropical systems
+2. Explains how the two tightest aspects from each system create core dynamics
+3. Describes how any stelliums concentrate energy
+4. Compares and contrasts sidereal vs tropical where relevant
+5. Creates a coherent picture of the core psychological patterns
+
+Keep it to 2-3 paragraphs, be specific and insightful."""
+        
+        response = await llm.generate(
+            system=system_prompt,
+            user=user_prompt,
+            max_output_tokens=2000,
+            temperature=0.7,
+            call_label="snapshot_reading"
+        )
+        
+        return response.strip()
+        
+    except Exception as e:
+        logger.error(f"Error generating snapshot reading: {e}", exc_info=True)
+        return "Snapshot reading is temporarily unavailable."
+
+
 async def get_gemini3_reading(chart_data: dict, unknown_time: bool) -> str:
     """Four-call Gemini 3 pipeline."""
     if not GEMINI_API_KEY and AI_MODE != "stub":
@@ -1934,6 +2209,14 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
         except Exception as e:
             logger.warning(f"Could not generate quick highlights: {e}")
             full_response["quick_highlights"] = "Quick highlights are unavailable for this chart."
+        
+        # Generate snapshot reading (blinded, limited data)
+        try:
+            snapshot_reading = await generate_snapshot_reading(full_response, data.unknown_time)
+            full_response["snapshot_reading"] = snapshot_reading
+        except Exception as e:
+            logger.warning(f"Could not generate snapshot reading: {e}")
+            full_response["snapshot_reading"] = "Snapshot reading is temporarily unavailable."
             
         return full_response
 
