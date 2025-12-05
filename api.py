@@ -1103,9 +1103,20 @@ def serialize_snapshot_data(chart_data: dict, unknown_time: bool) -> dict:
         asc = s_extra['Ascendant']
         info_str = asc.get('info', '')
         sign = extract_sign_from_position(info_str)
+        # Try to extract degree from info string (format: "Sign degree°" or "Sign degree° – House X")
+        degree = 0
+        if info_str:
+            parts = info_str.split()
+            for i, part in enumerate(parts):
+                if '°' in part:
+                    try:
+                        degree = float(part.replace('°', '').replace("'", ''))
+                        break
+                    except (ValueError, AttributeError):
+                        pass
         snapshot["core_identity"]["sidereal"]["ascendant"] = {
             "sign": sign,
-            "degree": asc.get('info', '').split()[1] if info_str and len(info_str.split()) > 1 else 0
+            "degree": degree
         }
     
     # Extract Sun, Moon, Rising from tropical
@@ -1128,9 +1139,20 @@ def serialize_snapshot_data(chart_data: dict, unknown_time: bool) -> dict:
         asc = t_extra['Ascendant']
         info_str = asc.get('info', '')
         sign = extract_sign_from_position(info_str)
+        # Try to extract degree from info string (format: "Sign degree°" or "Sign degree° – House X")
+        degree = 0
+        if info_str:
+            parts = info_str.split()
+            for i, part in enumerate(parts):
+                if '°' in part:
+                    try:
+                        degree = float(part.replace('°', '').replace("'", ''))
+                        break
+                    except (ValueError, AttributeError):
+                        pass
         snapshot["core_identity"]["tropical"]["ascendant"] = {
             "sign": sign,
-            "degree": asc.get('info', '').split()[1] if info_str and len(info_str.split()) > 1 else 0
+            "degree": degree
         }
     
     # Get 2 tightest aspects from sidereal (sorted by score, then orb)
@@ -2210,13 +2232,19 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
             logger.warning(f"Could not generate quick highlights: {e}")
             full_response["quick_highlights"] = "Quick highlights are unavailable for this chart."
         
-        # Generate snapshot reading (blinded, limited data)
-        try:
-            snapshot_reading = await generate_snapshot_reading(full_response, data.unknown_time)
-            full_response["snapshot_reading"] = snapshot_reading
-        except Exception as e:
-            logger.warning(f"Could not generate snapshot reading: {e}")
-            full_response["snapshot_reading"] = "Snapshot reading is temporarily unavailable."
+        # Generate snapshot reading (blinded, limited data) - only for actual birth charts, not transit charts
+        # Skip for transit charts to avoid blocking the response
+        is_transit_chart = data.full_name.lower() in ["current transits", "transits"]
+        if not is_transit_chart:
+            try:
+                snapshot_reading = await generate_snapshot_reading(full_response, data.unknown_time)
+                full_response["snapshot_reading"] = snapshot_reading
+            except Exception as e:
+                logger.warning(f"Could not generate snapshot reading: {e}")
+                full_response["snapshot_reading"] = "Snapshot reading is temporarily unavailable."
+        else:
+            # For transit charts, don't include snapshot reading
+            full_response["snapshot_reading"] = None
             
         return full_response
 
