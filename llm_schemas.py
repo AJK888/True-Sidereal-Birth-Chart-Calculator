@@ -305,10 +305,6 @@ def serialize_chart_for_llm(chart_data: Dict[str, Any], unknown_time: bool) -> D
     Example output structure:
     {
         "metadata": {
-            "chart_name": "John Doe",
-            "birth_date": "1990-01-15",
-            "birth_time": "14:30",
-            "location": "New York, NY, USA",
             "unknown_time": false,
             "day_night_status": "day"
         },
@@ -378,12 +374,10 @@ def serialize_chart_for_llm(chart_data: Dict[str, Any], unknown_time: bool) -> D
         return result
     
     # Build serialized structure
+    # NOTE: Personal identifiers (name, birth_date, birth_time, location) are excluded
+    # to protect user privacy when sending data to AI models
     serialized = {
         "metadata": {
-            "chart_name": chart_data.get('name', 'N/A'),
-            "birth_date": chart_data.get('birth_date', 'N/A'),
-            "birth_time": chart_data.get('birth_time') if not unknown_time else None,
-            "location": chart_data.get('location', 'N/A'),
             "unknown_time": unknown_time,
             "day_night_status": chart_data.get('day_night_status', 'unknown')
         },
@@ -548,13 +542,10 @@ def format_serialized_chart_for_prompt(serialized_chart: Dict[str, Any]) -> str:
     lines = []
     
     # Metadata
+    # NOTE: Personal identifiers (name, birth_date, birth_time, location) are excluded
+    # to protect user privacy when sending data to AI models
     meta = serialized_chart.get('metadata', {})
     lines.append("=== CHART METADATA ===")
-    lines.append(f"Name: {meta.get('chart_name', 'N/A')}")
-    lines.append(f"Birth Date: {meta.get('birth_date', 'N/A')}")
-    if meta.get('birth_time'):
-        lines.append(f"Birth Time: {meta.get('birth_time')}")
-    lines.append(f"Location: {meta.get('location', 'N/A')}")
     lines.append(f"Unknown Time: {meta.get('unknown_time', False)}")
     lines.append("")
     

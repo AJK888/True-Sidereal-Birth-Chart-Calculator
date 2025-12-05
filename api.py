@@ -2383,7 +2383,7 @@ async def get_gemini_chat_response(chart_data: dict, reading: Optional[str], con
         reading_context = f"""
 
 === THIS USER'S COMPLETE PERSONALIZED READING ===
-The following is the full AI-generated astrological reading created specifically for {chart_name}.
+The following is the full AI-generated astrological reading created specifically for this chart owner.
 Reference this reading when answering questions - it contains deep insights about their chart.
 
 {reading}
@@ -2391,8 +2391,8 @@ Reference this reading when answering questions - it contains deep insights abou
 === END OF PERSONALIZED READING ===
 """
     
-    user_prompt = f"""=== CHART OWNER: {chart_name} ===
-You are speaking directly with {chart_name} about THEIR chart. All data below belongs to them.
+    user_prompt = f"""=== CHART OWNER ===
+You are speaking directly with the chart owner about THEIR chart. All data below belongs to them.
 
 === CHART DATA ===
 {chart_summary}
