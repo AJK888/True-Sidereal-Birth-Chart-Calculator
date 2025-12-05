@@ -696,13 +696,13 @@ const AuthManager = {
     async openChatForChart(chartId) {
         try {
             const chart = await this.loadChart(chartId);
-            this.showChatModal(chart);
+            await this.showChatModal(chart);
         } catch (error) {
             console.error('Failed to open chat:', error);
         }
     },
     
-    showChatModal(chart) {
+    async showChatModal(chart) {
         this.closeModals();
         this.currentChartId = chart.id;
         this.currentChatConversation = null;
@@ -717,20 +717,7 @@ const AuthManager = {
                     <p>Chatting about: <strong>${chart.chart_name}</strong></p>
                 </div>
                 <div class="chat-messages" id="chatMessages">
-                    <div class="welcome-message">
-                        <div class="astrologer-avatar"><i class="fas fa-sun"></i></div>
-                        <div class="message-content">
-                            <p>Hello! I'm here to help you explore and understand ${chart.chart_name}'s birth chart. I can discuss the patterns, tendencies, and themes revealed through astrological symbolism.</p>
-                            <p>What would you like to explore? You could ask about:</p>
-                            <ul>
-                                <li>Specific placements (e.g., "What does my Moon in Scorpio suggest?")</li>
-                                <li>Life themes (e.g., "What patterns does my chart show around relationships?")</li>
-                                <li>Self-reflection (e.g., "What does my Saturn placement suggest I'm learning?")</li>
-                                <li>Understanding aspects (e.g., "What does my Sun square Mars mean?")</li>
-                            </ul>
-                            <p class="chat-disclaimer"><em>Note: Astrology is a symbolic tool for self-reflection, not a predictive science. These interpretations are for entertainment and personal insight only, not professional advice.</em></p>
-                        </div>
-                    </div>
+                    <div class="loading">Loading conversation...</div>
                 </div>
                 <form id="chatForm" class="chat-input-form">
                     <input type="text" id="chatInput" placeholder="Ask about your chart..." autocomplete="off">
@@ -742,7 +729,74 @@ const AuthManager = {
         `;
         document.body.appendChild(modal);
         setTimeout(() => modal.classList.add('active'), 10);
+        
+        // Load conversation history
+        const messagesContainer = document.getElementById('chatMessages');
+        try {
+            // Get all conversations for this chart
+            const conversations = await this.loadConversations(chart.id);
+            
+            // If there are conversations, load the most recent one
+            if (conversations && conversations.length > 0) {
+                const latestConversation = conversations[0]; // Most recent is first
+                this.currentChatConversation = latestConversation.id;
+                
+                // Load the full conversation with messages
+                const conversation = await this.loadConversation(latestConversation.id);
+                
+                if (conversation && conversation.messages && conversation.messages.length > 0) {
+                    // Display existing messages
+                    messagesContainer.innerHTML = '';
+                    conversation.messages.forEach(msg => {
+                        const msgEl = document.createElement('div');
+                        msgEl.className = `chat-message ${msg.role}-message`;
+                        if (msg.role === 'user') {
+                            msgEl.innerHTML = `
+                                <div class="message-content">${this.escapeHtml(msg.content)}</div>
+                            `;
+                        } else {
+                            msgEl.innerHTML = `
+                                <div class="astrologer-avatar"><i class="fas fa-sun"></i></div>
+                                <div class="message-content">${this.formatChatResponse(msg.content)}</div>
+                            `;
+                        }
+                        messagesContainer.appendChild(msgEl);
+                    });
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                } else {
+                    // No messages, show welcome
+                    this.showWelcomeMessage(messagesContainer, chart.chart_name);
+                }
+            } else {
+                // No conversations, show welcome
+                this.showWelcomeMessage(messagesContainer, chart.chart_name);
+            }
+        } catch (error) {
+            console.error('Error loading conversation:', error);
+            // Show welcome message on error
+            this.showWelcomeMessage(messagesContainer, chart.chart_name);
+        }
+        
         modal.querySelector('#chatInput').focus();
+    },
+    
+    showWelcomeMessage(container, chartName) {
+        container.innerHTML = `
+            <div class="welcome-message">
+                <div class="astrologer-avatar"><i class="fas fa-sun"></i></div>
+                <div class="message-content">
+                    <p>Hello! I'm here to help you explore and understand ${chartName}'s birth chart. I can discuss the patterns, tendencies, and themes revealed through astrological symbolism.</p>
+                    <p>What would you like to explore? You could ask about:</p>
+                    <ul>
+                        <li>Specific placements (e.g., "What does my Moon in Scorpio suggest?")</li>
+                        <li>Life themes (e.g., "What patterns does my chart show around relationships?")</li>
+                        <li>Self-reflection (e.g., "What does my Saturn placement suggest I'm learning?")</li>
+                        <li>Understanding aspects (e.g., "What does my Sun square Mars mean?")</li>
+                    </ul>
+                    <p class="chat-disclaimer"><em>Note: Astrology is a symbolic tool for self-reflection, not a predictive science. These interpretations are for entertainment and personal insight only, not professional advice.</em></p>
+                </div>
+            </div>
+        `;
     },
     
     async handleChatSubmit(message) {
