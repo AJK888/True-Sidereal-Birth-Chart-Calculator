@@ -702,11 +702,55 @@ Rules:
     if unknown_time:
         houses_instruction = "SKIP THIS SECTION ENTIRELY. Since birth time is unknown, we cannot calculate houses. Do NOT write anything about houses or life domains. Do NOT mention that birth time is unknown here—that was already covered in the What We Know section. Simply omit this section completely."
     else:
-        houses_instruction = """For each major life domain (Self/1st House, Relationships/7th House, Career/10th House, Home/4th House, Spirituality/9th & 12th Houses):
-   - Name the ruling planets and their sidereal/tropical states
-   - Show how the domain is "engineered" by multiple factors converging (house ruler + planets in house + aspects to cusp)
-   - Give one "this is exactly how it shows up" example
-   - Connect to numerology where relevant (e.g., "Your 2nd house emphasis + Life Path 8 = money is both security and spiritual test")"""
+        houses_instruction = """For ALL 12 houses, provide a comprehensive analysis. Cover each house in this order:
+
+1st HOUSE (Self & Identity): Physical appearance, first impressions, how you project yourself, vitality, personal identity
+2nd HOUSE (Resources & Values): Money, possessions, values, self-worth, material security, what you value
+3rd HOUSE (Communication & Learning): Siblings, early education, communication style, local travel, thinking patterns, writing/speaking
+4th HOUSE (Home & Roots): Family, home environment, emotional foundations, private life, ancestry, inner security
+5th HOUSE (Creativity & Pleasure): Romance, children, creativity, self-expression, hobbies, fun, risk-taking, play
+6th HOUSE (Work & Health): Daily work, routines, health, service, pets, habits, duty, practical skills
+7th HOUSE (Relationships & Partnerships): Marriage, partnerships, close relationships, contracts, others, projection
+8th HOUSE (Transformation & Shared Resources): Death, rebirth, transformation, shared resources, inheritance, taxes, psychology, intimacy
+9th HOUSE (Philosophy & Higher Learning): Higher education, philosophy, religion, long-distance travel, publishing, beliefs, expansion of mind
+10th HOUSE (Career & Public Standing): Career, reputation, public image, authority, status, life direction, achievements
+11th HOUSE (Friends & Aspirations): Friends, groups, hopes, dreams, social causes, technology, innovation, community
+12th HOUSE (Spirituality & Unconscious): Subconscious, spirituality, hidden enemies, karma, isolation, secrets, transcendence
+
+For each house, provide COMPREHENSIVE analysis covering:
+
+1. HOUSE CUSP & RULER:
+   - The sign on the cusp (both sidereal and tropical - note if they differ)
+   - The ruling planet(s) for that sign
+   - Where the ruling planet is located (sign, house, degree) in BOTH sidereal and tropical systems
+   - The condition of the ruler (dignified, debilitated, retrograde, etc.) in both systems
+
+2. ALL PLANETS IN THE HOUSE:
+   - List EVERY planet that falls in this house in the SIDEREAL system (Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Chiron, Nodes, etc.)
+   - List EVERY planet that falls in this house in the TROPICAL system
+   - For each planet, note: its sign, degree, house position, aspects, retrograde status
+   - Compare sidereal vs tropical placements - note where planets appear in different houses between systems and what that means
+
+3. ALL ZODIAC SIGNS IN THE HOUSE:
+   - Identify ALL signs that appear within this house (houses can span multiple signs)
+   - Note the degree ranges for each sign within the house
+   - Explain how each sign's energy influences this life domain
+   - Compare sidereal vs tropical sign distributions in the house
+
+4. SYNTHESIS:
+   - Show how the domain is "engineered" by multiple factors converging (house ruler + ALL planets in house + sign distributions + aspects to cusp)
+   - Explain how sidereal placements reveal the SOUL-LEVEL approach to this domain
+   - Explain how tropical placements reveal the PERSONALITY-LEVEL approach to this domain
+   - Note any contradictions or tensions between sidereal and tropical placements
+   - Give concrete examples of how this shows up in real life
+   - Connect to numerology where relevant
+   - Note if the house is empty (no planets) and what that means - but still analyze the ruler and sign distributions
+
+5. STELLIUMS & CONCENTRATIONS:
+   - If 3+ planets are in this house, analyze the stellium energy and how it concentrates focus in this domain
+   - Note if the stellium appears in sidereal, tropical, or both systems
+
+Be thorough - examine every planet, every sign, and both systems for each of the 12 houses."""
     
     snapshot_notes = ""
     if blueprint.get("parsed") and getattr(blueprint['parsed'], "snapshot", None):
