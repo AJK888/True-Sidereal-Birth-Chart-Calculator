@@ -445,7 +445,7 @@ const AstrologyCalculator = {
 	displayInitialResults(chartData) {
         // Display snapshot reading if available
 		if (chartData.snapshot_reading && chartData.snapshot_reading !== null) {
-			this.snapshotTitle.parentElement.style.display = 'block';
+			this.snapshotTitle.style.display = 'block';
 			this.snapshotOutput.innerHTML = chartData.snapshot_reading.replace(/\n/g, '<br>');
 		}
 		
