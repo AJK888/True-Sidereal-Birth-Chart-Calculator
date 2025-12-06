@@ -17,8 +17,10 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
-from database import get_db, User, SavedChart, ChatConversation, ChatMessage, CreditTransaction
+from database import get_db, User, SavedChart, ChatConversation, ChatMessage, CreditTransaction, AdminBypassLog
 from auth import get_current_user, get_current_user_optional
+from subscription import check_subscription_access
+from fastapi import Request
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +116,7 @@ class ChatSendResponse(BaseModel):
     """Schema for chat response."""
     user_message: MessageResponse
     assistant_message: MessageResponse
-    credits_remaining: int
+    credits_remaining: Optional[int] = None  # None for subscription users
 
 
 # ============================================================================
@@ -263,10 +265,11 @@ async def get_conversation(
 async def send_message(
     conversation_id: int,
     data: ChatSendRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Send a message in a conversation and get AI response."""
+    """Send a message in a conversation and get AI response. Requires active subscription."""
     # Get conversation
     conversation = db.query(ChatConversation).filter(
         ChatConversation.id == conversation_id,
@@ -276,16 +279,49 @@ async def send_message(
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
-    # Check credits
-    if not check_credits(current_user, CHAT_CREDIT_COST):
+    # Check subscription access (with admin bypass support)
+    admin_secret = request.query_params.get('admin_secret')
+    has_access, reason = check_subscription_access(current_user, db, admin_secret)
+    
+    if not has_access:
+        # Log admin bypass attempt if secret was provided but invalid
+        if admin_secret:
+            try:
+                log_entry = AdminBypassLog(
+                    user_email=current_user.email,
+                    endpoint="/api/chat/conversations/{conversation_id}/messages",
+                    ip_address=request.client.host if request.client else None,
+                    user_agent=request.headers.get("user-agent"),
+                    details=f"Invalid admin secret attempt for chat"
+                )
+                db.add(log_entry)
+                db.commit()
+            except Exception as log_error:
+                logger.warning(f"Could not log admin bypass attempt: {log_error}")
+        
         raise HTTPException(
             status_code=402,
             detail={
-                "error": "Insufficient credits",
-                "required": CHAT_CREDIT_COST,
-                "available": current_user.credits
+                "error": "Subscription required",
+                "message": "A monthly subscription is required to use the chat feature. Subscribe to unlock unlimited chats about your chart.",
+                "reason": reason
             }
         )
+    
+    # Log successful admin bypass if used
+    if reason == "admin_bypass":
+        try:
+            log_entry = AdminBypassLog(
+                user_email=current_user.email,
+                endpoint="/api/chat/conversations/{conversation_id}/messages",
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("user-agent"),
+                details=f"Admin bypass used for chat"
+            )
+            db.add(log_entry)
+            db.commit()
+        except Exception as log_error:
+            logger.warning(f"Could not log admin bypass: {log_error}")
     
     # Save user message
     user_message = ChatMessage(
@@ -309,19 +345,14 @@ async def send_message(
         conversation_id=conversation_id,
         role="assistant",
         content=ai_response_content,
-        credits_charged=CHAT_CREDIT_COST
+        credits_charged=0  # No credits for subscription users
     )
     db.add(assistant_message)
     
     # Update conversation timestamp
     conversation.updated_at = datetime.utcnow()
     
-    # Deduct credits
-    credits_remaining = deduct_credits(
-        db, current_user, CHAT_CREDIT_COST,
-        f"Chat message in conversation {conversation_id}"
-    )
-    
+    # No credit deduction for subscriptions - unlimited chats
     db.commit()
     db.refresh(user_message)
     db.refresh(assistant_message)
@@ -335,7 +366,7 @@ async def send_message(
             content=user_message.content,
             created_at=user_message.created_at,
             tokens_used=user_message.tokens_used,
-            credits_charged=user_message.credits_charged
+            credits_charged=0  # No credits for subscription users
         ),
         assistant_message=MessageResponse(
             id=assistant_message.id,
@@ -343,9 +374,9 @@ async def send_message(
             content=assistant_message.content,
             created_at=assistant_message.created_at,
             tokens_used=assistant_message.tokens_used,
-            credits_charged=assistant_message.credits_charged
+            credits_charged=0  # No credits for subscription users
         ),
-        credits_remaining=credits_remaining
+        credits_remaining=None  # Not applicable for subscriptions
     )
 
 

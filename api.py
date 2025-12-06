@@ -38,12 +38,13 @@ from llm_schemas import (
 )
 
 # --- Import Auth & Database ---
-from database import init_db, get_db, User, SavedChart, ChatConversation, ChatMessage, CreditTransaction
+from database import init_db, get_db, User, SavedChart, ChatConversation, ChatMessage, CreditTransaction, AdminBypassLog
 from auth import (
     UserCreate, UserLogin, UserResponse, Token,
     create_user, authenticate_user, get_user_by_email,
     create_access_token, get_current_user, get_current_user_optional
 )
+from subscription import has_active_subscription, check_subscription_access
 from sqlalchemy.orm import Session
 
 # --- Import Chat API Router ---
@@ -1789,6 +1790,47 @@ Output the polished reading with the exact same structure as the draft."""
 # Removed format_full_report_for_email - now using PDF generation instead
 
 
+def send_snapshot_email_via_sendgrid(snapshot_text: str, recipient_email: str, chart_name: str, birth_date: str, birth_time: str, location: str):
+    """Send snapshot reading email via SendGrid (text only, no PDF)."""
+    if not SENDGRID_API_KEY or not SENDGRID_FROM_EMAIL:
+        logger.warning("SendGrid not configured - cannot send snapshot email")
+        return False
+    
+    try:
+        message = Mail(
+            from_email=SENDGRID_FROM_EMAIL,
+            to_emails=recipient_email,
+            subject=f"Chart Snapshot: {chart_name}",
+            html_content=f"""
+            <html>
+            <body>
+                <h2>Your Chart Snapshot</h2>
+                <p><strong>Name:</strong> {chart_name}</p>
+                <p><strong>Birth Date:</strong> {birth_date}</p>
+                <p><strong>Birth Time:</strong> {birth_time}</p>
+                <p><strong>Location:</strong> {location}</p>
+                <hr>
+                <div style="white-space: pre-wrap;">{snapshot_text.replace(chr(10), '<br>')}</div>
+            </body>
+            </html>
+            """
+        )
+        
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        
+        if response.status_code in [200, 202]:
+            logger.info(f"Snapshot email sent successfully to {recipient_email}")
+            return True
+        else:
+            logger.error(f"SendGrid returned status {response.status_code}")
+            return False
+    
+    except Exception as e:
+        logger.error(f"Error sending snapshot email: {e}", exc_info=True)
+        return False
+
+
 def send_chart_email_via_sendgrid(pdf_bytes: bytes, recipient_email: str, subject: str, chart_name: str):
     """Send email with PDF attachment using SendGrid API."""
     from datetime import datetime
@@ -2246,6 +2288,41 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
                     timeout=30.0
                 )
                 full_response["snapshot_reading"] = snapshot_reading
+                
+                # Send snapshot email immediately to user and admin
+                if snapshot_reading and data.user_email:
+                    try:
+                        # Format birth date and time for email
+                        birth_date_str = f"{data.month}/{data.day}/{data.year}"
+                        birth_time_str = f"{data.hour:02d}:{data.minute:02d}"
+                        if data.hour >= 12:
+                            birth_time_str += " PM"
+                        else:
+                            birth_time_str += " AM"
+                        
+                        # Send to user
+                        send_snapshot_email_via_sendgrid(
+                            snapshot_reading,
+                            data.user_email,
+                            data.full_name,
+                            birth_date_str,
+                            birth_time_str,
+                            data.location
+                        )
+                        
+                        # Send to admin
+                        if ADMIN_EMAIL:
+                            send_snapshot_email_via_sendgrid(
+                                snapshot_reading,
+                                ADMIN_EMAIL,
+                                data.full_name,
+                                birth_date_str,
+                                birth_time_str,
+                                data.location
+                            )
+                    except Exception as email_error:
+                        logger.warning(f"Failed to send snapshot email: {email_error}")
+                
             except asyncio.TimeoutError:
                 logger.warning("Snapshot reading generation timed out after 30 seconds - skipping to avoid blocking chart response")
                 full_response["snapshot_reading"] = None
@@ -2273,10 +2350,17 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
 
 @app.post("/generate_reading")
 # Removed rate limit - user wants comprehensive readings without restrictions
-async def generate_reading_endpoint(request: Request, reading_data: ReadingRequest, background_tasks: BackgroundTasks):
+async def generate_reading_endpoint(
+    request: Request, 
+    reading_data: ReadingRequest, 
+    background_tasks: BackgroundTasks,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db: Session = Depends(get_db)
+):
     """
     This endpoint queues the reading generation and email sending in the background.
     Returns immediately so users can close the browser and still receive their reading via email.
+    Requires active subscription (or admin bypass).
     """
     try:
         user_inputs = reading_data.user_inputs
@@ -2291,6 +2375,52 @@ async def generate_reading_endpoint(request: Request, reading_data: ReadingReque
                 status_code=400, 
                 detail="Email address is required. Your reading will be sent to your email when complete."
             )
+        
+        # Check subscription access (with admin bypass support)
+        # Check both query params and header for admin secret
+        admin_secret = request.query_params.get('admin_secret') or request.headers.get("x-admin-secret")
+        has_access, reason = check_subscription_access(current_user, db, admin_secret)
+        
+        if not has_access:
+            # Log admin bypass attempt if secret was provided but invalid
+            if admin_secret:
+                try:
+                    log_entry = AdminBypassLog(
+                        user_email=user_email,
+                        endpoint="/generate_reading",
+                        ip_address=request.client.host if request.client else None,
+                        user_agent=request.headers.get("user-agent"),
+                        details=f"Invalid admin secret attempt for {user_email}"
+                    )
+                    db.add(log_entry)
+                    db.commit()
+                except Exception as log_error:
+                    logger.warning(f"Could not log admin bypass attempt: {log_error}")
+            
+            raise HTTPException(
+                status_code=402,
+                detail={
+                    "error": "Subscription required",
+                    "message": "A monthly subscription is required to generate full comprehensive readings. Snapshot readings are available for free.",
+                    "reason": reason
+                }
+            )
+        
+        # Log successful admin bypass if used (works even without logged-in user)
+        if reason == "admin_bypass":
+            try:
+                user_email_for_log = current_user.email if current_user else user_email
+                log_entry = AdminBypassLog(
+                    user_email=user_email_for_log,
+                    endpoint="/generate_reading",
+                    ip_address=request.client.host if request.client else None,
+                    user_agent=request.headers.get("user-agent"),
+                    details=f"Admin bypass used for full reading generation" + (f" by user {user_email_for_log}" if user_email_for_log else " (anonymous)")
+                )
+                db.add(log_entry)
+                db.commit()
+            except Exception as log_error:
+                logger.warning(f"Could not log admin bypass: {log_error}")
         
         # Generate chart hash for polling
         chart_hash = generate_chart_hash(reading_data.chart_data, reading_data.unknown_time)
@@ -2934,3 +3064,76 @@ async def delete_conversation_endpoint(
     db.commit()
     
     return {"message": "Conversation deleted successfully."}
+
+
+# ============================================================
+# Subscription Management Endpoints
+# ============================================================
+
+from subscription import create_subscription_checkout, handle_subscription_webhook
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+@app.get("/api/subscription/status")
+async def get_subscription_status(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get current user's subscription status."""
+    is_active = has_active_subscription(current_user, db)
+    
+    return {
+        "has_subscription": is_active,
+        "status": current_user.subscription_status,
+        "start_date": current_user.subscription_start_date.isoformat() if current_user.subscription_start_date else None,
+        "end_date": current_user.subscription_end_date.isoformat() if current_user.subscription_end_date else None,
+        "is_admin": current_user.is_admin
+    }
+
+
+@app.post("/api/subscription/checkout")
+async def create_subscription_checkout_endpoint(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a Stripe checkout session for monthly subscription."""
+    try:
+        result = create_subscription_checkout(
+            user_id=current_user.id,
+            user_email=current_user.email
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Error creating subscription checkout: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/webhooks/stripe")
+async def stripe_webhook_endpoint(request: Request, db: Session = Depends(get_db)):
+    """Handle Stripe webhook events for subscriptions."""
+    payload = await request.body()
+    sig_header = request.headers.get("Stripe-Signature")
+    
+    if not sig_header:
+        raise HTTPException(status_code=400, detail="Missing Stripe-Signature header")
+    
+    try:
+        import stripe
+        if not STRIPE_WEBHOOK_SECRET:
+            raise HTTPException(status_code=500, detail="STRIPE_WEBHOOK_SECRET not configured")
+        
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_WEBHOOK_SECRET
+        )
+        
+        result = handle_subscription_webhook(event, db)
+        return result
+    
+    except ValueError as e:
+        logger.error(f"Invalid webhook payload: {e}")
+        raise HTTPException(status_code=400, detail="Invalid payload")
+    except stripe.error.SignatureVerificationError as e:
+        logger.error(f"Invalid webhook signature: {e}")
+        raise HTTPException(status_code=400, detail="Invalid signature")
+    except Exception as e:
+        logger.error(f"Error processing webhook: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))

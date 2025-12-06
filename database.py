@@ -47,6 +47,13 @@ class User(Base):
     is_admin = Column(Boolean, default=False)  # Admin flag for developer access
     credits = Column(Integer, default=3)  # Free credits for new users
     
+    # Stripe subscription fields
+    stripe_customer_id = Column(String(255), nullable=True, index=True)
+    stripe_subscription_id = Column(String(255), nullable=True, index=True)
+    subscription_status = Column(String(50), default="inactive")  # inactive, active, past_due, canceled, trialing
+    subscription_start_date = Column(DateTime, nullable=True)
+    subscription_end_date = Column(DateTime, nullable=True)
+    
     # Relationship to saved charts
     charts = relationship("SavedChart", back_populates="owner", cascade="all, delete-orphan")
     
@@ -147,6 +154,42 @@ class CreditTransaction(Base):
     
     # Relationship
     user = relationship("User", back_populates="credit_transactions")
+
+
+class SubscriptionPayment(Base):
+    """Subscription payment history tracking."""
+    __tablename__ = "subscription_payments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Payment details
+    stripe_payment_intent_id = Column(String(255), nullable=True, index=True)
+    stripe_invoice_id = Column(String(255), nullable=True, index=True)
+    amount = Column(Integer, nullable=False)  # Amount in cents
+    currency = Column(String(10), default="usd")
+    status = Column(String(50), nullable=False)  # succeeded, pending, failed, refunded
+    payment_date = Column(DateTime, nullable=False)
+    billing_period_start = Column(DateTime, nullable=True)
+    billing_period_end = Column(DateTime, nullable=True)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    user = relationship("User")
+
+
+class AdminBypassLog(Base):
+    """Log admin secret key usage for auditing."""
+    __tablename__ = "admin_bypass_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_email = Column(String(255), nullable=True)  # User email if available
+    endpoint = Column(String(255), nullable=False)  # API endpoint accessed
+    ip_address = Column(String(45), nullable=True)  # IPv4 or IPv6
+    user_agent = Column(String(500), nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    details = Column(Text, nullable=True)  # Additional context
 
 
 def init_db():
