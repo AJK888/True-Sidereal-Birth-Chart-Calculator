@@ -207,11 +207,23 @@ const AstrologyCalculator = {
                 
                 // Check if it's a subscription error
                 if (readingRes.status === 402 && errorData.detail && errorData.detail.error === "Subscription required") {
-                    // Show upgrade prompt
-                    if (typeof AuthManager !== 'undefined' && AuthManager.showUpgradePrompt) {
-                        AuthManager.showUpgradePrompt('reading');
+                    // Display friendly subscription message instead of error
+                    const message = errorData.detail.message || 'A monthly subscription is required for comprehensive full readings and other premium services.';
+                    this.geminiOutput.innerHTML = `
+                        <div style="padding: 20px; background-color: rgba(27, 108, 168, 0.1); border-left: 4px solid #1b6ca8; margin-bottom: 15px; border-radius: 4px;">
+                            <h3 style="margin-top: 0; color: #1b6ca8;">Unlock Full Readings & Premium Features</h3>
+                            <p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 1em;">${message}</p>
+                            <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 1em;">Good news! You can still get <strong>unlimited free snapshot readings</strong> with your chart calculation. The snapshot provides quick insights into your core patterns.</p>
+                            <div style="margin-top: 1.5em;">
+                                <a href="#pricing-section" class="button primary" onclick="window.scrollTo({top: document.getElementById('pricing-section').offsetTop - 100, behavior: 'smooth'})">View Pricing & Subscribe</a>
+                            </div>
+                        </div>
+                    `;
+                    if (this.copyReadingBtn) {
+                        this.copyReadingBtn.style.display = 'none';
                     }
-                    throw new Error('Subscription required for full readings');
+                    this.setLoadingState(false);
+                    return; // Exit early - don't throw error
                 }
                 
                 throw new Error(errorData.detail || 'AI Reading service failed.');
@@ -317,6 +329,11 @@ const AstrologyCalculator = {
 				stack: err.stack,
 				name: err.name
 			});
+			// Don't show error for subscription-related messages - they're handled above
+			if (err.message && err.message.includes('Subscription required')) {
+				// Already handled, don't show error
+				return;
+			}
 			this.geminiOutput.innerHTML = `<div style="padding: 15px; background-color: #fee; border-left: 4px solid #e53e3e; color: #c33;">
 				<strong>Error:</strong> The AI reading is currently unavailable. ${err.message}
 			</div>`;
