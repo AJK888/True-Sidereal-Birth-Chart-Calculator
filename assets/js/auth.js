@@ -1098,7 +1098,7 @@ const AuthManager = {
             subscriptionStatus.className = 'subscription-status active';
             subscriptionStatus.style.display = 'block';
         } else {
-            subscribeBtn.textContent = 'Subscribe Now - $500/month';
+            subscribeBtn.textContent = 'Subscribe Now - $88/month';
             subscribeBtn.disabled = false;
             subscribeBtn.classList.remove('disabled');
             subscriptionStatus.style.display = 'none';
@@ -1151,7 +1151,7 @@ const AuthManager = {
             this.showNotification('Failed to start subscription. Please try again.', 'error');
             if (subscribeBtn) {
                 subscribeBtn.disabled = false;
-                subscribeBtn.textContent = 'Subscribe Now - $500/month';
+                subscribeBtn.textContent = 'Subscribe Now - $88/month';
             }
         }
     },
