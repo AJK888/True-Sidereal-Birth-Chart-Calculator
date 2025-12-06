@@ -443,10 +443,40 @@ const AstrologyCalculator = {
 	},
 
 	displayInitialResults(chartData) {
+		// Ensure results container is visible
+		this.resultsContainer.style.display = 'block';
+		
         // Display snapshot reading if available
-		if (chartData.snapshot_reading && chartData.snapshot_reading !== null) {
-			this.snapshotTitle.style.display = 'block';
-			this.snapshotOutput.innerHTML = chartData.snapshot_reading.replace(/\n/g, '<br>');
+		console.log("Chart data received:", chartData);
+		console.log("Snapshot reading:", chartData.snapshot_reading);
+		console.log("Snapshot title element:", this.snapshotTitle);
+		console.log("Snapshot output element:", this.snapshotOutput);
+		
+		// Check if snapshot reading exists and is not null/empty
+		const hasSnapshot = chartData.snapshot_reading && 
+		                    chartData.snapshot_reading !== null && 
+		                    chartData.snapshot_reading !== undefined &&
+		                    String(chartData.snapshot_reading).trim() !== '';
+		
+		if (hasSnapshot) {
+			console.log("Displaying snapshot reading");
+			if (this.snapshotTitle) {
+				this.snapshotTitle.style.display = 'block';
+				console.log("Snapshot title display set to block");
+			} else {
+				console.error("Snapshot title element not found!");
+			}
+			if (this.snapshotOutput) {
+				this.snapshotOutput.innerHTML = String(chartData.snapshot_reading).replace(/\n/g, '<br>');
+				console.log("Snapshot output populated");
+			} else {
+				console.error("Snapshot output element not found!");
+			}
+		} else {
+			console.log("Snapshot reading not available or empty");
+			if (this.snapshotTitle) {
+				this.snapshotTitle.style.display = 'none';
+			}
 		}
 		
         // Updated initial message for synchronous loading
