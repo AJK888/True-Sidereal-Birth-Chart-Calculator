@@ -1289,7 +1289,7 @@ def format_snapshot_for_prompt(snapshot: dict) -> str:
 
 async def generate_snapshot_reading(chart_data: dict, unknown_time: bool) -> str:
     """
-    Generate a brief snapshot reading using only limited data:
+    Generate a comprehensive snapshot reading using limited data:
     - 2 tightest aspects (sidereal and tropical)
     - Stelliums (sidereal and tropical)
     - Sun, Moon, Rising (sidereal and tropical)
@@ -1307,39 +1307,41 @@ async def generate_snapshot_reading(chart_data: dict, unknown_time: bool) -> str
         
         llm = Gemini3Client()
         
-        system_prompt = """You are a master astrological analyst providing a brief, insightful snapshot reading.
+        system_prompt = """You are a master astrological analyst providing a comprehensive snapshot reading.
 
-Your task is to synthesize the core identity (Sun, Moon, Rising), the two tightest aspects, and any stelliums from BOTH sidereal and tropical systems into a concise but comprehensive snapshot.
+Your task is to synthesize the core identity (Sun, Moon, Rising), the two tightest aspects, and any stelliums from BOTH sidereal and tropical systems into a detailed but focused snapshot.
 
 GUIDELINES:
 1. Compare and contrast sidereal vs tropical placements - note where they align and where they differ
 2. Explain how the tightest aspects create core dynamics in the personality
 3. Describe how stelliums concentrate energy in specific signs/houses
 4. Synthesize these elements into a coherent picture of the person's core nature
-5. Be specific and insightful, but keep it concise (2-3 paragraphs)
+5. Be specific and insightful, providing meaningful depth (4-6 paragraphs)
 6. Use second person ("you", "your")
 7. Focus on psychological patterns and tendencies, not predictions
+8. Draw connections between the different elements to create a unified narrative
 
 OUTPUT FORMAT:
-Provide a brief but comprehensive snapshot reading in 2-3 paragraphs that synthesizes all the provided information."""
+Provide a comprehensive snapshot reading in 4-6 paragraphs that synthesizes all the provided information with depth and insight."""
         
         user_prompt = f"""Chart Snapshot Data:
 {snapshot_summary}
 
-Generate a brief but comprehensive snapshot reading that:
-1. Synthesizes the Sun, Moon, and Rising placements from both sidereal and tropical systems
-2. Explains how the two tightest aspects from each system create core dynamics
-3. Describes how any stelliums concentrate energy
-4. Compares and contrasts sidereal vs tropical where relevant
-5. Creates a coherent picture of the core psychological patterns
+Generate a comprehensive snapshot reading that:
+1. Synthesizes the Sun, Moon, and Rising placements from both sidereal and tropical systems, noting similarities and differences
+2. Explains how the two tightest aspects from each system create core dynamics and psychological patterns
+3. Describes how any stelliums concentrate energy and what this means for the person's focus and expression
+4. Compares and contrasts sidereal vs tropical where relevant, explaining the significance of any differences
+5. Creates a coherent, detailed picture of the core psychological patterns, motivations, and tendencies
+6. Draws meaningful connections between all the elements to tell a unified story
 
-Keep it to 2-3 paragraphs, be specific and insightful."""
+Provide 4-6 paragraphs of insightful, specific analysis that gives readers a meaningful understanding while they wait for their full report."""
         
         response = await llm.generate(
             system=system_prompt,
             user=user_prompt,
-            max_output_tokens=2000,
-            temperature=0.7,
+            max_output_tokens=2000,  # Increased for more comprehensive reading
+            temperature=0.7,  # Higher for more creative and nuanced responses
             call_label="snapshot_reading"
         )
         
@@ -2234,14 +2236,22 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
         
         # Generate snapshot reading (blinded, limited data) - only for actual birth charts, not transit charts
         # Skip for transit charts to avoid blocking the response
+        # Use timeout to prevent blocking chart response for too long
         is_transit_chart = data.full_name.lower() in ["current transits", "transits"]
         if not is_transit_chart:
             try:
-                snapshot_reading = await generate_snapshot_reading(full_response, data.unknown_time)
+                # Add timeout of 30 seconds - allows for comprehensive reading generation
+                snapshot_reading = await asyncio.wait_for(
+                    generate_snapshot_reading(full_response, data.unknown_time),
+                    timeout=30.0
+                )
                 full_response["snapshot_reading"] = snapshot_reading
+            except asyncio.TimeoutError:
+                logger.warning("Snapshot reading generation timed out after 30 seconds - skipping to avoid blocking chart response")
+                full_response["snapshot_reading"] = None
             except Exception as e:
                 logger.warning(f"Could not generate snapshot reading: {e}")
-                full_response["snapshot_reading"] = "Snapshot reading is temporarily unavailable."
+                full_response["snapshot_reading"] = None
         else:
             # For transit charts, don't include snapshot reading
             full_response["snapshot_reading"] = None
