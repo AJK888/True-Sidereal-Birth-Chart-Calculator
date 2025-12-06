@@ -2,7 +2,7 @@
 Subscription Management for Synthesis Astrology
 
 Handles:
-- Monthly $500 subscription via Stripe
+- Monthly $88 subscription via Stripe
 - Subscription status checking
 - Webhook processing for subscription events
 - Admin bypass logging
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-STRIPE_PRICE_ID_MONTHLY = os.getenv("STRIPE_PRICE_ID_MONTHLY")  # Monthly $500 subscription price ID
+STRIPE_PRICE_ID_MONTHLY = os.getenv("STRIPE_PRICE_ID_MONTHLY")  # Monthly $88 subscription price ID
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://synthesisastrology.com")
 SUCCESS_URL = f"{FRONTEND_URL}/subscription-success?session_id={{CHECKOUT_SESSION_ID}}"
