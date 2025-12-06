@@ -11,12 +11,15 @@ const AuthManager = {
     savedCharts: [],
     currentChatConversation: null,
     currentChartId: null,
+    subscriptionStatus: null,
     
     init() {
         // Load stored auth state
         this.loadAuthState();
         this.bindEvents();
         this.updateUI();
+        this.checkSubscriptionStatus();
+        this.bindSubscriptionEvents();
     },
     
     // ============================================================
@@ -121,6 +124,9 @@ const AuthManager = {
             this.closeModals();
             this.showNotification('Account created successfully!', 'success');
             
+            // Check subscription status (will be inactive for new users)
+            await this.checkSubscriptionStatus();
+            
             return data;
         } catch (error) {
             console.error('Registration error:', error);
@@ -150,8 +156,9 @@ const AuthManager = {
             this.closeModals();
             this.showNotification('Welcome back!', 'success');
             
-            // Load saved charts
+            // Load saved charts and check subscription status
             await this.loadSavedCharts();
+            await this.checkSubscriptionStatus();
             
             return data;
         } catch (error) {
@@ -307,16 +314,29 @@ const AuthManager = {
                 })
             });
             
-            const data = await response.json();
-            
             if (!response.ok) {
-                throw new Error(data.detail || 'Failed to send message');
+                const errorData = await response.json().catch(() => ({ detail: 'Failed to send message' }));
+                
+                // Check if it's a subscription error
+                if (response.status === 402 && errorData.detail && errorData.detail.error === "Subscription required") {
+                    const subscriptionError = new Error('Subscription required');
+                    subscriptionError.isSubscriptionError = true;
+                    subscriptionError.detail = errorData.detail;
+                    throw subscriptionError;
+                }
+                
+                throw new Error(errorData.detail?.message || errorData.detail || 'Failed to send message');
             }
             
+            const data = await response.json();
             this.currentChatConversation = data.conversation_id;
             
             return data;
         } catch (error) {
+            if (error.isSubscriptionError) {
+                // Don't show notification here - let handleChatSubmit show the upgrade prompt
+                throw error;
+            }
             this.showNotification(error.message, 'error');
             throw error;
         }
@@ -848,13 +868,34 @@ const AuthManager = {
         } catch (error) {
             loadingEl.remove();
             
+            // Check if it's a subscription error
+            let errorMessage = "I'm sorry, I encountered an error. Please try again.";
+            let showUpgrade = false;
+            
+            if (error.isSubscriptionError || (error.message && error.message.includes('Subscription required'))) {
+                errorMessage = error.detail?.message || "A monthly subscription is required to use the chat feature. Subscribe to unlock unlimited conversations about your chart.";
+                showUpgrade = true;
+            }
+            
             const errorMsgEl = document.createElement('div');
             errorMsgEl.className = 'chat-message assistant-message error';
             errorMsgEl.innerHTML = `
                 <div class="astrologer-avatar"><i class="fas fa-exclamation-triangle"></i></div>
-                <div class="message-content">I'm sorry, I encountered an error. Please try again.</div>
+                <div class="message-content">
+                    ${errorMessage}
+                    ${showUpgrade ? `
+                        <div style="margin-top: 1em; padding-top: 1em; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                            <a href="#pricing-section" class="button primary" onclick="document.querySelector('.chat-modal').style.display='none'; window.scrollTo({top: document.getElementById('pricing-section').offsetTop - 100, behavior: 'smooth'})">View Pricing & Subscribe</a>
+                        </div>
+                    ` : ''}
+                </div>
             `;
             messagesContainer.appendChild(errorMsgEl);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            if (showUpgrade) {
+                this.showUpgradePrompt('chat');
+            }
         }
     },
     
@@ -998,6 +1039,178 @@ const AuthManager = {
         const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
         if (!match) return 0;
         return parseInt(match[2], 10);
+    },
+    
+    // ============================================================
+    // SUBSCRIPTION MANAGEMENT
+    // ====================================
+    
+    async checkSubscriptionStatus() {
+        if (!this.isLoggedIn()) {
+            this.subscriptionStatus = null;
+            this.updateSubscriptionUI();
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${this.API_BASE}/api/subscription/status`, {
+                headers: {
+                    'Authorization': `Bearer ${this.authToken}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                this.subscriptionStatus = data;
+                this.updateSubscriptionUI();
+            } else {
+                this.subscriptionStatus = { has_subscription: false };
+                this.updateSubscriptionUI();
+            }
+        } catch (error) {
+            console.error('Error checking subscription status:', error);
+            this.subscriptionStatus = { has_subscription: false };
+            this.updateSubscriptionUI();
+        }
+    },
+    
+    updateSubscriptionUI() {
+        const subscribeBtn = document.getElementById('subscribeBtn');
+        const subscriptionStatus = document.getElementById('subscriptionStatus');
+        
+        if (!subscribeBtn || !subscriptionStatus) return;
+        
+        if (!this.isLoggedIn()) {
+            subscribeBtn.textContent = 'Sign In to Subscribe';
+            subscribeBtn.onclick = () => {
+                this.showLoginModal();
+                this.closeModals();
+            };
+            subscriptionStatus.style.display = 'none';
+            return;
+        }
+        
+        if (this.subscriptionStatus && this.subscriptionStatus.has_subscription) {
+            subscribeBtn.textContent = 'Active Subscription';
+            subscribeBtn.disabled = true;
+            subscribeBtn.classList.add('disabled');
+            subscriptionStatus.textContent = `Active until ${new Date(this.subscriptionStatus.end_date).toLocaleDateString()}`;
+            subscriptionStatus.className = 'subscription-status active';
+            subscriptionStatus.style.display = 'block';
+        } else {
+            subscribeBtn.textContent = 'Subscribe Now - $500/month';
+            subscribeBtn.disabled = false;
+            subscribeBtn.classList.remove('disabled');
+            subscriptionStatus.style.display = 'none';
+        }
+    },
+    
+    bindSubscriptionEvents() {
+        const subscribeBtn = document.getElementById('subscribeBtn');
+        if (subscribeBtn) {
+            subscribeBtn.addEventListener('click', () => this.handleSubscribe());
+        }
+    },
+    
+    async handleSubscribe() {
+        if (!this.isLoggedIn()) {
+            this.showLoginModal();
+            return;
+        }
+        
+        const subscribeBtn = document.getElementById('subscribeBtn');
+        
+        try {
+            if (subscribeBtn) {
+                subscribeBtn.disabled = true;
+                subscribeBtn.textContent = 'Processing...';
+            }
+            
+            const response = await fetch(`${this.API_BASE}/api/subscription/checkout`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.authToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to create checkout session');
+            }
+            
+            const data = await response.json();
+            
+            if (data.checkout_url) {
+                // Redirect to Stripe checkout
+                window.location.href = data.checkout_url;
+            } else {
+                throw new Error('No checkout URL received');
+            }
+        } catch (error) {
+            console.error('Error creating subscription checkout:', error);
+            this.showNotification('Failed to start subscription. Please try again.', 'error');
+            if (subscribeBtn) {
+                subscribeBtn.disabled = false;
+                subscribeBtn.textContent = 'Subscribe Now - $500/month';
+            }
+        }
+    },
+    
+    hasActiveSubscription() {
+        return this.subscriptionStatus && this.subscriptionStatus.has_subscription;
+    },
+    
+    showUpgradePrompt(feature: string) {
+        const message = feature === 'reading' 
+            ? 'A monthly subscription is required for comprehensive full readings. Snapshot readings are available for free!'
+            : 'A monthly subscription is required to use the chat feature. Subscribe to unlock unlimited conversations about your chart.';
+        
+        const upgradeHtml = `
+            <div style="padding: 2rem; text-align: center; max-width: 600px; margin: 0 auto;">
+                <h3 style="margin-bottom: 1rem; color: #1b6ca8;">Subscription Required</h3>
+                <p style="margin-bottom: 1.5rem; color: rgba(255, 255, 255, 0.8);">${message}</p>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <a href="#pricing-section" class="button primary" onclick="document.querySelector('.modal').style.display='none'">View Pricing</a>
+                    ${this.isLoggedIn() ? `<button class="button" onclick="AuthManager.handleSubscribe()">Subscribe Now</button>` : `<button class="button" onclick="AuthManager.showLoginModal(); document.querySelector('.modal').style.display='none'">Sign In</button>`}
+                </div>
+            </div>
+        `;
+        
+        // Create or update modal
+        let modal = document.querySelector('.upgrade-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.className = 'modal upgrade-modal';
+            modal.innerHTML = `
+                <div class="modal-content" style="max-width: 700px;">
+                    <span class="modal-close">&times;</span>
+                    ${upgradeHtml}
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Close on X click
+            modal.querySelector('.modal-close').addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+            
+            // Close on outside click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        } else {
+            modal.querySelector('.modal-content').innerHTML = `
+                <span class="modal-close">&times;</span>
+                ${upgradeHtml}
+            `;
+            modal.querySelector('.modal-close').addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+        }
+        
+        modal.style.display = 'flex';
     }
 };
 

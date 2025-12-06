@@ -1316,3 +1316,179 @@ pre {
         bottom: 1rem;
     }
 }
+
+/* ============================================================
+   Pricing Section Styles
+   ============================================================ */
+
+#pricing-section {
+    background-color: rgba(36, 41, 67, 0.5);
+    padding: 4rem 0;
+}
+
+.pricing-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.pricing-tier {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 2rem;
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pricing-tier:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.pricing-tier.featured {
+    border-color: #1b6ca8;
+    background: rgba(27, 108, 168, 0.1);
+    transform: scale(1.05);
+}
+
+.pricing-tier.featured:hover {
+    transform: scale(1.05) translateY(-5px);
+}
+
+.tier-badge {
+    position: absolute;
+    top: -12px;
+    right: 20px;
+    background: #1b6ca8;
+    color: white;
+    padding: 0.3rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.tier-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tier-header h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.8em;
+    text-transform: none;
+}
+
+.price {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #1b6ca8;
+}
+
+.price .period {
+    font-size: 0.4em;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: normal;
+}
+
+.free-tier .price {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.features-list {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0;
+}
+
+.features-list li {
+    padding: 0.8rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+}
+
+.features-list li:last-child {
+    border-bottom: none;
+}
+
+.features-list li i {
+    color: #1b6ca8;
+    margin-top: 0.2em;
+    flex-shrink: 0;
+}
+
+.features-list li strong {
+    color: #1b6ca8;
+}
+
+.tier-description {
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+    margin-top: 1.5rem;
+    line-height: 1.6;
+}
+
+.pricing-faq {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.pricing-faq h3 {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.pricing-faq details {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+.pricing-faq details summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0.5rem 0;
+}
+
+.pricing-faq details p {
+    margin-top: 1rem;
+    padding-left: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+}
+
+.subscription-status {
+    text-align: center;
+    padding: 0.8rem;
+    border-radius: 4px;
+}
+
+.subscription-status.active {
+    background: rgba(27, 108, 168, 0.2);
+    color: #1b6ca8;
+    border: 1px solid #1b6ca8;
+}
+
+.subscription-status.inactive {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+@media screen and (max-width: 980px) {
+    .pricing-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .pricing-tier.featured {
+        transform: scale(1);
+    }
+    
+    .pricing-tier.featured:hover {
+        transform: translateY(-5px);
+    }
+}

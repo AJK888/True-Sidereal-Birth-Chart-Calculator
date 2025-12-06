@@ -204,6 +204,16 @@ const AstrologyCalculator = {
                     console.error("Failed to parse error response as JSON:", text);
                     errorData = { detail: 'AI Reading service failed to respond correctly.' };
                 }
+                
+                // Check if it's a subscription error
+                if (readingRes.status === 402 && errorData.detail && errorData.detail.error === "Subscription required") {
+                    // Show upgrade prompt
+                    if (typeof AuthManager !== 'undefined' && AuthManager.showUpgradePrompt) {
+                        AuthManager.showUpgradePrompt('reading');
+                    }
+                    throw new Error('Subscription required for full readings');
+                }
+                
                 throw new Error(errorData.detail || 'AI Reading service failed.');
             }
 
@@ -272,9 +282,26 @@ const AstrologyCalculator = {
 				
 				// Check if there's an error message in the response
 				if (readingResult && readingResult.detail) {
-					this.geminiOutput.innerHTML = `<div style="padding: 15px; background-color: #fee; border-left: 4px solid #e53e3e; color: #c33;">
-						<strong>Error:</strong> ${readingResult.detail}
-					</div>`;
+					// Check if it's a subscription error
+					if (readingResult.detail.error === "Subscription required") {
+						this.geminiOutput.innerHTML = `
+							<div style="padding: 20px; background-color: rgba(27, 108, 168, 0.1); border-left: 4px solid #1b6ca8; margin-bottom: 15px;">
+								<h3 style="margin-top: 0; color: #1b6ca8;">Subscription Required</h3>
+								<p style="color: rgba(255, 255, 255, 0.9);">${readingResult.detail.message || 'A monthly subscription is required for comprehensive full readings.'}</p>
+								<p style="color: rgba(255, 255, 255, 0.7); margin-top: 1em;">Good news! You can still get <strong>unlimited free snapshot readings</strong> with your chart calculation. The snapshot provides quick insights into your core patterns.</p>
+								<div style="margin-top: 1.5em;">
+									<a href="#pricing-section" class="button primary" onclick="window.scrollTo({top: document.getElementById('pricing-section').offsetTop - 100, behavior: 'smooth'})">View Pricing & Subscribe</a>
+								</div>
+							</div>
+						`;
+						if (typeof AuthManager !== 'undefined' && AuthManager.showUpgradePrompt) {
+							AuthManager.showUpgradePrompt('reading');
+						}
+					} else {
+						this.geminiOutput.innerHTML = `<div style="padding: 15px; background-color: #fee; border-left: 4px solid #e53e3e; color: #c33;">
+							<strong>Error:</strong> ${readingResult.detail.message || readingResult.detail}
+						</div>`;
+					}
 				} else {
 					this.geminiOutput.innerHTML = "The AI reading could not be generated at this time.";
 				}
@@ -467,7 +494,22 @@ const AstrologyCalculator = {
 				console.error("Snapshot title element not found!");
 			}
 			if (this.snapshotOutput) {
-				this.snapshotOutput.innerHTML = String(chartData.snapshot_reading).replace(/\n/g, '<br>');
+				const snapshotText = String(chartData.snapshot_reading).replace(/\n/g, '<br>');
+				// Check if user has subscription (if AuthManager is available)
+				const hasSubscription = typeof AuthManager !== 'undefined' && AuthManager.hasActiveSubscription && AuthManager.hasActiveSubscription();
+				
+				if (!hasSubscription) {
+					// Add upgrade prompt after snapshot
+					this.snapshotOutput.innerHTML = snapshotText + `
+						<div style="margin-top: 2em; padding: 1.5em; background-color: rgba(27, 108, 168, 0.1); border-left: 4px solid #1b6ca8; border-radius: 4px;">
+							<h4 style="margin-top: 0; color: #1b6ca8;">Want a Deeper Analysis?</h4>
+							<p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 1em;">This is your free snapshot reading. Subscribe to get a comprehensive 15+ page full reading covering all aspects of your chart, plus unlimited chat conversations with our AI astrologer.</p>
+							<a href="#pricing-section" class="button primary" onclick="window.scrollTo({top: document.getElementById('pricing-section').offsetTop - 100, behavior: 'smooth'})">View Pricing & Subscribe</a>
+						</div>
+					`;
+				} else {
+					this.snapshotOutput.innerHTML = snapshotText;
+				}
 				console.log("Snapshot output populated");
 			} else {
 				console.error("Snapshot output element not found!");
