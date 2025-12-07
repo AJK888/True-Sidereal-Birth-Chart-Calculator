@@ -28,7 +28,9 @@ logger = logging.getLogger(__name__)
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-STRIPE_PRICE_ID_MONTHLY = os.getenv("STRIPE_PRICE_ID_MONTHLY")  # Monthly $88 subscription price ID
+# Stripe Price ID for the monthly $88 subscription
+# Get this from your Stripe Dashboard: Products > Your Product > Pricing > Price ID (starts with price_)
+STRIPE_PRICE_ID_MONTHLY = os.getenv("STRIPE_PRICE_ID_MONTHLY")
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://synthesisastrology.com")
 SUCCESS_URL = f"{FRONTEND_URL}/subscription-success?session_id={{CHECKOUT_SESSION_ID}}"
