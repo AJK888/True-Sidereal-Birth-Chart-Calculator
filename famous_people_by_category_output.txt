@@ -1,0 +1,300 @@
+======================================================================
+FAMOUS PEOPLE SCRAPER - BY CATEGORY
+======================================================================
+Started: 2025-12-10 15:53:15.745498
+OPENCAGE_KEY: SET
+======================================================================
+
+Current database count: 2254 people
+Found 2254 people already in database (will skip)
+
+======================================================================
+STEP 1: QUERYING BY OCCUPATION CATEGORY
+======================================================================
+
+Category: Actors
+Target: 1000 people
+Occupations: Q33999, Q10798782, Q10800557
+  ✓ Fetched 1786 people
+
+Category: Musicians
+Target: 1000 people
+Occupations: Q639669, Q177220, Q488205
+  ✓ Fetched 1961 people
+
+Category: Athletes
+Target: 800 people
+Occupations: Q2066131, Q937857, Q3665646, Q19204627
+  ✓ Fetched 1600 people
+
+Category: Politicians
+Target: 400 people
+Occupations: Q82955
+  ✓ Fetched 779 people
+
+Category: Influencers / creators
+Target: 500 people
+Occupations: Q3282637, Q17125263
+  ✓ Fetched 1000 people
+
+Category: Models
+Target: 200 people
+Occupations: Q4610556, Q3357567
+  ✓ Fetched 400 people
+
+Category: Authors / writers
+Target: 300 people
+Occupations: Q36180
+  ✓ Fetched 600 people
+
+Category: Entrepreneurs
+Target: 300 people
+Occupations: Q43845
+  ✓ Fetched 600 people
+
+Total fetched from Wikidata: 8726 people
+
+======================================================================
+STEP 2: FETCHING LABELS
+======================================================================
+Fetching labels for 11988 QIDs...
+✓ Fetched 11788 labels
+
+======================================================================
+STEP 3: PROCESSING AND SAVING TO DATABASE
+======================================================================
+Processing 5860 people with complete data after notability filters (enwiki + sitelinks >= 10)...
+   Progress: 50/5860 (processed: 41, skipped: 9, errors: 0)
+   ✓ Committed batch: 50 people saved to database
+   Progress: 100/5860 (processed: 86, skipped: 14, errors: 0)
+   ✓ Committed batch: 100 people saved to database
+   Progress: 150/5860 (processed: 131, skipped: 19, errors: 0)
+   ✓ Committed batch: 150 people saved to database
+   Progress: 200/5860 (processed: 179, skipped: 21, errors: 0)
+   ✓ Committed batch: 200 people saved to database
+   Progress: 250/5860 (processed: 228, skipped: 22, errors: 0)
+   ✓ Committed batch: 250 people saved to database
+   Progress: 300/5860 (processed: 276, skipped: 24, errors: 0)
+   ✓ Committed batch: 300 people saved to database
+   Progress: 350/5860 (processed: 324, skipped: 26, errors: 0)
+   ✓ Committed batch: 350 people saved to database
+   Progress: 400/5860 (processed: 374, skipped: 26, errors: 0)
+   ✓ Committed batch: 400 people saved to database
+   Progress: 450/5860 (processed: 423, skipped: 27, errors: 0)
+   ✓ Committed batch: 450 people saved to database
+   Progress: 500/5860 (processed: 472, skipped: 28, errors: 0)
+   ✓ Committed batch: 500 people saved to database
+   Progress: 550/5860 (processed: 521, skipped: 29, errors: 0)
+   ✓ Committed batch: 550 people saved to database
+   Progress: 600/5860 (processed: 571, skipped: 29, errors: 0)
+   ✓ Committed batch: 600 people saved to database
+   Progress: 650/5860 (processed: 620, skipped: 30, errors: 0)
+   ✓ Committed batch: 650 people saved to database
+   Progress: 700/5860 (processed: 670, skipped: 30, errors: 0)
+   ✓ Committed batch: 700 people saved to database
+   Progress: 750/5860 (processed: 719, skipped: 31, errors: 0)
+   ✓ Committed batch: 750 people saved to database
+   Progress: 800/5860 (processed: 769, skipped: 31, errors: 0)
+   ✓ Committed batch: 800 people saved to database
+   Progress: 850/5860 (processed: 817, skipped: 33, errors: 0)
+   ✓ Committed batch: 850 people saved to database
+   Progress: 900/5860 (processed: 867, skipped: 33, errors: 0)
+   ✓ Committed batch: 900 people saved to database
+   Progress: 950/5860 (processed: 917, skipped: 33, errors: 0)
+   ✓ Committed batch: 950 people saved to database
+   Progress: 1000/5860 (processed: 967, skipped: 33, errors: 0)
+   ✓ Committed batch: 1000 people saved to database
+   Progress: 1050/5860 (processed: 1016, skipped: 34, errors: 0)
+   ✓ Committed batch: 1050 people saved to database
+   Progress: 1100/5860 (processed: 1066, skipped: 34, errors: 0)
+   ✓ Committed batch: 1100 people saved to database
+   Progress: 1150/5860 (processed: 1116, skipped: 34, errors: 0)
+   ✓ Committed batch: 1150 people saved to database
+   Progress: 1200/5860 (processed: 1166, skipped: 34, errors: 0)
+   ✓ Committed batch: 1200 people saved to database
+   Progress: 1250/5860 (processed: 1216, skipped: 34, errors: 0)
+   Progress: 1300/5860 (processed: 1234, skipped: 66, errors: 0)
+   ✓ Committed batch: 1250 people saved to database
+   Progress: 1350/5860 (processed: 1263, skipped: 87, errors: 0)
+   Progress: 1400/5860 (processed: 1299, skipped: 101, errors: 0)
+   ✓ Committed batch: 1300 people saved to database
+   Progress: 1450/5860 (processed: 1337, skipped: 113, errors: 0)
+   ✓ Committed batch: 1350 people saved to database
+   Progress: 1500/5860 (processed: 1380, skipped: 120, errors: 0)
+   ✓ Committed batch: 1400 people saved to database
+   Progress: 1550/5860 (processed: 1421, skipped: 129, errors: 0)
+   ✓ Committed batch: 1450 people saved to database
+   Progress: 1600/5860 (processed: 1463, skipped: 137, errors: 0)
+   ✓ Committed batch: 1500 people saved to database
+   Progress: 1650/5860 (processed: 1506, skipped: 144, errors: 0)
+   ✓ Committed batch: 1550 people saved to database
+   Progress: 1700/5860 (processed: 1554, skipped: 146, errors: 0)
+   ✓ Committed batch: 1600 people saved to database
+   Progress: 1750/5860 (processed: 1602, skipped: 148, errors: 0)
+   Progress: 1800/5860 (processed: 1647, skipped: 153, errors: 0)
+   ✓ Committed batch: 1650 people saved to database
+   Progress: 1850/5860 (processed: 1693, skipped: 157, errors: 0)
+   ✓ Committed batch: 1700 people saved to database
+   Progress: 1900/5860 (processed: 1741, skipped: 159, errors: 0)
+   ✓ Committed batch: 1750 people saved to database
+   Progress: 1950/5860 (processed: 1784, skipped: 166, errors: 0)
+   ✓ Committed batch: 1800 people saved to database
+   Progress: 2000/5860 (processed: 1834, skipped: 166, errors: 0)
+   ✓ Committed batch: 1850 people saved to database
+   Progress: 2050/5860 (processed: 1880, skipped: 170, errors: 0)
+   ✓ Committed batch: 1900 people saved to database
+   Progress: 2100/5860 (processed: 1925, skipped: 175, errors: 0)
+   ✓ Committed batch: 1950 people saved to database
+   Progress: 2150/5860 (processed: 1971, skipped: 179, errors: 0)
+   ✓ Committed batch: 2000 people saved to database
+   Progress: 2200/5860 (processed: 2020, skipped: 180, errors: 0)
+   ✓ Committed batch: 2050 people saved to database
+   Progress: 2250/5860 (processed: 2067, skipped: 183, errors: 0)
+   ✓ Committed batch: 2100 people saved to database
+   Progress: 2300/5860 (processed: 2113, skipped: 187, errors: 0)
+   ✓ Committed batch: 2150 people saved to database
+   Progress: 2350/5860 (processed: 2158, skipped: 192, errors: 0)
+   ✓ Committed batch: 2200 people saved to database
+   Progress: 2400/5860 (processed: 2204, skipped: 196, errors: 0)
+   ✓ Committed batch: 2250 people saved to database
+   Progress: 2450/5860 (processed: 2251, skipped: 199, errors: 0)
+   Progress: 2500/5860 (processed: 2294, skipped: 206, errors: 0)
+   ✓ Committed batch: 2300 people saved to database
+   Progress: 2550/5860 (processed: 2340, skipped: 210, errors: 0)
+   ✓ Committed batch: 2350 people saved to database
+   Progress: 2600/5860 (processed: 2384, skipped: 216, errors: 0)
+   ✓ Committed batch: 2400 people saved to database
+   Progress: 2650/5860 (processed: 2434, skipped: 216, errors: 0)
+   ✓ Committed batch: 2450 people saved to database
+   Progress: 2700/5860 (processed: 2483, skipped: 217, errors: 0)
+   ✓ Committed batch: 2500 people saved to database
+   Progress: 2750/5860 (processed: 2532, skipped: 218, errors: 0)
+   ✓ Committed batch: 2550 people saved to database
+   Progress: 2800/5860 (processed: 2582, skipped: 218, errors: 0)
+   ✓ Committed batch: 2600 people saved to database
+   Progress: 2850/5860 (processed: 2632, skipped: 218, errors: 0)
+   ✓ Committed batch: 2650 people saved to database
+   Progress: 2900/5860 (processed: 2682, skipped: 218, errors: 0)
+   ✓ Committed batch: 2700 people saved to database
+   Progress: 2950/5860 (processed: 2732, skipped: 218, errors: 0)
+   ✓ Committed batch: 2750 people saved to database
+   Progress: 3000/5860 (processed: 2782, skipped: 218, errors: 0)
+   ✓ Committed batch: 2800 people saved to database
+   Progress: 3050/5860 (processed: 2832, skipped: 218, errors: 0)
+   ✓ Committed batch: 2850 people saved to database
+   Progress: 3100/5860 (processed: 2882, skipped: 218, errors: 0)
+   ✓ Committed batch: 2900 people saved to database
+   Progress: 3150/5860 (processed: 2932, skipped: 218, errors: 0)
+   ✓ Committed batch: 2950 people saved to database
+   Progress: 3200/5860 (processed: 2982, skipped: 218, errors: 0)
+   ✓ Committed batch: 3000 people saved to database
+   Progress: 3250/5860 (processed: 3032, skipped: 218, errors: 0)
+   ✓ Committed batch: 3050 people saved to database
+   Progress: 3300/5860 (processed: 3082, skipped: 218, errors: 0)
+   ✓ Committed batch: 3100 people saved to database
+   Progress: 3350/5860 (processed: 3132, skipped: 218, errors: 0)
+   ✓ Committed batch: 3150 people saved to database
+   Progress: 3400/5860 (processed: 3182, skipped: 218, errors: 0)
+   ✓ Committed batch: 3200 people saved to database
+   Progress: 3450/5860 (processed: 3232, skipped: 218, errors: 0)
+   ✓ Committed batch: 3250 people saved to database
+   Progress: 3500/5860 (processed: 3281, skipped: 219, errors: 0)
+   ✓ Committed batch: 3300 people saved to database
+   Progress: 3550/5860 (processed: 3304, skipped: 246, errors: 0)
+   Progress: 3600/5860 (processed: 3320, skipped: 280, errors: 0)
+   Progress: 3650/5860 (processed: 3342, skipped: 308, errors: 0)
+   ✓ Committed batch: 3350 people saved to database
+   Progress: 3700/5860 (processed: 3372, skipped: 328, errors: 0)
+   ✓ Committed batch: 3400 people saved to database
+   Progress: 3750/5860 (processed: 3404, skipped: 346, errors: 0)
+   Progress: 3800/5860 (processed: 3443, skipped: 357, errors: 0)
+   ✓ Committed batch: 3450 people saved to database
+   Progress: 3850/5860 (processed: 3484, skipped: 366, errors: 0)
+   ✓ Committed batch: 3500 people saved to database
+   Progress: 3900/5860 (processed: 3527, skipped: 373, errors: 0)
+   ✓ Committed batch: 3550 people saved to database
+   Progress: 3950/5860 (processed: 3571, skipped: 379, errors: 0)
+   ✓ Committed batch: 3600 people saved to database
+   Progress: 4000/5860 (processed: 3614, skipped: 386, errors: 0)
+   ✓ Committed batch: 3650 people saved to database
+   Progress: 4050/5860 (processed: 3657, skipped: 393, errors: 0)
+   ✓ Committed batch: 3700 people saved to database
+   Progress: 4100/5860 (processed: 3702, skipped: 398, errors: 0)
+   ✓ Committed batch: 3750 people saved to database
+   Progress: 4150/5860 (processed: 3750, skipped: 399, errors: 1)
+   Progress: 4200/5860 (processed: 3795, skipped: 404, errors: 1)
+   ✓ Committed batch: 3800 people saved to database
+   Progress: 4250/5860 (processed: 3840, skipped: 408, errors: 2)
+   ✓ Committed batch: 3850 people saved to database
+   Progress: 4300/5860 (processed: 3890, skipped: 408, errors: 2)
+   ✓ Committed batch: 3900 people saved to database
+   Progress: 4350/5860 (processed: 3939, skipped: 408, errors: 3)
+   ✓ Committed batch: 3950 people saved to database
+   Progress: 4400/5860 (processed: 3989, skipped: 408, errors: 3)
+   ✓ Committed batch: 4000 people saved to database
+   Progress: 4450/5860 (processed: 4039, skipped: 408, errors: 3)
+   ✓ Committed batch: 4050 people saved to database
+   Progress: 4500/5860 (processed: 4088, skipped: 409, errors: 3)
+   ✓ Committed batch: 4100 people saved to database
+   Progress: 4550/5860 (processed: 4138, skipped: 409, errors: 3)
+   ✓ Committed batch: 4150 people saved to database
+   Progress: 4600/5860 (processed: 4187, skipped: 410, errors: 3)
+   ✓ Committed batch: 4200 people saved to database
+   Progress: 4650/5860 (processed: 4236, skipped: 411, errors: 3)
+   ✓ Committed batch: 4250 people saved to database
+   Progress: 4700/5860 (processed: 4286, skipped: 411, errors: 3)
+   ✓ Committed batch: 4300 people saved to database
+   Progress: 4750/5860 (processed: 4334, skipped: 413, errors: 3)
+   ✓ Committed batch: 4350 people saved to database
+   Progress: 4800/5860 (processed: 4370, skipped: 427, errors: 3)
+   ✓ Committed batch: 4400 people saved to database
+   Progress: 4850/5860 (processed: 4400, skipped: 447, errors: 3)
+   Progress: 4900/5860 (processed: 4426, skipped: 471, errors: 3)
+   ✓ Committed batch: 4450 people saved to database
+   Progress: 4950/5860 (processed: 4468, skipped: 479, errors: 3)
+   ✓ Committed batch: 4500 people saved to database
+   Progress: 5000/5860 (processed: 4515, skipped: 482, errors: 3)
+   ✓ Committed batch: 4550 people saved to database
+   Progress: 5050/5860 (processed: 4552, skipped: 495, errors: 3)
+   Progress: 5100/5860 (processed: 4579, skipped: 518, errors: 3)
+   ✓ Committed batch: 4600 people saved to database
+   Progress: 5150/5860 (processed: 4606, skipped: 541, errors: 3)
+   Progress: 5200/5860 (processed: 4641, skipped: 556, errors: 3)
+   ✓ Committed batch: 4650 people saved to database
+   Progress: 5250/5860 (processed: 4679, skipped: 568, errors: 3)
+   ✓ Committed batch: 4700 people saved to database
+   Progress: 5300/5860 (processed: 4721, skipped: 576, errors: 3)
+   ✓ Committed batch: 4750 people saved to database
+   Progress: 5350/5860 (processed: 4763, skipped: 584, errors: 3)
+   ✓ Committed batch: 4800 people saved to database
+   Progress: 5400/5860 (processed: 4805, skipped: 592, errors: 3)
+   Progress: 5450/5860 (processed: 4843, skipped: 603, errors: 4)
+   ✓ Committed batch: 4850 people saved to database
+   Progress: 5500/5860 (processed: 4880, skipped: 616, errors: 4)
+   ✓ Committed batch: 4900 people saved to database
+   Progress: 5550/5860 (processed: 4903, skipped: 642, errors: 5)
+   Progress: 5600/5860 (processed: 4942, skipped: 652, errors: 6)
+   ✓ Committed batch: 4950 people saved to database
+   Progress: 5650/5860 (processed: 4984, skipped: 660, errors: 6)
+   ✓ Committed batch: 5000 people saved to database
+   Progress: 5700/5860 (processed: 5032, skipped: 662, errors: 6)
+   ✓ Committed batch: 5050 people saved to database
+   Progress: 5750/5860 (processed: 5078, skipped: 666, errors: 6)
+   ✓ Committed batch: 5100 people saved to database
+   Progress: 5800/5860 (processed: 5125, skipped: 669, errors: 6)
+   ✓ Committed batch: 5150 people saved to database
+   Progress: 5850/5860 (processed: 5173, skipped: 671, errors: 6)
+
+   ✓ Final commit: All 5183 people saved to database
+
+======================================================================
+PROCESS COMPLETE!
+======================================================================
+Fetched (raw): 8726 people from Wikidata
+After notability filter: 5860 candidates
+Calculated & Saved: 5183 people
+Skipped (already in DB): 671
+Errors: 6
+Final database count: 7437 people
+Finished: 2025-12-10 16:25:59.515198
+======================================================================

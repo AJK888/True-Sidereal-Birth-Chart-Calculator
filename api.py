@@ -2291,23 +2291,80 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
             ephe_path = BASE_DIR
         swe.set_ephe_path(ephe_path) 
 
+        # Geocoding with fallback: Try OpenCage first, then Nominatim
+        lat, lng, timezone_name = None, None, None
+        
+        # Try OpenCage first (if key is available)
         opencage_key = os.getenv("OPENCAGE_KEY")
-        if not opencage_key:
-            raise HTTPException(status_code=500, detail="Server is missing the geocoding API key.")
+        if opencage_key:
+            try:
+                geo_url = f"https://api.opencagedata.com/geocode/v1/json?q={data.location}&key={opencage_key}"
+                response = requests.get(geo_url, timeout=10)
+                
+                # Check for 402 Payment Required - don't fail, just fall back
+                if response.status_code == 402:
+                    logger.warning("OpenCage API returned 402 Payment Required. Falling back to Nominatim.")
+                else:
+                    response.raise_for_status()
+                    geo_res = response.json()
+                    results = geo_res.get("results", [])
+                    if results:
+                        result = results[0]
+                        geometry = result.get("geometry", {})
+                        annotations = result.get("annotations", {}).get("timezone", {})
+                        lat = geometry.get("lat")
+                        lng = geometry.get("lng")
+                        timezone_name = annotations.get("name")
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"OpenCage geocoding failed: {e}. Falling back to Nominatim.")
         
-        geo_url = f"https://api.opencagedata.com/geocode/v1/json?q={data.location}&key={opencage_key}"
-        response = requests.get(geo_url, timeout=10)
-        response.raise_for_status()
-        geo_res = response.json()
-
-        results = geo_res.get("results", [])
-        if not results:
-             raise HTTPException(status_code=400, detail=f"Could not find location data for '{data.location}'. Please be more specific (e.g., City, State, Country).")
+        # Fallback to Nominatim if OpenCage failed or returned 402
+        if not lat or not lng:
+            try:
+                nominatim_url = "https://nominatim.openstreetmap.org/search"
+                params = {
+                    "q": data.location,
+                    "format": "json",
+                    "limit": 1
+                }
+                headers = {
+                    "User-Agent": "SynthesisAstrology/1.0 (contact@example.com)"  # Required by Nominatim
+                }
+                response = requests.get(nominatim_url, params=params, headers=headers, timeout=10)
+                response.raise_for_status()
+                nominatim_data = response.json()
+                
+                if nominatim_data and len(nominatim_data) > 0:
+                    result_data = nominatim_data[0]
+                    lat = float(result_data.get("lat", 0))
+                    lng = float(result_data.get("lon", 0))
+                    
+                    # Nominatim doesn't provide timezone directly, so we'll use a timezone lookup
+                    # Use a free timezone API
+                    if lat and lng:
+                        try:
+                            # Use timezone lookup API
+                            tz_url = f"https://timeapi.io/api/TimeZone/coordinate?latitude={lat}&longitude={lng}"
+                            tz_response = requests.get(tz_url, timeout=5)
+                            if tz_response.status_code == 200:
+                                tz_data = tz_response.json()
+                                timezone_name = tz_data.get("timeZone", "UTC")
+                            else:
+                                # Fallback: use UTC and let pendulum handle it
+                                timezone_name = "UTC"
+                        except Exception as tz_e:
+                            logger.warning(f"Timezone lookup failed: {tz_e}. Using UTC.")
+                            timezone_name = "UTC"
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Nominatim geocoding failed: {e}")
+                raise HTTPException(status_code=400, detail=f"Could not find location data for '{data.location}'. Please be more specific (e.g., City, State, Country).")
         
-        result = results[0]
-        geometry = result.get("geometry", {})
-        annotations = result.get("annotations", {}).get("timezone", {})
-        lat, lng, timezone_name = geometry.get("lat"), geometry.get("lng"), annotations.get("name")
+        # Final validation
+        if not lat or not lng:
+            raise HTTPException(status_code=400, detail=f"Could not find location data for '{data.location}'. Please be more specific (e.g., City, State, Country).")
+        
+        if not timezone_name:
+            timezone_name = "UTC"  # Fallback to UTC
 
         if not all([isinstance(lat, (int, float)), isinstance(lng, (int, float)), timezone_name]):
              logger.error(f"Incomplete location data retrieved: lat={lat}, lng={lng}, tz={timezone_name}")

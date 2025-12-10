@@ -1,0 +1,2207 @@
+FAMOUS PEOPLE IN DATABASE: 2204 total
+======================================================================
+
+1. 0xDEAFBEEF
+2. A. C. Johnson
+3. A. K. Hanson
+4. A. K. Warder
+5. A. L. Westgard
+6. A. M. Opsahl
+7. Aaron Hadlow
+8. Aaron Straup Cope
+9. Achard of Saint-Victor
+10. Achini Perera
+11. Adachi Kinnosuke
+12. Adam Brookes
+13. Adam Ryen
+14. Addy Luo
+15. Adolf Beck case
+16. Adrian Alphona
+17. Adrian Smiseth Sejersted
+18. Adrian Ugelvik
+19. Adrian Wan
+20. Adrien Gilbert
+21. Agnar Christensen
+22. Ai Sano
+23. Ai Shishime
+24. Aidan Wojtak-Hissong
+25. Aiko Fujitani
+26. Aizawa Mina
+27. Akari Uchida
+28. Akemi Iwata
+29. Akemi Murakami
+30. Aki'umi Okabe
+31. Akie Namiki
+32. Akihiko Matsui
+33. Akihiko Yoshida
+34. Akihiro Nagakawa
+35. Akiko Hayakawa
+36. Akiko Yoshikawa
+37. Akinori Nakanishi
+38. Akinori Yonezawa
+39. Akio Kanemoto
+40. Akio Matsuyama
+41. Akira Kasai
+42. Akira Kibe
+43. Akira Oda
+44. Akira Ohashi
+45. Akira Uchibori
+46. Aksel Refstad
+47. Alan Farrington
+48. Alan Hodgkinson
+49. Alan Murphy
+50. Alan Thomas
+51. Alan Wace
+52. Albert Einstein
+53. Albert Harrison Van Deusen
+54. AldosWorld TV
+55. Alec Brown
+56. Alessandra De Rossi
+57. Alex Campbell
+58. Alex Kinneberg
+59. Alexa Torrington
+60. Alexander Arvizu
+61. Alexander Bertram
+62. Alexander Ruud Tveter
+63. Alexandra Joner
+64. Alfred Hallett
+65. Alfred W. Lewis
+66. Alfred W. Simon
+67. Alice Glenday
+68. Allan Irving
+69. Allison C. Daley
+70. Alvin Hudson
+71. Amalie Eikeland
+72. Amanda de Cadenet
+73. Amarpaul Kaur
+74. Amelia Jane Le Mesurier
+75. Ami Ayuha
+76. Amina Toyoda
+77. Amélie Montplaisir
+78. Anas Farah Ali
+79. Anders Emil Nedrebø
+80. Anders J. Hemstad
+81. Anders Murud
+82. Andras Guttormsson
+83. Andrea Dupont
+84. Andrea Jerom
+85. Andreas Apergis
+86. Andrew A. Brown
+87. Andrew Allen
+88. Andrew Bye
+89. Andrew Leslie
+90. Andrew M. Waldron
+91. Andrew Skeen
+92. Andrew Tharalson
+93. Andrew Thompson
+94. Andrew V. Stoltenberg
+95. Andrew Wilson
+96. Andrew Wood
+97. Andrew of Saint Victor
+98. Andrews
+99. André Gingras
+100. André Veilleux
+101. André Øvredal
+102. Andy Drzewiecki
+103. Andy Gorski
+104. Andy Linden
+105. Andy Mikita
+106. Andy Stevens
+107. Aneesa O'Brien
+108. Anette Hovind Johansen
+109. Angela Richards
+110. Angie Ng
+111. Anita Blom
+112. Ankokuji Ekei
+113. Ann Mulvale
+114. Anna Fraser
+115. Anna Kami
+116. Anna Löwenstein
+117. Anna Mills Johnston
+118. Anna Minton
+119. Anna Pinnock
+120. Anna Tran
+121. Anne Brandon, Baroness Grey of Powys
+122. Anne Cecil, Countess of Oxford
+123. Anne Hampson
+124. Anne Ingstadbjørg
+125. Anne Lande Peters
+126. Anne Mather
+127. Anne Skovgaard
+128. Anne Wharton
+129. Annie Chapelier
+130. Annie Louisa Walker
+131. Annie M. Briggs
+132. Annie Mottram Craig Batten
+133. Annie Winquist
+134. Anouk Purnelle-Faniel
+135. Anthony Ashley-Cooper, 8th Earl of Shaftesbury
+136. Anthony Ashley-Cooper, 9th Earl of Shaftesbury
+137. Anthony Browne, 1st Viscount Montagu
+138. Anthony Cooke
+139. Anthony Howard
+140. Anthony James
+141. Anthony Maria Browne, 2nd Viscount Montagu
+142. Anthony Morley
+143. Anthony Pagden
+144. Anthony Smith
+145. Anton Borgen
+146. Anton Olsen
+147. Anton Salvesen
+148. Anya Major
+149. Aoi
+150. Aoi Takayama
+151. Apple Brook
+152. Archibald Bell Jr.
+153. Archibald Hay, 13th Earl of Kinnoull
+154. Arihiro Sentoku
+155. Arima Naozumi
+156. Arisa Fujii
+157. Arne Arneson
+158. Arne Fjellberg
+159. Arne Post
+160. Arne Vidar Røed
+161. Arne Åse
+162. Arnie Lerum
+163. Arnljot Nyaas
+164. Arnold Kirke-Smith
+165. Arnold Morgan
+166. Arnt Ove Grønbech
+167. Arron Fray
+168. Arthur B. English
+169. Arthur Beard
+170. Arthur Crooks
+171. Arthur D'Orr LePan
+172. Arthur Edwin Shelton
+173. Arthur Guest
+174. Arthur H. Snell
+175. Arthur Henry Gooden
+176. Arthur John
+177. Arthur Letts
+178. Arthur Marriott
+179. Arthur Parkes
+180. Arthur Royle
+181. Arthur Sidney Olliff
+182. Arve Mokkelbost
+183. Arvid Aarsnes
+184. Arvid Knutsen
+185. Asagi Maeda
+186. Asajiro Noda
+187. Ashley-Paul Robinson
+188. Astrid Johannessen
+189. Astrid Øvstedal
+190. Astrid Øyre Slind
+191. Asuka Ōta
+192. Athena Lai
+193. Atsushi Hirano
+194. Atsushi Itō
+195. Atsushi Sakate
+196. Atsuto Iida
+197. Aud Johansen
+198. Audrey Lemieux
+199. Augustus de Bourbel
+200. Auisle
+201. Aurora Robson
+202. Austin Denham
+203. Auðunn illskælda
+204. Aveline Kushi
+205. Aya Fujishiro
+206. Ayaka Matsui
+207. Ayaka Takahashi
+208. Ayaka Takano
+209. Ayako Miyazaki
+210. Ayako Otowa
+211. Ayame Ikehata
+212. Ayane Kozasa
+213. Ayano Sato
+214. Ayano Shimizu
+215. Ayumi Iwata
+216. Azusa Oto
+217. Babette Stephens
+218. Bandō Kakitsu I
+219. Bansuke Kasamatsu
+220. Barak Norman
+221. Barbara Cleverly
+222. Barbara D'Alterio
+223. Barbara J Frisken
+224. Barbara Sherwood Lollar
+225. Barri Jones
+226. Barrie Martin
+227. Barry French
+228. Barry Gallagher
+229. Barry Jenkins
+230. Barry Pederson
+231. Barry Quin
+232. Barry Whitbread
+233. Basil Feilding, 4th Earl of Denbigh
+234. Basil H. Johnston
+235. Belinda Bauer
+236. Ben Breeze
+237. Ben Gledhill
+238. Ben Mazowita
+239. Ben Richards
+240. Ben Wainwright
+241. Ben Wells
+242. Benedict Swingate Calvert
+243. Benedicte Håland
+244. Benjamin Cox
+245. Benjamin Gonson
+246. Benjamin Hart
+247. Benjamin Lumley
+248. Bennett Asleson
+249. Bent Åserud
+250. Bente Nordby
+251. Berger Loman
+252. Bernard Martin
+253. Bernt Gilbertson
+254. Bert Assirati
+255. Bertram Clements
+256. Bertram Lenox Simpson
+257. Bertram William Henry Poole
+258. Betty Chandler
+259. Beverly Hotsprings
+260. Bhakti Vikasha Swami
+261. Bill Keenan
+262. Bill Schelter
+263. Billy Bishop
+264. Biosphere
+265. Birgitte Victoria Svendsen
+266. Bjarte Birkeland
+267. Bjørn Farmann
+268. Bjørn Martin Kristensen
+269. Bob Chaperon
+270. Bob Keen
+271. Bob Laycock
+272. Bob Woods
+273. Brad Taylor
+274. Brad Zapisocki
+275. Bre Blair
+276. Bree Wasylenko
+277. Brendan Heard
+278. Brian McGregor
+279. Brianne Desa
+280. Bruce K. Alexander
+281. Bruno Hébert
+282. Buddy Banks
+283. Bue Fjermeros
+284. Burchard I
+285. Byejack
+286. Bård Magne Pedersen
+287. C. Roger Myers
+288. Cal Brunker
+289. Cameron Anderson
+290. Cara Horgan
+291. Carl Berger
+292. Carl Ingomar Warnecke
+293. Carl Jonnevold
+294. Carl Marotte
+295. Carl Morey
+296. Carl-Michael Eide
+297. Carla Bradstock
+298. Carlo Rinomato
+299. Carmelo Rago
+300. Caroline Bliss
+301. Caroline Lavelle
+302. Carrie Kei Heim
+303. Carsen Campbell
+304. Carsten Thomassen
+305. Cary Kaplan
+306. Cassius Crieghtney
+307. Catalina Yue
+308. Catherine Wilkin
+309. Cecilie Mosli
+310. Cecilie Redisch Kvamme
+311. Cecilie Tenfjord-Toftby
+312. Chad Silver
+313. Charles Barker Ross Turner
+314. Charles H. Lench
+315. Charles H. Shelby
+316. Charles Hayes
+317. Charles Henry Ludovic Sharman
+318. Charles Levinson
+319. Charles M. Reese
+320. Charles Owsley
+321. Charles S. Thompson
+322. Charles Slade
+323. Charlotte Alexandra
+324. Chester Elton
+325. Chie Sato
+326. Chieko Hase
+327. Chieko Homma
+328. Chieko Katsumata
+329. Chimere Omeze
+330. Chisato Saito
+331. Chon Sang-pyong
+332. Chris Alexander
+333. Chris Collins
+334. Chris Loranger
+335. Chris Urmson
+336. Chrissie Zullo
+337. Christian Ahlness
+338. Christian Lombardo
+339. Christian Tessier
+340. Christine Colombo Nilsen
+341. Christine Firkins
+342. Christine McGlade
+343. Christine Willes
+344. Christopher Amundson
+345. Christopher Ferrie
+346. Christopher French
+347. Christopher G. Moore
+348. Christopher Jayden Dan
+349. Christopher Knights
+350. Christopher Simmons
+351. Chōnan Toshie
+352. Claire Corlett
+353. Clara Furse
+354. Clark Donnelly
+355. Clark W. Thompson
+356. Claude Soucie
+357. Claudie Blakley
+358. Clayton Ernest Beattie
+359. Clayton Patterson
+360. Clayton Worbeck
+361. Clement Twizere Buhake
+362. Clive Thompson
+363. Clyde Klotz
+364. Colin A. Ross
+365. Colin Francis MacKinnon
+366. Conrad Abbott
+367. Cord Spero
+368. Cordia Tsoi
+369. Corey Vanular
+370. Cosmo Fujiyama
+371. Craig Clow
+372. Crispian Sallis
+373. Curtis Slater
+374. Custom
+375. Cynewulf
+376. D.C. Curtis
+377. Dafna Linzer
+378. Dagmar Midcap
+379. Dai Satō
+380. Daihachi Oguchi
+381. Daiji Takahashi
+382. Daini no Sanmi
+383. Daisuke Moriyama
+384. Daisuke Toyama
+385. Daisy May Pratt Erd
+386. Dale Frail
+387. Dallas Fallscheer
+388. Damian Lee
+389. Damian Wilson
+390. Damo Suzuki
+391. Dan Bejar
+392. Dan Feiten
+393. Dan Johnson
+394. Dan Tucker
+395. Dana Bally
+396. Daniel Burka
+397. Daniel Goldberg
+398. Daniel McMahon
+399. Daniel Myrmæl Helgestad
+400. Daniel Northcott
+401. Daniel Petrie
+402. Daniel Roche
+403. Daniel Wesley
+404. Danley Johnson
+405. Danny Rimer
+406. Dany Gelinas
+407. Darcy Downs
+408. Darrel R. Falk
+409. Darryl Samson
+410. Date Terumune
+411. Dave Padden
+412. Dave Shea
+413. David Arthur Brodie
+414. David Belhumeur
+415. David Collier
+416. David E. Campbell
+417. David Evans
+418. David G. Lowe
+419. David Gell
+420. David J. Fox
+421. David James Elliott
+422. David Karwacki
+423. David Kristian
+424. David Lloyd MacIntosh
+425. David Mattingly
+426. David Rayside
+427. David Reale
+428. David Rigby
+429. David Ruan
+430. David Secter
+431. David Stetch
+432. David Wellington
+433. David Wilson
+434. David X. Marks
+435. Davis Idin Pareli Johansen
+436. Deeana Ou
+437. Delamere Francis McCloskey
+438. Demore Barnes
+439. Dennis E. Taylor
+440. Denny Wright
+441. Derek Fell
+442. Derrin Schlesinger
+443. Despo Sophocleous
+444. Destructhor
+445. Detmar Blow
+446. Diana Buttu
+447. Diana Hamilton
+448. Diana Schutz
+449. Diane Beamer
+450. Dick Groves
+451. Dick Hillis
+452. Dick Parry
+453. Dione Lucas
+454. Disappearance of Brandon Crisp
+455. Ditlev Traasdahl Madsen
+456. Dixon Edward Hoste
+457. Doc McKinney
+458. Dominic Filiou
+459. Dominic John
+460. Dominic Mafham
+461. Dominic Rowan
+462. Don Brown
+463. Don Ferguson
+464. Don Richardson
+465. Donald Cotton
+466. Donald Howarth
+467. Donald Moggridge
+468. Donald Stringer
+469. Donald Walter Clarke
+470. Donald Welbourn
+471. Donald Wickware Brown
+472. Donna Carvalhal
+473. Donna Smith
+474. Dora Isabel Ridout Hood
+475. Doris Jones
+476. Dorise Nielsen
+477. Dorothea Palmer
+478. Dorothy Anne Catherine Kennedy
+479. Dorothy Harrison
+480. Dorothy Rungeling
+481. Doug Cox
+482. Dougie Brimson
+483. Douglas Camfield
+484. Douglas E. Cowan
+485. Douglas E. Gerber
+486. Douglas H. Pimlott
+487. Douglas K. Adie
+488. Douglas Simmonds
+489. Drae Glover
+490. Dudley Hamilton-Miller
+491. Duncan Davidson
+492. Duncan Honeybourne
+493. Duncan R. Derry
+494. Dunn
+495. Ealdgyth
+496. Ed Cogswell
+497. Ed Moloney
+498. Eddie Spicer
+499. Edgar Dell
+500. Edgar Whittaker
+501. Edmund Carey
+502. Edmund Chapman
+503. Edmund Gonville
+504. Edmund Scarborough
+505. Edmund Simpson
+506. Edmund Verney
+507. Edward Barbeau
+508. Edward Barnett
+509. Edward Barrett
+510. Edward E. Simbalist
+511. Edward Frederick Knight
+512. Edward Gerald Butler
+513. Edward Glen
+514. Edward Lee
+515. Edward Major
+516. Edward Montagu
+517. Edward Saatchi
+518. Edward Victor
+519. Edwin Borsheim
+520. Egil Glørud
+521. Eiiti Wada
+522. Eiji Takigawa
+523. Eiji Yoshikawa
+524. Einar Thambarskelfir
+525. Eirik Kurland Olsen
+526. Elana Binysh
+527. Eleanor Jane Milner-Gulland
+528. Eleazer Oswald
+529. Elias Bradshaw
+530. Elin Rosseland
+531. Elisa Kurylowicz
+532. Elisabeth Terland
+533. Elizabeth Claypole
+534. Elizabeth Danvers
+535. Elizabeth Knollys
+536. Elling K. Roverud
+537. Elly Christiansson
+538. Elphege A. M. Gendreau
+539. Elspeth Chisholm
+540. Elton Tsang
+541. Elven Webb
+542. Elza Kephart
+543. Emiko Kubo
+544. Emil Silvestru
+545. Emilie Grace Lavoie
+546. Emilie Nautnes
+547. Emilie Woldvik
+548. Emily Maitlis
+549. Emiri Ikeido
+550. Emma Iversen
+551. Emma Stølen Godø
+552. Eoban
+553. Eri Nakamura
+554. Eric Bell
+555. Eric II of Norway
+556. Eric McLuhan
+557. Erick O. Erickson
+558. Erik Briand Clausen
+559. Erik Madsen
+560. Erik Schatzker
+561. Erika Lundmoen
+562. Erna Takazawa
+563. Ernest Archer
+564. Ernest Browne
+565. Ernest Hosler
+566. Ernest M. McSorley
+567. Ernest Mastromatteo
+568. Ernest Sirluck
+569. Ernest T. Hargrove
+570. Ernest William Titterton
+571. Eshin Nishimura
+572. Espen Arvesen
+573. Espen Harald Bjerke
+574. Espen Schjerven
+575. Ethan Beckford
+576. Etsuo Suzuki
+577. Etsushi Furukawa
+578. Eugene Cheung
+579. Eva Fodor Rønning
+580. Evan Guthrie
+581. Evan McEachran
+582. Eystein Halfdansson
+583. Eystein I of Norway
+584. Eysteinn Erlendsson
+585. F. H. A. Aalen
+586. Farah Nosh
+587. Faustin S. Delany
+588. Fenriz
+589. Filip Møller Delaveris
+590. Fleinn Hjörsson
+591. Florence Casler
+592. Francis Newman
+593. Francois Xavier Tetrault
+594. Frank Ciaccia
+595. Frank Dusy
+596. Frank Erickson
+597. Frank S. Balster
+598. Fred Henderson
+599. Fred Warburton
+600. Frederick Arthur Wansbrough
+601. Frederick Bedford
+602. Frederick Broome
+603. Frederick David A. Hartwick
+604. Frederick Tuckett
+605. Fridtjov Såheim
+606. Frode Hegland
+607. Frode Moen
+608. Frøydis Armand
+609. Fujiko Imajishi
+610. Fujiwara no Chōshi
+611. Fujiwara no Saneyori
+612. Fujiwara no Shunshi
+613. Fukaya Tadamasa
+614. Fulvio Cecere
+615. Fumiki Taguchi
+616. Fumio Usami
+617. G. Peter Lepage
+618. G. Peter Richardson
+619. Gabriel Blanchard
+620. Gabrielle Lie
+621. Gaisi Takeuti
+622. Galen Strawson
+623. Gard Myhre
+624. Garo Aida
+625. Gary Gibbons
+626. Gayle Olinekova
+627. Ge Yongfei
+628. Geir Hasund
+629. Geir Ivarsøy
+630. Gen Murata
+631. Geo Omori
+632. Geoff Keighley
+633. Geoff Kinrade
+634. Geoff Ryman
+635. Geoff Tunnicliffe
+636. Geoffrey Darby
+637. Geoffrey Gordon
+638. George Brucks
+639. George Felix
+640. George Forbes
+641. George H. Johnson
+642. George H. Sutton
+643. George Kuwa
+644. George Laurence
+645. George Low
+646. George Marble Bartlett
+647. George McCowan
+648. George Neil Stewart
+649. George Ripley
+650. Gerald Butts
+651. Gerald Edward Blake
+652. Germaine Warkentin
+653. Gerry Argento
+654. Gerry Davis
+655. Gihon
+656. Giichi Nishihara
+657. Gilbert E. Strandemo
+658. Gilles DeTremauden
+659. Ginjirō Toki
+660. Gishūmon-in no Tango
+661. Glenn Skram
+662. Go-Fukakusa-in no Nijō
+663. Go-Saga-in chūnagon no tenji
+664. Go-Toba In Kunai-kyō
+665. Go-Toba-in no Shimotsuke
+666. Gordon Edwards
+667. Gordon Fawcett Hamby
+668. Gordon Hoare
+669. Gordon Mulholland
+670. Gordon Tanner
+671. Graeme Manson
+672. Grant Connors
+673. Grant McCracken
+674. Greg Ip
+675. Greg Weber
+676. Gregory Despres
+677. Gry Østvik
+678. Grímur Kamban
+679. Gule Sheikh
+680. Gunnar Aase
+681. Gunnar Tandberg
+682. Gunnbjörn Ulfsson
+683. Gunnhildr Sveinsdóttir
+684. Gus van Go
+685. Gusta Marie Rian
+686. Gustav C. Dahl
+687. Guy Adams
+688. Guy Bellis
+689. Guy Burt
+690. Guy Hendrix Dyas
+691. Guy Mutton
+692. Gwynneth Heaton
+693. Gyda Enger
+694. Gyuri Sarossy
+695. Gérard Moss
+696. H. R. Bankart
+697. H. T. Koshiba
+698. Haakon Ericsson
+699. Haakon II of Norway
+700. Habeeba Barber
+701. Hachijō-in no Takakura
+702. Hadar Anter
+703. Halfdan Hvitbeinn
+704. Halvor L. Shirley
+705. Hamid Algar
+706. Hamilton Douglas Halyburton
+707. Hana Hanasaki
+708. Hanne Staff
+709. Hans Gunvalson
+710. Hans Jorgenson
+711. Hans M. Aune
+712. Hans Peter Bjorge
+713. Hans Skotner
+714. Hans T. Hille
+715. Hanson Juelson
+716. Harald Greycloak
+717. Harald Paalgard
+718. Harold Goodwin
+719. Harold Troper
+720. Harry Guntrip
+721. Harry Kinzi Shigeta
+722. Harry L. Gill
+723. Harry Lien
+724. Harry Ridgway
+725. Harry Strachan
+726. Haru Aoki
+727. Haruya Sakamoto
+728. Hase Yoshio
+729. Hashime Murayama
+730. Hat
+731. Hatefulest
+732. Hatomi Nagaoka
+733. Hayashi Misao
+734. Hayashizaki Shigenobu
+735. Hayato Date
+736. Hayato Okamoto
+737. Heather Bell
+738. Heather McKillop
+739. Heidi Ellingsen
+740. Helen Rost Martins
+741. Helena Koop Plett
+742. Helge Brendryen
+743. Henning Olsen
+744. Henri Boivin
+745. Henrik Christiansen
+746. Henry Drummond Wolff
+747. Henry G. Emmons
+748. Henry Hare Dugmore
+749. Henry Harrison Madill
+750. Henry Loucks
+751. Henry Montor
+752. Henry Roy
+753. Henry Stull
+754. Henry Williams
+755. Herb Sutter
+756. Herbert Frederick Moseley
+757. Herbert Hartnoll Bishop
+758. Herman Solberg Nilsen
+759. Hidehiro Miyashita
+760. Hideki Matsuki
+761. Hideo Sakai
+762. Hideroku Hara
+763. Hideyuki Miyao
+764. Hikalu Clarke
+765. Hikari Azusa
+766. Hikaru Saeki
+767. Hillel Steiner
+768. Himeno Sakatsume
+769. Hinami Yumesaki
+770. Hinaya Ryuho
+771. Hiroaki Kunitake
+772. Hiroaki Shimizu
+773. Hiroaki Umeda
+774. Hiroaki Yoshioka
+775. Hirofumi Koga
+776. Hiroka Matsumoto
+777. Hirokazu Yasuhara
+778. Hiroki Kita
+779. Hiroki Kotani
+780. Hiroki Nonogaki
+781. Hiroko Furumi
+782. Hiroko Kuwata
+783. Hiroko Minami
+784. Hiroko Nakamoto
+785. Hiroko Sano
+786. Hiromu Jin
+787. Hirose Heijirō
+788. Hiroshi Hamaguchi
+789. Hiroshi Hirano
+790. Hiroshi Imura
+791. Hiroshi Ishikawa
+792. Hiroshi Kawamoto
+793. Hiroshi Miyaji
+794. Hiroshi Ninomiya
+795. Hiroshi Toda
+796. Hiroshi Tsuruya
+797. Hiroshi Umemura
+798. Hiroyuki Kanno
+799. Hiroyuki Kishi
+800. Hiroyuki Kojima
+801. Hiroyuki Takahashi
+802. Hirozumi Satō
+803. Hisako Hibi
+804. Hisataka Okamoto
+805. Hishida Shunsō
+806. Hitoshi Kawashima
+807. Hjalmar Andresen
+808. Hjörleifr Hróðmarsson
+809. Holly Boyd
+810. Hong Sin-cha
+811. Honinbo Chihaku
+812. Honinbo Genjo
+813. Honinbo Hakugen
+814. Honinbo Shuetsu
+815. Honinbo Shuhaku
+816. Honinbō Retsugen
+817. Howard M. Resh
+818. Howard Sounes
+819. Hrolfe Ziegler
+820. Hugh Mingay
+821. Hugh Pollard
+822. Hugh Simon
+823. Hugh Syme
+824. Hugh le Despenser, 1st Earl of Winchester
+825. Hulda Crooks
+826. Humiaki Huzita
+827. Huntly D. Millar
+828. Husein Madhavji
+829. Hyozo Omori
+830. Håvard Nybø
+831. Hōjō Ujimasa
+832. Hōzō Nakajima
+833. I no Manari
+834. Iain Baird
+835. Ian Macdonald Drummond
+836. Ida Tsang Pui Ling
+837. Ido Reizan
+838. Ikuo Takahara
+839. Iliana Fox
+840. India Grey
+841. Inge I of Norway
+842. Ingeborg Eriksdottir of Norway
+843. Ingeborg of Norway
+844. Ingibiorg Finnsdottir
+845. Ingrid Meyer
+846. Ingrid Stairs
+847. Ingvar Stadheim
+848. Inoue Genan Inseki
+849. Inpumon-in no Taifu
+850. InvaderVie
+851. Inès Takeya
+852. Irvin Studin
+853. Irving Heward Cameron
+854. Isaac Tortola
+855. Isabella de Fortibus, Countess of Devon
+856. Isabelle Franca
+857. Isaiah L. Kenen
+858. Isaiah Peck
+859. Ise no Taifu
+860. Ishikawa Akimitsu
+861. Ivar Nordkild
+862. Izumi Aki
+863. J. A Arneson
+864. J. W. Wilson
+865. J.K. Chambers
+866. Jack Da Silva
+867. Jack Lannan
+868. Jack Wetherall
+869. Jacob Bjerknes
+870. Jacobo Kyushei Tomonaga
+871. Jade Vyfhuis
+872. Jake Goodman
+873. Jake Manley
+874. Jakob Bagge
+875. Jakob Tromsdal
+876. James Anderson
+877. James Arnold Dauphinee
+878. James Boyle Uniacke
+879. James Cumming
+880. James E. Anderson
+881. James Flannigan
+882. James Forrester
+883. James G. Ross
+884. James Masterson
+885. James Moffat
+886. James Munro
+887. James Wyatt
+888. Jamie Shannon
+889. Jan Olav Aaseth
+890. Jan Pande-Rolfsen
+891. Jan Riise
+892. Janelle Liu
+893. Janet Helmick Beavin
+894. Janice MacLeod
+895. Jarius Holmes
+896. Jason Anderson
+897. Jasper Cho
+898. Jasper Lützow Hagemann
+899. Jay Isaac
+900. Jean Béliveau
+901. Jean-Jacques Simard
+902. Jeanne Brault Laurin
+903. Jeff Job
+904. Jennifer Howell
+905. Jennifer McArton
+906. Jennifer Pappas
+907. Jenny Siswono
+908. Jennyfer Jewell
+909. Jens C. Dunham
+910. Jens J. Opsahl
+911. Jens Kristian Grondahl
+912. Jens Stoud
+913. Jeremy Lalonde
+914. Jessica Leung Hoi Yan
+915. Jessica Myers
+916. Jessie Turnbull
+917. Jey Pawlik
+918. Jill Wolodarsky
+919. Jimmy Beaulieu
+920. Jimmy Philémond-Montout
+921. Jin Akimoto
+922. Jin Chang-soo
+923. Jin Haritaworn
+924. Jinzaburo Yonezawa
+925. Jiro Miyake
+926. Jjanice+
+927. Joan Winearls
+928. Joanne Shaw Taylor
+929. Jocelyn Létourneau
+930. Joe Anderson
+931. Joe Nanini
+932. Joe Prospero
+933. Joelle Farrow
+934. Joely Ho
+935. Johanne Fridlund
+936. Johannes Vold
+937. John Arthur Sawyer
+938. John B. Boucher
+939. John Baxter
+940. John Byng-Hall
+941. John C. Johnson
+942. John D. Mackay
+943. John Dickson Stufflebeem
+944. John Draper
+945. John E. Johnson
+946. John E. Oppegaard
+947. John Farlinger
+948. John Farmer
+949. John Ferguson Flinn
+950. John Flynn
+951. John Francis Wade
+952. John G. Johnson
+953. John H. Peterson
+954. John Harkness Dales
+955. John Hothby
+956. John Ince
+957. John M. Roberts
+958. John Marshall
+959. John Mills
+960. John Skelton
+961. John Sveinsson
+962. John Swenson
+963. John Thompson
+964. John Wrottesley, 2nd Baron Wrottesley
+965. Jon Mikiver
+966. Jon Odden
+967. Jon-Richard Rundsveen
+968. Jonas Holmen
+969. Jonathan Augustus
+970. Jonathan Kuysten
+971. Jordan Goudreau
+972. Jordanna Phillips
+973. Jorunn Jacobsen Buckley
+974. Joseph A. McDonald
+975. Joseph Cooper Evans
+976. Joseph Edward Therrien
+977. Joseph May
+978. Joseph Michael Williams
+979. Joseph Rye
+980. Joseph Stanley Will
+981. Joseph Stratton
+982. Josh Bibby
+983. Joshua Yasuo Suzuki
+984. Joyce Cheng
+985. Judith Friedland
+986. Julia Abe
+987. Julian Wadham
+988. Julianna Kurokawa
+989. Julius Svendsen
+990. Jun Akiyama
+991. Jun Ito
+992. Jun Kim
+993. Jun Kitagawa
+994. Jun Konishi
+995. Jun Soejima
+996. Jun Suzuki
+997. Junichi Nakatsuru
+998. Junichi Ueno
+999. Junji Nishikawa
+1000. Junko Ishida
+1001. Justin Ashar
+1002. Justin Kawashima
+1003. Juvally Chan
+1004. Jón Halldórsson
+1005. Jørgen Hansen
+1006. Jōji Kawaguchi
+1007. K Alexander
+1008. K*West
+1009. KM-MARKIT
+1010. Kachiru Ishizue
+1011. Kai Akagi
+1012. Kai Cheng Thom
+1013. Kainat Qazi
+1014. Kaito Masai
+1015. Kaleah Smith
+1016. Kamayuki Tsubono
+1017. Kamo no Yasunori
+1018. Kana Hosoya
+1019. Kanako Yamaguchi
+1020. Kanji Nakamura
+1021. Kanta Taguchi
+1022. Kaoli Isshiki
+1023. Kaori Kasumi
+1024. Kaori Oinuma
+1025. Kaoru Kakinami
+1026. Kaoru Toyoda
+1027. Karen LeBlanc
+1028. Karen Sakisaka
+1029. Kari Berggrav
+1030. Kari Uglem
+1031. Karl Broughton
+1032. Karl Willetts
+1033. Karolina Turek
+1034. Kate Luyben
+1035. Kate Vernon
+1036. Katherine Tran
+1037. Katsuhisa Akasaki
+1038. Katsuji Miyazaki
+1039. Katsuji Ueda
+1040. Katsushi Kajii
+1041. Katsuzō Nishi
+1042. Kawashita Tomoko
+1043. Kawika Crowley
+1044. Kay Riddell Rouillard
+1045. Kaya Forson
+1046. Kaya Han
+1047. Kayla Uddenberg
+1048. Kazik Radwanski
+1049. Kazu Naoki
+1050. Kazuaki Tanahashi
+1051. Kazuha Oda
+1052. Kazuhiko Aoki
+1053. Kazuhiko Matsumoto
+1054. Kazuhiro Kusayanagi
+1055. Kazuhito Nigorisawa
+1056. Kazuko Hironaka
+1057. Kazuko Hohki
+1058. Kazuma Kamachi
+1059. Kazumi Kishi
+1060. Kazunori Ohara
+1061. Kazutoshi Takahashi
+1062. Kazuya Ayani
+1063. Kazuya Ikeda
+1064. Kazuyuki Hoshino
+1065. Kazuyuki Inoue
+1066. Kazuyuki Okitsu
+1067. Kei Fujiwara
+1068. Kei Hirose
+1069. Kei Pilz
+1070. Kei Saito
+1071. Keigo Okawa
+1072. Keiichi Tahara
+1073. Keiju Ishikawa
+1074. Keiko Furukawa
+1075. Keiko Hara
+1076. Keiko Saito
+1077. Keiko Uchibori
+1078. Keiko Yamamoto
+1079. Keishū Sanetō
+1080. Keisuke Moriya
+1081. Keisuke Tate
+1082. Keita Inamura
+1083. Keith McLeod
+1084. Keizan
+1085. Keizo Suzuki
+1086. Kelly Shibari
+1087. Kelvin Kwan
+1088. Ken Kobayashi
+1089. Ken Sueda
+1090. Ken Yamamura
+1091. Ken'ichirō Tsunoda
+1092. Kenichi Ebina
+1093. Kenichi Sawada
+1094. Kenichi Yamamoto
+1095. Kenichiro Yagi
+1096. Kenji Fujimoto
+1097. Kenji Ishikawa
+1098. Kenji Matsuo
+1099. Kenji Takeichi
+1100. Kenji Tochio
+1101. Kenji Yamamoto
+1102. Kent Johanssen
+1103. Kentaro Kameyama
+1104. Kentaro Yano
+1105. Kentsū Yabu
+1106. Kenzo Tada
+1107. Keri Smith
+1108. Kevin Doherty
+1109. Kevin Egell-Johnsen
+1110. Kevin Gillis
+1111. Kevin Robertson
+1112. Kevin Rushton
+1113. Kiara Groulx
+1114. Kim Nye
+1115. Kim Yngland
+1116. Kimie Sato
+1117. Kimiko Shiratori
+1118. Kirk Shaw
+1119. Kiyoshi Shimizu
+1120. Kiyoshi Tsujii
+1121. Kiyoyasu Kato
+1122. Kjell Tennfjord
+1123. Kjersti Beck
+1124. Kjersti Isaksen
+1125. Kjetil Hasund
+1126. Kjetil Zachariassen
+1127. Klara Sporsem
+1128. Klaus Nord Hoel
+1129. Klay Vincent Jeremy Bennison
+1130. Klára Krasula
+1131. Knud H. Helling
+1132. Knud W. Bondy
+1133. Knut Alvsson
+1134. Knut Hallvard Eikrem
+1135. Knute S. Aker
+1136. Kobori Nanrei Sohaku
+1137. Kohei Tojo
+1138. Kohsuke Hirata
+1139. Koichi Ishii
+1140. Koichi Sugimura
+1141. Koichi Tanaka
+1142. Koichiro Harada
+1143. Koji Fujiwara
+1144. Koji Sasaki
+1145. Koji Takeuchi
+1146. Koji Tatsuno
+1147. Koji Yamaguchi
+1148. Komei Fukuda
+1149. Komparu Zenchiku
+1150. Konoe Sakihisa
+1151. Kornelius Drange Hole
+1152. Kose Kanaoka
+1153. Kota Kawase
+1154. Kota Sasaki
+1155. Kouhaku Kuroboshi
+1156. Kouji Takasawa
+1157. Kozo Minemori
+1158. Krima Kapadia
+1159. Kristen Gutoskie
+1160. Kristian Horntvedt
+1161. Kristofer Dalager
+1162. Kristoffer Klaesson
+1163. Kumaichi Teramoto
+1164. Kumiko Takahashi
+1165. Kumudu Peddrick
+1166. Kunihiro Hasegawa
+1167. Kuniko-naishinnō
+1168. Kunio Busujima
+1169. Kurumi Tamaki
+1170. Kusunose Yukihiko
+1171. Kyana Teresa
+1172. Kyle Parrott
+1173. Kyo Iwama
+1174. Kyoko Nozaki
+1175. Kyousuke Motomi
+1176. Kyra Dickinson
+1177. Kōsaku Sugiura
+1178. Kōshun Tōjō
+1179. L. Susan Brown
+1180. L.E. Jones
+1181. Lamar Johnson
+1182. Lane Styles
+1183. Larry Gambone
+1184. Larry Wallis
+1185. Lars Anvar Kolle
+1186. Lars Klevberg
+1187. Lars O. Olson
+1188. Lars O. Teigen
+1189. Lars Swenson
+1190. Laura DeMarco
+1191. Laura Greenwood
+1192. Laura Mulvey
+1193. Laurence Hyde, 1st Earl of Rochester
+1194. Laurie Louise Foote
+1195. Lawrence Harvey
+1196. Leanne Geale
+1197. Lebuinus
+1198. Leif Øgaard
+1199. Leonard Calvert
+1200. Leonardo Simon
+1201. Leonardo da Vinci
+1202. Lewis Benson
+1203. Lila Kagedan
+1204. Linnaea Halpert
+1205. Lisa Takeba
+1206. Lise Bourbeau
+1207. Lise Paiement
+1208. Liv Lindeland
+1209. Liv Margolius
+1210. Lizzie Boys
+1211. Lonny Eagleton
+1212. Louis L. Dorr
+1213. Louis Newashish
+1214. Louis Saia
+1215. Louis-Philippe Beauchamp
+1216. Louisa Conolly
+1217. Louise Ropes Loomis
+1218. Luc Langlois
+1219. Lucas Meeuse
+1220. Lucy Bell
+1221. Lucy Russell
+1222. Lucy Vincent
+1223. Lucy Walker
+1224. Ludger Brien
+1225. Luis Ibaraki
+1226. Lukay
+1227. Luke Skaarup
+1228. Luke Sutherland
+1229. Luraina Undershute
+1230. Lydia A. Trimble
+1231. Lyubov Pozdneeva
+1232. Madeleine Budd
+1233. Maeda Toshinaga
+1234. Magnus Andersen
+1235. Magnus Barefoot
+1236. Magnus II of Norway
+1237. Magnus IV of Norway
+1238. Magnus IV of Sweden
+1239. Magnus the Good
+1240. Maguro Fujita
+1241. Maho Shimizu
+1242. Maika Loubté
+1243. Maki Kenjo
+1244. Makoto Ishikawa
+1245. Makoto Kitayama
+1246. Makoto Kono
+1247. Makoto Nakayama
+1248. Makoto Ozaki
+1249. Makoto Sasaki
+1250. Makyla Smith
+1251. Mami Kaneda
+1252. Mami Sakato
+1253. Manabu Kimura
+1254. Manabu Shimano
+1255. Manabu Tomita
+1256. Manaka Minami
+1257. Manami Itō
+1258. Manato Takahashi
+1259. Marc Seales
+1260. Marcel Bénéteau
+1261. Marcien Villemure
+1262. Marcus Godinho
+1263. Margaret Lock
+1264. Margaret of Hereford
+1265. Margit Seland
+1266. Mari Kimura
+1267. Mari Knudsen
+1268. Mari Miyamoto
+1269. Maria Brinch
+1270. Maria Q
+1271. Maria Rønning
+1272. Marianne Barth
+1273. Marie Aubert
+1274. Marie Curie
+1275. Marie Le Compte
+1276. Marie Ward
+1277. Mariko Kawana
+1278. Marilyn Mushinski
+1279. Marina Rice Bader
+1280. Marina of Omura
+1281. Marion Hume
+1282. Marion P. Shadd
+1283. Marit Haugom
+1284. Marius Bildøy
+1285. Mark Burke
+1286. Mark Burton
+1287. Mark Crossley
+1288. Mark Evelyn Heath
+1289. Mark Frost
+1290. Mark Higgins
+1291. Mark Humphrey
+1292. Mark Jones
+1293. Mark King
+1294. Mark Lawrence
+1295. Mark Miller
+1296. Mark Nielsen
+1297. Mark Singleton
+1298. Mark Smith
+1299. Mark Smulian
+1300. Mark Tucker
+1301. Marta Hazas
+1302. Martha Corey
+1303. Martin
+1304. Martin Akers
+1305. Martin Atkins
+1306. Martin B. Hofstad
+1307. Martin Barry
+1308. Martin Boyne
+1309. Martin De La See
+1310. Martin Delaney
+1311. Martin Elvestad
+1312. Martin J. Sullivan
+1313. Martin McLeod
+1314. Martin Orwin
+1315. Martin Sorrell
+1316. Martin W. Williams
+1317. Martin Wood
+1318. Martyn Bell
+1319. Martyn Colepeper
+1320. Martyn Crook
+1321. Mary Ann Wrighten
+1322. Mary Elizabeth Dow
+1323. Mary Ellen Christian
+1324. Mary Irwin-Gibson
+1325. Mary Morrill
+1326. Mary O'Malley
+1327. Mary Webster
+1328. Masaaki Yamada
+1329. Masae Takeuchi
+1330. Masafumi Hara
+1331. Masahide Kubo
+1332. Masahiko Ida
+1333. Masahiro Kanagawa
+1334. Masahiro Nakanishi
+1335. Masakatsu Waka
+1336. Masaki Nishizawa
+1337. Masako Takeda
+1338. Masako Yoshida
+1339. Masami Tachino
+1340. Masamune
+1341. Masaru Gokita
+1342. Masaru Setsumaru
+1343. Masashi Kameda
+1344. Masashi Miyamoto
+1345. Masataka Nakazawa
+1346. Masato Fujiwara
+1347. Masato Kunigami
+1348. Masaya Inoue
+1349. Masaya Takahashi
+1350. Masayuki Miyazawa
+1351. Masayuki Taguchi
+1352. Masujiro Nishida
+1353. Masumi Ishiyama
+1354. Masutatsu Yano
+1355. Masuyo Shiraishi
+1356. Mat Fraser
+1357. Matsuda Yuriko
+1358. Matsudaira Tadateru
+1359. Matt Bell
+1360. Matt Hampson
+1361. Matt Keith
+1362. Matt Lipsey
+1363. Matthew Brzezinski
+1364. Matthew Smith
+1365. Matthew Stokoe
+1366. Matthew Walker
+1367. Matthew Warren
+1368. Matthew Whitworth-Aylmer, 5th Baron Aylmer
+1369. Matthew Worthy
+1370. Maurice "Moss" Burbidge
+1371. Max Eberhardt
+1372. Max Troendlé
+1373. Maya Takeuchi
+1374. Meera Simhan
+1375. Megumi Igarashi
+1376. Megumi Kagurazaka
+1377. Megumi Masaki
+1378. Megumi Ogawa
+1379. Megumu Tamura
+1380. Meisa Hanai
+1381. Melvyn A. Fuss
+1382. Mette Mestad
+1383. Mia Huse
+1384. Micaela Anne Braithwaite
+1385. Michael Anderson
+1386. Michael Buckland
+1387. Michael E. Arth
+1388. Michael Hollingsworth
+1389. Michael J. Shaw
+1390. Michael Lombardi
+1391. Michael Loveday
+1392. Michael Posluns
+1393. Michael Price
+1394. Michael Reed
+1395. Michael Shaw
+1396. Michael Tarn
+1397. Michael Woods
+1398. Michi Himeno
+1399. Michiko Kono
+1400. Michiko Matsuda
+1401. Michiko Yokote
+1402. Michio Yasuda
+1403. Mickael Lebout
+1404. Mihoko Iwaya
+1405. Mikhaïl Ahooja
+1406. Miki Higashino
+1407. Miki Sugawara
+1408. Mikiko Kainuma
+1409. Mikio Furuta
+1410. Mikio Yamamoto
+1411. Mikkel Bjørge
+1412. Mikuru Suzuki
+1413. Milan Schere
+1414. Millie Terriss
+1415. Minako Takashima
+1416. Mine Kondo
+1417. Minori Umeda
+1418. Minoru Ozeki
+1419. Mio Sakaguchi
+1420. Misbah Ifzal
+1421. Mitsuhiko Ogata
+1422. Mitsuki Hashiguchi
+1423. Mitsuo Hashimoto
+1424. Mitsuo Kato
+1425. Mitsuo Matsumoto
+1426. Mitsuru Cope
+1427. Mitsuru Ishihara
+1428. Miu Nakamura
+1429. Miyuki Abe
+1430. Mizuho Nishikubo
+1431. Mizuta Masahide
+1432. Moe Nakata
+1433. Mohammadreza Golmohammadi
+1434. Momoka Akashi
+1435. Momoko Saito
+1436. Monica Evans
+1437. Mons Lid
+1438. Morten Eilifsen
+1439. Morten Hansen
+1440. Morten Renå Olsen
+1441. Morten Sigmund Mageroy
+1442. Morten Svalstad
+1443. Morwenna Lane
+1444. Motoko Kikkawa
+1445. Motoko Sasaki
+1446. Motomichi Nakamura
+1447. Motomu Toriyama
+1448. Muriel Uprichard
+1449. Musclebear Montreal
+1450. Musti
+1451. Mutsu Hirokichi
+1452. Mutsuko Sakura
+1453. N. J. Ottun
+1454. N. O. Henderson
+1455. Nadia Oh
+1456. Nagashima Hirona
+1457. Nagata Kabi
+1458. Nagayoshi Iwahori
+1459. Nagisa Horikoshi
+1460. Nagisa Shirai
+1461. Nailah Rowe
+1462. Nana Sasaki
+1463. Nanako Kaneko
+1464. Nancy Landry
+1465. Naoki Matsushita
+1466. Naoki Sakurada
+1467. Naoki Yakushiji
+1468. Naomi Azuma
+1469. Naomi Fujiyama
+1470. Naoto Muramatsu
+1471. Naoto Nagaosa
+1472. Naoto Nakamura
+1473. Naoto Saito
+1474. Naoto Tobe
+1475. Naoya Ishigaki
+1476. Natalie Ogle
+1477. Natascha M. Förster Schreiber
+1478. Natasha Wightman
+1479. Nathalie Blaquière
+1480. Nathan Nunn
+1481. Natsuki Kizu
+1482. Natsuko Kawaji
+1483. Natsumi Hara
+1484. Nels E. Ellertson
+1485. Nene Tanaka
+1486. Newton John Stabb
+1487. Newton Price Harcourt Brown
+1488. Niall Cousens
+1489. Nicholas Audsley
+1490. Nicholas Elia
+1491. Nicholas Frosst
+1492. Nicholas Treeshin
+1493. Nick Frentz
+1494. Nick Michaels
+1495. Nick Srnicek
+1496. Nicolas Wright
+1497. Nicole Demars
+1498. Nicole Millar
+1499. Niels Fredrik Dahl
+1500. Nigel Smart
+1501. Nikkita Persaud
+1502. Nils Johan Ringdal
+1503. Nils Oliveto
+1504. Nina Skeime
+1505. Nishiko
+1506. Nishiyama Sokichi
+1507. Noa Mizuhara
+1508. Noboru Ishiguro
+1509. Noboru Shiroyama
+1510. Nobuaki Kobayashi
+1511. Nobuhiro Tsurumaki
+1512. Nobukazu Teranishi
+1513. Nobuko Jashima
+1514. Nobuko Kondo
+1515. Nobuo Yoneda
+1516. Nobutake Mochiyama
+1517. Nobuyo Maeda
+1518. Nobuyoshi Higashi
+1519. Nobuyuki Kajitani
+1520. Nobuyuki Kato
+1521. Nobuyuki Nakajima
+1522. Nono Yûki
+1523. Noribumi Suzuki
+1524. Noriko Ishibashi
+1525. Noriko-naishinnō
+1526. Norio Yoshimizu
+1527. Noritaka Funamizu
+1528. O. B. Tone
+1529. O. G. Dale
+1530. Oda Sessō
+1531. Odd Arild Skonhoft
+1532. Odessa Thornhill
+1533. Okina Kyogoku
+1534. Okumura Toshinobu
+1535. Ola Bjerkaas
+1536. Olaf B. Bjørnstad
+1537. Olaf Hoffsbakken
+1538. Olaf I of Norway
+1539. Olaf III of Norway
+1540. Olav Gundersen
+1541. Olav Nysæter
+1542. Ole Amundson
+1543. Ole E. Boyum
+1544. Ole Erik Stavrum
+1545. Ole Henrik Fagerås
+1546. Ole Johan Singsdal
+1547. Ole Juelson
+1548. Ole Moe
+1549. Ole N. Barsness
+1550. Ole Peterson
+1551. Olga Fürst
+1552. Olivia Steele Falconer
+1553. Olivier Desmeules
+1554. Oluf Pedersen Maaneskiold
+1555. Osamu Matsumoto
+1556. Oskar Sivertsen
+1557. Osmund J. Wing
+1558. Osmund Osmundson
+1559. Otto Sundgot
+1560. Otto Tangen
+1561. Ottoline Leyser
+1562. Ove Thorsheim
+1563. Ove Ødegaard
+1564. Paige Howard
+1565. Parker Thompson
+1566. Pat Stay
+1567. Patrecia Scott
+1568. Patricia Herzog
+1569. Patricia Reed
+1570. Patrick Barlow
+1571. Patrick Bishop
+1572. Patrick Carignan
+1573. Patrick Søreide
+1574. Paul Apak Angilirq
+1575. Paul Denham Austerberry
+1576. Paul H. Rosendahl
+1577. Paul J. Griffiths
+1578. Paul Lereim
+1579. Paul Mason
+1580. Paul Moller
+1581. Paul P.
+1582. Paul Voisin
+1583. Paul Wesley Fox
+1584. Pauline A. Miller
+1585. Pavel Kapustin
+1586. Peder Dahlum Eide
+1587. Peder M. Henricks
+1588. Per Bergsland
+1589. Per Brogeland
+1590. Per Christensen
+1591. Per Christian Ellefsen
+1592. Percy Melmoth Walters
+1593. Peter A. Munch
+1594. Peter Barham
+1595. Peter Bradshaw
+1596. Peter Bredal
+1597. Peter Coffman
+1598. Peter Connelly
+1599. Peter Dicken
+1600. Peter F. Oliva
+1601. Peter Goddard
+1602. Peter O'Brien
+1603. Peter Paul Carr
+1604. Peter Peterson
+1605. Peter Scheerer
+1606. Peter Watts
+1607. Petra Januskova
+1608. Petter Eliassen
+1609. Petter Olsen
+1610. Phil Hine
+1611. Phil Jackson
+1612. Philip Awadalla
+1613. Philip Furley Fyson
+1614. Philip Repyngdon
+1615. Philip Øgaard
+1616. Phyllis E. Jones
+1617. Pierre Pettigrew
+1618. Polly Paulusma
+1619. Prachi Kumari
+1620. Prince Ōtsu
+1621. Princess Sumiko
+1622. Prosper Bernard
+1623. Pål Johannessen
+1624. Pål Løkkeberg
+1625. R. Brian Land
+1626. R. D. Reid
+1627. Rachel Berger
+1628. Rachel Graton
+1629. Rachel Jay Kuang
+1630. Ragnhild Mikkelsen
+1631. Ragnvald Heidumhære
+1632. Raider Nelson
+1633. Randi Marainen
+1634. Raoumaru
+1635. Raphael Holinshed
+1636. Ray Cameron
+1637. Ray Lawrence
+1638. Raymond A. D. Gillis
+1639. Rebecca Palmer
+1640. Reece Thompson
+1641. Rei Aino
+1642. Reidar Waaler
+1643. Reiji Hirata
+1644. Reirin Yamada
+1645. Reiya Downs
+1646. Rene Ohashi
+1647. Renee Roberts
+1648. Renshi Yamaguchi
+1649. Renée Martel
+1650. Reuben Epp
+1651. Richard Beauvais
+1652. Richard Dillane
+1653. Richard H. Wilkinson
+1654. Richard Haughton
+1655. Richard Leach Maddox
+1656. Richard Sawkins
+1657. Richard Skog
+1658. Richard of Andria
+1659. Rika Aoki
+1660. Rikke Nygard
+1661. Riko Azuna
+1662. Rin Aoki
+1663. Rinsaku Ogata
+1664. Ritsuko Hiroto
+1665. Roar Flåthen
+1666. Rob Archer
+1667. Rob Goddard
+1668. Rob Pike
+1669. Robert Allan Spencer
+1670. Robert Baltovich
+1671. Robert Brown
+1672. Robert Fisher Tomes
+1673. Robert Kilwardby
+1674. Robert S Hogg
+1675. Robert S. Hatten
+1676. Robert Seddon
+1677. Robert de Winton
+1678. Robin Blackburn
+1679. Robin Laycock
+1680. Robin Ward
+1681. Rocky Kramer
+1682. Rocky Vallarta
+1683. Roger Vandenakker
+1684. Roland Rusk McLaughlin
+1685. Rollo
+1686. Ron Laytner
+1687. Ron Oliver
+1688. Roxanne Kernohan
+1689. Roxanne McKee
+1690. Ru Kuwahata
+1691. Rui Sasaki
+1692. Rune Brøndbo
+1693. Rune Fasteland
+1694. Rune Lothe
+1695. Rune Lunso
+1696. Rune Ulvestad
+1697. Rurucha.
+1698. Ryan Stevenson
+1699. Rylee Traicoff
+1700. Ryo Kato
+1701. Ryo Sugimoto
+1702. Ryohei Otani
+1703. Ryohei Suzuki
+1704. Ryuichi Kosaka
+1705. Ryuji Noguchi
+1706. Ryuya Wakaba
+1707. Ryōki Kamitsubo
+1708. Ryōko Aoyagi
+1709. Ryūichi Kubota
+1710. S. H. Ongstad
+1711. Sachi Sophia Kurosu
+1712. Saeki Nejime
+1713. Sagami
+1714. Sagen Ishizuka
+1715. Saichiro Misumi
+1716. Saigū no Nyōgo
+1717. Saiyma Haroon
+1718. Sakae Shioya
+1719. Sakarias Opsahl
+1720. Sakiko Yamaoka
+1721. Sally Wyatt
+1722. Sam Kooiker
+1723. Sam Millington
+1724. Sam Yang
+1725. Samantha McLeod
+1726. Samir Tabar
+1727. Samuel Argall
+1728. Samuel D. Peterson
+1729. Samuel Milner
+1730. Samuel Newsom
+1731. Samuel Rowley
+1732. Samuel W. Lewis
+1733. Samuel Whitbread
+1734. Sana Zafar
+1735. Sanada Yukimura
+1736. Sanae Mishima
+1737. Sanjay Lal
+1738. Sanna Grønlid
+1739. Saori@destiny
+1740. Sara Saito
+1741. Sarah Fielding
+1742. Sarah Havneraas
+1743. Sarah Suphellen
+1744. Sarah Widdows
+1745. Sasaki Gensō
+1746. Sat-Okh
+1747. Satomi Shibata
+1748. Satomi Tsubakiori
+1749. Satoru Shibata
+1750. Satoshi Hiraoka
+1751. Satoshi Kusayanagi
+1752. Satoshi Ozaki
+1753. Sayaka Yamamoto
+1754. Scroop Egerton, 1st Duke of Bridgewater
+1755. Sean Connolly Affleck
+1756. Sean Roche
+1757. Sebastian Armesto
+1758. Sebastian Pop
+1759. Seedy Jatta
+1760. Seiji Hada
+1761. Seiji Kami
+1762. Seiya Kitano
+1763. Seiya Sugishita
+1764. Sekiryo Kaneda
+1765. Serena Kwok
+1766. Serenus Halverson
+1767. Seth
+1768. Seth Isaac Johnson
+1769. Setsuo Shinoda
+1770. Sever Ellingson
+1771. Shaherose Charania
+1772. Shamim Sarif
+1773. Shane Tarves
+1774. Sharon Johansen
+1775. Shaun Ellis
+1776. Shechinah Mpumlwana
+1777. Shelby Bain
+1778. Shigeki Sumi
+1779. Shigemi Ishii
+1780. Shigeo Fukushima
+1781. Shigeo Katsu
+1782. Shigeo Kiyama
+1783. Shigetoshi Miyazaki
+1784. Shiho Ishizawa
+1785. Shiho Kaneda
+1786. Shiho Terashima
+1787. Shikishi-naishinnō
+1788. Shimazu Takahisa
+1789. Shimizu Koharu
+1790. Shimpei Sakurada
+1791. Shin Sugino
+1792. Shingo Aino
+1793. Shingo Nanami
+1794. Shinichi Kawase
+1795. Shinnosuke Kamimura
+1796. Shino Magariyama
+1797. Shinobu Gotō
+1798. Shintarō Takashima
+1799. Shinya Tanimoto
+1800. Shirley Horton
+1801. Shizuka Miura
+1802. Shizuko Hoshi
+1803. Sho Dozono
+1804. Sho Hatsuyama
+1805. Shogo Miura
+1806. Shogo Moriwaki
+1807. Shogo Mukai
+1808. Shohei Oka
+1809. Shoichi Hirose
+1810. Shoji Shiba
+1811. Shoma Nagumo
+1812. Shota Takahashi
+1813. Shozaburo Sugimura
+1814. Shu Nagai
+1815. Shu Takumi
+1816. Shuji Kataoka
+1817. Shuji Takashima
+1818. Shukuroo Habara
+1819. Shungiku Nakamura
+1820. Shunichi Nagasaki
+1821. Shunji Watanabe
+1822. Shunpei Yamazaki
+1823. Shunsuke Nakamura
+1824. Shunsuke Nakatake
+1825. Shunsuke Okubo
+1826. Shunya Itō
+1827. Shunzei's Daughter
+1828. Shuzo Matsunaga
+1829. Shōei Mishina
+1830. Sibbie Ho
+1831. Sidney Read Welch
+1832. Sidney Saunders
+1833. Signy Wennerholm
+1834. Sigurd II of Norway
+1835. Sigurd Slembe
+1836. Sigurd the Crusader
+1837. Sigurðr Hákonarson
+1838. Simon Chandler
+1839. Simon Woods
+1840. Sin Yong-kyun
+1841. Sir James Kirkpatrick, 8th Baronet
+1842. Sir Richard Poore, 4th Baronet
+1843. Sir Robert Milnes, 1st Baronet
+1844. Siri Nordby
+1845. Siv Bråten Lunde
+1846. Skylar Healey
+1847. Snæbjörn Galti
+1848. Solfrid Heier
+1849. Sonne Teal
+1850. Sophie Traub
+1851. Sophie-Alexandra Evekink
+1852. Soraya Saga
+1853. Soshihiro Satake
+1854. Stacy Traub
+1855. Stein Karlsen
+1856. Stephanie Savage
+1857. Stephen Williams
+1858. Steve Douglas
+1859. Steve Joordens
+1860. Steve Skroce
+1861. Steve Wallis
+1862. Steven Mond
+1863. Steven Schwinghamer
+1864. Stian Neset
+1865. Stian Overå
+1866. Stig Roar Aftret
+1867. Stine Brekken
+1868. Stine Hovland
+1869. Sture Fladmark
+1870. Stéphanie Garneau
+1871. Sue Richards
+1872. Sumio Edamura
+1873. Sumio Shiratori
+1874. Sumitomo Masatomo
+1875. Susan Bassnett
+1876. Susan Maggi
+1877. Susan Thomson
+1878. Suzon Demers
+1879. Suzuki Kiitsu
+1880. Suō no Naishi
+1881. Svein Krøvel
+1882. Svein Romstad
+1883. Sven Erik Kristiansen
+1884. Sverre of Norway
+1885. Sverre Østbye
+1886. Swen Swenson
+1887. Sylvia Gani
+1888. Synnøve Solbakken
+1889. Syurin Nagatuki
+1890. Sō Yoshitoshi
+1891. Sōhekimon-in no Shōshō
+1892. Sōichirō Tanaka
+1893. Sōta Murakami
+1894. T. E. Bonde
+1895. T. H. Torgerson
+1896. T. Jerome Lawler
+1897. T. S. Wroolie
+1898. Tadashi Izawa
+1899. Tadashi Sasaki
+1900. Tadashi Yamashita
+1901. Tadayoshi Tamura
+1902. Taeko Kawasumi
+1903. Takae Ohnishi
+1904. Takahiro Hachigō
+1905. Takahiro Hatakeda
+1906. Takahiro Kajita
+1907. Takako Ishii
+1908. Takako Tobise
+1909. Takao Nishiyama
+1910. Takao Orii
+1911. Takao Shimizu
+1912. Takashi Ito
+1913. Takashi Kasahara
+1914. Takashi Kashiwabara
+1915. Takashi Kawanishi
+1916. Takashi Miyamoto
+1917. Takashi Mizuno
+1918. Takashi Satō
+1919. Takashi Tokita
+1920. Takashige Kikui
+1921. Takatsukasa Fuyuie
+1922. Takatsukasa Fuyunori
+1923. Takatsukasa Kanetada
+1924. Takatsukasa Norihira
+1925. Takaya Imamura
+1926. Takaya Nakamura
+1927. Takayuki Iwakura
+1928. Takayuki Okochi
+1929. Takeaki Momose
+1930. Takeda Nobuzane
+1931. Takenori Ito
+1932. Takeo Wakabayashi
+1933. Takeshi Nakasu
+1934. Takeshi Ono
+1935. Takeyasu Hirono
+1936. Takuma Shoga
+1937. Tallak Brokken
+1938. Tamai Kobayashi
+1939. Tameo Ide
+1940. Tamio Harakawa
+1941. Tammy Peterson
+1942. Tassie Cameron
+1943. Tatsunori Endo
+1944. Tatsuo Yamada
+1945. Tatsuya Kojima
+1946. Taveeta Szymanowicz
+1947. Taylor Kare
+1948. Taylor Walsh
+1949. Tebey
+1950. Ted Mann
+1951. Teijirō Yamamoto
+1952. Tenyka Francique
+1953. Terje Olsen
+1954. Terrence J. O'Shaughnessy
+1955. Terri Tatchell
+1956. Terry Hayes
+1957. Teru Shimada
+1958. Terumi Nagae
+1959. Teruo Abe
+1960. Tessa Edwards
+1961. Tetsuo Katsuta
+1962. Tetsuzō Akutsu
+1963. Thaddeus Pun
+1964. Thanadelthur
+1965. Theo Harding
+1966. Theodore Jorgenson
+1967. Theophile Meek
+1968. Theresa Joy
+1969. Therese Åsland
+1970. Thierry Amar
+1971. Thomas Bottomore
+1972. Thomas F. McIlwraith (Jr.)
+1973. Thomas Fitzpatrick
+1974. Thomas Gates
+1975. Thomas Goltz
+1976. Thomas H. Burns
+1977. Thomas J. Hind
+1978. Thomas Jefferys
+1979. Thomas May
+1980. Thomas Tollefson
+1981. Thorvald Asvaldsson
+1982. Thorvald V. Knatvold
+1983. Tim Atack
+1984. Tim Byrne
+1985. Tim Henrik Sperrevik
+1986. Tim Sims
+1987. Timothy Ball
+1988. Tiny Timbrell
+1989. Tiril Wishman Eeg-Henriksen
+1990. Titti Maartmann
+1991. Tjodalv
+1992. Tobias Lauritsen
+1993. Todd M Allen
+1994. Tokio Seki
+1995. Tokuro Fujiwara
+1996. Tom Jacobsen
+1997. Tom Levorstad
+1998. Tom Newman
+1999. Tom Nordlie
+2000. Tom Reidar Haraldsen
+2001. Tom Waring
+2002. Tomiko Takai
+2003. Tomisaburō Wakui
+2004. Tommy Martyn
+2005. Tommy Sylte
+2006. Tomoki Nagasaka
+2007. Tomoko Matsunaga
+2008. Tomomi Yamashita
+2009. Tomoyoshi Fukushima
+2010. Tomoyuki U Tanaka
+2011. Toni Myers
+2012. Toni Skarica
+2013. Tonio Schibel
+2014. Tony Anselmo
+2015. Tony Smith
+2016. Tony Vogel
+2017. Tore Johannessen
+2018. Tore Renberg
+2019. Torf-Einarr
+2020. Torger Motland
+2021. Tormentor
+2022. Toru Kishimoto
+2023. Toshiaki Okamoto
+2024. Toshiharu Urakami
+2025. Toshiki Mabuchi
+2026. Toshiko Mori
+2027. Toshikuni Matsunaga
+2028. Toshio Takabayashi
+2029. Toshiya Ogata
+2030. Toshiyuki Takano
+2031. Tosten Johnson
+2032. Trevor MacDonald
+2033. Trevor Tordjman
+2034. Trevor Wurtele
+2035. Trond Helge Torsvik
+2036. Troy Hernandez
+2037. Trygve Allister Diesen
+2038. Trygve Johannessen
+2039. Tsubasa Hasegawa
+2040. Tsubasa Mori
+2041. Tsuchimikado-in no kozaishō
+2042. Tsukasa Tawada
+2043. Tsukino Chikasada
+2044. Tsuneo Imahori
+2045. Tsutomu Hirose
+2046. Tsutomu Kouno
+2047. Tsutomu Ohshima
+2048. Tsuyoshi Abe
+2049. Tsuyoshi Fukuda
+2050. Tsuyoshi Kubota
+2051. Tyler Edey
+2052. Tōru Minegishi
+2053. Uesugi Mochinori
+2054. Uesugi Narinori
+2055. Ukon
+2056. Ulf Sebbason
+2057. Ulvhild Håkansdotter
+2058. Uma no Naishi
+2059. Umetsugu Inoue
+2060. Unni Ødegård
+2061. Utako Hayashi
+2062. Uwe Gustafsson
+2063. Valdo Williams
+2064. Valentine Nagata-Ramos
+2065. Valshe
+2066. Vanessa Gray
+2067. Vern Hickey
+2068. Vic Ekberg
+2069. Vic Stanfield
+2070. Victor Sergent
+2071. Victoria Campbell
+2072. Vigdis Hårsaker
+2073. Viktor Thorn
+2074. Vilde Hasund
+2075. Vilgunn Gregusson
+2076. Vivian Dawson
+2077. Vivian Tam Wai Yan
+2078. Vladimir Yamatov
+2079. W. W. Jeffers
+2080. Wakō Hon'na
+2081. Warabe Aska
+2082. Wayne Tefs
+2083. Wendy Lyon
+2084. Wendy McElroy
+2085. Werner Christie
+2086. Weymouth Crowell
+2087. Will Brisbin
+2088. Will Holland
+2089. Will Osborne
+2090. William A. Cutts
+2091. William Austin
+2092. William B. Wallace
+2093. William Bray
+2094. William Cuddy
+2095. William E. Carswell
+2096. William Goffe
+2097. William Greenblatt
+2098. William H. T. Baillie
+2099. William Henry Forbes
+2100. William Henry Sleeman
+2101. William Hinds
+2102. William John Fennell
+2103. William Morrison
+2104. William N. Irving
+2105. William Neilson
+2106. William Oliver Evelyn Meade-King
+2107. William Phinney
+2108. William Quinn
+2109. William Rosenfeld
+2110. William S. Enger
+2111. William Sayle
+2112. William Sell
+2113. William Shakespeare
+2114. William Snaith
+2115. William Sorelle
+2116. William Stevens
+2117. William T. Green
+2118. William Taylor
+2119. William Thomas James Easterbrook
+2120. William Waud
+2121. William Windham, Sr.
+2122. Willo Perron
+2123. Willy Giummarra
+2124. Wolf E. Allihn
+2125. Xia Dalong
+2126. Yaeko Taguchi
+2127. Yamato Fukasawa
+2128. Yammie Leung
+2129. Yasuhi Nakamura
+2130. Yasunori Okuda
+2131. Yasushi Warita
+2132. Yasuyuki Honne
+2133. Yisrael Mordecai Safeek
+2134. Yo Sasaki
+2135. Yohei Nanbu
+2136. Yohei Suzuki
+2137. Yoko Maria
+2138. Yoneji Masuda
+2139. Yoon Jong-tae
+2140. Yoshiaki Tago
+2141. Yoshida Kanetomo
+2142. Yoshie Kasajima
+2143. Yoshihiro Fujita
+2144. Yoshihiro Yatsukawa
+2145. Yoshiichi Watanabe
+2146. Yoshikawa Koretari
+2147. Yoshiko Miyamoto
+2148. Yoshiko Tsukioka
+2149. Yoshimasa Hiraike
+2150. Yoshinobu Ota
+2151. Yoshinori Ono
+2152. Yoshio Fujimoto
+2153. Yoshio Takahashi
+2154. Yoshiyuki Asai
+2155. Yoshiyuki Kamata
+2156. Yoshizo Itabashi
+2157. Yosuke Fukase
+2158. Yota Otachi
+2159. Yotaro Sato
+2160. Yozo Aoki
+2161. Yuichi Motai
+2162. Yuina Iwase
+2163. Yuji Furukawa
+2164. Yuji Shiozaki
+2165. Yuka Hodaka
+2166. Yukari Komatsu
+2167. Yuki Kadono
+2168. Yuki Yase
+2169. Yukihiro Yoshida
+2170. Yukiko Yanagi
+2171. Yukinari Tamura
+2172. Yukio Shimbara
+2173. Yukio Tani
+2174. Yuko Morimoto
+2175. Yuko Oita
+2176. Yumi Suzuki
+2177. Yumi Watanabe
+2178. Yuri Ichii
+2179. Yuri Kawanabe
+2180. Yuri Kazama
+2181. Yurie Watabe
+2182. Yuriko Mogami
+2183. Yuriko Shima
+2184. Yusuke Naora
+2185. Yusuke Niwai
+2186. Yuta Takahashi
+2187. Yutaka Akichika
+2188. Yutaka Hosoda
+2189. Yûna Ishikawa
+2190. Yō Izumi
+2191. Yūshi Naishinnō-ke no Kii
+2192. Yūzō Tanaka
+2193. Zakaria Amara
+2194. mothy
+2195. xiangyu
+2196. Ådne Nissestad
+2197. Åse Gornitzka
+2198. Étienne Lucier
+2199. Øivind Blunck
+2200. Þjóðólfr of Hvinir
+2201. Þorbjörn Hornklofi
+2202. Þurið Þorkilsdóttir
+2203. Ōtomo Sōrin
+2204. Ōya Tyson
