@@ -1356,10 +1356,19 @@ async def generate_snapshot_reading(chart_data: dict, unknown_time: bool) -> str
     
     try:
         # Serialize snapshot data
+        logger.info("Serializing snapshot data...")
         snapshot = serialize_snapshot_data(chart_data, unknown_time)
+        
+        # Validate snapshot has data
+        if not snapshot.get("core_identity", {}).get("sidereal") and not snapshot.get("core_identity", {}).get("tropical"):
+            logger.error("Snapshot data is empty - no core identity found")
+            return "Snapshot reading is temporarily unavailable - chart data incomplete."
+        
         snapshot_summary = format_snapshot_for_prompt(snapshot)
+        logger.info(f"Snapshot summary length: {len(snapshot_summary)} characters")
         
         llm = Gemini3Client()
+        logger.info("Calling Gemini API for snapshot reading...")
         
         unknown_time_flag = snapshot.get('metadata', {}).get('unknown_time', False)
         
@@ -2363,16 +2372,20 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
         # Use timeout to prevent blocking chart response for too long
         is_transit_chart = data.full_name.lower() in ["current transits", "transits"]
         if not is_transit_chart:
+            logger.info("Generating snapshot reading...")
             try:
-                # Add timeout of 30 seconds - allows for comprehensive reading generation
+                # Add timeout of 60 seconds - allows for comprehensive reading generation
+                # Increased from 30s to handle slower API responses
                 snapshot_reading = await asyncio.wait_for(
                     generate_snapshot_reading(full_response, data.unknown_time),
-                    timeout=30.0
+                    timeout=60.0
                 )
+                # Always set snapshot_reading (even if it's an error message, so user knows what happened)
                 full_response["snapshot_reading"] = snapshot_reading
+                logger.info(f"Snapshot reading generated successfully (length: {len(snapshot_reading) if snapshot_reading else 0})")
                 
-                # Send snapshot email immediately to user and admin
-                if snapshot_reading and data.user_email:
+                # Send snapshot email immediately to user and admin (only if successful)
+                if snapshot_reading and snapshot_reading != "Snapshot reading is temporarily unavailable." and data.user_email:
                     try:
                         # Format birth date and time for email
                         birth_date_str = f"{data.month}/{data.day}/{data.year}"
@@ -2409,11 +2422,12 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
                         logger.warning(f"Failed to send snapshot email: {email_error}")
                 
             except asyncio.TimeoutError:
-                logger.warning("Snapshot reading generation timed out after 30 seconds - skipping to avoid blocking chart response")
-                full_response["snapshot_reading"] = None
+                logger.error("Snapshot reading generation timed out after 60 seconds - skipping to avoid blocking chart response")
+                full_response["snapshot_reading"] = "Snapshot reading timed out. Please try again or wait for your full reading."
             except Exception as e:
-                logger.warning(f"Could not generate snapshot reading: {e}")
-                full_response["snapshot_reading"] = None
+                logger.error(f"Could not generate snapshot reading: {e}", exc_info=True)
+                # Return error message instead of None so user knows what happened
+                full_response["snapshot_reading"] = f"Snapshot reading temporarily unavailable: {str(e)}"
         else:
             # For transit charts, don't include snapshot reading
             full_response["snapshot_reading"] = None
