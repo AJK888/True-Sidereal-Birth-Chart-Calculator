@@ -111,19 +111,35 @@
 									<div class="pricing-tier premium-tier featured">
 										<div class="tier-badge">Most Popular</div>
 										<div class="tier-header">
-											<h3>Premium</h3>
-											<div class="price">$88<span class="period">/month</span></div>
+											<h3>Full Reading</h3>
+											<div class="price">$28<span class="period">one-time</span></div>
 										</div>
 										<ul class="features-list">
 											<li><i class="fas fa-check"></i> <strong>Everything in Free</strong></li>
-											<li><i class="fas fa-check"></i> <strong>Comprehensive Full Readings</strong> - Deep, multi-chapter AI analysis of your entire chart</li>
-											<li><i class="fas fa-check"></i> <strong>Unlimited Chat Conversations</strong> - Ask our AI astrologer anything about your chart</li>
+											<li><i class="fas fa-check"></i> <strong>Comprehensive Full Reading</strong> - Deep, 15+ page AI analysis of your entire chart</li>
+											<li><i class="fas fa-check"></i> <strong>FREE Month of Unlimited Chats</strong> - Ask our AI astrologer anything about your chart</li>
 											<li><i class="fas fa-check"></i> <strong>Shadow Work Guidance</strong> - Understand and transform your unconscious patterns</li>
 											<li><i class="fas fa-check"></i> <strong>Life Improvement Strategies</strong> - Personalized guidance for growth and healing</li>
-											<li><i class="fas fa-check"></i> <strong>Ongoing Support</strong> - Continue the conversation as you evolve</li>
+											<li><i class="fas fa-check"></i> <strong>Chart Saved Permanently</strong> - Access your reading anytime</li>
 										</ul>
-										<p class="tier-description">For those committed to deep self-understanding and transformative personal growth. Cancel anytime.</p>
-										<button id="subscribeBtn" class="button primary large" style="width: 100%; margin-top: 1.5em;">Subscribe Now</button>
+										<p class="tier-description">Get your comprehensive full reading and enjoy a free month of unlimited chats to explore your chart in depth.</p>
+										<button id="purchaseReadingBtn" class="button primary large" style="width: 100%; margin-top: 1.5em;">Purchase Full Reading</button>
+										<p class="purchase-status" id="readingPurchaseStatus" style="display: none; margin-top: 1em; font-size: 0.9em;"></p>
+									</div>
+									
+									<div class="pricing-tier subscription-tier">
+										<div class="tier-header">
+											<h3>Monthly Subscription</h3>
+											<div class="price">$8<span class="period">/month</span></div>
+										</div>
+										<ul class="features-list">
+											<li><i class="fas fa-check"></i> <strong>Unlimited Chat Conversations</strong> - Continue chatting after your free month</li>
+											<li><i class="fas fa-check"></i> <strong>Access to All Premium Features</strong></li>
+											<li><i class="fas fa-check"></i> <strong>Ongoing Support</strong> - Continue the conversation as you evolve</li>
+											<li><i class="fas fa-check"></i> <strong>Cancel Anytime</strong> - No long-term commitment</li>
+										</ul>
+										<p class="tier-description">Continue your journey after your free month. Perfect for ongoing exploration and growth.</p>
+										<button id="subscribeBtn" class="button large" style="width: 100%; margin-top: 1.5em;">Subscribe Now</button>
 										<p class="subscription-status" id="subscriptionStatus" style="display: none; margin-top: 1em; font-size: 0.9em;"></p>
 									</div>
 								</div>
@@ -135,8 +151,12 @@
 										<p>The <strong>Snapshot Reading</strong> (free) is a quick 4-6 paragraph overview focusing on your core identity (Sun, Moon, Rising), tightest aspects, and stelliums. It's perfect for getting immediate insights while you wait. The <strong>Full Reading</strong> (premium) is a comprehensive 15+ page analysis covering all aspects of your chart, life domains, relationships, career, emotional patterns, and spiritual path with actionable guidance.</p>
 									</details>
 									<details style="margin: 1em 0;">
+										<summary><strong>What happens after I purchase a full reading?</strong></summary>
+										<p>When you purchase a full reading for $28, you'll receive your comprehensive 15+ page analysis and get a <strong>free month of unlimited chats</strong>. After your free month, you can choose to subscribe for $8/month to continue chatting, or simply keep your reading without the subscription.</p>
+									</details>
+									<details style="margin: 1em 0;">
 										<summary><strong>Can I cancel my subscription anytime?</strong></summary>
-										<p>Yes! You can cancel your subscription at any time. You'll continue to have access until the end of your current billing period.</p>
+										<p>Yes! You can cancel your $8/month subscription at any time. You'll continue to have access until the end of your current billing period. Your full reading remains accessible even after canceling.</p>
 									</details>
 									<details style="margin: 1em 0;">
 										<summary><strong>What can I ask in the chat feature?</strong></summary>
@@ -287,6 +307,19 @@
 												<pre id="tropical-output"></pre>
 											</div>
 										</div>
+									</div>
+									
+									<div id="famous-people-section" class="result-section" style="display: none;">
+										<header class="major">
+											<h2>Famous People Like You</h2>
+											<p style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7); margin-top: 0.5em;">
+												Discover which famous people share similar astrological patterns with you
+											</p>
+										</header>
+										<div id="famous-people-loading" style="text-align: center; padding: 2em;">
+											<p>Finding your astrological matches...</p>
+										</div>
+										<div id="famous-people-results" class="famous-people-grid" style="display: none;"></div>
 									</div>
 							
 								</div>

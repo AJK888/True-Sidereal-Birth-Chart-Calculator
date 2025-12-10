@@ -1077,7 +1077,44 @@ const AuthManager = {
     updateSubscriptionUI() {
         const subscribeBtn = document.getElementById('subscribeBtn');
         const subscriptionStatus = document.getElementById('subscriptionStatus');
+        const purchaseReadingBtn = document.getElementById('purchaseReadingBtn');
+        const readingPurchaseStatus = document.getElementById('readingPurchaseStatus');
         
+        // Update reading purchase button
+        if (purchaseReadingBtn) {
+            if (!this.isLoggedIn()) {
+                purchaseReadingBtn.textContent = 'Sign In to Purchase';
+                purchaseReadingBtn.onclick = () => {
+                    this.showLoginModal();
+                    this.closeModals();
+                };
+            } else if (this.subscriptionStatus && this.subscriptionStatus.has_purchased_reading) {
+                purchaseReadingBtn.textContent = 'Reading Purchased';
+                purchaseReadingBtn.disabled = true;
+                purchaseReadingBtn.classList.add('disabled');
+                if (readingPurchaseStatus) {
+                    const freeMonthEnd = this.subscriptionStatus.free_chat_month_end_date;
+                    if (freeMonthEnd && new Date(freeMonthEnd) > new Date()) {
+                        readingPurchaseStatus.textContent = `Free month active until ${new Date(freeMonthEnd).toLocaleDateString()}`;
+                        readingPurchaseStatus.className = 'purchase-status active';
+                        readingPurchaseStatus.style.display = 'block';
+                    } else {
+                        readingPurchaseStatus.textContent = 'Reading purchased - Subscribe to continue chatting';
+                        readingPurchaseStatus.className = 'purchase-status';
+                        readingPurchaseStatus.style.display = 'block';
+                    }
+                }
+            } else {
+                purchaseReadingBtn.textContent = 'Purchase Full Reading - $28';
+                purchaseReadingBtn.disabled = false;
+                purchaseReadingBtn.classList.remove('disabled');
+                if (readingPurchaseStatus) {
+                    readingPurchaseStatus.style.display = 'none';
+                }
+            }
+        }
+        
+        // Update subscription button
         if (!subscribeBtn || !subscriptionStatus) return;
         
         if (!this.isLoggedIn()) {
@@ -1098,7 +1135,7 @@ const AuthManager = {
             subscriptionStatus.className = 'subscription-status active';
             subscriptionStatus.style.display = 'block';
         } else {
-            subscribeBtn.textContent = 'Subscribe Now - $88/month';
+            subscribeBtn.textContent = 'Subscribe Now - $8/month';
             subscribeBtn.disabled = false;
             subscribeBtn.classList.remove('disabled');
             subscriptionStatus.style.display = 'none';
@@ -1109,6 +1146,55 @@ const AuthManager = {
         const subscribeBtn = document.getElementById('subscribeBtn');
         if (subscribeBtn) {
             subscribeBtn.addEventListener('click', () => this.handleSubscribe());
+        }
+        
+        const purchaseReadingBtn = document.getElementById('purchaseReadingBtn');
+        if (purchaseReadingBtn) {
+            purchaseReadingBtn.addEventListener('click', () => this.handlePurchaseReading());
+        }
+    },
+    
+    async handlePurchaseReading() {
+        if (!this.isLoggedIn()) {
+            this.showLoginModal();
+            return;
+        }
+        
+        const purchaseReadingBtn = document.getElementById('purchaseReadingBtn');
+        
+        try {
+            if (purchaseReadingBtn) {
+                purchaseReadingBtn.disabled = true;
+                purchaseReadingBtn.textContent = 'Processing...';
+            }
+            
+            const response = await fetch(`${this.API_BASE}/api/reading/checkout`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.authToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to create checkout session');
+            }
+            
+            const data = await response.json();
+            
+            if (data.checkout_url) {
+                // Redirect to Stripe checkout
+                window.location.href = data.checkout_url;
+            } else {
+                throw new Error('No checkout URL received');
+            }
+        } catch (error) {
+            console.error('Error creating reading checkout:', error);
+            this.showNotification('Failed to start purchase. Please try again.', 'error');
+            if (purchaseReadingBtn) {
+                purchaseReadingBtn.disabled = false;
+                purchaseReadingBtn.textContent = 'Purchase Full Reading - $28';
+            }
         }
     },
     
@@ -1151,27 +1237,45 @@ const AuthManager = {
             this.showNotification('Failed to start subscription. Please try again.', 'error');
             if (subscribeBtn) {
                 subscribeBtn.disabled = false;
-                subscribeBtn.textContent = 'Subscribe Now - $88/month';
+                subscribeBtn.textContent = 'Subscribe Now - $8/month';
             }
         }
     },
     
     hasActiveSubscription() {
-        return this.subscriptionStatus && this.subscriptionStatus.has_subscription;
+        // Check for active subscription or free month
+        if (!this.subscriptionStatus) return false;
+        
+        // Has active paid subscription
+        if (this.subscriptionStatus.has_subscription) return true;
+        
+        // Has purchased reading and is in free month
+        if (this.subscriptionStatus.has_purchased_reading) {
+            const freeMonthEnd = this.subscriptionStatus.free_chat_month_end_date;
+            if (freeMonthEnd && new Date(freeMonthEnd) > new Date()) {
+                return true;
+            }
+        }
+        
+        return false;
     },
     
     showUpgradePrompt(feature: string) {
         const message = feature === 'reading' 
-            ? 'A monthly subscription is required for comprehensive full readings. Snapshot readings are available for free!'
-            : 'A monthly subscription is required to use the chat feature. Subscribe to unlock unlimited conversations about your chart.';
+            ? 'Purchase a full reading for $28 to get your comprehensive 15+ page analysis plus a free month of unlimited chats!'
+            : 'Purchase a full reading to get a free month of chats, or subscribe for $8/month to continue chatting.';
         
         const upgradeHtml = `
             <div style="padding: 2rem; text-align: center; max-width: 600px; margin: 0 auto;">
-                <h3 style="margin-bottom: 1rem; color: #1b6ca8;">Subscription Required</h3>
+                <h3 style="margin-bottom: 1rem; color: #1b6ca8;">${feature === 'reading' ? 'Full Reading Required' : 'Chat Access Required'}</h3>
                 <p style="margin-bottom: 1.5rem; color: rgba(255, 255, 255, 0.8);">${message}</p>
                 <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                     <a href="#pricing-section" class="button primary" onclick="document.querySelector('.modal').style.display='none'">View Pricing</a>
-                    ${this.isLoggedIn() ? `<button class="button" onclick="AuthManager.handleSubscribe()">Subscribe Now</button>` : `<button class="button" onclick="AuthManager.showLoginModal(); document.querySelector('.modal').style.display='none'">Sign In</button>`}
+                    ${this.isLoggedIn() 
+                        ? (feature === 'reading' 
+                            ? `<button class="button" onclick="AuthManager.handlePurchaseReading()">Purchase Reading</button>`
+                            : `<button class="button" onclick="AuthManager.handleSubscribe()">Subscribe Now</button>`)
+                        : `<button class="button" onclick="AuthManager.showLoginModal(); document.querySelector('.modal').style.display='none'">Sign In</button>`}
                 </div>
             </div>
         `;

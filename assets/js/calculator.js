@@ -98,6 +98,9 @@ const AstrologyCalculator = {
 			};
 			
 			this.displayInitialResults(chartData);
+			
+			// Find similar famous people (free feature)
+			this.findSimilarFamousPeople(chartData);
 			// Fetch and display AI reading directly on the page
 			await this.fetchAndDisplayAIReading(chartData);
 		} catch (err) {
@@ -108,7 +111,6 @@ const AstrologyCalculator = {
             this.geminiOutput.innerText = "Error calculating chart or generating reading: " + err.message;
 			if(siderealOutput) siderealOutput.innerText = "Error: " + err.message;
             this.setLoadingState(false); // Make sure loading stops on error
-
 		} 
         // finally block is removed as loading state is handled in fetchAndDisplayAIReading or catch block
 	},
@@ -1027,6 +1029,127 @@ const AstrologyCalculator = {
 				<pre>${legendText}</pre>
 			</details>
 		`;
+	},
+	
+	async findSimilarFamousPeople(chartData) {
+		// Show the famous people section
+		const famousPeopleSection = document.getElementById('famous-people-section');
+		const loadingDiv = document.getElementById('famous-people-loading');
+		const resultsDiv = document.getElementById('famous-people-results');
+		
+		if (!famousPeopleSection) return;
+		
+		famousPeopleSection.style.display = 'block';
+		loadingDiv.style.display = 'block';
+		resultsDiv.style.display = 'none';
+		
+		try {
+			const response = await fetch(`${this.API_URLS.calculate.replace('/calculate_chart', '/api/find-similar-famous-people')}`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					chart_data: chartData,
+					limit: 10
+				})
+			});
+			
+			if (!response.ok) {
+				throw new Error(`API error: ${response.status}`);
+			}
+			
+			const data = await response.json();
+			
+			if (data.matches && data.matches.length > 0) {
+				this.displayFamousPeopleMatches(data.matches);
+				loadingDiv.style.display = 'none';
+				resultsDiv.style.display = 'grid';
+			} else {
+				loadingDiv.innerHTML = '<p>No matches found yet. Check back soon as we add more famous people!</p>';
+			}
+		} catch (error) {
+			console.error('Error finding similar famous people:', error);
+			loadingDiv.innerHTML = '<p>Unable to find matches at this time. This feature is still being developed.</p>';
+		}
+	},
+	
+	displayFamousPeopleMatches(matches) {
+		const resultsDiv = document.getElementById('famous-people-results');
+		if (!resultsDiv) return;
+		
+		let html = '';
+		
+		matches.forEach(match => {
+			const similarityColor = match.similarity_score >= 70 ? '#4CAF50' : 
+			                       match.similarity_score >= 50 ? '#FF9800' : '#2196F3';
+			
+			html += `
+				<div class="famous-person-card" style="
+					background: rgba(27, 108, 168, 0.1);
+					border: 1px solid rgba(27, 108, 168, 0.3);
+					border-radius: 8px;
+					padding: 1.5em;
+					transition: transform 0.2s, box-shadow 0.2s;
+				" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 5px 15px rgba(27, 108, 168, 0.3)'" 
+				   onmouseout="this.style.transform=''; this.style.boxShadow=''">
+					<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1em;">
+						<h3 style="margin: 0; color: #1b6ca8;">${match.name}</h3>
+						<div style="
+							background: ${similarityColor};
+							color: white;
+							padding: 0.3em 0.8em;
+							border-radius: 20px;
+							font-size: 0.85em;
+							font-weight: bold;
+						">${match.similarity_score}% match</div>
+					</div>
+					${match.occupation ? `<p style="color: rgba(255, 255, 255, 0.8); margin: 0.5em 0; font-style: italic;">${match.occupation}</p>` : ''}
+					<div style="margin: 1em 0; padding: 1em; background: rgba(0, 0, 0, 0.2); border-radius: 4px;">
+						<p style="margin: 0.3em 0; font-size: 0.9em;">
+							<strong>Born:</strong> ${match.birth_date} in ${match.birth_location}
+						</p>
+						${match.sun_sign_sidereal ? `<p style="margin: 0.3em 0; font-size: 0.9em;"><strong>Sun:</strong> ${match.sun_sign_sidereal} (Sidereal), ${match.sun_sign_tropical || 'N/A'} (Tropical)</p>` : ''}
+						${match.moon_sign_sidereal ? `<p style="margin: 0.3em 0; font-size: 0.9em;"><strong>Moon:</strong> ${match.moon_sign_sidereal} (Sidereal), ${match.moon_sign_tropical || 'N/A'} (Tropical)</p>` : ''}
+					</div>
+					<a href="${match.wikipedia_url}" target="_blank" rel="noopener noreferrer" 
+					   style="
+						display: inline-block;
+						margin-top: 1em;
+						padding: 0.6em 1.2em;
+						background: #1b6ca8;
+						color: white;
+						text-decoration: none;
+						border-radius: 4px;
+						transition: background 0.2s;
+					" onmouseover="this.style.background='#155a8a'" onmouseout="this.style.background='#1b6ca8'">
+						Learn More on Wikipedia →
+					</a>
+				</div>
+			`;
+		});
+		
+		resultsDiv.innerHTML = html;
+		
+		// Add CSS for grid layout if not already present
+		if (!document.getElementById('famous-people-grid-style')) {
+			const style = document.createElement('style');
+			style.id = 'famous-people-grid-style';
+			style.textContent = `
+				.famous-people-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+					gap: 1.5em;
+					margin-top: 2em;
+				}
+				@media (max-width: 768px) {
+					.famous-people-grid {
+						grid-template-columns: 1fr;
+					}
+				}
+			`;
+			document.head.appendChild(style);
+		}
 	}
 };
 
