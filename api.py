@@ -38,7 +38,7 @@ from llm_schemas import (
 )
 
 # --- Import Auth & Database ---
-from database import init_db, get_db, User, SavedChart, ChatConversation, ChatMessage, CreditTransaction, AdminBypassLog
+from database import init_db, get_db, User, SavedChart, ChatConversation, ChatMessage, CreditTransaction, AdminBypassLog, FamousPerson
 from auth import (
     UserCreate, UserLogin, UserResponse, Token,
     create_user, authenticate_user, get_user_by_email,
@@ -1293,16 +1293,25 @@ def format_snapshot_for_prompt(snapshot: dict) -> str:
     
     # Core Identity
     lines.append("=== CORE IDENTITY ===")
+    unknown_time = snapshot.get('metadata', {}).get('unknown_time', False)
     for system in ['sidereal', 'tropical']:
         lines.append(f"\n{system.upper()}:")
         core = snapshot.get('core_identity', {}).get(system, {})
-        for body in ['sun', 'moon', 'ascendant']:
+        # Always include Sun and Moon
+        for body in ['sun', 'moon']:
             if body in core:
                 info = core[body]
-                house_str = f", House {info['house']}" if info.get('house') else ""
+                house_str = f", House {info['house']}" if info.get('house') and not unknown_time else ""
                 retro_str = " (Rx)" if info.get('retrograde') else ""
                 degree_str = f" {info.get('degree', 0)}°" if info.get('degree') else ""
                 lines.append(f"  {body.capitalize()}: {info.get('sign', 'N/A')}{degree_str}{house_str}{retro_str}")
+        # Only include Ascendant if time is known
+        if not unknown_time and 'ascendant' in core:
+            info = core['ascendant']
+            degree_str = f" {info.get('degree', 0)}°" if info.get('degree') else ""
+            lines.append(f"  Ascendant: {info.get('sign', 'N/A')}{degree_str}")
+        elif unknown_time:
+            lines.append("  Ascendant: Not available (birth time unknown)")
     lines.append("")
     
     # Tightest Aspects
@@ -1352,33 +1361,62 @@ async def generate_snapshot_reading(chart_data: dict, unknown_time: bool) -> str
         
         llm = Gemini3Client()
         
-        system_prompt = """You are a master astrological analyst providing a comprehensive snapshot reading.
+        unknown_time_flag = snapshot.get('metadata', {}).get('unknown_time', False)
+        
+        time_restrictions = ""
+        if unknown_time_flag:
+            time_restrictions = """
+CRITICAL: Birth time is UNKNOWN. You MUST:
+- Do NOT mention the Ascendant (Rising sign) at all - it is not available
+- Do NOT mention house placements or house numbers
+- Do NOT mention the Midheaven (MC) or any angles
+- Do NOT mention chart ruler or house rulers
+- Focus ONLY on sign placements, planetary aspects, and stelliums in signs
+- When describing stelliums, focus on the sign energy, NOT house placement
+- If the data shows "Unknown Time: True", the Ascendant/Rising is NOT in the data and should not be referenced"""
+        else:
+            time_restrictions = """
+- You may reference the Ascendant (Rising sign) if it's in the data
+- You may mention house placements if they're provided in the data"""
+        
+        system_prompt = f"""You are a master astrological analyst providing a comprehensive snapshot reading.
 
-Your task is to synthesize the core identity (Sun, Moon, Rising), the two tightest aspects, and any stelliums from BOTH sidereal and tropical systems into a detailed but focused snapshot.
+Your task is to synthesize the core identity (Sun, Moon, Rising if available), the two tightest aspects, and any stelliums from BOTH sidereal and tropical systems into a detailed but focused snapshot.
 
 GUIDELINES:
 1. Compare and contrast sidereal vs tropical placements - note where they align and where they differ
 2. Explain how the tightest aspects create core dynamics in the personality
-3. Describe how stelliums concentrate energy in specific signs/houses
+3. Describe how stelliums concentrate energy in specific signs (and houses only if birth time is known)
 4. Synthesize these elements into a coherent picture of the person's core nature
 5. Be specific and insightful, providing meaningful depth (4-6 paragraphs)
 6. Use second person ("you", "your")
 7. Focus on psychological patterns and tendencies, not predictions
 8. Draw connections between the different elements to create a unified narrative
+{time_restrictions}
 
 OUTPUT FORMAT:
 Provide a comprehensive snapshot reading in 4-6 paragraphs that synthesizes all the provided information with depth and insight."""
+        
+        unknown_time_flag = snapshot.get('metadata', {}).get('unknown_time', False)
+        
+        rising_instruction = ""
+        if unknown_time_flag:
+            rising_instruction = "\nIMPORTANT: The birth time is unknown, so the Ascendant/Rising sign is NOT available. Do NOT mention it or try to interpret it. Focus only on Sun and Moon placements, aspects, and stelliums."
+        else:
+            rising_instruction = "\nYou may include the Ascendant/Rising sign in your analysis if it's provided in the data."
         
         user_prompt = f"""Chart Snapshot Data:
 {snapshot_summary}
 
 Generate a comprehensive snapshot reading that:
-1. Synthesizes the Sun, Moon, and Rising placements from both sidereal and tropical systems, noting similarities and differences
+1. Synthesizes the Sun and Moon placements from both sidereal and tropical systems, noting similarities and differences{rising_instruction}
 2. Explains how the two tightest aspects from each system create core dynamics and psychological patterns
-3. Describes how any stelliums concentrate energy and what this means for the person's focus and expression
+3. Describes how any stelliums concentrate energy in signs and what this means for the person's focus and expression (mention houses ONLY if birth time is known)
 4. Compares and contrasts sidereal vs tropical where relevant, explaining the significance of any differences
 5. Creates a coherent, detailed picture of the core psychological patterns, motivations, and tendencies
 6. Draws meaningful connections between all the elements to tell a unified story
+
+{"REMINDER: Birth time is unknown. Do NOT mention Ascendant, Rising sign, houses, Midheaven, or any time-sensitive chart elements." if unknown_time_flag else ""}
 
 Provide 4-6 paragraphs of insightful, specific analysis that gives readers a meaningful understanding while they wait for their full report."""
         
@@ -2338,11 +2376,14 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
                     try:
                         # Format birth date and time for email
                         birth_date_str = f"{data.month}/{data.day}/{data.year}"
-                        birth_time_str = f"{data.hour:02d}:{data.minute:02d}"
-                        if data.hour >= 12:
-                            birth_time_str += " PM"
+                        if data.unknown_time:
+                            birth_time_str = "Unknown (Noon Chart)"
                         else:
-                            birth_time_str += " AM"
+                            birth_time_str = f"{data.hour:02d}:{data.minute:02d}"
+                            if data.hour >= 12:
+                                birth_time_str += " PM"
+                            else:
+                                birth_time_str += " AM"
                         
                         # Send to user
                         send_snapshot_email_via_sendgrid(
@@ -3114,7 +3155,7 @@ async def delete_conversation_endpoint(
 # Subscription Management Endpoints
 # ============================================================
 
-from subscription import create_subscription_checkout, handle_subscription_webhook
+from subscription import create_subscription_checkout, create_reading_checkout, handle_subscription_webhook
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 @app.get("/api/subscription/status")
@@ -3122,7 +3163,7 @@ async def get_subscription_status(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get current user's subscription status."""
+    """Get current user's subscription status and reading purchase info."""
     is_active = has_active_subscription(current_user, db)
     
     return {
@@ -3130,8 +3171,28 @@ async def get_subscription_status(
         "status": current_user.subscription_status,
         "start_date": current_user.subscription_start_date.isoformat() if current_user.subscription_start_date else None,
         "end_date": current_user.subscription_end_date.isoformat() if current_user.subscription_end_date else None,
+        "has_purchased_reading": current_user.has_purchased_reading,
+        "reading_purchase_date": current_user.reading_purchase_date.isoformat() if current_user.reading_purchase_date else None,
+        "free_chat_month_end_date": current_user.free_chat_month_end_date.isoformat() if current_user.free_chat_month_end_date else None,
         "is_admin": current_user.is_admin
     }
+
+
+@app.post("/api/reading/checkout")
+async def create_reading_checkout_endpoint(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Create a Stripe checkout session for $28 one-time full reading purchase."""
+    try:
+        result = create_reading_checkout(
+            user_id=current_user.id,
+            user_email=current_user.email
+        )
+        return result
+    except Exception as e:
+        logger.error(f"Error creating reading checkout: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/subscription/checkout")
@@ -3139,7 +3200,7 @@ async def create_subscription_checkout_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Create a Stripe checkout session for monthly subscription."""
+    """Create a Stripe checkout session for $8/month subscription."""
     try:
         result = create_subscription_checkout(
             user_id=current_user.id,
@@ -3180,4 +3241,196 @@ async def stripe_webhook_endpoint(request: Request, db: Session = Depends(get_db
         raise HTTPException(status_code=400, detail="Invalid signature")
     except Exception as e:
         logger.error(f"Error processing webhook: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# Famous People Similarity Matching (Free Feature)
+# ============================================================================
+
+def calculate_chart_similarity(user_chart_data: dict, famous_person: FamousPerson) -> float:
+    """
+    Calculate similarity score between user chart and famous person chart.
+    Returns a score from 0-100.
+    """
+    try:
+        # Load famous person's chart data
+        if not famous_person.chart_data_json:
+            return 0.0
+        
+        fp_chart = json.loads(famous_person.chart_data_json)
+        
+        score = 0.0
+        matches = 0
+        total_checks = 0
+        
+        # Compare Sun signs (both systems) - weight: 30%
+        user_sun_s = None
+        user_sun_t = None
+        fp_sun_s = famous_person.sun_sign_sidereal
+        fp_sun_t = famous_person.sun_sign_tropical
+        
+        s_positions = {p['name']: p for p in user_chart_data.get('sidereal_major_positions', [])}
+        t_positions = {p['name']: p for p in user_chart_data.get('tropical_major_positions', [])}
+        
+        if 'Sun' in s_positions:
+            user_sun_s = s_positions['Sun'].get('position', '').split()[-1] if s_positions['Sun'].get('position') else None
+        if 'Sun' in t_positions:
+            user_sun_t = t_positions['Sun'].get('position', '').split()[-1] if t_positions['Sun'].get('position') else None
+        
+        if user_sun_s and fp_sun_s:
+            total_checks += 1
+            if user_sun_s == fp_sun_s:
+                matches += 1
+                score += 15.0
+        
+        if user_sun_t and fp_sun_t:
+            total_checks += 1
+            if user_sun_t == fp_sun_t:
+                matches += 1
+                score += 15.0
+        
+        # Compare Moon signs (both systems) - weight: 30%
+        user_moon_s = None
+        user_moon_t = None
+        fp_moon_s = famous_person.moon_sign_sidereal
+        fp_moon_t = famous_person.moon_sign_tropical
+        
+        if 'Moon' in s_positions:
+            user_moon_s = s_positions['Moon'].get('position', '').split()[-1] if s_positions['Moon'].get('position') else None
+        if 'Moon' in t_positions:
+            user_moon_t = t_positions['Moon'].get('position', '').split()[-1] if t_positions['Moon'].get('position') else None
+        
+        if user_moon_s and fp_moon_s:
+            total_checks += 1
+            if user_moon_s == fp_moon_s:
+                matches += 1
+                score += 15.0
+        
+        if user_moon_t and fp_moon_t:
+            total_checks += 1
+            if user_moon_t == fp_moon_t:
+                matches += 1
+                score += 15.0
+        
+        # Compare Rising signs (if available) - weight: 20%
+        user_rising_s = None
+        user_rising_t = None
+        fp_rising_s = famous_person.rising_sign_sidereal
+        fp_rising_t = famous_person.rising_sign_tropical
+        
+        s_extra = {p['name']: p for p in user_chart_data.get('sidereal_additional_points', [])}
+        t_extra = {p['name']: p for p in user_chart_data.get('tropical_additional_points', [])}
+        
+        if 'Ascendant' in s_extra and not user_chart_data.get('unknown_time'):
+            asc_info = s_extra['Ascendant'].get('info', '')
+            user_rising_s = asc_info.split()[0] if asc_info else None
+        
+        if 'Ascendant' in t_extra and not user_chart_data.get('unknown_time'):
+            asc_info = t_extra['Ascendant'].get('info', '')
+            user_rising_t = asc_info.split()[0] if asc_info else None
+        
+        if user_rising_s and fp_rising_s:
+            total_checks += 1
+            if user_rising_s == fp_rising_s:
+                matches += 1
+                score += 10.0
+        
+        if user_rising_t and fp_rising_t:
+            total_checks += 1
+            if user_rising_t == fp_rising_t:
+                matches += 1
+                score += 10.0
+        
+        # Compare dominant elements - weight: 10%
+        user_dom_elem = user_chart_data.get('sidereal_chart_analysis', {}).get('dominant_element')
+        fp_dom_elem = fp_chart.get('sidereal_chart_analysis', {}).get('dominant_element')
+        if user_dom_elem and fp_dom_elem and user_dom_elem == fp_dom_elem:
+            score += 10.0
+        
+        # Compare life path number (if available) - weight: 10%
+        # This would require storing numerology in famous_person table
+        
+        return min(score, 100.0)
+    
+    except Exception as e:
+        logger.error(f"Error calculating similarity: {e}", exc_info=True)
+        return 0.0
+
+
+@app.post("/api/find-similar-famous-people")
+@limiter.limit("100/day")
+async def find_similar_famous_people_endpoint(
+    request: Request,
+    chart_data: dict,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    """
+    Find famous people with similar birth charts to the user's chart.
+    This is a FREE feature - no subscription required.
+    
+    Args:
+        chart_data: The user's calculated chart data (from /calculate_chart endpoint)
+        limit: Number of matches to return (default 10, max 50)
+    
+    Returns:
+        List of famous people sorted by similarity score
+    """
+    try:
+        if limit > 50:
+            limit = 50
+        if limit < 1:
+            limit = 10
+        
+        # Get all famous people from database
+        famous_people = db.query(FamousPerson).all()
+        
+        if not famous_people:
+            return {
+                "matches": [],
+                "message": "No famous people data available yet. Check back soon!"
+            }
+        
+        # Calculate similarity scores
+        matches = []
+        for fp in famous_people:
+            score = calculate_chart_similarity(chart_data, fp)
+            if score > 0:  # Only include if there's some similarity
+                matches.append({
+                    "famous_person": fp,
+                    "similarity_score": score
+                })
+        
+        # Sort by similarity score (highest first)
+        matches.sort(key=lambda x: x["similarity_score"], reverse=True)
+        
+        # Take top matches
+        top_matches = matches[:limit]
+        
+        # Format response
+        result = []
+        for match in top_matches:
+            fp = match["famous_person"]
+            result.append({
+                "name": fp.name,
+                "wikipedia_url": fp.wikipedia_url,
+                "occupation": fp.occupation,
+                "similarity_score": round(match["similarity_score"], 1),
+                "birth_date": f"{fp.birth_month}/{fp.birth_day}/{fp.birth_year}",
+                "birth_location": fp.birth_location,
+                "sun_sign_sidereal": fp.sun_sign_sidereal,
+                "sun_sign_tropical": fp.sun_sign_tropical,
+                "moon_sign_sidereal": fp.moon_sign_sidereal,
+                "moon_sign_tropical": fp.moon_sign_tropical,
+            })
+        
+        return {
+            "matches": result,
+            "total_compared": len(famous_people),
+            "matches_found": len(result)
+        }
+    
+    except Exception as e:
+        logger.error(f"Error finding similar famous people: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

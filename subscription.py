@@ -2,7 +2,9 @@
 Subscription Management for Synthesis Astrology
 
 Handles:
-- Monthly $88 subscription via Stripe
+- $28 one-time full reading purchase via Stripe
+- Free month of chats after reading purchase
+- Monthly $8 subscription for continued chat access
 - Subscription status checking
 - Webhook processing for subscription events
 - Admin bypass logging
@@ -28,8 +30,10 @@ logger = logging.getLogger(__name__)
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
-# Stripe Price ID for the monthly $88 subscription
+# Stripe Price ID for the $28 one-time full reading purchase
 # Get this from your Stripe Dashboard: Products > Your Product > Pricing > Price ID (starts with price_)
+STRIPE_PRICE_ID_READING = os.getenv("STRIPE_PRICE_ID_READING")
+# Stripe Price ID for the monthly $8 subscription (for continued chat access)
 STRIPE_PRICE_ID_MONTHLY = os.getenv("STRIPE_PRICE_ID_MONTHLY")
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "https://synthesisastrology.com")
@@ -50,14 +54,14 @@ else:
 
 def has_active_subscription(user, db: Session) -> bool:
     """
-    Check if user has an active subscription.
+    Check if user has an active subscription or is in their free month.
     
     Args:
         user: User database object
         db: Database session
     
     Returns:
-        True if user has active subscription, False otherwise
+        True if user has active subscription or is in free month, False otherwise
     """
     if not user:
         return False
@@ -65,6 +69,11 @@ def has_active_subscription(user, db: Session) -> bool:
     # Admin users always have access
     if user.is_admin:
         return True
+    
+    # Check if user is in their free month (after purchasing a reading)
+    if user.has_purchased_reading and user.free_chat_month_end_date:
+        if user.free_chat_month_end_date > datetime.utcnow():
+            return True
     
     # Check subscription status
     if user.subscription_status == "active":
@@ -82,6 +91,8 @@ def has_active_subscription(user, db: Session) -> bool:
 def check_subscription_access(user, db: Session, admin_secret: Optional[str] = None) -> tuple[bool, str]:
     """
     Check if user has subscription access, with optional admin bypass.
+    For full readings: requires reading purchase or subscription.
+    For chat: requires reading purchase (free month) or active subscription.
     
     Args:
         user: User database object (can be None)
@@ -101,11 +112,103 @@ def check_subscription_access(user, db: Session, admin_secret: Optional[str] = N
     if not user:
         return False, "User not authenticated"
     
-    # Check subscription
+    # Check subscription or free month
     if has_active_subscription(user, db):
-        return True, "active_subscription"
+        # Determine the reason
+        if user.has_purchased_reading and user.free_chat_month_end_date and user.free_chat_month_end_date > datetime.utcnow():
+            return True, "free_month"
+        elif user.subscription_status == "active":
+            return True, "active_subscription"
     
     return False, "no_subscription"
+
+
+# ============================================================================
+# Stripe Checkout for Reading Purchase
+# ============================================================================
+
+def create_reading_checkout(user_id: int, user_email: str) -> Dict[str, Any]:
+    """
+    Create a Stripe Checkout session for $28 one-time full reading purchase.
+    
+    Args:
+        user_id: User's database ID
+        user_email: User's email
+    
+    Returns:
+        Dict with checkout_url and session_id
+    """
+    if not STRIPE_SECRET_KEY or not stripe:
+        raise ValueError("Stripe not configured")
+    
+    if not STRIPE_PRICE_ID_READING:
+        raise ValueError("STRIPE_PRICE_ID_READING not configured")
+    
+    try:
+        # Check if user already has a Stripe customer ID
+        from database import User, get_db
+        db = next(get_db())
+        user = db.query(User).filter(User.id == user_id).first()
+        
+        customer_id = user.stripe_customer_id if user else None
+        
+        # Create or retrieve Stripe customer
+        if not customer_id:
+            customer = stripe.Customer.create(
+                email=user_email,
+                metadata={"user_id": str(user_id)}
+            )
+            customer_id = customer.id
+            
+            # Save customer ID to user
+            if user:
+                user.stripe_customer_id = customer_id
+                db.commit()
+        else:
+            # Verify customer still exists in Stripe
+            try:
+                stripe.Customer.retrieve(customer_id)
+            except stripe.error.InvalidRequestError:
+                # Customer doesn't exist, create new one
+                customer = stripe.Customer.create(
+                    email=user_email,
+                    metadata={"user_id": str(user_id)}
+                )
+                customer_id = customer.id
+                if user:
+                    user.stripe_customer_id = customer_id
+                    db.commit()
+        
+        # Create checkout session for one-time reading purchase
+        session = stripe.checkout.Session.create(
+            customer=customer_id,
+            payment_method_types=["card"],
+            line_items=[{
+                "price": STRIPE_PRICE_ID_READING,
+                "quantity": 1,
+            }],
+            mode="payment",  # One-time payment, not subscription
+            success_url=SUCCESS_URL,
+            cancel_url=CANCEL_URL,
+            metadata={
+                "user_id": str(user_id),
+                "purchase_type": "reading"
+            }
+        )
+        
+        logger.info(f"Created reading purchase checkout session {session.id} for user {user_id}")
+        
+        return {
+            "checkout_url": session.url,
+            "session_id": session.id,
+        }
+    
+    except stripe.error.StripeError as e:
+        logger.error(f"Stripe error creating reading checkout: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Error creating reading checkout: {e}")
+        raise
 
 
 # ============================================================================
@@ -224,13 +327,24 @@ def handle_subscription_webhook(event: Dict[str, Any], db: Session) -> Dict[str,
     
     try:
         if event_type == "checkout.session.completed":
-            # Subscription checkout completed
+            # Checkout completed - could be reading purchase or subscription
             session = event_data
             user_id = int(session.get("metadata", {}).get("user_id", 0))
+            purchase_type = session.get("metadata", {}).get("purchase_type", "")
             
             if user_id:
                 user = db.query(User).filter(User.id == user_id).first()
                 if user:
+                    # Check if this is a reading purchase (one-time payment)
+                    if purchase_type == "reading" and session.get("mode") == "payment":
+                        # Reading purchase completed - grant free month of chats
+                        user.has_purchased_reading = True
+                        user.reading_purchase_date = datetime.utcnow()
+                        user.free_chat_month_end_date = datetime.utcnow() + timedelta(days=30)
+                        db.commit()
+                        logger.info(f"Reading purchase completed for user {user_id}, free month granted until {user.free_chat_month_end_date}")
+                    
+                    # Check if this is a subscription (recurring payment)
                     subscription_id = session.get("subscription")
                     if subscription_id:
                         user.stripe_subscription_id = subscription_id

@@ -1,6 +1,8 @@
-# Stripe Subscription Setup Guide
+# Stripe Setup Guide
 
-Complete step-by-step instructions to set up Stripe for the $88/month subscription.
+Complete step-by-step instructions to set up Stripe for the new pricing model:
+- $28 one-time full reading purchase
+- $8/month subscription for continued chat access
 
 ## Prerequisites
 - Stripe account (sign up at https://stripe.com if needed)
@@ -22,47 +24,61 @@ Complete step-by-step instructions to set up Stripe for the $88/month subscripti
 
 ---
 
-## Step 2: Create a Product in Stripe
+## Step 2: Create Product for Full Reading Purchase
 
 1. In Stripe Dashboard, go to **Products** (left sidebar)
 2. Click **"+ Add product"** button
 3. Fill in the product details:
-   - **Name**: `Synthesis Astrology Premium Subscription`
-   - **Description**: `Monthly subscription for unlimited full readings and chat access`
+   - **Name**: `Synthesis Astrology Full Reading`
+   - **Description**: `Comprehensive 15+ page full reading with free month of unlimited chats`
    - Leave other fields as default
 4. Click **"Save product"**
 
----
-
-## Step 3: Create a Price for the Product
+### Step 2a: Create Price for Full Reading
 
 1. After creating the product, you'll see a **"Add price"** section
 2. Click **"Add price"** or go to the product and click **"Add another price"**
 3. Configure the price:
    - **Pricing model**: Select **"Standard pricing"**
-   - **Price**: Enter `88.00`
+   - **Price**: Enter `28.00`
+   - **Currency**: Select `USD` (or your preferred currency)
+   - **Billing period**: Select **"One time"** (not recurring)
+4. Click **"Save price"**
+5. **Copy the Price ID** (starts with `price_`) - This is your `STRIPE_PRICE_ID_READING`
+
+---
+
+## Step 3: Create Product for Monthly Subscription
+
+1. In Stripe Dashboard, go to **Products** (left sidebar)
+2. Click **"+ Add product"** button
+3. Fill in the product details:
+   - **Name**: `Synthesis Astrology Monthly Subscription`
+   - **Description**: `Monthly subscription for unlimited chat conversations and premium features`
+   - Leave other fields as default
+4. Click **"Save product"**
+
+### Step 3a: Create Price for Monthly Subscription
+
+1. After creating the product, you'll see a **"Add price"** section
+2. Click **"Add price"** or go to the product and click **"Add another price"**
+3. Configure the price:
+   - **Pricing model**: Select **"Standard pricing"**
+   - **Price**: Enter `8.00`
    - **Currency**: Select `USD` (or your preferred currency)
    - **Billing period**: Select **"Monthly"** (recurring)
    - **Usage type**: Select **"Licensed"**
 4. Click **"Save price"**
+5. **Copy the Price ID** (starts with `price_`) - This is your `STRIPE_PRICE_ID_MONTHLY`
 
----
-
-## Step 4: Get Your Price ID
-
-1. After saving the price, you'll see it listed under your product
-2. The **Price ID** will be displayed (starts with `price_`)
-   - Example: `price_1ABC123def456GHI789jkl012`
-3. **Copy this Price ID** - you'll need it for the environment variable `STRIPE_PRICE_ID_MONTHLY`
-
-💡 **Tip**: You can also find it by:
+💡 **Tip**: You can find Price IDs by:
    - Going to **Products** → Click your product → Click the price → The ID is shown at the top
 
 ---
 
-## Step 5: Set Up Webhook Endpoint
+## Step 4: Set Up Webhook Endpoint
 
-Webhooks allow Stripe to notify your server when subscription events occur (payment succeeded, subscription canceled, etc.).
+Webhooks allow Stripe to notify your server when payment events occur (payment succeeded, subscription canceled, etc.).
 
 1. In Stripe Dashboard, go to **Developers** → **Webhooks** (left sidebar)
 2. Click **"+ Add endpoint"**
@@ -70,19 +86,19 @@ Webhooks allow Stripe to notify your server when subscription events occur (paym
    - **Endpoint URL**: Enter your API URL + webhook path
      - Example: `https://true-sidereal-api.onrender.com/api/webhooks/stripe`
      - Replace with your actual API base URL
-   - **Description**: `Synthesis Astrology Subscription Webhooks`
+   - **Description**: `Synthesis Astrology Payment Webhooks`
    - **Events to send**: Click **"Select events"** and choose:
-     - `checkout.session.completed`
+     - `checkout.session.completed` (for both reading purchase and subscription)
      - `customer.subscription.created`
      - `customer.subscription.updated`
      - `customer.subscription.deleted`
-     - `invoice.paid`
+     - `invoice.paid` (for monthly subscription renewals)
      - `invoice.payment_failed`
 4. Click **"Add endpoint"**
 
 ---
 
-## Step 6: Get Your Webhook Signing Secret
+## Step 5: Get Your Webhook Signing Secret
 
 1. After creating the webhook endpoint, click on it to view details
 2. In the **"Signing secret"** section, click **"Reveal"**
@@ -96,7 +112,7 @@ Webhooks allow Stripe to notify your server when subscription events occur (paym
 
 ---
 
-## Step 7: Set Environment Variables
+## Step 6: Set Environment Variables
 
 Set these environment variables in your deployment platform (Render, Heroku, etc.):
 
@@ -107,16 +123,20 @@ Set these environment variables in your deployment platform (Render, Heroku, etc
    - Example: `sk_test_51ABC123...` or `sk_live_51ABC123...`
 
 2. **STRIPE_WEBHOOK_SECRET**
-   - Value: Your Webhook Signing Secret (from Step 6)
+   - Value: Your Webhook Signing Secret (from Step 5)
    - Example: `whsec_1ABC123...`
 
-3. **STRIPE_PRICE_ID_MONTHLY**
-   - Value: Your Price ID (from Step 4)
+3. **STRIPE_PRICE_ID_READING**
+   - Value: Your Full Reading Price ID (from Step 2a)
    - Example: `price_1ABC123...`
+
+4. **STRIPE_PRICE_ID_MONTHLY**
+   - Value: Your Monthly Subscription Price ID (from Step 3a)
+   - Example: `price_1XYZ789...`
 
 ### Optional Variables (if different from defaults):
 
-4. **FRONTEND_URL** (optional)
+5. **FRONTEND_URL** (optional)
    - Value: Your frontend website URL
    - Default: `https://synthesisastrology.com`
    - Example: `https://synthesisastrology.com`
@@ -135,11 +155,26 @@ Set these environment variables in your deployment platform (Render, Heroku, etc
 ```bash
 heroku config:set STRIPE_SECRET_KEY=sk_test_...
 heroku config:set STRIPE_WEBHOOK_SECRET=whsec_...
+heroku config:set STRIPE_PRICE_ID_READING=price_...
 heroku config:set STRIPE_PRICE_ID_MONTHLY=price_...
 ```
 
 **On Other Platforms:**
 - Check your platform's documentation for setting environment variables
+
+---
+
+## Step 7: Database Migration
+
+You'll need to add new columns to track reading purchases and free month status:
+
+```sql
+ALTER TABLE users ADD COLUMN has_purchased_reading BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN reading_purchase_date TIMESTAMP;
+ALTER TABLE users ADD COLUMN free_chat_month_end_date TIMESTAMP;
+```
+
+Or if using SQLAlchemy migrations, the schema has already been updated in `database.py`.
 
 ---
 
@@ -151,14 +186,22 @@ heroku config:set STRIPE_PRICE_ID_MONTHLY=price_...
    - You should see: `"Stripe initialized for subscriptions"`
    - If you see: `"Stripe not configured - subscription features disabled"`, check your environment variables
 
-2. **Test the checkout flow**:
+2. **Test the reading purchase flow**:
    - Log in to your website
-   - Click "Subscribe Now"
+   - Click "Purchase Full Reading" ($28)
    - You should be redirected to Stripe Checkout
    - Use Stripe test card: `4242 4242 4242 4242`
    - Any future expiry date, any CVC
+   - After payment, verify free month is granted
 
-3. **Test webhook delivery**:
+3. **Test the subscription flow**:
+   - After free month expires (or manually test)
+   - Click "Subscribe" ($8/month)
+   - You should be redirected to Stripe Checkout
+   - Use Stripe test card: `4242 4242 4242 4242`
+   - Verify subscription is activated
+
+4. **Test webhook delivery**:
    - In Stripe Dashboard → **Developers** → **Webhooks**
    - Click your webhook endpoint
    - You should see recent events listed
@@ -207,19 +250,25 @@ heroku config:set STRIPE_PRICE_ID_MONTHLY=price_...
 
 - [ ] Created Stripe account
 - [ ] Got API keys (Secret Key and Publishable Key)
-- [ ] Created product: "Synthesis Astrology Premium Subscription"
-- [ ] Created price: $88/month recurring
-- [ ] Copied Price ID (`price_...`)
+- [ ] Created product: "Synthesis Astrology Full Reading"
+- [ ] Created price: $28.00 one-time payment
+- [ ] Copied Reading Price ID (`price_...`) → `STRIPE_PRICE_ID_READING`
+- [ ] Created product: "Synthesis Astrology Monthly Subscription"
+- [ ] Created price: $8.00/month recurring
+- [ ] Copied Subscription Price ID (`price_...`) → `STRIPE_PRICE_ID_MONTHLY`
 - [ ] Created webhook endpoint pointing to `/api/webhooks/stripe`
 - [ ] Selected required webhook events
 - [ ] Copied webhook signing secret (`whsec_...`)
 - [ ] Set `STRIPE_SECRET_KEY` environment variable
 - [ ] Set `STRIPE_WEBHOOK_SECRET` environment variable
+- [ ] Set `STRIPE_PRICE_ID_READING` environment variable
 - [ ] Set `STRIPE_PRICE_ID_MONTHLY` environment variable
 - [ ] Set `FRONTEND_URL` (if different from default)
+- [ ] Ran database migration (if needed)
 - [ ] Restarted service to load new environment variables
 - [ ] Verified "Stripe initialized" message in logs
-- [ ] Tested checkout flow with test card
+- [ ] Tested reading purchase flow with test card
+- [ ] Tested subscription flow with test card
 - [ ] Verified webhook events are being received
 
 ---
@@ -237,8 +286,8 @@ If you encounter issues:
 ## Next Steps
 
 After setup is complete:
-- Test a full subscription flow end-to-end
+- Test a full reading purchase flow end-to-end
+- Test subscription signup after free month
 - Monitor webhook events to ensure they're processing correctly
 - Switch to Live mode when ready for production
-- Update your frontend to handle subscription status changes
-
+- Update your frontend to handle the new pricing model

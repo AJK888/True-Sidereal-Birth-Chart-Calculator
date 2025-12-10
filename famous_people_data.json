@@ -1,0 +1,57 @@
+[
+  {
+    "name": "Albert Einstein",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Albert_Einstein",
+    "birth_date": {
+      "year": 1879,
+      "month": 3,
+      "day": 14
+    },
+    "birth_location": "Ulm, Kingdom of Württemberg, German Empire",
+    "occupation": "a German-born theoretical physicist best known for developing the theory of relativity"
+  },
+  {
+    "name": "Marie Curie",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Marie_Curie",
+    "birth_date": {
+      "year": 1867,
+      "month": 11,
+      "day": 7
+    },
+    "birth_location": "Warsaw, Congress Poland, Russian Empire",
+    "occupation": "a Polish and naturalised-French physicist and chemist who conducted pioneering research on radioacti"
+  },
+  {
+    "name": "Leonardo da Vinci",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Leonardo_da_Vinci",
+    "birth_date": {
+      "year": 1452,
+      "month": 4,
+      "day": 15
+    },
+    "birth_location": "possibly Anchiano",
+    "occupation": "active as a painter, draughtsman, engineer, scientist, theorist, sculptor, and architect"
+  },
+  {
+    "name": "William Shakespeare",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/William_Shakespeare",
+    "birth_date": {
+      "year": 1564,
+      "month": 4,
+      "day": 23
+    },
+    "birth_location": "Stratford-upon-Avon, Warwickshire, England",
+    "occupation": "{{hlist"
+  },
+  {
+    "name": "Isaac Newton",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Isaac_Newton",
+    "birth_date": {
+      "year": 1643,
+      "month": 1,
+      "day": 4
+    },
+    "birth_location": null,
+    "occupation": null
+  }
+]

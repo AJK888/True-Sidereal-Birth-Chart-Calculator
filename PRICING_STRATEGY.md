@@ -5,48 +5,34 @@
 - Buffer for retries/errors: ~$0.06
 - **Total Cost Per Reading**: ~$0.30
 
-## Recommended Pricing Tiers
+## Current Pricing Model
 
-### Option A: Credit-Based System (Recommended)
-Users purchase credits, spend them on features.
+### Full Reading Purchase
+- **Price**: $28 (one-time payment)
+- **Includes**: 
+  - One comprehensive full reading (15+ page deep analysis)
+  - **Free month of unlimited chats** - Ask our AI astrologer anything about your chart
+- **Margin**: $28 revenue, $0.30 cost = 98.9% margin
 
-| Feature | Credits | Your Cost | Suggested Price |
-|---------|---------|-----------|-----------------|
-| Full Chart Reading | 10 credits | $0.30 | $4.99 (10 credits) |
-| Chat Message (to AI) | 1 credit | ~$0.02-0.05 | included in bundle |
-| Follow-up Deep Dive | 5 credits | ~$0.15 | included in bundle |
+### Monthly Subscription (After Free Month)
+- **Price**: $8/month
+- **Includes**:
+  - Unlimited chat conversations about your chart
+  - Access to all premium features and benefits
+  - Ongoing support and guidance
+- **When it starts**: After your free month expires (if you want to continue chatting)
+- **Cancel anytime**: No long-term commitment
 
-**Credit Packages:**
-- Starter: 10 credits = $4.99 (1 reading OR 10 chat messages)
-- Explorer: 30 credits = $9.99 (3 readings OR mix of features)
-- Seeker: 100 credits = $24.99 (10 readings OR heavy chat usage)
+## Pricing Flow
 
-**Margins:**
-- Starter: $4.99 revenue, $0.30 cost = 94% margin
-- Explorer: $9.99 revenue, $0.90 cost = 91% margin  
-- Seeker: $24.99 revenue, $3.00 cost = 88% margin
+1. **User purchases full reading** ($28)
+   - Receives comprehensive full reading
+   - Gets 1 free month of unlimited chats
+   - Free month starts immediately upon purchase
 
----
-
-### Option B: Subscription Model
-
-| Tier | Price/Month | Includes | Your Cost | Margin |
-|------|-------------|----------|-----------|--------|
-| Free | $0 | 1 reading, 5 chat messages | $0.40 | Loss leader |
-| Basic | $7.99/mo | 3 readings, 50 chat messages | ~$1.50 | 81% |
-| Premium | $14.99/mo | Unlimited readings, unlimited chat | ~$5-10 | 33-66% |
-
----
-
-### Option C: Pay-Per-Use (Simplest)
-
-| Feature | Price | Your Cost | Margin |
-|---------|-------|-----------|--------|
-| Full Reading | $4.99 | $0.30 | 94% |
-| Chat Session (10 messages) | $1.99 | $0.30 | 85% |
-| Unlimited Chat (24hr) | $2.99 | ~$0.50 | 83% |
-
----
+2. **After free month expires**
+   - User can continue with $8/month subscription to keep chatting
+   - Or choose not to subscribe (reading remains accessible)
 
 ## Chat Cost Estimation
 
@@ -55,93 +41,92 @@ Assuming chat uses smaller context windows:
 - Output: ~500 tokens (response)
 - **Cost per chat message**: ~$0.01-0.03
 
-For 10 chat messages: ~$0.10-0.30
+For unlimited chats in a month: ~$0.50-3.00 (depending on usage)
 
----
+## Free Tier (Always Available)
 
-## Recommended Implementation: Hybrid Model
-
-### Free Tier (Account Required)
-- 1 free comprehensive reading
-- 3 free chat messages to try the feature
-- Chart saved permanently
-
-### Credits System
-- 10 credits = $4.99
-- 30 credits = $9.99 (10% bonus)
-- 100 credits = $24.99 (25% bonus)
-
-### Credit Costs
-- Full Reading: 10 credits
-- Chat Message: 1 credit
-- Deep Dive on Topic: 5 credits
-
----
+- Unlimited Chart Calculations
+- Complete Astrological Placements (Sidereal & Tropical)
+- Chinese Zodiac & Numerology Analysis
+- **Unlimited Snapshot Readings** - Quick AI-generated insights delivered instantly via email
+- Chart Visualization Wheels
+- Full Raw Chart Data
 
 ## Stripe Products to Create
 
-1. **credit_pack_starter** - 10 credits @ $4.99
-2. **credit_pack_explorer** - 30 credits @ $9.99
-3. **credit_pack_seeker** - 100 credits @ $24.99
+1. **Full Reading Purchase** - $28 one-time payment
+   - Product: "Synthesis Astrology Full Reading"
+   - Price: $28.00 (one-time)
+   - Price ID environment variable: `STRIPE_PRICE_ID_READING`
 
-Optional subscriptions:
-4. **subscription_basic** - $7.99/mo (30 credits/month)
-5. **subscription_premium** - $14.99/mo (100 credits/month)
+2. **Monthly Subscription** - $8/month recurring
+   - Product: "Synthesis Astrology Monthly Subscription"
+   - Price: $8.00/month (recurring)
+   - Price ID environment variable: `STRIPE_PRICE_ID_MONTHLY`
 
----
+## Database Schema
 
-## Database Schema Additions Needed
+The following fields track reading purchases and free month status:
 
 ```sql
--- User credits tracking
-ALTER TABLE users ADD COLUMN credits INTEGER DEFAULT 3;  -- Free starter credits
-
--- Credit transactions log
-CREATE TABLE credit_transactions (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    amount INTEGER NOT NULL,  -- positive = purchase, negative = usage
-    transaction_type VARCHAR(50),  -- 'purchase', 'reading', 'chat', 'bonus'
-    stripe_payment_id VARCHAR(255),
-    description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Chat messages (for billing)
-CREATE TABLE chat_messages (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    chart_id INTEGER REFERENCES saved_charts(id),
-    role VARCHAR(20),  -- 'user' or 'assistant'
-    content TEXT,
-    tokens_used INTEGER,
-    credits_charged INTEGER DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- User table additions
+ALTER TABLE users ADD COLUMN has_purchased_reading BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN reading_purchase_date TIMESTAMP;
+ALTER TABLE users ADD COLUMN free_chat_month_end_date TIMESTAMP;
 ```
 
----
+## Implementation Details
 
-## Implementation Phases
+### Reading Purchase Flow
+1. User clicks "Purchase Full Reading" ($28)
+2. Stripe Checkout session created (one-time payment)
+3. Upon successful payment:
+   - `has_purchased_reading` = True
+   - `reading_purchase_date` = current timestamp
+   - `free_chat_month_end_date` = current timestamp + 30 days
+4. User can now:
+   - Generate full reading (if not already done)
+   - Use unlimited chats for 30 days
 
-### Phase 1: Credit System Backend
-- Add credits column to users table
-- Create credit_transactions table
-- Create endpoints: GET /credits, POST /use_credits
+### Subscription Flow (After Free Month)
+1. User's free month is about to expire or has expired
+2. User clicks "Subscribe" ($8/month)
+3. Stripe Checkout session created (recurring subscription)
+4. Upon successful subscription:
+   - `subscription_status` = "active"
+   - `subscription_start_date` = current timestamp
+   - `subscription_end_date` = current timestamp + 30 days
+5. User continues to have unlimited chat access
 
-### Phase 2: Stripe Integration
-- Set up Stripe products and prices
-- Create checkout session endpoint
-- Webhook handler for successful payments
-- Credit fulfillment on payment success
+### Access Control Logic
 
-### Phase 3: Chat Feature
-- Chat endpoint that checks/deducts credits
-- Chat history storage
-- Rate limiting per credit balance
+**For Full Readings:**
+- Requires: `has_purchased_reading` = True OR `subscription_status` = "active"
 
-### Phase 4: UI Updates
-- Credit balance display
-- Purchase flow
-- Chat interface with credit warnings
+**For Chat:**
+- Requires: 
+  - In free month (`free_chat_month_end_date` > now) OR
+  - Active subscription (`subscription_status` = "active")
 
+## API Endpoints
+
+- `POST /api/reading/checkout` - Create checkout for $28 reading purchase
+- `POST /api/subscription/checkout` - Create checkout for $8/month subscription
+- `GET /api/subscription/status` - Get current subscription/reading status
+- `POST /api/webhooks/stripe` - Handle Stripe webhook events
+
+## Webhook Events Handled
+
+- `checkout.session.completed` - Reading purchase or subscription signup
+- `customer.subscription.updated` - Subscription status changes
+- `customer.subscription.deleted` - Subscription canceled
+- `invoice.paid` - Monthly subscription payment succeeded
+- `invoice.payment_failed` - Payment failed
+
+## Benefits of This Model
+
+1. **Lower barrier to entry**: $28 one-time vs $88/month subscription
+2. **Value demonstration**: Free month lets users experience chat feature
+3. **Flexible commitment**: Users can try without long-term commitment
+4. **High margin**: 98.9% margin on reading purchase
+5. **Recurring revenue**: $8/month is affordable for ongoing users
