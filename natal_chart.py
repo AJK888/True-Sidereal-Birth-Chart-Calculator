@@ -2,9 +2,17 @@
 
 from datetime import datetime, timezone
 import math
+import os
 from itertools import combinations
 from typing import List, Tuple, Dict, Any, Union, Optional
 import swisseph as swe
+
+# Set Swiss Ephemeris path for asteroid calculations
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_SWISS_EPHEMERIS_PATH = os.path.join(BASE_DIR, "swiss_ephemeris")
+ephe_path = os.getenv("SWEP_PATH") or DEFAULT_SWISS_EPHEMERIS_PATH
+if os.path.exists(ephe_path):
+    swe.set_ephe_path(ephe_path)
 
 # --- Constants ---
 TRUE_SIDEREAL_SIGNS = [("Aries",0.0,19.7286),("Taurus",19.7286,56.5875),("Gemini",56.5875,86.0412),("Cancer",86.0412,103.19),("Leo",103.19,141.6065),("Virgo",141.6065,191.32),("Libra",191.32,210.1972),("Scorpio",210.1972,223.4245),("Ophiuchus",223.4245,235.7818),("Sagittarius",235.7818,269.2677),("Capricorn",269.2677,294.8435),("Aquarius",294.8435,318.0103),("Pisces",318.0103,360.0)]

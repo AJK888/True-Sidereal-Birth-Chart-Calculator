@@ -54,6 +54,11 @@ class User(Base):
     subscription_start_date = Column(DateTime, nullable=True)
     subscription_end_date = Column(DateTime, nullable=True)
     
+    # Reading purchase and free month tracking
+    has_purchased_reading = Column(Boolean, default=False)  # Has user purchased a $28 full reading?
+    reading_purchase_date = Column(DateTime, nullable=True)  # When did they purchase the reading?
+    free_chat_month_end_date = Column(DateTime, nullable=True)  # End date of free month of chats after reading purchase
+    
     # Relationship to saved charts
     charts = relationship("SavedChart", back_populates="owner", cascade="all, delete-orphan")
     
@@ -190,6 +195,51 @@ class AdminBypassLog(Base):
     user_agent = Column(String(500), nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
     details = Column(Text, nullable=True)  # Additional context
+
+
+class FamousPerson(Base):
+    """Famous person with birth chart data for similarity matching."""
+    __tablename__ = "famous_people"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Basic info
+    name = Column(String(255), nullable=False, unique=True, index=True)
+    wikipedia_url = Column(String(500), nullable=False)
+    occupation = Column(String(255), nullable=True)
+    
+    # Birth data
+    birth_year = Column(Integer, nullable=False)
+    birth_month = Column(Integer, nullable=False)
+    birth_day = Column(Integer, nullable=False)
+    birth_hour = Column(Integer, nullable=True)  # May be unknown
+    birth_minute = Column(Integer, nullable=True)  # May be unknown
+    birth_location = Column(String(500), nullable=False)
+    unknown_time = Column(Boolean, default=True)  # Most famous people won't have exact birth times
+    
+    # Chart data (stored as JSON for quick comparison)
+    chart_data_json = Column(Text, nullable=True)  # Key chart elements for comparison
+    
+    # Key chart elements for matching (stored separately for fast queries)
+    sun_sign_sidereal = Column(String(50), nullable=True, index=True)
+    sun_sign_tropical = Column(String(50), nullable=True, index=True)
+    moon_sign_sidereal = Column(String(50), nullable=True, index=True)
+    moon_sign_tropical = Column(String(50), nullable=True, index=True)
+    rising_sign_sidereal = Column(String(50), nullable=True, index=True)
+    rising_sign_tropical = Column(String(50), nullable=True, index=True)
+    
+    # Numerology
+    life_path_number = Column(String(10), nullable=True, index=True)
+    day_number = Column(String(10), nullable=True)
+    
+    # Chinese Zodiac
+    chinese_zodiac_animal = Column(String(50), nullable=True, index=True)
+    chinese_zodiac_element = Column(String(50), nullable=True)
+    
+    # Metadata
+    page_views = Column(Integer, nullable=True)  # Wikipedia page views (for ranking)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 def init_db():
