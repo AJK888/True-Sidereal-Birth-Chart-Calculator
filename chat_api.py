@@ -302,7 +302,16 @@ async def send_message(
                 db.add(log_entry)
                 db.commit()
             except Exception as log_error:
-                logger.warning(f"Could not log admin bypass attempt: {log_error}")
+                # Handle sequence sync issues gracefully
+                error_str = str(log_error)
+                if "UniqueViolation" in error_str and "admin_bypass_logs_pkey" in error_str:
+                    logger.warning(f"Admin bypass log sequence out of sync. Run fix_admin_logs_sequence.py to resolve. Error: {log_error}")
+                    try:
+                        db.rollback()
+                    except:
+                        pass
+                else:
+                    logger.warning(f"Could not log admin bypass attempt: {log_error}")
         
         raise HTTPException(
             status_code=402,
@@ -327,7 +336,16 @@ async def send_message(
             db.add(log_entry)
             db.commit()
         except Exception as log_error:
-            logger.warning(f"Could not log admin bypass: {log_error}")
+            # Handle sequence sync issues gracefully
+            error_str = str(log_error)
+            if "UniqueViolation" in error_str and "admin_bypass_logs_pkey" in error_str:
+                logger.warning(f"Admin bypass log sequence out of sync. Run fix_admin_logs_sequence.py to resolve. Error: {log_error}")
+                try:
+                    db.rollback()
+                except:
+                    pass
+            else:
+                logger.warning(f"Could not log admin bypass: {log_error}")
     
     # Save user message
     user_message = ChatMessage(
