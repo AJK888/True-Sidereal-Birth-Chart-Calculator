@@ -45,7 +45,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)  # Admin flag for developer access
-    credits = Column(Integer, default=3)  # Free credits for new users
+    credits = Column(Integer, default=10)  # Free credits for new users (10 free chats)
     
     # Stripe subscription fields
     stripe_customer_id = Column(String(255), nullable=True, index=True)

@@ -269,7 +269,7 @@ async def send_message(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Send a message in a conversation and get AI response. Requires active subscription."""
+    """Send a message in a conversation and get AI response. Requires subscription OR credits (10 free chats)."""
     # Get conversation
     conversation = db.query(ChatConversation).filter(
         ChatConversation.id == conversation_id,
@@ -279,11 +279,16 @@ async def send_message(
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
-    # Check subscription access (with admin bypass support)
-    admin_secret = request.query_params.get('admin_secret')
-    has_access, reason = check_subscription_access(current_user, db, admin_secret)
+    # Check access: subscription OR credits (with admin bypass support)
+    # Refresh user to ensure we have latest credit balance
+    db.refresh(current_user)
     
-    if not has_access:
+    admin_secret = request.query_params.get('admin_secret')
+    has_subscription, reason = check_subscription_access(current_user, db, admin_secret)
+    has_credits = check_credits(current_user, CHAT_CREDIT_COST)
+    
+    # Allow if user has subscription OR has credits
+    if not has_subscription and not has_credits:
         # Log admin bypass attempt if secret was provided but invalid
         if admin_secret:
             try:
@@ -302,8 +307,9 @@ async def send_message(
         raise HTTPException(
             status_code=402,
             detail={
-                "error": "Subscription required",
-                "message": "A monthly subscription is required to use the chat feature. Subscribe to unlock unlimited chats about your chart.",
+                "error": "Chat access required",
+                "message": f"You've used all {current_user.credits} free chats. Purchase a full reading for $28 to get unlimited chats for a month, or subscribe for $8/month.",
+                "credits_remaining": current_user.credits,
                 "reason": reason
             }
         )
@@ -340,24 +346,32 @@ async def send_message(
         db=db
     )
     
+    # Deduct credits if user doesn't have subscription (free users use credits)
+    credits_charged = 0
+    credits_remaining = None
+    
+    if not has_subscription:
+        # Free user - deduct credits
+        credits_remaining = deduct_credits(db, current_user, CHAT_CREDIT_COST, f"Chat message in conversation {conversation_id}")
+        credits_charged = CHAT_CREDIT_COST
+    
     # Save assistant message
     assistant_message = ChatMessage(
         conversation_id=conversation_id,
         role="assistant",
         content=ai_response_content,
-        credits_charged=0  # No credits for subscription users
+        credits_charged=credits_charged
     )
     db.add(assistant_message)
     
     # Update conversation timestamp
     conversation.updated_at = datetime.utcnow()
     
-    # No credit deduction for subscriptions - unlimited chats
     db.commit()
     db.refresh(user_message)
     db.refresh(assistant_message)
     
-    logger.info(f"User {current_user.id} sent message in conversation {conversation_id}")
+    logger.info(f"User {current_user.id} sent message in conversation {conversation_id} (credits charged: {credits_charged})")
     
     return ChatSendResponse(
         user_message=MessageResponse(
@@ -366,7 +380,7 @@ async def send_message(
             content=user_message.content,
             created_at=user_message.created_at,
             tokens_used=user_message.tokens_used,
-            credits_charged=0  # No credits for subscription users
+            credits_charged=0  # User messages don't cost credits
         ),
         assistant_message=MessageResponse(
             id=assistant_message.id,
@@ -374,9 +388,9 @@ async def send_message(
             content=assistant_message.content,
             created_at=assistant_message.created_at,
             tokens_used=assistant_message.tokens_used,
-            credits_charged=0  # No credits for subscription users
+            credits_charged=credits_charged
         ),
-        credits_remaining=None  # Not applicable for subscriptions
+        credits_remaining=credits_remaining
     )
 
 

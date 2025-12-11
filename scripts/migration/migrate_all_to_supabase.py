@@ -28,7 +28,7 @@ def create_all_tables(cursor):
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             is_active BOOLEAN DEFAULT TRUE,
             is_admin BOOLEAN DEFAULT FALSE,
-            credits INTEGER DEFAULT 3,
+            credits INTEGER DEFAULT 10,
             stripe_customer_id VARCHAR(255),
             stripe_subscription_id VARCHAR(255),
             subscription_status VARCHAR(50) DEFAULT 'inactive',
