@@ -89,83 +89,63 @@
 						<section id="pricing-section">
 							<div class="inner">
 								<header class="major">
-									<h2>Pricing & Features</h2>
+									<h2>Upgrade to Paid</h2>
 								</header>
-								<div class="pricing-container">
-									<div class="pricing-tier free-tier">
-										<div class="tier-header">
-											<h3>Free</h3>
-											<div class="price">$0<span class="period">/forever</span></div>
-										</div>
-										<ul class="features-list">
-											<li><i class="fas fa-check"></i> Unlimited Chart Calculations</li>
-											<li><i class="fas fa-check"></i> Complete Astrological Placements (Sidereal & Tropical)</li>
-											<li><i class="fas fa-check"></i> Chinese Zodiac & Numerology Analysis</li>
-											<li><i class="fas fa-check"></i> <strong>Unlimited Snapshot Readings</strong> - Quick AI-generated insights delivered instantly via email</li>
-											<li><i class="fas fa-check"></i> Chart Visualization Wheels</li>
-											<li><i class="fas fa-check"></i> Full Raw Chart Data</li>
-										</ul>
-										<p class="tier-description">Perfect for exploring your astrological blueprint and getting quick insights into your core patterns.</p>
+								
+								<div class="upgrade-offer" style="text-align: center; max-width: 800px; margin: 0 auto 3em;">
+									<div style="background: linear-gradient(135deg, rgba(27, 108, 168, 0.2), rgba(138, 43, 226, 0.2)); padding: 2.5em; border-radius: 15px; border: 2px solid rgba(27, 108, 168, 0.3); margin-bottom: 2em;">
+										<h3 style="font-size: 2em; margin-bottom: 0.5em; color: #1b6ca8;">Special Offer</h3>
+										<p style="font-size: 1.3em; line-height: 1.6; color: rgba(255, 255, 255, 0.95); margin-bottom: 1em;">
+											Purchase a <strong>Full Reading for $28</strong> and get a <strong style="color: #8a2be2;">FREE month of unlimited chats</strong> with our AI astrologer!
+										</p>
+										<p style="font-size: 1.1em; color: rgba(255, 255, 255, 0.85);">
+											Get your comprehensive 15+ page analysis plus explore your chart in depth with unlimited conversations.
+										</p>
 									</div>
 									
-									<div class="pricing-tier premium-tier featured">
-										<div class="tier-badge">Most Popular</div>
-										<div class="tier-header">
-											<h3>Full Reading</h3>
-											<div class="price">$28<span class="period">one-time</span></div>
+									<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2em; margin-top: 2em;">
+										<div class="pricing-tier premium-tier featured" style="margin: 0;">
+											<div class="tier-badge">Best Value</div>
+											<div class="tier-header">
+												<h3>Full Reading</h3>
+												<div class="price">$28<span class="period">one-time</span></div>
+											</div>
+											<ul class="features-list">
+												<li><i class="fas fa-check"></i> <strong>Comprehensive Full Reading</strong> - 15+ page deep analysis</li>
+												<li><i class="fas fa-check"></i> <strong>FREE Month of Unlimited Chats</strong> - Ask anything about your chart</li>
+												<li><i class="fas fa-check"></i> Shadow Work & Life Guidance</li>
+												<li><i class="fas fa-check"></i> Chart Saved Permanently</li>
+											</ul>
+											<button id="purchaseReadingBtn" class="button primary large" style="width: 100%; margin-top: 1.5em;">Purchase Full Reading</button>
+											<p class="purchase-status" id="readingPurchaseStatus" style="display: none; margin-top: 1em; font-size: 0.9em;"></p>
 										</div>
-										<ul class="features-list">
-											<li><i class="fas fa-check"></i> <strong>Everything in Free</strong></li>
-											<li><i class="fas fa-check"></i> <strong>Comprehensive Full Reading</strong> - Deep, 15+ page AI analysis of your entire chart</li>
-											<li><i class="fas fa-check"></i> <strong>FREE Month of Unlimited Chats</strong> - Ask our AI astrologer anything about your chart</li>
-											<li><i class="fas fa-check"></i> <strong>Shadow Work Guidance</strong> - Understand and transform your unconscious patterns</li>
-											<li><i class="fas fa-check"></i> <strong>Life Improvement Strategies</strong> - Personalized guidance for growth and healing</li>
-											<li><i class="fas fa-check"></i> <strong>Chart Saved Permanently</strong> - Access your reading anytime</li>
-										</ul>
-										<p class="tier-description">Get your comprehensive full reading and enjoy a free month of unlimited chats to explore your chart in depth.</p>
-										<button id="purchaseReadingBtn" class="button primary large" style="width: 100%; margin-top: 1.5em;">Purchase Full Reading</button>
-										<p class="purchase-status" id="readingPurchaseStatus" style="display: none; margin-top: 1em; font-size: 0.9em;"></p>
-									</div>
-									
-									<div class="pricing-tier subscription-tier">
-										<div class="tier-header">
-											<h3>Monthly Subscription</h3>
-											<div class="price">$8<span class="period">/month</span></div>
+										
+										<div class="pricing-tier subscription-tier" style="margin: 0;">
+											<div class="tier-header">
+												<h3>Monthly Subscription</h3>
+												<div class="price">$8<span class="period">/month</span></div>
+											</div>
+											<ul class="features-list">
+												<li><i class="fas fa-check"></i> <strong>Unlimited Chats</strong> - Continue after your free month</li>
+												<li><i class="fas fa-check"></i> Ongoing Support</li>
+												<li><i class="fas fa-check"></i> Cancel Anytime</li>
+											</ul>
+											<p style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7); margin-top: 1em;">
+												Continue chatting after your free month expires
+											</p>
+											<button id="subscribeBtn" class="button large" style="width: 100%; margin-top: 1.5em;">Subscribe Now</button>
+											<p class="subscription-status" id="subscriptionStatus" style="display: none; margin-top: 1em; font-size: 0.9em;"></p>
 										</div>
-										<ul class="features-list">
-											<li><i class="fas fa-check"></i> <strong>Unlimited Chat Conversations</strong> - Continue chatting after your free month</li>
-											<li><i class="fas fa-check"></i> <strong>Access to All Premium Features</strong></li>
-											<li><i class="fas fa-check"></i> <strong>Ongoing Support</strong> - Continue the conversation as you evolve</li>
-											<li><i class="fas fa-check"></i> <strong>Cancel Anytime</strong> - No long-term commitment</li>
-										</ul>
-										<p class="tier-description">Continue your journey after your free month. Perfect for ongoing exploration and growth.</p>
-										<button id="subscribeBtn" class="button large" style="width: 100%; margin-top: 1.5em;">Subscribe Now</button>
-										<p class="subscription-status" id="subscriptionStatus" style="display: none; margin-top: 1em; font-size: 0.9em;"></p>
 									</div>
 								</div>
 								
-								<div class="pricing-faq" style="margin-top: 3em; padding-top: 2em; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-									<h3>Frequently Asked Questions</h3>
-									<details style="margin: 1em 0;">
-										<summary><strong>What's the difference between Snapshot and Full Reading?</strong></summary>
-										<p>The <strong>Snapshot Reading</strong> (free) is a quick 4-6 paragraph overview focusing on your core identity (Sun, Moon, Rising), tightest aspects, and stelliums. It's perfect for getting immediate insights while you wait. The <strong>Full Reading</strong> (premium) is a comprehensive 15+ page analysis covering all aspects of your chart, life domains, relationships, career, emotional patterns, and spiritual path with actionable guidance.</p>
-									</details>
-									<details style="margin: 1em 0;">
-										<summary><strong>What happens after I purchase a full reading?</strong></summary>
-										<p>When you purchase a full reading for $28, you'll receive your comprehensive 15+ page analysis and get a <strong>free month of unlimited chats</strong>. After your free month, you can choose to subscribe for $8/month to continue chatting, or simply keep your reading without the subscription.</p>
-									</details>
-									<details style="margin: 1em 0;">
-										<summary><strong>Can I cancel my subscription anytime?</strong></summary>
-										<p>Yes! You can cancel your $8/month subscription at any time. You'll continue to have access until the end of your current billing period. Your full reading remains accessible even after canceling.</p>
-									</details>
-									<details style="margin: 1em 0;">
-										<summary><strong>What can I ask in the chat feature?</strong></summary>
-										<p>With Premium, you can have unlimited conversations with our AI astrologer about your specific chart. Ask about your shadow patterns, relationship dynamics, career guidance, how to work with challenging aspects, or any question about your astrological blueprint. The AI has full context of your chart and can provide personalized insights.</p>
-									</details>
-									<details style="margin: 1em 0;">
-										<summary><strong>Do I need to subscribe to get my chart calculated?</strong></summary>
-										<p>No! Chart calculation, snapshot readings, and all raw astrological data are completely free. The subscription is only required for comprehensive full readings and the chat feature.</p>
-									</details>
+								<div style="text-align: center; margin-top: 2em; padding: 1.5em; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
+									<p style="font-size: 1.1em; color: rgba(255, 255, 255, 0.9); margin-bottom: 0.5em;">
+										<strong>Free users:</strong> Get 10 free chats to explore your chart!
+									</p>
+									<p style="font-size: 0.95em; color: rgba(255, 255, 255, 0.7);">
+										All chart calculations, snapshot readings, and astrological data are completely free.
+									</p>
 								</div>
 							</div>
 						</section>

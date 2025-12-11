@@ -872,8 +872,8 @@ const AuthManager = {
             let errorMessage = "I'm sorry, I encountered an error. Please try again.";
             let showUpgrade = false;
             
-            if (error.isSubscriptionError || (error.message && error.message.includes('Subscription required'))) {
-                errorMessage = error.detail?.message || "A monthly subscription is required to use the chat feature. Subscribe to unlock unlimited conversations about your chart.";
+            if (error.isSubscriptionError || (error.message && error.message.includes('Subscription required')) || (error.message && error.message.includes('Chat access required'))) {
+                errorMessage = error.detail?.message || "You've used all your free chats. Purchase a full reading for $28 to get unlimited chats for a month, or subscribe for $8/month.";
                 showUpgrade = true;
             }
             
