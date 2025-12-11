@@ -20,7 +20,7 @@ from sqlalchemy import text, inspect
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from database import SessionLocal, SavedChart, FamousPerson, init_db, engine
-from natal_chart import NatalChart
+# Note: We don't need NatalChart here - we're extracting from existing chart_data_json
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
