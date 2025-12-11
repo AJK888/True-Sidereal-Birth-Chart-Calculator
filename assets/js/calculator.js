@@ -438,6 +438,14 @@ const AstrologyCalculator = {
 
 	async loadAndDrawTransitChart() {
 		try {
+			// Get user's current location
+			let location = await this.getUserLocation();
+			if (!location) {
+				// Fallback to a default location if geolocation fails
+				console.warn("Could not get user location, using default");
+				location = "Boston, MA, USA";
+			}
+			
 			const now = new Date();
 			const apiRes = await fetch(this.API_URLS.calculate, {
 				method: "POST",
@@ -449,7 +457,7 @@ const AstrologyCalculator = {
 					day: now.getDate(),
 					hour: now.getHours(),
 					minute: now.getMinutes(),
-					location: "Boston, MA, USA",
+					location: location,
 					unknown_time: false
 				}),
 			});
@@ -473,6 +481,87 @@ const AstrologyCalculator = {
 			console.error("Failed to load transit chart:", err);
 			document.getElementById('sidereal-transit-wheel-svg').innerHTML = '<text x="500" y="500" fill="white" font-size="20" text-anchor="middle">Could not load transits.</text>';
 		}
+	},
+
+	async getUserLocation() {
+		// Try to get user's location using browser geolocation API
+		return new Promise((resolve) => {
+			if (!navigator.geolocation) {
+				console.warn("Geolocation is not supported by this browser");
+				resolve(null);
+				return;
+			}
+
+			// Set a timeout for geolocation (5 seconds)
+			const timeout = setTimeout(() => {
+				console.warn("Geolocation request timed out");
+				resolve(null);
+			}, 5000);
+
+			navigator.geolocation.getCurrentPosition(
+				async (position) => {
+					clearTimeout(timeout);
+					const lat = position.coords.latitude;
+					const lng = position.coords.longitude;
+					
+					// Reverse geocode to get location name
+					try {
+						// Use Nominatim (free reverse geocoding)
+						const response = await fetch(
+							`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
+							{
+								headers: {
+									'User-Agent': 'SynthesisAstrology/1.0'
+								}
+							}
+						);
+						
+						if (response.ok) {
+							const data = await response.json();
+							const address = data.address || {};
+							
+							// Build location string from address components
+							let locationParts = [];
+							if (address.city) locationParts.push(address.city);
+							else if (address.town) locationParts.push(address.town);
+							else if (address.village) locationParts.push(address.village);
+							
+							if (address.state) locationParts.push(address.state);
+							else if (address.region) locationParts.push(address.region);
+							
+							if (address.country) {
+								const country = address.country_code ? address.country_code.toUpperCase() : address.country;
+								locationParts.push(country);
+							}
+							
+							if (locationParts.length > 0) {
+								resolve(locationParts.join(', '));
+							} else {
+								// Fallback: use coordinates
+								resolve(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+							}
+						} else {
+							// Fallback: use coordinates
+							resolve(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+						}
+					} catch (error) {
+						console.warn("Reverse geocoding failed:", error);
+						// Fallback: use coordinates
+						resolve(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+					}
+				},
+				(error) => {
+					clearTimeout(timeout);
+					console.warn("Geolocation error:", error.message);
+					resolve(null);
+				},
+				{
+					enableHighAccuracy: false,
+					timeout: 5000,
+					maximumAge: 300000 // Cache for 5 minutes
+				}
+			);
+		});
 	},
 
 	setLoadingState(isLoading) {
