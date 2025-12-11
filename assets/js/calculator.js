@@ -1056,7 +1056,8 @@ const AstrologyCalculator = {
 			});
 			
 			if (!response.ok) {
-				throw new Error(`API error: ${response.status}`);
+				const errorData = await response.json().catch(() => ({ detail: `HTTP ${response.status}` }));
+				throw new Error(errorData.detail || `API error: ${response.status}`);
 			}
 			
 			const data = await response.json();
@@ -1065,12 +1066,14 @@ const AstrologyCalculator = {
 				this.displayFamousPeopleMatches(data.matches);
 				loadingDiv.style.display = 'none';
 				resultsDiv.style.display = 'grid';
+			} else if (data.message) {
+				loadingDiv.innerHTML = `<p>${data.message}</p>`;
 			} else {
 				loadingDiv.innerHTML = '<p>No matches found yet. Check back soon as we add more famous people!</p>';
 			}
 		} catch (error) {
 			console.error('Error finding similar famous people:', error);
-			loadingDiv.innerHTML = '<p>Unable to find matches at this time. This feature is still being developed.</p>';
+			loadingDiv.innerHTML = `<p>Unable to find matches at this time. ${error.message || 'Please try again later.'}</p>`;
 		}
 	},
 	
