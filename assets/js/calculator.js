@@ -288,6 +288,8 @@ const AstrologyCalculator = {
 				if (this.copyReadingBtn) {
 					this.copyReadingBtn.style.display = 'inline-block'; // Show copy button
 				}
+				// Show popup for free users about saving and chatting
+				this.showSaveAndChatPopup();
 			} else {
 				// No reading available - log for debugging
 				console.warn("Unexpected response format:", readingResult);
@@ -389,6 +391,8 @@ const AstrologyCalculator = {
 						this.copyReadingBtn.style.display = 'inline-block'; // Show copy button
 					}
 					console.log("Reading successfully retrieved and displayed!");
+					// Show popup for free users about saving and chatting
+					this.showSaveAndChatPopup();
 				} else {
 					// Still processing
 					const statusEl = document.getElementById('pollingStatus');
