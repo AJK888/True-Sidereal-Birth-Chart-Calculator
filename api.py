@@ -3590,7 +3590,28 @@ async def find_similar_famous_people_endpoint(
         
         # Debug logging
         logger.info(f"Received chart_data type: {type(chart_data)}, is string: {isinstance(chart_data, str)}")
+        if isinstance(chart_data, str):
+            logger.info(f"chart_data string preview: {chart_data[:200]}")
         
+        # Recursively parse JSON strings in nested structures
+        def parse_json_recursive(obj):
+            """Recursively parse JSON strings in nested structures."""
+            if isinstance(obj, str):
+                try:
+                    parsed = json.loads(obj)
+                    # If parsing succeeded, recursively parse the result
+                    return parse_json_recursive(parsed)
+                except (json.JSONDecodeError, TypeError):
+                    # Not JSON, return as-is
+                    return obj
+            elif isinstance(obj, dict):
+                return {k: parse_json_recursive(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [parse_json_recursive(item) for item in obj]
+            else:
+                return obj
+        
+        # Parse chart_data if it's a string
         if isinstance(chart_data, str):
             try:
                 chart_data = json.loads(chart_data)
@@ -3598,6 +3619,15 @@ async def find_similar_famous_people_endpoint(
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse chart_data as JSON: {e}")
                 raise HTTPException(status_code=400, detail="Invalid chart_data format - must be valid JSON")
+        
+        # Recursively parse any nested JSON strings (e.g., numerology, chinese_zodiac might be JSON strings)
+        chart_data = parse_json_recursive(chart_data)
+        
+        # Debug: Log the types of nested values after recursive parsing
+        if 'numerology' in chart_data:
+            logger.info(f"numerology type after parsing: {type(chart_data['numerology'])}")
+        if 'chinese_zodiac' in chart_data:
+            logger.info(f"chinese_zodiac type after parsing: {type(chart_data['chinese_zodiac'])}")
         
         # Double-check it's a dict after parsing
         if not isinstance(chart_data, dict):
@@ -3636,8 +3666,44 @@ async def find_similar_famous_people_endpoint(
         user_moon_t = extract_sign(t_positions.get('Moon', {}).get('position')) if 'Moon' in t_positions and t_positions['Moon'].get('position') else None
         
         # Get user's numerology and Chinese zodiac for additional filtering
-        user_life_path = chart_data.get('numerology', {}).get('life_path_number')
-        user_chinese_animal = chart_data.get('chinese_zodiac', {}).get('animal')
+        # Safely handle nested dictionaries that might be strings or missing
+        # Safely get numerology - it might be a string, dict, or missing
+        numerology_data = chart_data.get('numerology')
+        if numerology_data is None:
+            numerology_data = {}
+        elif isinstance(numerology_data, str):
+            try:
+                numerology_data = json.loads(numerology_data)
+                # Recursively parse in case it contains more nested strings
+                numerology_data = parse_json_recursive(numerology_data)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning(f"Failed to parse numerology as JSON: {e}, value: {numerology_data[:100] if isinstance(numerology_data, str) else numerology_data}")
+                numerology_data = {}
+        elif not isinstance(numerology_data, dict):
+            logger.warning(f"numerology is not a dict: {type(numerology_data)}")
+            numerology_data = {}
+        
+        # Now safely get the life_path_number
+        user_life_path = numerology_data.get('life_path_number') if isinstance(numerology_data, dict) else None
+        
+        # Safely get chinese_zodiac - it might be a string, dict, or missing
+        chinese_zodiac_data = chart_data.get('chinese_zodiac')
+        if chinese_zodiac_data is None:
+            chinese_zodiac_data = {}
+        elif isinstance(chinese_zodiac_data, str):
+            try:
+                chinese_zodiac_data = json.loads(chinese_zodiac_data)
+                # Recursively parse in case it contains more nested strings
+                chinese_zodiac_data = parse_json_recursive(chinese_zodiac_data)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning(f"Failed to parse chinese_zodiac as JSON: {e}, value: {chinese_zodiac_data[:100] if isinstance(chinese_zodiac_data, str) else chinese_zodiac_data}")
+                chinese_zodiac_data = {}
+        elif not isinstance(chinese_zodiac_data, dict):
+            logger.warning(f"chinese_zodiac is not a dict: {type(chinese_zodiac_data)}")
+            chinese_zodiac_data = {}
+        
+        # Now safely get the animal
+        user_chinese_animal = chinese_zodiac_data.get('animal') if isinstance(chinese_zodiac_data, dict) else None
         
         # OPTIMIZATION: Filter database query to only candidates with matching Sun/Moon signs
         # This reduces from 7,435 records to ~500-1000 candidates
