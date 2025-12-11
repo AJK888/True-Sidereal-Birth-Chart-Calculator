@@ -3539,6 +3539,12 @@ def calculate_chart_similarity(user_chart_data: dict, famous_person: FamousPerso
 class SimilarPeopleRequest(BaseModel):
     chart_data: dict
     limit: int = 10
+    
+    class Config:
+        # Allow JSON strings to be parsed as dicts
+        json_encoders = {
+            dict: lambda v: v
+        }
 
 @app.post("/api/find-similar-famous-people")
 @limiter.limit("100/day")
@@ -3565,7 +3571,16 @@ async def find_similar_famous_people_endpoint(
         if limit < 1:
             limit = 10
         
+        # Handle chart_data - it might come as a string (JSON) or dict
         chart_data = data.chart_data
+        if isinstance(chart_data, str):
+            try:
+                chart_data = json.loads(chart_data)
+            except json.JSONDecodeError:
+                raise HTTPException(status_code=400, detail="Invalid chart_data format - must be valid JSON")
+        
+        if not isinstance(chart_data, dict):
+            raise HTTPException(status_code=400, detail="chart_data must be a dictionary or JSON string")
         
         # Extract user's signs for filtering (optimization)
         s_positions = {p['name']: p for p in chart_data.get('sidereal_major_positions', [])}
