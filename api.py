@@ -3557,14 +3557,8 @@ def calculate_chart_similarity(user_chart_data: dict, famous_person: FamousPerso
 
 
 class SimilarPeopleRequest(BaseModel):
-    chart_data: dict
+    chart_data: Any  # Accept any type, we'll validate in endpoint
     limit: int = 10
-    
-    class Config:
-        # Allow JSON strings to be parsed as dicts
-        json_encoders = {
-            dict: lambda v: v
-        }
 
 @app.post("/api/find-similar-famous-people")
 @limiter.limit("100/day")
@@ -3593,18 +3587,42 @@ async def find_similar_famous_people_endpoint(
         
         # Handle chart_data - it might come as a string (JSON) or dict
         chart_data = data.chart_data
+        
+        # Debug logging
+        logger.info(f"Received chart_data type: {type(chart_data)}, is string: {isinstance(chart_data, str)}")
+        
         if isinstance(chart_data, str):
             try:
                 chart_data = json.loads(chart_data)
-            except json.JSONDecodeError:
+                logger.info(f"Parsed JSON string, new type: {type(chart_data)}")
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse chart_data as JSON: {e}")
                 raise HTTPException(status_code=400, detail="Invalid chart_data format - must be valid JSON")
         
+        # Double-check it's a dict after parsing
         if not isinstance(chart_data, dict):
-            raise HTTPException(status_code=400, detail="chart_data must be a dictionary or JSON string")
+            logger.error(f"chart_data is not a dict after parsing. Type: {type(chart_data)}, Value: {str(chart_data)[:200]}")
+            raise HTTPException(status_code=400, detail=f"chart_data must be a dictionary or JSON string. Got type: {type(chart_data).__name__}")
+        
+        # Ensure we have the expected structure
+        if 'sidereal_major_positions' not in chart_data and 'tropical_major_positions' not in chart_data:
+            logger.warning(f"chart_data missing expected keys. Keys present: {list(chart_data.keys())[:10]}")
         
         # Extract user's signs for filtering (optimization)
-        s_positions = {p['name']: p for p in chart_data.get('sidereal_major_positions', [])}
-        t_positions = {p['name']: p for p in chart_data.get('tropical_major_positions', [])}
+        # Safely handle missing or invalid data
+        sidereal_positions = chart_data.get('sidereal_major_positions', [])
+        tropical_positions = chart_data.get('tropical_major_positions', [])
+        
+        # Ensure positions are lists
+        if not isinstance(sidereal_positions, list):
+            logger.warning(f"sidereal_major_positions is not a list: {type(sidereal_positions)}")
+            sidereal_positions = []
+        if not isinstance(tropical_positions, list):
+            logger.warning(f"tropical_major_positions is not a list: {type(tropical_positions)}")
+            tropical_positions = []
+        
+        s_positions = {p['name']: p for p in sidereal_positions if isinstance(p, dict) and 'name' in p}
+        t_positions = {p['name']: p for p in tropical_positions if isinstance(p, dict) and 'name' in p}
         
         def extract_sign(position_str):
             if not position_str:
