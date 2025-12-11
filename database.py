@@ -225,8 +225,15 @@ class FamousPerson(Base):
     sun_sign_tropical = Column(String(50), nullable=True, index=True)
     moon_sign_sidereal = Column(String(50), nullable=True, index=True)
     moon_sign_tropical = Column(String(50), nullable=True, index=True)
-    rising_sign_sidereal = Column(String(50), nullable=True, index=True)
-    rising_sign_tropical = Column(String(50), nullable=True, index=True)
+    # Rising signs removed - query from JSON instead to reduce database size
+    
+    # Additional planetary placements (stored as JSON for all planets including outer planets)
+    # Format: {"sidereal": {"Mercury": {"sign": "Gemini", "degree": 15.5, "retrograde": false}, ...}, "tropical": {...}}
+    planetary_placements_json = Column(Text, nullable=True)
+    
+    # Top 3 aspects (both sidereal and tropical) - stored as JSON
+    # Format: {"sidereal": [{"p1": "Sun", "p2": "Moon", "type": "Conjunction", "orb": "2.5°", "strength": "4.5"}], "tropical": [...]}
+    top_aspects_json = Column(Text, nullable=True)
     
     # Numerology
     life_path_number = Column(String(10), nullable=True, index=True)
@@ -234,10 +241,9 @@ class FamousPerson(Base):
     
     # Chinese Zodiac
     chinese_zodiac_animal = Column(String(50), nullable=True, index=True)
-    chinese_zodiac_element = Column(String(50), nullable=True)
     
     # Metadata
-    page_views = Column(Integer, nullable=True)  # Wikipedia page views (for ranking)
+    page_views = Column(Integer, nullable=True, index=True)  # Wikipedia page views (for ranking)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
