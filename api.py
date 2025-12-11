@@ -3536,12 +3536,15 @@ def calculate_chart_similarity(user_chart_data: dict, famous_person: FamousPerso
         return 0.0
 
 
+class SimilarPeopleRequest(BaseModel):
+    chart_data: dict
+    limit: int = 10
+
 @app.post("/api/find-similar-famous-people")
 @limiter.limit("100/day")
 async def find_similar_famous_people_endpoint(
     request: Request,
-    chart_data: dict,
-    limit: int = 10,
+    data: SimilarPeopleRequest,
     db: Session = Depends(get_db)
 ):
     """
@@ -3556,10 +3559,13 @@ async def find_similar_famous_people_endpoint(
         List of famous people sorted by similarity score
     """
     try:
+        limit = data.limit
         if limit > 50:
             limit = 50
         if limit < 1:
             limit = 10
+        
+        chart_data = data.chart_data
         
         # Extract user's signs for filtering (optimization)
         s_positions = {p['name']: p for p in chart_data.get('sidereal_major_positions', [])}
@@ -3571,10 +3577,10 @@ async def find_similar_famous_people_endpoint(
             parts = position_str.split()
             return parts[-1] if parts else None
         
-        user_sun_s = extract_sign(s_positions.get('Sun', {}).get('position')) if 'Sun' in s_positions else None
-        user_sun_t = extract_sign(t_positions.get('Sun', {}).get('position')) if 'Sun' in t_positions else None
-        user_moon_s = extract_sign(s_positions.get('Moon', {}).get('position')) if 'Moon' in s_positions else None
-        user_moon_t = extract_sign(t_positions.get('Moon', {}).get('position')) if 'Moon' in t_positions else None
+        user_sun_s = extract_sign(s_positions.get('Sun', {}).get('position')) if 'Sun' in s_positions and s_positions['Sun'].get('position') else None
+        user_sun_t = extract_sign(t_positions.get('Sun', {}).get('position')) if 'Sun' in t_positions and t_positions['Sun'].get('position') else None
+        user_moon_s = extract_sign(s_positions.get('Moon', {}).get('position')) if 'Moon' in s_positions and s_positions['Moon'].get('position') else None
+        user_moon_t = extract_sign(t_positions.get('Moon', {}).get('position')) if 'Moon' in t_positions and t_positions['Moon'].get('position') else None
         
         # Get user's numerology and Chinese zodiac for additional filtering
         user_life_path = chart_data.get('numerology', {}).get('life_path_number')
@@ -3584,35 +3590,43 @@ async def find_similar_famous_people_endpoint(
         # This reduces from 7,435 records to ~500-1000 candidates
         from sqlalchemy import or_
         
-        filter_conditions = []
+        # Build filter query step by step to avoid parameter binding issues
+        query = db.query(FamousPerson)
+        
+        # Build OR conditions for matching signs
+        sign_conditions = []
         if user_sun_s:
-            filter_conditions.append(FamousPerson.sun_sign_sidereal == user_sun_s)
+            sign_conditions.append(FamousPerson.sun_sign_sidereal == user_sun_s)
         if user_sun_t:
-            filter_conditions.append(FamousPerson.sun_sign_tropical == user_sun_t)
+            sign_conditions.append(FamousPerson.sun_sign_tropical == user_sun_t)
         if user_moon_s:
-            filter_conditions.append(FamousPerson.moon_sign_sidereal == user_moon_s)
+            sign_conditions.append(FamousPerson.moon_sign_sidereal == user_moon_s)
         if user_moon_t:
-            filter_conditions.append(FamousPerson.moon_sign_tropical == user_moon_t)
+            sign_conditions.append(FamousPerson.moon_sign_tropical == user_moon_t)
+        
+        # Apply sign filters if we have any
+        if sign_conditions:
+            query = query.filter(or_(*sign_conditions))
+        
+        # Add life path filter if available (handle master numbers)
         if user_life_path:
-            # Handle master numbers - check both full and reduced form
             lp_clean = str(user_life_path).split('/')[0] if '/' in str(user_life_path) else str(user_life_path)
             lp_reduced = str(user_life_path).split('/')[-1] if '/' in str(user_life_path) else lp_clean
-            filter_conditions.append(
+            # Use separate filter() calls instead of nested or_()
+            query = query.filter(
                 or_(
                     FamousPerson.life_path_number == user_life_path,
                     FamousPerson.life_path_number == lp_clean,
                     FamousPerson.life_path_number == lp_reduced
                 )
             )
-        if user_chinese_animal:
-            filter_conditions.append(FamousPerson.chinese_zodiac_animal.ilike(f"%{user_chinese_animal}%"))
         
-        # Query with filters (much faster than loading all records)
-        if filter_conditions:
-            famous_people = db.query(FamousPerson).filter(or_(*filter_conditions)).limit(1000).all()
-        else:
-            # Fallback: if no filters available, still limit to prevent loading all
-            famous_people = db.query(FamousPerson).limit(1000).all()
+        # Add Chinese zodiac filter if available
+        if user_chinese_animal:
+            query = query.filter(FamousPerson.chinese_zodiac_animal.ilike(f"%{user_chinese_animal}%"))
+        
+        # Execute query with limit
+        famous_people = query.limit(1000).all()
         
         if not famous_people:
             return {
@@ -3688,6 +3702,11 @@ async def find_similar_famous_people_endpoint(
             "matches_found": len(result)
         }
     
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
     except Exception as e:
         logger.error(f"Error finding similar famous people: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error finding similar famous people: {str(e)}")
