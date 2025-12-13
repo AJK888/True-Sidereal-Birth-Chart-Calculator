@@ -2,7 +2,7 @@ services:
   - type: web
     name: true-sidereal-api
     env: python
-    buildCommand: pip install -r True-Sidereal-Birth-Chart/requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r True-Sidereal-Birth-Chart/requirements.txt
     startCommand: cd True-Sidereal-Birth-Chart && uvicorn api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION

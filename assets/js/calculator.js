@@ -101,8 +101,27 @@ const AstrologyCalculator = {
 			
 			// Find similar famous people (free feature)
 			this.findSimilarFamousPeople(chartData);
-			// Fetch and display AI reading directly on the page
-			await this.fetchAndDisplayAIReading(chartData);
+			
+			// Check if full reading was automatically queued (for FRIENDS_AND_FAMILY_KEY users)
+			if (chartData.full_reading_queued && chartData.chart_hash) {
+				// Display processing message and start polling
+				this.geminiOutput.innerHTML = `
+					<div style="padding: 20px; background-color: #f0f7ff; border-left: 4px solid #1b6ca8; margin-bottom: 15px;">
+						<h3 style="margin-top: 0; color: #1b6ca8;">⏳ Your comprehensive full reading is being generated</h3>
+						<p style="margin-bottom: 10px; color: #2c3e50;"><strong style="color: #2c3e50;">Estimated time:</strong> up to 15 minutes</p>
+						<p style="margin-bottom: 0; color: #2c3e50;">Your reading will appear here when complete. You can also check your email.</p>
+						<p id="pollingStatus" style="margin-top: 10px; font-size: 0.85em; color: #666; font-style: italic;">Checking for completed reading...</p>
+					</div>
+				`;
+				if (this.copyReadingBtn) {
+					this.copyReadingBtn.style.display = 'none';
+				}
+				// Start polling for the completed reading
+				this.startPollingForReading(chartData.chart_hash);
+			} else {
+				// Fetch and display AI reading directly on the page (normal flow)
+				await this.fetchAndDisplayAIReading(chartData);
+			}
 		} catch (err) {
             // Display error and ensure loading state is off
 			this.resultsContainer.style.display = 'block';
@@ -145,9 +164,17 @@ const AstrologyCalculator = {
 		if (ampm === 'PM' && hour < 12) hour += 12;
 		if (ampm === 'AM' && hour === 12) hour = 0;
 
+		// Check for FRIENDS_AND_FAMILY_KEY in URL params
+		const urlParams = new URLSearchParams(window.location.search);
+		const friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
+		const headers = { "Content-Type": "application/json" };
+		if (friendsAndFamilyKey) {
+			headers['X-Friends-And-Family-Key'] = friendsAndFamilyKey;
+		}
+		
 		const apiRes = await fetch(this.API_URLS.calculate, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: headers,
 			body: JSON.stringify({
 				full_name: this.form.querySelector("[name='fullName']").value,
 				year, month, day, hour, minute,
@@ -180,9 +207,9 @@ const AstrologyCalculator = {
 
 			const headers = { "Content-Type": "application/json" };
 			const urlParams = new URLSearchParams(window.location.search);
-			const adminSecret = urlParams.get('admin_secret');
-			if (adminSecret) {
-				headers['X-Admin-Secret'] = adminSecret;
+			const friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
+			if (friendsAndFamilyKey) {
+				headers['X-Friends-And-Family-Key'] = friendsAndFamilyKey;
 			}
 
             // This fetch now waits for the full reading before proceeding
