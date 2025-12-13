@@ -283,7 +283,14 @@ async def send_message(
     # Refresh user to ensure we have latest credit balance
     db.refresh(current_user)
     
-    friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY') or request.headers.get("x-friends-and-family-key")
+    # Check both query params and headers (case-insensitive)
+    friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY')
+    if not friends_and_family_key:
+        # Check headers (case-insensitive)
+        for header_name, header_value in request.headers.items():
+            if header_name.lower() == "x-friends-and-family-key":
+                friends_and_family_key = header_value
+                break
     has_subscription, reason = check_subscription_access(current_user, db, friends_and_family_key)
     has_credits = check_credits(current_user, CHAT_CREDIT_COST)
     

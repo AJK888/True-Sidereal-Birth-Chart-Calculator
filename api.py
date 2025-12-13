@@ -123,7 +123,13 @@ def generate_chart_hash(chart_data: Dict, unknown_time: bool) -> str:
 # --- Rate Limiter Key Function ---
 def get_rate_limit_key(request: Request) -> str:
     if ADMIN_SECRET_KEY:
-        friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY') or request.headers.get("x-friends-and-family-key")
+        friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY')
+        if not friends_and_family_key:
+            # Check headers (case-insensitive)
+            for header_name, header_value in request.headers.items():
+                if header_name.lower() == "x-friends-and-family-key":
+                    friends_and_family_key = header_value
+                    break
         if friends_and_family_key and friends_and_family_key == ADMIN_SECRET_KEY:
             return str(uuid.uuid4())
     return get_remote_address(request)
@@ -2490,8 +2496,17 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest, backgro
             full_response["snapshot_reading"] = None
         
         # Automatically generate full reading for FRIENDS_AND_FAMILY_KEY users
-        friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY') or request.headers.get("x-friends-and-family-key")
-        if friends_and_family_key and ADMIN_SECRET_KEY and friends_and_family_key == ADMIN_SECRET_KEY:
+        # Check both query params and headers (case-insensitive)
+        friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY')
+        if not friends_and_family_key:
+            # Check headers (case-insensitive)
+            for header_name, header_value in request.headers.items():
+                if header_name.lower() == "x-friends-and-family-key":
+                    friends_and_family_key = header_value
+                    break
+        if friends_and_family_key:
+            logger.info(f"FRIENDS_AND_FAMILY_KEY received (length: {len(friends_and_family_key)})")
+            if ADMIN_SECRET_KEY and friends_and_family_key == ADMIN_SECRET_KEY:
             # Check if this is a transit chart (skip for those)
             if not is_transit_chart and data.user_email:
                 logger.info(f"FRIENDS_AND_FAMILY_KEY detected - automatically generating full reading for {data.full_name}")
@@ -2561,8 +2576,14 @@ async def generate_reading_endpoint(
             )
         
         # Check subscription access (with admin bypass support)
-        # Check both query params and header for FRIENDS_AND_FAMILY_KEY
-        friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY') or request.headers.get("x-friends-and-family-key")
+        # Check both query params and headers (case-insensitive)
+        friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY')
+        if not friends_and_family_key:
+            # Check headers (case-insensitive)
+            for header_name, header_value in request.headers.items():
+                if header_name.lower() == "x-friends-and-family-key":
+                    friends_and_family_key = header_value
+                    break
         has_access, reason = check_subscription_access(current_user, db, friends_and_family_key)
         
         if not has_access:
