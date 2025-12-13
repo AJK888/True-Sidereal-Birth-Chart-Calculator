@@ -103,7 +103,7 @@ def check_subscription_access(user, db: Session, admin_secret: Optional[str] = N
         Tuple of (has_access: bool, reason: str)
     """
     # Check admin bypass FIRST (works even without logged-in user)
-    ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
+    ADMIN_SECRET_KEY = os.getenv("FRIENDS_AND_FAMILY_KEY")
     if admin_secret and ADMIN_SECRET_KEY and admin_secret == ADMIN_SECRET_KEY:
         # Log admin bypass usage (logging happens in endpoint, not here)
         return True, "admin_bypass"

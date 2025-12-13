@@ -96,7 +96,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_SWISS_EPHEMERIS_PATH = os.path.join(BASE_DIR, "swiss_ephemeris")
 
 # --- Admin Secret Key for bypassing rate limit ---
-ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
+ADMIN_SECRET_KEY = os.getenv("FRIENDS_AND_FAMILY_KEY")
 
 # --- Reading Cache for Frontend Polling ---
 # In-memory cache to store completed readings (key: chart_hash, value: {reading, timestamp})
