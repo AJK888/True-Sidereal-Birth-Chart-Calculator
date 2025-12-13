@@ -1260,7 +1260,7 @@ const AuthManager = {
         return false;
     },
     
-    showUpgradePrompt(feature: string) {
+    showUpgradePrompt(feature) {
         const message = feature === 'reading' 
             ? 'Purchase a full reading for $28 to get your comprehensive 15+ page analysis plus a free month of unlimited chats!'
             : 'Purchase a full reading to get a free month of chats, or subscribe for $8/month to continue chatting.';

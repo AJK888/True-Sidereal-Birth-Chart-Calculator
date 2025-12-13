@@ -165,11 +165,32 @@ const AstrologyCalculator = {
 		if (ampm === 'AM' && hour === 12) hour = 0;
 
 		// Check for FRIENDS_AND_FAMILY_KEY in URL params
+		// Handle URL-encoded values (e.g., F%26FKEY for F&FKEY)
 		const urlParams = new URLSearchParams(window.location.search);
-		const friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
+		let friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
+		// Also check if the value got split due to & character
+		if (!friendsAndFamilyKey) {
+			// Try to reconstruct if it was split: FRIENDS_AND_FAMILY_KEY=F&FKEY becomes FRIENDS_AND_FAMILY_KEY=F and FKEY=
+			const allParams = new URLSearchParams(window.location.search);
+			const keys = Array.from(allParams.keys());
+			const keyIndex = keys.indexOf('FRIENDS_AND_FAMILY_KEY');
+			if (keyIndex !== -1 && keyIndex < keys.length - 1) {
+				// Check if next param might be part of the value
+				const nextKey = keys[keyIndex + 1];
+				if (nextKey === 'FKEY' || !allParams.get(nextKey)) {
+					// Likely split value, try to reconstruct
+					friendsAndFamilyKey = allParams.get('FRIENDS_AND_FAMILY_KEY') + '&' + nextKey;
+				}
+			}
+		}
+		// Decode URL-encoded characters
+		if (friendsAndFamilyKey) {
+			friendsAndFamilyKey = decodeURIComponent(friendsAndFamilyKey);
+		}
 		const headers = { "Content-Type": "application/json" };
 		if (friendsAndFamilyKey) {
 			headers['X-Friends-And-Family-Key'] = friendsAndFamilyKey;
+			console.log('FRIENDS_AND_FAMILY_KEY detected:', friendsAndFamilyKey.substring(0, 3) + '...'); // Log partial for security
 		}
 		
 		const apiRes = await fetch(this.API_URLS.calculate, {
@@ -207,8 +228,21 @@ const AstrologyCalculator = {
 
 			const headers = { "Content-Type": "application/json" };
 			const urlParams = new URLSearchParams(window.location.search);
-			const friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
+			let friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
+			// Handle URL-encoded values and split values
+			if (!friendsAndFamilyKey) {
+				const allParams = new URLSearchParams(window.location.search);
+				const keys = Array.from(allParams.keys());
+				const keyIndex = keys.indexOf('FRIENDS_AND_FAMILY_KEY');
+				if (keyIndex !== -1 && keyIndex < keys.length - 1) {
+					const nextKey = keys[keyIndex + 1];
+					if (nextKey === 'FKEY' || !allParams.get(nextKey)) {
+						friendsAndFamilyKey = allParams.get('FRIENDS_AND_FAMILY_KEY') + '&' + nextKey;
+					}
+				}
+			}
 			if (friendsAndFamilyKey) {
+				friendsAndFamilyKey = decodeURIComponent(friendsAndFamilyKey);
 				headers['X-Friends-And-Family-Key'] = friendsAndFamilyKey;
 			}
 
