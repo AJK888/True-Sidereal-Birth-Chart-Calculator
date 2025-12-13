@@ -2507,30 +2507,30 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest, backgro
         if friends_and_family_key:
             logger.info(f"FRIENDS_AND_FAMILY_KEY received (length: {len(friends_and_family_key)})")
             if ADMIN_SECRET_KEY and friends_and_family_key == ADMIN_SECRET_KEY:
-            # Check if this is a transit chart (skip for those)
-            if not is_transit_chart and data.user_email:
-                logger.info(f"FRIENDS_AND_FAMILY_KEY detected - automatically generating full reading for {data.full_name}")
-                # Generate chart hash for polling
-                chart_hash = generate_chart_hash(full_response, data.unknown_time)
-                
-                # Prepare user inputs for reading generation
-                user_inputs = {
-                    'full_name': data.full_name,
-                    'user_email': data.user_email
-                }
-                
-                # Queue full reading generation in background
-                background_tasks.add_task(
-                    generate_reading_and_send_email,
-                    chart_data=full_response,
-                    unknown_time=data.unknown_time,
-                    user_inputs=user_inputs
-                )
-                
-                # Add chart_hash to response so frontend can poll for reading
-                full_response["chart_hash"] = chart_hash
-                full_response["full_reading_queued"] = True
-                logger.info(f"Full reading queued for FRIENDS_AND_FAMILY_KEY user with chart_hash: {chart_hash}")
+                # Check if this is a transit chart (skip for those)
+                if not is_transit_chart and data.user_email:
+                    logger.info(f"FRIENDS_AND_FAMILY_KEY detected - automatically generating full reading for {data.full_name}")
+                    # Generate chart hash for polling
+                    chart_hash = generate_chart_hash(full_response, data.unknown_time)
+                    
+                    # Prepare user inputs for reading generation
+                    user_inputs = {
+                        'full_name': data.full_name,
+                        'user_email': data.user_email
+                    }
+                    
+                    # Queue full reading generation in background
+                    background_tasks.add_task(
+                        generate_reading_and_send_email,
+                        chart_data=full_response,
+                        unknown_time=data.unknown_time,
+                        user_inputs=user_inputs
+                    )
+                    
+                    # Add chart_hash to response so frontend can poll for reading
+                    full_response["chart_hash"] = chart_hash
+                    full_response["full_reading_queued"] = True
+                    logger.info(f"Full reading queued for FRIENDS_AND_FAMILY_KEY user with chart_hash: {chart_hash}")
             
         return full_response
 
