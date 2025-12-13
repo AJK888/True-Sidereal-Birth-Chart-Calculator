@@ -90,19 +90,19 @@ def has_active_subscription(user, db: Session) -> bool:
 
 def check_subscription_access(user, db: Session, admin_secret: Optional[str] = None) -> tuple[bool, str]:
     """
-    Check if user has subscription access, with optional admin bypass.
+    Check if user has subscription access, with optional FRIENDS_AND_FAMILY_KEY bypass.
     For full readings: requires reading purchase or subscription.
     For chat: requires reading purchase (free month) or active subscription.
     
     Args:
         user: User database object (can be None)
         db: Database session
-        admin_secret: Optional admin secret key from URL parameter or header
+        admin_secret: Optional FRIENDS_AND_FAMILY_KEY from URL parameter (?FRIENDS_AND_FAMILY_KEY=...) or header
     
     Returns:
         Tuple of (has_access: bool, reason: str)
     """
-    # Check admin bypass FIRST (works even without logged-in user)
+    # Check FRIENDS_AND_FAMILY_KEY bypass FIRST (works even without logged-in user)
     ADMIN_SECRET_KEY = os.getenv("FRIENDS_AND_FAMILY_KEY")
     if admin_secret and ADMIN_SECRET_KEY and admin_secret == ADMIN_SECRET_KEY:
         # Log admin bypass usage (logging happens in endpoint, not here)

@@ -283,14 +283,14 @@ async def send_message(
     # Refresh user to ensure we have latest credit balance
     db.refresh(current_user)
     
-    admin_secret = request.query_params.get('admin_secret')
-    has_subscription, reason = check_subscription_access(current_user, db, admin_secret)
+    friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY') or request.headers.get("x-friends-and-family-key")
+    has_subscription, reason = check_subscription_access(current_user, db, friends_and_family_key)
     has_credits = check_credits(current_user, CHAT_CREDIT_COST)
     
     # Allow if user has subscription OR has credits
     if not has_subscription and not has_credits:
         # Log admin bypass attempt if secret was provided but invalid
-        if admin_secret:
+        if friends_and_family_key:
             try:
                 log_entry = AdminBypassLog(
                     user_email=current_user.email,
@@ -365,11 +365,12 @@ async def send_message(
     )
     
     # Deduct credits if user doesn't have subscription (free users use credits)
+    # Skip credit deduction for FRIENDS_AND_FAMILY_KEY users
     credits_charged = 0
     credits_remaining = None
     
-    if not has_subscription:
-        # Free user - deduct credits
+    if not has_subscription and reason != "admin_bypass":
+        # Free user - deduct credits (but not for FRIENDS_AND_FAMILY_KEY users)
         credits_remaining = deduct_credits(db, current_user, CHAT_CREDIT_COST, f"Chat message in conversation {conversation_id}")
         credits_charged = CHAT_CREDIT_COST
     

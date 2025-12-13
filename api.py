@@ -123,8 +123,8 @@ def generate_chart_hash(chart_data: Dict, unknown_time: bool) -> str:
 # --- Rate Limiter Key Function ---
 def get_rate_limit_key(request: Request) -> str:
     if ADMIN_SECRET_KEY:
-        admin_secret_header = request.headers.get("x-admin-secret")
-        if admin_secret_header and admin_secret_header == ADMIN_SECRET_KEY:
+        friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY') or request.headers.get("x-friends-and-family-key")
+        if friends_and_family_key and friends_and_family_key == ADMIN_SECRET_KEY:
             return str(uuid.uuid4())
     return get_remote_address(request)
 
@@ -2277,7 +2277,7 @@ async def send_emails_in_background(chart_data: Dict, reading_text: str, user_in
 
 @app.post("/calculate_chart")
 @limiter.limit("50/day")
-async def calculate_chart_endpoint(request: Request, data: ChartRequest):
+async def calculate_chart_endpoint(request: Request, data: ChartRequest, background_tasks: BackgroundTasks):
     try:
         log_data = data.dict()
         if 'full_name' in log_data:
@@ -2488,6 +2488,34 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest):
         else:
             # For transit charts, don't include snapshot reading
             full_response["snapshot_reading"] = None
+        
+        # Automatically generate full reading for FRIENDS_AND_FAMILY_KEY users
+        friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY') or request.headers.get("x-friends-and-family-key")
+        if friends_and_family_key and ADMIN_SECRET_KEY and friends_and_family_key == ADMIN_SECRET_KEY:
+            # Check if this is a transit chart (skip for those)
+            if not is_transit_chart and data.user_email:
+                logger.info(f"FRIENDS_AND_FAMILY_KEY detected - automatically generating full reading for {data.full_name}")
+                # Generate chart hash for polling
+                chart_hash = generate_chart_hash(full_response, data.unknown_time)
+                
+                # Prepare user inputs for reading generation
+                user_inputs = {
+                    'full_name': data.full_name,
+                    'user_email': data.user_email
+                }
+                
+                # Queue full reading generation in background
+                background_tasks.add_task(
+                    generate_reading_and_send_email,
+                    chart_data=full_response,
+                    unknown_time=data.unknown_time,
+                    user_inputs=user_inputs
+                )
+                
+                # Add chart_hash to response so frontend can poll for reading
+                full_response["chart_hash"] = chart_hash
+                full_response["full_reading_queued"] = True
+                logger.info(f"Full reading queued for FRIENDS_AND_FAMILY_KEY user with chart_hash: {chart_hash}")
             
         return full_response
 
@@ -2533,13 +2561,13 @@ async def generate_reading_endpoint(
             )
         
         # Check subscription access (with admin bypass support)
-        # Check both query params and header for admin secret
-        admin_secret = request.query_params.get('admin_secret') or request.headers.get("x-admin-secret")
-        has_access, reason = check_subscription_access(current_user, db, admin_secret)
+        # Check both query params and header for FRIENDS_AND_FAMILY_KEY
+        friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY') or request.headers.get("x-friends-and-family-key")
+        has_access, reason = check_subscription_access(current_user, db, friends_and_family_key)
         
         if not has_access:
             # Log admin bypass attempt if secret was provided but invalid
-            if admin_secret:
+            if friends_and_family_key:
                 try:
                     log_entry = AdminBypassLog(
                         user_email=user_email,
