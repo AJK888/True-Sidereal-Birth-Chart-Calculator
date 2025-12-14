@@ -3300,21 +3300,36 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 @app.get("/api/subscription/status")
 async def get_subscription_status(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Get current user's subscription status and reading purchase info."""
-    is_active = has_active_subscription(current_user, db)
+    # Check for FRIENDS_AND_FAMILY_KEY bypass
+    friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY')
+    if not friends_and_family_key:
+        # Check headers (case-insensitive)
+        for header_name, header_value in request.headers.items():
+            if header_name.lower() == "x-friends-and-family-key":
+                friends_and_family_key = header_value
+                break
+    
+    # Check if FRIENDS_AND_FAMILY_KEY is valid
+    ADMIN_SECRET_KEY = os.getenv("FRIENDS_AND_FAMILY_KEY")
+    has_friends_family_access = friends_and_family_key and ADMIN_SECRET_KEY and friends_and_family_key == ADMIN_SECRET_KEY
+    
+    is_active = has_active_subscription(current_user, db) or has_friends_family_access
     
     return {
         "has_subscription": is_active,
-        "status": current_user.subscription_status,
+        "status": "active" if has_friends_family_access else current_user.subscription_status,
         "start_date": current_user.subscription_start_date.isoformat() if current_user.subscription_start_date else None,
         "end_date": current_user.subscription_end_date.isoformat() if current_user.subscription_end_date else None,
-        "has_purchased_reading": current_user.has_purchased_reading,
+        "has_purchased_reading": current_user.has_purchased_reading or has_friends_family_access,
         "reading_purchase_date": current_user.reading_purchase_date.isoformat() if current_user.reading_purchase_date else None,
         "free_chat_month_end_date": current_user.free_chat_month_end_date.isoformat() if current_user.free_chat_month_end_date else None,
-        "is_admin": current_user.is_admin
+        "is_admin": current_user.is_admin,
+        "friends_family_access": has_friends_family_access
     }
 
 
