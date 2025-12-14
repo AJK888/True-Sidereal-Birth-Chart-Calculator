@@ -92,12 +92,12 @@ class SavedChart(Base):
     # Calculated chart data (stored as JSON string)
     chart_data_json = Column(Text, nullable=True)
     
-    # Structured placement and aspect data (extracted from chart_data_json)
-    planetary_placements_json = Column(Text, nullable=True)  # All planetary placements in structured format
-    top_aspects_json = Column(Text, nullable=True)  # Top 3 aspects (sidereal and tropical)
-    
     # AI reading (if generated)
     ai_reading = Column(Text, nullable=True)
+    
+    # Note: planetary_placements_json and top_aspects_json columns exist in some databases
+    # but not all. They are not used in the save_chart endpoint, so we don't define them here
+    # to avoid database errors. If needed in the future, add them via migration first.
     
     # Relationship
     owner = relationship("User", back_populates="charts")

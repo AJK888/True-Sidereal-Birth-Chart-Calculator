@@ -2505,7 +2505,8 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest, backgro
                     friends_and_family_key = header_value
                     break
         if friends_and_family_key:
-            logger.info(f"FRIENDS_AND_FAMILY_KEY received (length: {len(friends_and_family_key)})")
+            logger.info(f"FRIENDS_AND_FAMILY_KEY received (length: {len(friends_and_family_key)}, first 3 chars: {friends_and_family_key[:3] if len(friends_and_family_key) >= 3 else friends_and_family_key})")
+            logger.info(f"ADMIN_SECRET_KEY configured: {bool(ADMIN_SECRET_KEY)}, length: {len(ADMIN_SECRET_KEY) if ADMIN_SECRET_KEY else 0}")
             if ADMIN_SECRET_KEY and friends_and_family_key == ADMIN_SECRET_KEY:
                 # Check if this is a transit chart (skip for those)
                 if not is_transit_chart and data.user_email:
@@ -2584,7 +2585,12 @@ async def generate_reading_endpoint(
                 if header_name.lower() == "x-friends-and-family-key":
                     friends_and_family_key = header_value
                     break
+        if friends_and_family_key:
+            logger.info(f"[generate_reading] FRIENDS_AND_FAMILY_KEY received (length: {len(friends_and_family_key)}, first 3 chars: {friends_and_family_key[:3] if len(friends_and_family_key) >= 3 else friends_and_family_key})")
+            logger.info(f"[generate_reading] ADMIN_SECRET_KEY configured: {bool(ADMIN_SECRET_KEY)}, length: {len(ADMIN_SECRET_KEY) if ADMIN_SECRET_KEY else 0}")
         has_access, reason = check_subscription_access(current_user, db, friends_and_family_key)
+        if friends_and_family_key:
+            logger.info(f"[generate_reading] Access check result: has_access={has_access}, reason={reason}")
         
         if not has_access:
             # Log admin bypass attempt if secret was provided but invalid
@@ -4336,7 +4342,7 @@ async def find_similar_famous_people_endpoint(
             )
         
         # 3. Numerology day AND life path match
-        user_day = user_numerology.get('day_number')
+        user_day = numerology_data.get('day_number') if isinstance(numerology_data, dict) else None
         if user_day and user_life_path:
             user_day_norm = normalize_master_number(user_day)
             user_lp_norm = normalize_master_number(user_life_path)
