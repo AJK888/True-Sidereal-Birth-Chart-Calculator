@@ -2,7 +2,7 @@ name: Merge Bot
 
 on:
   pull_request:
-    types: [labeled, synchronize, reopened]
+    types: [opened, synchronize, labeled, unlabeled]
 
 permissions:
   contents: write
@@ -10,32 +10,94 @@ permissions:
 
 jobs:
   merge:
-    if: contains(github.event.pull_request.labels.*.name, 'automerge')
+    if: github.event.pull_request != null
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Safety checks
         run: |
           echo "PR: #${{ github.event.pull_request.number }}"
           echo "Actor: ${{ github.actor }}"
+          echo "Action: ${{ github.event.action }}"
+          echo "Sender: ${{ github.event.sender.login }}"
           echo "Head repo: ${{ github.event.pull_request.head.repo.full_name }}"
           echo "Base repo: ${{ github.repository }}"
 
           # Block forks (critical)
           if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
-            echo "Refusing to merge: PR is from a fork."
+            echo "❌ Refusing to merge: PR is from a fork."
             exit 1
           fi
 
-          # Only allow the repo owner username to trigger merges (adjust if needed)
-          if [ "${{ github.actor }}" != "AJK888" ]; then
-            echo "Refusing to merge: only AJK888 can trigger automerge."
-            exit 1
+          # Only enforce "AJK888 applied label" check when action is "labeled"
+          # Allow re-runs on synchronize/reopened if label is already present
+          if [ "${{ github.event.action }}" = "labeled" ]; then
+            if [ "${{ github.event.sender.login }}" != "AJK888" ]; then
+              echo "❌ Refusing to merge: automerge label not applied by AJK888."
+              exit 1
+            fi
+            echo "✅ Label applied by AJK888"
+          else
+            echo "✅ Re-running on ${{ github.event.action }} event (label check will happen later)"
           fi
 
-      - name: Merge PR
+          echo "✅ Safety checks passed"
+
+      - name: Check if automerge label exists
+        id: check-label
+        run: |
+          LABELS=$(gh pr view ${{ github.event.pull_request.number }} --json labels --jq '.labels[].name' || echo "")
+          if echo "$LABELS" | grep -q "automerge"; then
+            echo "has_automerge=true" >> $GITHUB_OUTPUT
+            echo "✅ automerge label found"
+          else
+            echo "has_automerge=false" >> $GITHUB_OUTPUT
+            echo "❌ automerge label not found"
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Check if PR is mergeable
+        id: check-mergeable
+        if: steps.check-label.outputs.has_automerge == 'true'
         run: |
-          gh pr merge "$PR_NUMBER" --squash --delete-branch
+          PR_STATE=$(gh pr view ${{ github.event.pull_request.number }} --json mergeable,mergeStateStatus --jq '{mergeable: .mergeable, state: .mergeStateStatus}' || echo '{"mergeable":false,"state":"unknown"}')
+          MERGEABLE=$(echo "$PR_STATE" | jq -r '.mergeable // false')
+          STATE=$(echo "$PR_STATE" | jq -r '.state // "unknown"')
+
+          # Handle both boolean true and string "MERGEABLE"
+          if ([ "$MERGEABLE" = "true" ] || [ "$MERGEABLE" = "MERGEABLE" ]) && [ "$STATE" != "BLOCKED" ]; then
+            echo "can_merge=true" >> $GITHUB_OUTPUT
+            echo "✅ PR is mergeable (mergeable: $MERGEABLE, state: $STATE)"
+          else
+            echo "can_merge=false" >> $GITHUB_OUTPUT
+            echo "⏳ PR is not mergeable (mergeable: $MERGEABLE, state: $STATE)"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge PR
+        if: steps.check-label.outputs.has_automerge == 'true' && steps.check-mergeable.outputs.can_merge == 'true'
+        run: |
+          echo "🚀 Merging PR #${{ github.event.pull_request.number }}"
+          gh pr merge ${{ github.event.pull_request.number }} --squash --delete-branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log merge attempt
+        if: always()
+        run: |
+          if [ "${{ steps.check-label.outputs.has_automerge }}" = "true" ]; then
+            if [ "${{ steps.check-mergeable.outputs.can_merge }}" = "true" ]; then
+              echo "✅ Merge completed successfully"
+            else
+              echo "⏳ PR has automerge label but is not yet mergeable"
+            fi
+          else
+            echo "ℹ️  PR does not have automerge label"
+          fi
