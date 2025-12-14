@@ -1046,6 +1046,22 @@ const AuthManager = {
     // ====================================
     
     async checkSubscriptionStatus() {
+        // Check for FRIENDS_AND_FAMILY_KEY in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
+        
+        // If FRIENDS_AND_FAMILY_KEY is present, treat as having full access
+        if (friendsAndFamilyKey) {
+            this.subscriptionStatus = {
+                has_subscription: true,
+                status: "active",
+                has_purchased_reading: true,
+                friends_family_access: true
+            };
+            this.updateSubscriptionUI();
+            return;
+        }
+        
         if (!this.isLoggedIn()) {
             this.subscriptionStatus = null;
             this.updateSubscriptionUI();
@@ -1053,10 +1069,16 @@ const AuthManager = {
         }
         
         try {
-            const response = await fetch(`${this.API_BASE}/api/subscription/status`, {
-                headers: {
-                    'Authorization': `Bearer ${this.authToken}`
-                }
+            // Pass FRIENDS_AND_FAMILY_KEY in headers if present
+            const headers = {
+                'Authorization': `Bearer ${this.authToken}`
+            };
+            if (friendsAndFamilyKey) {
+                headers['X-Friends-And-Family-Key'] = friendsAndFamilyKey;
+            }
+            
+            const response = await fetch(`${this.API_BASE}/api/subscription/status?${friendsAndFamilyKey ? 'FRIENDS_AND_FAMILY_KEY=' + encodeURIComponent(friendsAndFamilyKey) : ''}`, {
+                headers: headers
             });
             
             if (response.ok) {
