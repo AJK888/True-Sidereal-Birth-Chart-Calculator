@@ -3388,6 +3388,544 @@ async def stripe_webhook_endpoint(request: Request, db: Session = Depends(get_db
 # Famous People Similarity Matching (Free Feature)
 # ============================================================================
 
+def extract_stelliums(chart_data: dict) -> dict:
+    """
+    Extract stelliums from chart data (both sidereal and tropical).
+    Returns dict with 'sidereal' and 'tropical' lists of stellium descriptions.
+    """
+    stelliums = {"sidereal": [], "tropical": []}
+    
+    # Extract from aspect patterns
+    s_patterns = chart_data.get('sidereal_aspect_patterns', [])
+    t_patterns = chart_data.get('tropical_aspect_patterns', [])
+    
+    for pattern in s_patterns:
+        desc = pattern.get('description', '')
+        if 'stellium' in desc.lower():
+            stelliums['sidereal'].append(desc)
+    
+    for pattern in t_patterns:
+        desc = pattern.get('description', '')
+        if 'stellium' in desc.lower():
+            stelliums['tropical'].append(desc)
+    
+    return stelliums
+
+
+def extract_top_aspects_from_chart(chart_data: dict, top_n: int = 3) -> dict:
+    """
+    Extract top N aspects from chart data (both sidereal and tropical).
+    Returns dict with 'sidereal' and 'tropical' lists of aspect dicts.
+    """
+    aspects = {"sidereal": [], "tropical": []}
+    
+    # Get sidereal aspects
+    sidereal_aspects = chart_data.get('sidereal_aspects', [])
+    sorted_sidereal = sorted(
+        sidereal_aspects,
+        key=lambda a: (
+            -float(a.get("score", 0)) if isinstance(a.get("score"), (int, float, str)) and str(a.get("score")).replace(".", "").isdigit() else 0,
+            abs(float(str(a.get("orb", "999")).replace("°", "").strip()) if isinstance(a.get("orb"), str) else float(a.get("orb", 999)))
+        )
+    )[:top_n]
+    
+    for aspect in sorted_sidereal:
+        p1_name = aspect.get("p1_name", "").split(" in ")[0].strip()
+        p2_name = aspect.get("p2_name", "").split(" in ")[0].strip()
+        aspects["sidereal"].append({
+            "p1": p1_name,
+            "p2": p2_name,
+            "type": aspect.get("type", ""),
+        })
+    
+    # Get tropical aspects
+    tropical_aspects = chart_data.get('tropical_aspects', [])
+    sorted_tropical = sorted(
+        tropical_aspects,
+        key=lambda a: (
+            -float(a.get("score", 0)) if isinstance(a.get("score"), (int, float, str)) and str(a.get("score")).replace(".", "").isdigit() else 0,
+            abs(float(str(a.get("orb", "999")).replace("°", "").strip()) if isinstance(a.get("orb"), str) else float(a.get("orb", 999)))
+        )
+    )[:top_n]
+    
+    for aspect in sorted_tropical:
+        p1_name = aspect.get("p1_name", "").split(" in ")[0].strip()
+        p2_name = aspect.get("p2_name", "").split(" in ")[0].strip()
+        aspects["tropical"].append({
+            "p1": p1_name,
+            "p2": p2_name,
+            "type": aspect.get("type", ""),
+        })
+    
+    return aspects
+
+
+def normalize_master_number(num_str):
+    """Normalize master numbers (e.g., '33/6' -> ['33', '6'])"""
+    if not num_str:
+        return []
+    num_str = str(num_str)
+    if '/' in num_str:
+        return [num_str.split('/')[0], num_str.split('/')[-1]]
+    return [num_str]
+
+
+def check_strict_matches(user_chart_data: dict, famous_person: FamousPerson, user_numerology: dict, user_chinese_zodiac: dict) -> tuple[bool, list[str]]:
+    """
+    Check if famous person matches strict criteria:
+    1. Sun AND Moon in sidereal
+    2. Sun AND Moon in tropical
+    3. Numerology day AND life path number
+    4. Chinese zodiac AND (numerology day OR life path number)
+    
+    Returns: (is_match, list of match reasons)
+    """
+    reasons = []
+    matches = []
+    
+    # Extract user's signs
+    s_positions = {p['name']: p for p in user_chart_data.get('sidereal_major_positions', [])}
+    t_positions = {p['name']: p for p in user_chart_data.get('tropical_major_positions', [])}
+    
+    def extract_sign(position_str):
+        if not position_str:
+            return None
+        parts = position_str.split()
+        return parts[-1] if parts else None
+    
+    user_sun_s = extract_sign(s_positions.get('Sun', {}).get('position')) if 'Sun' in s_positions else None
+    user_moon_s = extract_sign(s_positions.get('Moon', {}).get('position')) if 'Moon' in s_positions else None
+    user_sun_t = extract_sign(t_positions.get('Sun', {}).get('position')) if 'Sun' in t_positions else None
+    user_moon_t = extract_sign(t_positions.get('Moon', {}).get('position')) if 'Moon' in t_positions else None
+    
+    # 1. Check Sun AND Moon in sidereal
+    if user_sun_s and user_moon_s and famous_person.sun_sign_sidereal and famous_person.moon_sign_sidereal:
+        if user_sun_s == famous_person.sun_sign_sidereal and user_moon_s == famous_person.moon_sign_sidereal:
+            matches.append("strict_sun_moon_sidereal")
+            reasons.append(f"Matching Sun ({user_sun_s}) and Moon ({user_moon_s}) in Sidereal")
+    
+    # 2. Check Sun AND Moon in tropical
+    if user_sun_t and user_moon_t and famous_person.sun_sign_tropical and famous_person.moon_sign_tropical:
+        if user_sun_t == famous_person.sun_sign_tropical and user_moon_t == famous_person.moon_sign_tropical:
+            matches.append("strict_sun_moon_tropical")
+            reasons.append(f"Matching Sun ({user_sun_t}) and Moon ({user_moon_t}) in Tropical")
+    
+    # 3. Check numerology day AND life path number
+    user_day = user_numerology.get('day_number') if isinstance(user_numerology, dict) else None
+    user_life_path = user_numerology.get('life_path_number') if isinstance(user_numerology, dict) else None
+    
+    if user_day and user_life_path and famous_person.day_number and famous_person.life_path_number:
+        user_day_norm = normalize_master_number(user_day)
+        fp_day_norm = normalize_master_number(famous_person.day_number)
+        user_lp_norm = normalize_master_number(user_life_path)
+        fp_lp_norm = normalize_master_number(famous_person.life_path_number)
+        
+        day_match = any(d in fp_day_norm for d in user_day_norm) or any(d in user_day_norm for d in fp_day_norm)
+        lp_match = any(lp in fp_lp_norm for lp in user_lp_norm) or any(lp in user_lp_norm for lp in fp_lp_norm)
+        
+        if day_match and lp_match:
+            matches.append("strict_numerology")
+            reasons.append(f"Matching Day Number ({user_day}) and Life Path Number ({user_life_path})")
+    
+    # 4. Check Chinese zodiac AND (numerology day OR life path number)
+    user_chinese = user_chinese_zodiac.get('animal') if isinstance(user_chinese_zodiac, dict) else None
+    if user_chinese and famous_person.chinese_zodiac_animal:
+        if user_chinese.lower() == famous_person.chinese_zodiac_animal.lower():
+            # Check if also matches numerology day
+            if user_day and famous_person.day_number:
+                user_day_norm = normalize_master_number(user_day)
+                fp_day_norm = normalize_master_number(famous_person.day_number)
+                if any(d in fp_day_norm for d in user_day_norm) or any(d in user_day_norm for d in fp_day_norm):
+                    matches.append("strict_chinese_day")
+                    reasons.append(f"Matching Chinese Zodiac ({user_chinese}) and Day Number ({user_day})")
+            
+            # Check if also matches life path number
+            if user_life_path and famous_person.life_path_number:
+                user_lp_norm = normalize_master_number(user_life_path)
+                fp_lp_norm = normalize_master_number(famous_person.life_path_number)
+                if any(lp in fp_lp_norm for lp in user_lp_norm) or any(lp in user_lp_norm for lp in fp_lp_norm):
+                    matches.append("strict_chinese_lifepath")
+                    reasons.append(f"Matching Chinese Zodiac ({user_chinese}) and Life Path Number ({user_life_path})")
+    
+    return len(matches) > 0, reasons
+
+
+def check_aspect_matches(user_chart_data: dict, famous_person: FamousPerson) -> tuple[bool, list[str]]:
+    """
+    Check if famous person shares 2 of the top 3 aspects.
+    Returns: (is_match, list of match reasons)
+    """
+    reasons = []
+    
+    # Get user's top 3 aspects
+    user_aspects = extract_top_aspects_from_chart(user_chart_data, top_n=3)
+    
+    # Get famous person's top 3 aspects
+    if not famous_person.top_aspects_json:
+        return False, []
+    
+    try:
+        fp_aspects = json.loads(famous_person.top_aspects_json)
+    except:
+        return False, []
+    
+    # Compare sidereal aspects
+    user_s_aspects = user_aspects.get('sidereal', [])
+    fp_s_aspects = fp_aspects.get('sidereal', [])
+    
+    s_matches = 0
+    matched_aspects_s = []
+    for u_aspect in user_s_aspects:
+        for fp_aspect in fp_s_aspects:
+            # Check if same planets and same aspect type (order doesn't matter)
+            u_pair = sorted([u_aspect['p1'], u_aspect['p2']])
+            fp_pair = sorted([fp_aspect['p1'], fp_aspect['p2']])
+            if u_pair == fp_pair and u_aspect['type'] == fp_aspect['type']:
+                s_matches += 1
+                matched_aspects_s.append(f"{u_aspect['p1']} {u_aspect['type']} {u_aspect['p2']}")
+                break
+    
+    # Compare tropical aspects
+    user_t_aspects = user_aspects.get('tropical', [])
+    fp_t_aspects = fp_aspects.get('tropical', [])
+    
+    t_matches = 0
+    matched_aspects_t = []
+    for u_aspect in user_t_aspects:
+        for fp_aspect in fp_t_aspects:
+            u_pair = sorted([u_aspect['p1'], u_aspect['p2']])
+            fp_pair = sorted([fp_aspect['p1'], fp_aspect['p2']])
+            if u_pair == fp_pair and u_aspect['type'] == fp_aspect['type']:
+                t_matches += 1
+                matched_aspects_t.append(f"{u_aspect['p1']} {u_aspect['type']} {u_aspect['p2']}")
+                break
+    
+    # Need at least 2 matches total (can be from either system)
+    total_matches = s_matches + t_matches
+    
+    if total_matches >= 2:
+        if matched_aspects_s:
+            reasons.append(f"Sharing {s_matches} top aspect(s) in Sidereal: {', '.join(matched_aspects_s)}")
+        if matched_aspects_t:
+            reasons.append(f"Sharing {t_matches} top aspect(s) in Tropical: {', '.join(matched_aspects_t)}")
+        return True, reasons
+    
+    return False, []
+
+
+def check_stellium_matches(user_chart_data: dict, famous_person: FamousPerson) -> tuple[bool, list[str]]:
+    """
+    Check if famous person has the same stelliums.
+    Returns: (is_match, list of match reasons)
+    """
+    reasons = []
+    
+    # Get user's stelliums
+    user_stelliums = extract_stelliums(user_chart_data)
+    
+    # Get famous person's stelliums
+    if not famous_person.chart_data_json:
+        return False, []
+    
+    try:
+        fp_chart = json.loads(famous_person.chart_data_json)
+        fp_stelliums = extract_stelliums(fp_chart)
+    except:
+        return False, []
+    
+    # Compare stelliums (extract sign/house from description)
+    def extract_stellium_key(desc):
+        """Extract key info from stellium description"""
+        # Format: "4 bodies in Aquarius (Air, Fixed Sign Stellium)" or "3 bodies in House 5 (House Stellium)"
+        if 'Sign Stellium' in desc:
+            # Extract sign name
+            parts = desc.split(' bodies in ')
+            if len(parts) > 1:
+                sign = parts[1].split(' (')[0].strip()
+                return ('sign', sign)
+        elif 'House Stellium' in desc:
+            # Extract house number
+            parts = desc.split('House ')
+            if len(parts) > 1:
+                house = parts[1].split(' (')[0].strip()
+                return ('house', house)
+        return None
+    
+    matched_stelliums = []
+    
+    # Compare sidereal stelliums
+    for u_stellium in user_stelliums.get('sidereal', []):
+        u_key = extract_stellium_key(u_stellium)
+        if u_key:
+            for fp_stellium in fp_stelliums.get('sidereal', []):
+                fp_key = extract_stellium_key(fp_stellium)
+                if u_key == fp_key:
+                    matched_stelliums.append(f"Sidereal: {u_stellium}")
+                    break
+    
+    # Compare tropical stelliums
+    for u_stellium in user_stelliums.get('tropical', []):
+        u_key = extract_stellium_key(u_stellium)
+        if u_key:
+            for fp_stellium in fp_stelliums.get('tropical', []):
+                fp_key = extract_stellium_key(fp_stellium)
+                if u_key == fp_key:
+                    matched_stelliums.append(f"Tropical: {u_stellium}")
+                    break
+    
+    if matched_stelliums:
+        reasons.extend([f"Shared stellium: {s}" for s in matched_stelliums])
+        return True, reasons
+    
+    return False, []
+
+
+def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_person: FamousPerson) -> float:
+    """
+    Calculate comprehensive similarity score including all placements and aspects.
+    Returns a score from 0-100.
+    """
+    try:
+        # Load famous person's chart data
+        if not famous_person.chart_data_json:
+            return 0.0
+        
+        fp_chart = json.loads(famous_person.chart_data_json)
+        fp_planetary_placements = {}
+        if famous_person.planetary_placements_json:
+            try:
+                fp_planetary_placements = json.loads(famous_person.planetary_placements_json)
+            except:
+                pass
+        
+        score = 0.0
+        max_possible_score = 0.0
+        
+        # Extract user's positions
+        s_positions = {p['name']: p for p in user_chart_data.get('sidereal_major_positions', [])}
+        t_positions = {p['name']: p for p in user_chart_data.get('tropical_major_positions', [])}
+        s_extra = {p['name']: p for p in user_chart_data.get('sidereal_additional_points', [])}
+        t_extra = {p['name']: p for p in user_chart_data.get('tropical_additional_points', [])}
+        
+        # Helper function to extract sign from position string
+        def extract_sign(position_str):
+            if not position_str:
+                return None
+            parts = position_str.split()
+            return parts[-1] if parts else None
+        
+        # ========================================================================
+        # PLANETARY PLACEMENTS (Sidereal & Tropical) - All planets
+        # ========================================================================
+        
+        # All planets to compare (weighted by importance)
+        planets_to_compare = [
+            ('Sun', 8.0),
+            ('Moon', 8.0),
+            ('Mercury', 3.0),
+            ('Venus', 3.0),
+            ('Mars', 3.0),
+            ('Jupiter', 2.0),
+            ('Saturn', 2.0),
+            ('Uranus', 1.5),
+            ('Neptune', 1.5),
+            ('Pluto', 1.5),
+        ]
+        
+        for planet_name, weight in planets_to_compare:
+            # Sidereal comparison
+            user_planet_s = None
+            fp_planet_s = None
+            
+            if planet_name in s_positions:
+                user_planet_s = extract_sign(s_positions[planet_name].get('position'))
+            
+            # Try to get from famous person's stored placements
+            if fp_planetary_placements.get('sidereal', {}).get(planet_name):
+                fp_planet_s = fp_planetary_placements['sidereal'][planet_name].get('sign')
+            # Fallback to chart_data_json
+            elif fp_chart.get('sidereal_major_positions'):
+                for p in fp_chart['sidereal_major_positions']:
+                    if p.get('name') == planet_name:
+                        fp_planet_s = extract_sign(p.get('position'))
+                        break
+            
+            if user_planet_s and fp_planet_s:
+                max_possible_score += weight
+                if user_planet_s == fp_planet_s:
+                    score += weight
+            
+            # Tropical comparison
+            user_planet_t = None
+            fp_planet_t = None
+            
+            if planet_name in t_positions:
+                user_planet_t = extract_sign(t_positions[planet_name].get('position'))
+            
+            # Try to get from famous person's stored placements
+            if fp_planetary_placements.get('tropical', {}).get(planet_name):
+                fp_planet_t = fp_planetary_placements['tropical'][planet_name].get('sign')
+            # Fallback to chart_data_json
+            elif fp_chart.get('tropical_major_positions'):
+                for p in fp_chart['tropical_major_positions']:
+                    if p.get('name') == planet_name:
+                        fp_planet_t = extract_sign(p.get('position'))
+                        break
+            
+            if user_planet_t and fp_planet_t:
+                max_possible_score += weight
+                if user_planet_t == fp_planet_t:
+                    score += weight
+        
+        # Rising/Ascendant signs (if birth time known) - weight: 4 points each system
+        if not user_chart_data.get('unknown_time'):
+            user_rising_s = None
+            user_rising_t = None
+            fp_rising_s = None
+            fp_rising_t = None
+            
+            if 'Ascendant' in s_extra:
+                asc_info = s_extra['Ascendant'].get('info', '')
+                user_rising_s = asc_info.split()[0] if asc_info else None
+            
+            if 'Ascendant' in t_extra:
+                asc_info = t_extra['Ascendant'].get('info', '')
+                user_rising_t = asc_info.split()[0] if asc_info else None
+            
+            # Get from famous person (if they have birth time)
+            if not famous_person.unknown_time and fp_chart.get('sidereal_additional_points'):
+                for p in fp_chart['sidereal_additional_points']:
+                    if p.get('name') == 'Ascendant':
+                        asc_info = p.get('info', '')
+                        fp_rising_s = asc_info.split()[0] if asc_info else None
+                        break
+            
+            if not famous_person.unknown_time and fp_chart.get('tropical_additional_points'):
+                for p in fp_chart['tropical_additional_points']:
+                    if p.get('name') == 'Ascendant':
+                        asc_info = p.get('info', '')
+                        fp_rising_t = asc_info.split()[0] if asc_info else None
+                        break
+            
+            if user_rising_s and fp_rising_s:
+                max_possible_score += 4.0
+                if user_rising_s == fp_rising_s:
+                    score += 4.0
+            
+            if user_rising_t and fp_rising_t:
+                max_possible_score += 4.0
+                if user_rising_t == fp_rising_t:
+                    score += 4.0
+        
+        # ========================================================================
+        # ASPECTS (Top 10 from both systems)
+        # ========================================================================
+        
+        user_aspects = extract_top_aspects_from_chart(user_chart_data, top_n=10)
+        
+        if famous_person.top_aspects_json:
+            try:
+                fp_aspects = json.loads(famous_person.top_aspects_json)
+                
+                # Compare sidereal aspects (weight: 2 points per match)
+                user_s_aspects = user_aspects.get('sidereal', [])
+                fp_s_aspects = fp_aspects.get('sidereal', [])
+                
+                for u_aspect in user_s_aspects:
+                    for fp_aspect in fp_s_aspects:
+                        u_pair = sorted([u_aspect['p1'], u_aspect['p2']])
+                        fp_pair = sorted([fp_aspect['p1'], fp_aspect['p2']])
+                        if u_pair == fp_pair and u_aspect['type'] == fp_aspect['type']:
+                            max_possible_score += 2.0
+                            score += 2.0
+                            break
+                
+                # Compare tropical aspects
+                user_t_aspects = user_aspects.get('tropical', [])
+                fp_t_aspects = fp_aspects.get('tropical', [])
+                
+                for u_aspect in user_t_aspects:
+                    for fp_aspect in fp_t_aspects:
+                        u_pair = sorted([u_aspect['p1'], u_aspect['p2']])
+                        fp_pair = sorted([fp_aspect['p1'], fp_aspect['p2']])
+                        if u_pair == fp_pair and u_aspect['type'] == fp_aspect['type']:
+                            max_possible_score += 2.0
+                            score += 2.0
+                            break
+            except:
+                pass
+        
+        # ========================================================================
+        # NUMEROLOGY
+        # ========================================================================
+        
+        # Life Path Number - weight: 5 points
+        user_life_path = user_chart_data.get('numerology', {}).get('life_path_number')
+        fp_life_path = famous_person.life_path_number
+        
+        if user_life_path and fp_life_path:
+            max_possible_score += 5.0
+            user_lp_norm = normalize_master_number(user_life_path)
+            fp_lp_norm = normalize_master_number(fp_life_path)
+            
+            if any(lp in fp_lp_norm for lp in user_lp_norm) or any(lp in user_lp_norm for lp in fp_lp_norm):
+                score += 5.0
+        
+        # Day Number - weight: 3 points
+        user_day_num = user_chart_data.get('numerology', {}).get('day_number')
+        fp_day_num = famous_person.day_number
+        
+        if user_day_num and fp_day_num:
+            max_possible_score += 3.0
+            user_day_norm = normalize_master_number(user_day_num)
+            fp_day_norm = normalize_master_number(fp_day_num)
+            
+            if any(d in fp_day_norm for d in user_day_norm) or any(d in user_day_norm for d in fp_day_norm):
+                score += 3.0
+        
+        # ========================================================================
+        # CHINESE ZODIAC
+        # ========================================================================
+        
+        # Chinese Zodiac Animal - weight: 4 points
+        user_chinese_animal = user_chart_data.get('chinese_zodiac', {}).get('animal')
+        fp_chinese_animal = famous_person.chinese_zodiac_animal
+        
+        if user_chinese_animal and fp_chinese_animal:
+            max_possible_score += 4.0
+            if user_chinese_animal.lower() == fp_chinese_animal.lower():
+                score += 4.0
+        
+        # ========================================================================
+        # DOMINANT ELEMENT
+        # ========================================================================
+        
+        # Dominant Element - weight: 2 points
+        user_dom_elem = user_chart_data.get('sidereal_chart_analysis', {}).get('dominant_element')
+        fp_dom_elem = fp_chart.get('sidereal_chart_analysis', {}).get('dominant_element')
+        
+        if user_dom_elem and fp_dom_elem:
+            max_possible_score += 2.0
+            if user_dom_elem.lower() == fp_dom_elem.lower():
+                score += 2.0
+        
+        # ========================================================================
+        # CALCULATE FINAL SCORE
+        # ========================================================================
+        
+        # Normalize to 0-100 scale based on maximum possible score
+        if max_possible_score > 0:
+            normalized_score = (score / max_possible_score) * 100.0
+        else:
+            normalized_score = 0.0
+        
+        return min(normalized_score, 100.0)
+    
+    except Exception as e:
+        logger.error(f"Error calculating comprehensive similarity: {e}", exc_info=True)
+        return 0.0
+
+
 def calculate_chart_similarity(user_chart_data: dict, famous_person: FamousPerson) -> float:
     """
     Calculate comprehensive similarity score between user chart and famous person chart.
@@ -3754,47 +4292,108 @@ async def find_similar_famous_people_endpoint(
         # Now safely get the animal
         user_chinese_animal = chinese_zodiac_data.get('animal') if isinstance(chinese_zodiac_data, dict) else None
         
-        # OPTIMIZATION: Filter database query to only candidates with matching Sun/Moon signs
-        # This reduces from 7,435 records to ~500-1000 candidates
-        from sqlalchemy import or_
+        # OPTIMIZATION: Filter database query using new matching criteria
+        # We'll use broader filters to catch all potential matches, then apply strict criteria
+        from sqlalchemy import or_, and_
         
-        # Build filter query step by step to avoid parameter binding issues
+        # Build filter query - use OR to catch any potential matches
         query = db.query(FamousPerson)
         
-        # Build OR conditions for matching signs
-        sign_conditions = []
-        if user_sun_s:
-            sign_conditions.append(FamousPerson.sun_sign_sidereal == user_sun_s)
-        if user_sun_t:
-            sign_conditions.append(FamousPerson.sun_sign_tropical == user_sun_t)
-        if user_moon_s:
-            sign_conditions.append(FamousPerson.moon_sign_sidereal == user_moon_s)
-        if user_moon_t:
-            sign_conditions.append(FamousPerson.moon_sign_tropical == user_moon_t)
+        # Build conditions for potential matches
+        conditions = []
         
-        # Apply sign filters if we have any
-        if sign_conditions:
-            query = query.filter(or_(*sign_conditions))
-        
-        # Add life path filter if available (handle master numbers)
-        if user_life_path:
-            lp_clean = str(user_life_path).split('/')[0] if '/' in str(user_life_path) else str(user_life_path)
-            lp_reduced = str(user_life_path).split('/')[-1] if '/' in str(user_life_path) else lp_clean
-            # Use separate filter() calls instead of nested or_()
-            query = query.filter(
-                or_(
-                    FamousPerson.life_path_number == user_life_path,
-                    FamousPerson.life_path_number == lp_clean,
-                    FamousPerson.life_path_number == lp_reduced
+        # 1. Sun AND Moon sidereal match
+        if user_sun_s and user_moon_s:
+            conditions.append(
+                and_(
+                    FamousPerson.sun_sign_sidereal == user_sun_s,
+                    FamousPerson.moon_sign_sidereal == user_moon_s
                 )
             )
         
-        # Add Chinese zodiac filter if available
-        if user_chinese_animal:
-            query = query.filter(FamousPerson.chinese_zodiac_animal.ilike(f"%{user_chinese_animal}%"))
+        # 2. Sun AND Moon tropical match
+        if user_sun_t and user_moon_t:
+            conditions.append(
+                and_(
+                    FamousPerson.sun_sign_tropical == user_sun_t,
+                    FamousPerson.moon_sign_tropical == user_moon_t
+                )
+            )
         
-        # Execute query with limit
-        famous_people = query.limit(1000).all()
+        # 3. Numerology day AND life path match
+        user_day = user_numerology.get('day_number')
+        if user_day and user_life_path:
+            user_day_norm = normalize_master_number(user_day)
+            user_lp_norm = normalize_master_number(user_life_path)
+            # Build OR conditions for master numbers
+            lp_conditions = []
+            for lp in user_lp_norm:
+                lp_conditions.append(FamousPerson.life_path_number == lp)
+            day_conditions = []
+            for day in user_day_norm:
+                day_conditions.append(FamousPerson.day_number == day)
+            if lp_conditions and day_conditions:
+                conditions.append(
+                    and_(
+                        or_(*lp_conditions),
+                        or_(*day_conditions)
+                    )
+                )
+        
+        # 4. Chinese zodiac AND (day OR life path)
+        if user_chinese_animal:
+            chinese_conditions = []
+            chinese_conditions.append(FamousPerson.chinese_zodiac_animal.ilike(f"%{user_chinese_animal}%"))
+            
+            numer_conditions = []
+            if user_day:
+                user_day_norm = normalize_master_number(user_day)
+                for day in user_day_norm:
+                    numer_conditions.append(FamousPerson.day_number == day)
+            if user_life_path:
+                user_lp_norm = normalize_master_number(user_life_path)
+                for lp in user_lp_norm:
+                    numer_conditions.append(FamousPerson.life_path_number == lp)
+            
+            if numer_conditions:
+                conditions.append(
+                    and_(
+                        chinese_conditions[0],
+                        or_(*numer_conditions)
+                    )
+                )
+        
+        # Also include people who might match on aspects or stelliums
+        # (they need chart_data_json or top_aspects_json)
+        if not conditions:
+            # If no strict conditions, at least require chart data for aspect/stellium matching
+            conditions.append(FamousPerson.chart_data_json.isnot(None))
+        else:
+            # Add aspect/stellium candidates to the OR conditions
+            conditions.extend([
+                FamousPerson.top_aspects_json.isnot(None),
+                FamousPerson.chart_data_json.isnot(None)
+            ])
+        
+        # Apply filters - use OR to get all potential matches
+        if conditions:
+            query = query.filter(or_(*conditions))
+        else:
+            # Fallback: at least match one sign
+            sign_conditions = []
+            if user_sun_s:
+                sign_conditions.append(FamousPerson.sun_sign_sidereal == user_sun_s)
+            if user_sun_t:
+                sign_conditions.append(FamousPerson.sun_sign_tropical == user_sun_t)
+            if user_moon_s:
+                sign_conditions.append(FamousPerson.moon_sign_sidereal == user_moon_s)
+            if user_moon_t:
+                sign_conditions.append(FamousPerson.moon_sign_tropical == user_moon_t)
+            if sign_conditions:
+                query = query.filter(or_(*sign_conditions))
+        
+        # Execute query with higher limit to catch all potential matches
+        famous_people = query.limit(2000).all()
         
         if not famous_people:
             return {
@@ -3802,18 +4401,42 @@ async def find_similar_famous_people_endpoint(
                 "message": "No matches found. We're constantly adding more famous people to our database. Check back soon!"
             }
         
-        # Calculate similarity scores on filtered candidates
+        # Apply strict matching criteria and calculate scores
         matches = []
         for fp in famous_people:
-            score = calculate_chart_similarity(chart_data, fp)
-            if score > 0:  # Only include if there's some similarity
+            # Check strict matches
+            strict_match, strict_reasons = check_strict_matches(
+                chart_data, fp, numerology_data, chinese_zodiac_data
+            )
+            
+            # Check aspect matches
+            aspect_match, aspect_reasons = check_aspect_matches(chart_data, fp)
+            
+            # Check stellium matches
+            stellium_match, stellium_reasons = check_stellium_matches(chart_data, fp)
+            
+            # Include if matches any criteria
+            if strict_match or aspect_match or stellium_match:
+                # Calculate comprehensive score
+                comprehensive_score = calculate_comprehensive_similarity_score(chart_data, fp)
+                
+                # Combine all match reasons
+                all_reasons = strict_reasons + aspect_reasons + stellium_reasons
+                
                 matches.append({
                     "famous_person": fp,
-                    "similarity_score": score
+                    "similarity_score": comprehensive_score,
+                    "match_reasons": all_reasons,
+                    "match_type": "strict" if strict_match else ("aspect" if aspect_match else "stellium")
                 })
         
-        # Sort by similarity score (highest first)
-        matches.sort(key=lambda x: x["similarity_score"], reverse=True)
+        # Sort by similarity score (highest first), then by match type priority
+        def sort_key(m):
+            # Prioritize strict matches, then aspect, then stellium
+            type_priority = {"strict": 3, "aspect": 2, "stellium": 1}.get(m["match_type"], 0)
+            return (type_priority, m["similarity_score"])
+        
+        matches.sort(key=sort_key, reverse=True)
         
         # Take top matches
         top_matches = matches[:limit]
@@ -3837,6 +4460,8 @@ async def find_similar_famous_people_endpoint(
                 "wikipedia_url": fp.wikipedia_url,
                 "occupation": fp.occupation,
                 "similarity_score": round(match["similarity_score"], 1),
+                "match_reasons": match.get("match_reasons", []),
+                "match_type": match.get("match_type", "general"),
                 "birth_date": f"{fp.birth_month}/{fp.birth_day}/{fp.birth_year}",
                 "birth_location": fp.birth_location,
                 # Sun & Moon (always available)
@@ -3855,6 +4480,12 @@ async def find_similar_famous_people_endpoint(
                 "jupiter_sign_tropical": fp_planetary.get('tropical', {}).get('Jupiter', {}).get('sign'),
                 "saturn_sign_sidereal": fp_planetary.get('sidereal', {}).get('Saturn', {}).get('sign'),
                 "saturn_sign_tropical": fp_planetary.get('tropical', {}).get('Saturn', {}).get('sign'),
+                "uranus_sign_sidereal": fp_planetary.get('sidereal', {}).get('Uranus', {}).get('sign'),
+                "uranus_sign_tropical": fp_planetary.get('tropical', {}).get('Uranus', {}).get('sign'),
+                "neptune_sign_sidereal": fp_planetary.get('sidereal', {}).get('Neptune', {}).get('sign'),
+                "neptune_sign_tropical": fp_planetary.get('tropical', {}).get('Neptune', {}).get('sign'),
+                "pluto_sign_sidereal": fp_planetary.get('sidereal', {}).get('Pluto', {}).get('sign'),
+                "pluto_sign_tropical": fp_planetary.get('tropical', {}).get('Pluto', {}).get('sign'),
                 # Numerology
                 "life_path_number": fp.life_path_number,
                 "day_number": fp.day_number,
