@@ -1,0 +1,41 @@
+name: Merge Bot
+
+on:
+  pull_request:
+    types: [labeled, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    if: contains(github.event.pull_request.labels.*.name, 'automerge')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Safety checks
+        run: |
+          echo "PR: #${{ github.event.pull_request.number }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Head repo: ${{ github.event.pull_request.head.repo.full_name }}"
+          echo "Base repo: ${{ github.repository }}"
+
+          # Block forks (critical)
+          if [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
+            echo "Refusing to merge: PR is from a fork."
+            exit 1
+          fi
+
+          # Only allow the repo owner username to trigger merges (adjust if needed)
+          if [ "${{ github.actor }}" != "AJK888" ]; then
+            echo "Refusing to merge: only AJK888 can trigger automerge."
+            exit 1
+          fi
+
+      - name: Merge PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr merge "$PR_NUMBER" --squash --delete-branch
