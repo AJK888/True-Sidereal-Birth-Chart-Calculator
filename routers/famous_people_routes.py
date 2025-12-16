@@ -143,8 +143,11 @@ async def find_similar_famous_people_endpoint(
         
         # Get user's numerology and Chinese zodiac for additional filtering
         # Safely handle nested dictionaries that might be strings or missing
-        # Safely get numerology - it might be a string, dict, or missing
+        # Safely get numerology - it might be a string, dict, or missing.
+        # Prefer "numerology", but fall back to "numerology_analysis" used in chart responses.
         numerology_data = chart_data.get('numerology')
+        if numerology_data is None and 'numerology_analysis' in chart_data:
+            numerology_data = chart_data.get('numerology_analysis')
         if numerology_data is None:
             numerology_data = {}
         elif isinstance(numerology_data, str):
@@ -162,24 +165,19 @@ async def find_similar_famous_people_endpoint(
         # Now safely get the life_path_number
         user_life_path = numerology_data.get('life_path_number') if isinstance(numerology_data, dict) else None
         
-        # Safely get chinese_zodiac - it might be a string, dict, or missing
+        # Safely get chinese_zodiac animal - extract only animal (last word), not element
         chinese_zodiac_data = chart_data.get('chinese_zodiac')
-        if chinese_zodiac_data is None:
-            chinese_zodiac_data = {}
-        elif isinstance(chinese_zodiac_data, str):
-            try:
-                chinese_zodiac_data = json.loads(chinese_zodiac_data)
-                # Recursively parse in case it contains more nested strings
-                chinese_zodiac_data = parse_json_recursive(chinese_zodiac_data)
-            except (json.JSONDecodeError, TypeError) as e:
-                logger.warning(f"Failed to parse chinese_zodiac as JSON: {e}, value: {chinese_zodiac_data[:100] if isinstance(chinese_zodiac_data, str) else chinese_zodiac_data}")
-                chinese_zodiac_data = {}
-        elif not isinstance(chinese_zodiac_data, dict):
-            logger.warning(f"chinese_zodiac is not a dict: {type(chinese_zodiac_data)}")
-            chinese_zodiac_data = {}
-        
-        # Now safely get the animal
-        user_chinese_animal = chinese_zodiac_data.get('animal') if isinstance(chinese_zodiac_data, dict) else None
+        if isinstance(chinese_zodiac_data, str):
+            # Extract animal (last word) from strings like "Earth Tiger" -> "Tiger"
+            parts = chinese_zodiac_data.strip().split()
+            if len(parts) >= 1:
+                user_chinese_animal = parts[-1]  # Take last word (the animal)
+            else:
+                user_chinese_animal = None
+        elif isinstance(chinese_zodiac_data, dict):
+            user_chinese_animal = chinese_zodiac_data.get('animal')
+        else:
+            user_chinese_animal = None
         
         # OPTIMIZATION: Filter database query using new matching criteria
         # We'll use broader filters to catch all potential matches, then apply strict criteria

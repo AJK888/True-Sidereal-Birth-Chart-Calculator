@@ -504,19 +504,23 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
         # ========================================================================
         # NUMEROLOGY
         # ========================================================================
-        
-        # Parse numerology if it's a string (JSON)
-        user_numerology = user_chart_data.get('numerology', {})
-        if isinstance(user_numerology, str):
+        # On the user side, numerology is usually under "numerology_analysis" in the
+        # chart response, but older/other flows may use "numerology". Support both.
+        raw_numerology = (
+            user_chart_data.get('numerology')
+            or user_chart_data.get('numerology_analysis')
+            or {}
+        )
+        if isinstance(raw_numerology, str):
             try:
-                user_numerology = json.loads(user_numerology)
-            except:
-                user_numerology = {}
-        if not isinstance(user_numerology, dict):
-            user_numerology = {}
+                raw_numerology = json.loads(raw_numerology)
+            except Exception:
+                raw_numerology = {}
+        if not isinstance(raw_numerology, dict):
+            raw_numerology = {}
         
         # Life Path Number - weight: 10 points
-        user_life_path = user_numerology.get('life_path_number')
+        user_life_path = raw_numerology.get('life_path_number')
         fp_life_path = famous_person.life_path_number
         
         if user_life_path and fp_life_path:
@@ -528,7 +532,7 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
                 score += 10.0
         
         # Day Number - weight: 10 points
-        user_day_num = user_numerology.get('day_number')
+        user_day_num = raw_numerology.get('day_number')
         fp_day_num = famous_person.day_number
         
         if user_day_num and fp_day_num:
@@ -542,19 +546,22 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
         # ========================================================================
         # CHINESE ZODIAC
         # ========================================================================
+        # In the chart response, chinese_zodiac is usually a string like "Earth Tiger".
+        # Extract only the animal (last word) - we don't match on element.
+        raw_chinese = user_chart_data.get('chinese_zodiac', {})
+        if isinstance(raw_chinese, str):
+            # Extract animal (last word) from strings like "Earth Tiger" -> "Tiger"
+            parts = raw_chinese.strip().split()
+            if len(parts) >= 1:
+                user_chinese_animal = parts[-1]  # Take last word (the animal)
+            else:
+                user_chinese_animal = None
+        elif isinstance(raw_chinese, dict):
+            user_chinese_animal = raw_chinese.get('animal')
+        else:
+            user_chinese_animal = None
         
-        # Parse chinese_zodiac if it's a string (JSON)
-        user_chinese_zodiac = user_chart_data.get('chinese_zodiac', {})
-        if isinstance(user_chinese_zodiac, str):
-            try:
-                user_chinese_zodiac = json.loads(user_chinese_zodiac)
-            except:
-                user_chinese_zodiac = {}
-        if not isinstance(user_chinese_zodiac, dict):
-            user_chinese_zodiac = {}
-        
-        # Chinese Zodiac Animal - weight: 10 points
-        user_chinese_animal = user_chinese_zodiac.get('animal')
+        # Chinese Zodiac Animal - weight: 10 points (only match animal, not element)
         fp_chinese_animal = famous_person.chinese_zodiac_animal
         
         if user_chinese_animal and fp_chinese_animal:
@@ -700,15 +707,21 @@ def extract_all_matching_factors(user_chart_data: dict, fp: FamousPerson, fp_pla
             matches_list.append("Rising/Ascendant (Tropical)")
     
     # Check Numerology
-    user_numerology = user_chart_data.get('numerology', {})
-    if isinstance(user_numerology, str):
+    raw_numerology = (
+        user_chart_data.get('numerology')
+        or user_chart_data.get('numerology_analysis')
+        or {}
+    )
+    if isinstance(raw_numerology, str):
         try:
-            user_numerology = json.loads(user_numerology)
-        except:
-            user_numerology = {}
+            raw_numerology = json.loads(raw_numerology)
+        except Exception:
+            raw_numerology = {}
+    if not isinstance(raw_numerology, dict):
+        raw_numerology = {}
     
-    user_life_path = user_numerology.get('life_path_number') if isinstance(user_numerology, dict) else None
-    user_day = user_numerology.get('day_number') if isinstance(user_numerology, dict) else None
+    user_life_path = raw_numerology.get('life_path_number') if isinstance(raw_numerology, dict) else None
+    user_day = raw_numerology.get('day_number') if isinstance(raw_numerology, dict) else None
     
     if user_life_path and fp.life_path_number:
         user_lp_norm = normalize_master_number(user_life_path)
@@ -722,15 +735,20 @@ def extract_all_matching_factors(user_chart_data: dict, fp: FamousPerson, fp_pla
         if any(d in fp_day_norm for d in user_day_norm) or any(d in user_day_norm for d in fp_day_norm):
             matches_list.append(f"Day Number ({user_day})")
     
-    # Check Chinese Zodiac
-    user_chinese = user_chart_data.get('chinese_zodiac', {})
-    if isinstance(user_chinese, str):
-        try:
-            user_chinese = json.loads(user_chinese)
-        except:
-            user_chinese = {}
+    # Check Chinese Zodiac - only match animal, not element
+    raw_chinese = user_chart_data.get('chinese_zodiac', {})
+    if isinstance(raw_chinese, str):
+        # Extract animal (last word) from strings like "Earth Tiger" -> "Tiger"
+        parts = raw_chinese.strip().split()
+        if len(parts) >= 1:
+            user_chinese_animal = parts[-1]  # Take last word (the animal)
+        else:
+            user_chinese_animal = None
+    elif isinstance(raw_chinese, dict):
+        user_chinese_animal = raw_chinese.get('animal')
+    else:
+        user_chinese_animal = None
     
-    user_chinese_animal = user_chinese.get('animal') if isinstance(user_chinese, dict) else None
     if user_chinese_animal and fp.chinese_zodiac_animal:
         if user_chinese_animal.lower() == fp.chinese_zodiac_animal.lower():
             matches_list.append(f"Chinese Zodiac ({user_chinese_animal})")
@@ -813,28 +831,37 @@ async def find_similar_famous_people_internal(
         user_moon_s = extract_sign(s_positions.get('Moon', {}).get('position')) if 'Moon' in s_positions and s_positions['Moon'].get('position') else None
         user_moon_t = extract_sign(t_positions.get('Moon', {}).get('position')) if 'Moon' in t_positions and t_positions['Moon'].get('position') else None
         
-        # Get numerology and Chinese zodiac
-        numerology_data = chart_data.get('numerology', {})
+        # Get numerology and Chinese zodiac from chart data
+        # Numerology may be under "numerology" or "numerology_analysis"
+        numerology_data = (
+            chart_data.get('numerology')
+            or chart_data.get('numerology_analysis')
+            or {}
+        )
         if isinstance(numerology_data, str):
             try:
                 numerology_data = json.loads(numerology_data)
-            except:
+            except Exception:
                 numerology_data = {}
         if not isinstance(numerology_data, dict):
             numerology_data = {}
         
+        # Chinese zodiac - extract only animal (last word), not element
         chinese_zodiac_data = chart_data.get('chinese_zodiac', {})
         if isinstance(chinese_zodiac_data, str):
-            try:
-                chinese_zodiac_data = json.loads(chinese_zodiac_data)
-            except:
-                chinese_zodiac_data = {}
-        if not isinstance(chinese_zodiac_data, dict):
-            chinese_zodiac_data = {}
+            # Extract animal (last word) from strings like "Earth Tiger" -> "Tiger"
+            parts = chinese_zodiac_data.strip().split()
+            if len(parts) >= 1:
+                user_chinese_animal = parts[-1]  # Take last word (the animal)
+            else:
+                user_chinese_animal = None
+        elif isinstance(chinese_zodiac_data, dict):
+            user_chinese_animal = chinese_zodiac_data.get('animal')
+        else:
+            user_chinese_animal = None
         
         user_life_path = numerology_data.get('life_path_number')
         user_day = numerology_data.get('day_number')
-        user_chinese_animal = chinese_zodiac_data.get('animal')
         
         # Build query (same logic as endpoint)
         query = db.query(FamousPerson)
