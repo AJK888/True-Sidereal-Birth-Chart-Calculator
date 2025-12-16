@@ -3545,7 +3545,6 @@ async def get_subscription_status(
         "end_date": current_user.subscription_end_date.isoformat() if current_user.subscription_end_date else None,
         "has_purchased_reading": current_user.has_purchased_reading or has_friends_family_access,
         "reading_purchase_date": current_user.reading_purchase_date.isoformat() if current_user.reading_purchase_date else None,
-        "friends_family_access": has_friends_family_access
         "free_chat_month_end_date": current_user.free_chat_month_end_date.isoformat() if current_user.free_chat_month_end_date else None,
         "is_admin": current_user.is_admin,
         "friends_family_access": has_friends_family_access
