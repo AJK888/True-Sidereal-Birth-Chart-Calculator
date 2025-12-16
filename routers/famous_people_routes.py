@@ -51,6 +51,9 @@ async def find_similar_famous_people_endpoint(
     Returns:
         List of famous people sorted by similarity score
     """
+    logger.info("="*60)
+    logger.info("FAMOUS PEOPLE ENDPOINT CALLED")
+    logger.info("="*60)
     try:
         limit = data.limit
         if limit > 50:
@@ -279,21 +282,28 @@ async def find_similar_famous_people_endpoint(
         
         # Get ALL famous people with chart data (no filtering, search entire database)
         # Only require that they have chart data for scoring
+        logger.info("Querying database for famous people with chart data...")
         all_famous_people = db.query(FamousPerson).filter(
             FamousPerson.chart_data_json.isnot(None)
         ).all()
         
+        logger.info(f"Found {len(all_famous_people)} famous people in database with chart data")
+        
         if not all_famous_people:
+            logger.warning("No famous people found in database with chart data")
             return {
                 "matches": [],
                 "message": "No matches found. We're constantly adding more famous people to our database. Check back soon!"
             }
         
         # Calculate comprehensive scores for ALL famous people
+        logger.info(f"Calculating similarity scores for {len(all_famous_people)} famous people...")
         matches = []
+        scores_calculated = 0
         for fp in all_famous_people:
             # Calculate comprehensive score for everyone
             comprehensive_score = calculate_comprehensive_similarity_score(chart_data, fp)
+            scores_calculated += 1
             
             # Only include if score > 0 (has actual matches)
             if comprehensive_score > 0.0:
@@ -317,11 +327,14 @@ async def find_similar_famous_people_endpoint(
                     "match_type": match_type
                 })
         
+        logger.info(f"Calculated scores for {scores_calculated} people, found {len(matches)} with score > 0")
+        
         # Sort by similarity score ONLY (highest first)
         matches.sort(key=lambda m: m["similarity_score"], reverse=True)
         
         # Take top 20 matches (always return top 20 from entire database)
         top_matches = matches[:20]
+        logger.info(f"Returning top {len(top_matches)} matches")
         
         # Format response with comprehensive matching details
         result = []
@@ -361,6 +374,8 @@ async def find_similar_famous_people_endpoint(
             }
             
             result.append(match_details)
+        
+        logger.info(f"Endpoint returning {len(result)} matches out of {len(all_famous_people)} compared")
         
         return {
             "matches": result,
