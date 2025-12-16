@@ -46,6 +46,8 @@ from auth import (
 )
 from subscription import has_active_subscription, check_subscription_access
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text
 
 # --- Import Chat API Router ---
 from chat_api import router as chat_router
@@ -205,6 +207,22 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# --- Response Header Middleware ---
+from middleware.headers import (
+    NormalizeJsonContentTypeMiddleware,
+    SecurityHeadersMiddleware,
+    ApiNoCacheMiddleware
+)
+
+# Add middleware in reverse execution order (last added = first executed on response)
+# Execution order on response (reverse of addition):
+# 1. ApiNoCacheMiddleware (added last, executes first - can override cache headers)
+# 2. SecurityHeadersMiddleware (added second, executes second - sets security defaults)
+# 3. NormalizeJsonContentTypeMiddleware (added first, executes last - normalizes content-type)
+app.add_middleware(NormalizeJsonContentTypeMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(ApiNoCacheMiddleware)
 
 @app.exception_handler(RateLimitExceeded)
 async def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
@@ -2726,7 +2744,7 @@ async def calculate_chart_endpoint(
                 logger.info(f"Snapshot reading generated successfully (length: {len(snapshot_reading) if snapshot_reading else 0})")
                 
                 # Send snapshot email immediately to user and admin (only if successful)
-                if snapshot_reading and snapshot_reading != "Snapshot reading is temporarily unavailable." and data.user_email:
+                if snapshot_reading and snapshot_reading != "Snapshot reading is temporarily unavailable.":
                     try:
                         # Format birth date and time for email
                         birth_date_str = f"{data.month}/{data.day}/{data.year}"
@@ -2739,17 +2757,18 @@ async def calculate_chart_endpoint(
                             else:
                                 birth_time_str += " AM"
                         
-                        # Send to user
-                        send_snapshot_email_via_sendgrid(
-                            snapshot_reading,
-                            data.user_email,
-                            data.full_name,
-                            birth_date_str,
-                            birth_time_str,
-                            data.location
-                        )
+                        # Send to user (if email provided)
+                        if data.user_email:
+                            send_snapshot_email_via_sendgrid(
+                                snapshot_reading,
+                                data.user_email,
+                                data.full_name,
+                                birth_date_str,
+                                birth_time_str,
+                                data.location
+                            )
                         
-                        # Send to admin
+                        # Send to admin (always, if configured)
                         if ADMIN_EMAIL:
                             send_snapshot_email_via_sendgrid(
                                 snapshot_reading,
@@ -3533,7 +3552,45 @@ async def send_chat_message_endpoint(
         content=data.message
     )
     db.add(user_msg)
-    db.commit()
+    
+    # Commit with sequence fix handling
+    try:
+        db.commit()
+    except IntegrityError as e:
+        error_str = str(e.orig) if hasattr(e, 'orig') else str(e)
+        if "UniqueViolation" in error_str and "chat_messages_pkey" in error_str:
+            logger.warning(f"Chat messages sequence out of sync. Fixing sequence...")
+            db.rollback()
+            # Fix the sequence (only for PostgreSQL)
+            try:
+                from database import DATABASE_URL
+                is_postgres = DATABASE_URL.startswith('postgresql://') or DATABASE_URL.startswith('postgres://')
+                
+                if is_postgres:
+                    # Get max ID from table
+                    result = db.execute(text("SELECT MAX(id) FROM chat_messages"))
+                    max_id = result.scalar() or 0
+                    # Reset sequence to max_id + 1
+                    db.execute(text(f"SELECT setval('chat_messages_id_seq', {max_id + 1}, false)"))
+                    db.commit()
+                    logger.info(f"Fixed chat_messages sequence. Next ID will be {max_id + 1}")
+                    # Retry adding the message
+                    db.add(user_msg)
+                    db.commit()
+                else:
+                    # SQLite - recreate the message object
+                    user_msg = ChatMessage(
+                        conversation_id=conversation.id,
+                        role="user",
+                        content=data.message
+                    )
+                    db.add(user_msg)
+                    db.commit()
+            except Exception as fix_error:
+                logger.error(f"Failed to fix chat_messages sequence: {fix_error}")
+                raise HTTPException(status_code=500, detail="Database error. Please try again.")
+        else:
+            raise
     
     # Parse chart data
     chart_data = json.loads(chart.chart_data_json) if chart.chart_data_json else {}
@@ -3573,7 +3630,47 @@ async def send_chat_message_endpoint(
         
         # Update conversation timestamp
         conversation.updated_at = datetime.utcnow()
-        db.commit()
+        
+        # Commit with sequence fix handling
+        try:
+            db.commit()
+        except IntegrityError as e:
+            error_str = str(e.orig) if hasattr(e, 'orig') else str(e)
+            if "UniqueViolation" in error_str and "chat_messages_pkey" in error_str:
+                logger.warning(f"Chat messages sequence out of sync. Fixing sequence...")
+                db.rollback()
+                # Fix the sequence (only for PostgreSQL)
+                try:
+                    from database import DATABASE_URL
+                    is_postgres = DATABASE_URL.startswith('postgresql://') or DATABASE_URL.startswith('postgres://')
+                    
+                    if is_postgres:
+                        # Get max ID from table
+                        result = db.execute(text("SELECT MAX(id) FROM chat_messages"))
+                        max_id = result.scalar() or 0
+                        # Reset sequence to max_id + 1
+                        db.execute(text(f"SELECT setval('chat_messages_id_seq', {max_id + 1}, false)"))
+                        db.commit()
+                        logger.info(f"Fixed chat_messages sequence. Next ID will be {max_id + 1}")
+                        # Retry adding the message
+                        db.add(assistant_msg)
+                        conversation.updated_at = datetime.utcnow()
+                        db.commit()
+                    else:
+                        # SQLite - recreate the message object
+                        assistant_msg = ChatMessage(
+                            conversation_id=conversation.id,
+                            role="assistant",
+                            content=ai_response
+                        )
+                        db.add(assistant_msg)
+                        conversation.updated_at = datetime.utcnow()
+                        db.commit()
+                except Exception as fix_error:
+                    logger.error(f"Failed to fix chat_messages sequence: {fix_error}")
+                    raise HTTPException(status_code=500, detail="Database error. Please try again.")
+            else:
+                raise
         
         logger.info(f"Chat response generated for user {current_user.email}")
         

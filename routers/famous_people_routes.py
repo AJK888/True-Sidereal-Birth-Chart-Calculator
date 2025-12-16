@@ -330,9 +330,9 @@ async def find_similar_famous_people_endpoint(
         # Sort by similarity score ONLY (highest first)
         matches.sort(key=lambda m: m["similarity_score"], reverse=True)
         
-        # Take top 40 matches (always return top 40 from entire database)
-        top_matches = matches[:40]
-        logger.info(f"Returning top {len(top_matches)} matches")
+        # Filter to only include matches with synthesis score >= 30
+        top_matches = [m for m in matches if m["similarity_score"] >= 30.0]
+        logger.info(f"Found {len(matches)} total matches, returning {len(top_matches)} with score >= 30")
         
         # Format response with comprehensive matching details
         result = []
