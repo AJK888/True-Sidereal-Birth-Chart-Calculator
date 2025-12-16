@@ -16,6 +16,8 @@ npm ci && npm run build
 dist
 ```
 
+**⚠️ IMPORTANT:** Make sure the publish directory is `dist` (not `.dist` with a leading dot). The build outputs to `dist/` directory.
+
 ## What Changed
 
 1. Added `package.json` with Vite dependencies

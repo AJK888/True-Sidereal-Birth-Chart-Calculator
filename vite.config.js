@@ -41,7 +41,11 @@ export default defineConfig({
     },
     // Generate manifest for asset mapping (optional, for advanced use cases)
     manifest: false,
+    // Copy legacy scripts as-is (they're not ES modules)
+    copyPublicDir: true,
   },
   publicDir: 'public',
+  // Legacy scripts should be copied, not bundled
+  // Vite will copy them from public/ or keep them as external references
 });
 

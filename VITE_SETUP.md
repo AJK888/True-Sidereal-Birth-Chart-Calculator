@@ -16,6 +16,8 @@ npm ci && npm run build
 dist
 ```
 
+**⚠️ CRITICAL:** The publish directory must be `dist` (NOT `.dist` with a leading dot). Vite outputs to `dist/` directory.
+
 ## Local Development
 
 ### Install Dependencies
