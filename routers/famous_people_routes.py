@@ -330,8 +330,8 @@ async def find_similar_famous_people_endpoint(
         # Sort by similarity score ONLY (highest first)
         matches.sort(key=lambda m: m["similarity_score"], reverse=True)
         
-        # Take top 20 matches (always return top 20 from entire database)
-        top_matches = matches[:20]
+        # Take top 30 matches (always return top 30 from entire database)
+        top_matches = matches[:30]
         logger.info(f"Returning top {len(top_matches)} matches")
         
         # Format response with comprehensive matching details

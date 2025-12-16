@@ -350,16 +350,16 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
         
         # All planets to compare (weighted by importance)
         planets_to_compare = [
-            ('Sun', 5.0),
-            ('Moon', 5.0),
-            ('Mercury', 3.0),
-            ('Venus', 3.0),
-            ('Mars', 3.0),
-            ('Jupiter', 3.0),
-            ('Saturn', 3.0),
-            ('Uranus', 3.0),
-            ('Neptune', 3.0),
-            ('Pluto', 3.0),
+            ('Sun', 5.0),      # 5 per system → 10 total (sidereal + tropical)
+            ('Moon', 5.0),     # 5 per system → 10 total
+            ('Mercury', 3.0),  # 3 per system → 6 total
+            ('Venus', 3.0),    # 3 per system → 6 total
+            ('Mars', 2.0),     # 2 per system → 4 total
+            ('Jupiter', 2.0),  # 2 per system → 4 total
+            ('Saturn', 2.0),   # 2 per system → 4 total
+            ('Uranus', 2.0),   # 2 per system → 4 total
+            ('Neptune', 2.0),  # 2 per system → 4 total
+            ('Pluto', 2.0),    # 2 per system → 4 total
         ]
         
         for planet_name, weight in planets_to_compare:
@@ -417,50 +417,13 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
                 if user_planet_t == fp_planet_t:
                     score += weight
         
-        # Rising/Ascendant signs (if birth time known) - weight: 5 points each system
-        if not user_chart_data.get('unknown_time'):
-            user_rising_s = None
-            user_rising_t = None
-            fp_rising_s = None
-            fp_rising_t = None
-            
-            if 'Ascendant' in s_extra:
-                asc_info = s_extra['Ascendant'].get('info', '')
-                user_rising_s = asc_info.split()[0] if asc_info else None
-            
-            if 'Ascendant' in t_extra:
-                asc_info = t_extra['Ascendant'].get('info', '')
-                user_rising_t = asc_info.split()[0] if asc_info else None
-            
-            # Get from famous person (if they have birth time)
-            if not famous_person.unknown_time and fp_chart.get('sidereal_additional_points'):
-                for p in fp_chart['sidereal_additional_points']:
-                    if p.get('name') == 'Ascendant':
-                        asc_info = p.get('info', '')
-                        fp_rising_s = asc_info.split()[0] if asc_info else None
-                        break
-            
-            if not famous_person.unknown_time and fp_chart.get('tropical_additional_points'):
-                for p in fp_chart['tropical_additional_points']:
-                    if p.get('name') == 'Ascendant':
-                        asc_info = p.get('info', '')
-                        fp_rising_t = asc_info.split()[0] if asc_info else None
-                        break
-            
-            if user_rising_s and fp_rising_s:
-                max_possible_score += 5.0
-                if user_rising_s == fp_rising_s:
-                    score += 5.0
-            
-            if user_rising_t and fp_rising_t:
-                max_possible_score += 5.0
-                if user_rising_t == fp_rising_t:
-                    score += 5.0
+        # Rising/Ascendant is intentionally EXCLUDED from similarity scoring per user request.
+        # We keep the code paths simple by not adding any Rising-based contributions here.
         
         # ========================================================================
         # ASPECTS (Top 3 from both systems)
         # ========================================================================
-        # If at least 2 out of 3 top aspects match, award 10 points
+        # If at least 2 out of 3 top aspects match, award 15 points
         
         user_aspects = extract_top_aspects_from_chart(user_chart_data, top_n=3)
         
@@ -494,10 +457,10 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
                             tropical_matches += 1
                             break
                 
-                # Award 10 points if at least 2 out of 3 aspects match in either system
+                # Award 15 points if at least 2 out of 3 aspects match in either system
                 if sidereal_matches >= 2 or tropical_matches >= 2:
-                    max_possible_score += 10.0
-                    score += 10.0
+                    max_possible_score += 15.0
+                    score += 15.0
             except:
                 pass
         
@@ -570,10 +533,9 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
                 score += 10.0
         
         # ========================================================================
-        # DOMINANT ELEMENT - Not included in scoring (only shown in matching_factors for display)
+        # DOMINANT ELEMENT - Not included in similarity calculation
         # ========================================================================
-        # Dominant Element is still extracted and shown in matching_factors list,
-        # but it is NOT included in the score calculation per user requirements
+        # Dominant Element is NOT included in scoring or matching_factors per user requirements
         
         # ========================================================================
         # CALCULATE FINAL SCORE
@@ -753,16 +715,7 @@ def extract_all_matching_factors(user_chart_data: dict, fp: FamousPerson, fp_pla
         if user_chinese_animal.lower() == fp.chinese_zodiac_animal.lower():
             matches_list.append(f"Chinese Zodiac ({user_chinese_animal})")
     
-    # Check Dominant Element
-    user_dom_elem_s = user_chart_data.get('sidereal_chart_analysis', {}).get('dominant_element')
-    fp_dom_elem_s = fp_chart.get('sidereal_chart_analysis', {}).get('dominant_element')
-    if user_dom_elem_s and fp_dom_elem_s and user_dom_elem_s.lower() == fp_dom_elem_s.lower():
-        matches_list.append(f"Dominant Element - Sidereal ({user_dom_elem_s})")
-    
-    user_dom_elem_t = user_chart_data.get('tropical_chart_analysis', {}).get('dominant_element')
-    fp_dom_elem_t = fp_chart.get('tropical_chart_analysis', {}).get('dominant_element')
-    if user_dom_elem_t and fp_dom_elem_t and user_dom_elem_t.lower() == fp_dom_elem_t.lower():
-        matches_list.append(f"Dominant Element - Tropical ({user_dom_elem_t})")
+    # Dominant Element is NOT included in similarity matching (removed per user request)
     
     # Check Aspects (from match_reasons if available, or calculate)
     user_aspects = extract_top_aspects_from_chart(user_chart_data, top_n=10)
@@ -971,8 +924,8 @@ async def find_similar_famous_people_internal(
         # Sort by similarity score ONLY (highest first)
         matches.sort(key=lambda m: m["similarity_score"], reverse=True)
         
-        # Always return top 20 from entire database
-        top_matches = matches[:20]
+        # Always return top 30 from entire database
+        top_matches = matches[:30]
         
         logger.info(f"Found {len(matches)} matches with score > 0, returning top {len(top_matches)}")
         
