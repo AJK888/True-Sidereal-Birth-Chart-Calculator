@@ -1652,7 +1652,7 @@ Provide 4-6 paragraphs of insightful, specific analysis that gives readers a mea
         response = await llm.generate(
             system=system_prompt,
             user=user_prompt,
-            max_output_tokens=2000,  # Increased for more comprehensive reading
+            max_output_tokens=4000,  # Increased for more comprehensive reading
             temperature=0.7,  # Higher for more creative and nuanced responses
             call_label="snapshot_reading"
         )
