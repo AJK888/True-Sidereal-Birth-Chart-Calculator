@@ -147,6 +147,32 @@ app.include_router(chat_router)
 init_db()
 logger.info("Database initialized successfully")
 
+# --- Startup Event: Trigger Webpage Deployment ---
+@app.on_event("startup")
+async def trigger_webpage_deployment():
+    """Trigger webpage deployment when API service starts (after new deployment)."""
+    WEBPAGE_DEPLOY_HOOK_URL = os.getenv("WEBPAGE_DEPLOY_HOOK_URL")
+    
+    if not WEBPAGE_DEPLOY_HOOK_URL:
+        logger.info("WEBPAGE_DEPLOY_HOOK_URL not configured. Skipping webpage deployment trigger.")
+        return
+    
+    # Trigger in background to not block startup
+    try:
+        logger.info("Triggering webpage deployment via deploy hook...")
+        response = requests.post(
+            WEBPAGE_DEPLOY_HOOK_URL,
+            timeout=10
+        )
+        
+        if response.status_code == 200 or response.status_code == 201:
+            logger.info(f"Successfully triggered webpage deployment. Status: {response.status_code}")
+        else:
+            logger.warning(f"Webpage deployment trigger returned status {response.status_code}: {response.text[:200]}")
+    except Exception as e:
+        # Don't fail startup if webpage deployment trigger fails
+        logger.warning(f"Failed to trigger webpage deployment on startup: {e}")
+
 # --- CORS MIDDLEWARE (MUST BE ADDED BEFORE ROUTES) ---
 origins = [
     "https://synthesisastrology.org",
@@ -4731,65 +4757,51 @@ async def find_similar_famous_people_endpoint(
             if sign_conditions:
                 query = query.filter(or_(*sign_conditions))
         
-        # Execute query with higher limit to catch all potential matches
-        famous_people = query.limit(2000).all()
+        # Get ALL famous people with chart data (no filtering, search entire database)
+        # Only require that they have chart data for scoring
+        all_famous_people = db.query(FamousPerson).filter(
+            FamousPerson.chart_data_json.isnot(None)
+        ).all()
         
-        if not famous_people:
+        if not all_famous_people:
             return {
                 "matches": [],
                 "message": "No matches found. We're constantly adding more famous people to our database. Check back soon!"
             }
         
-        # Apply strict matching criteria and calculate scores
+        # Calculate comprehensive scores for ALL famous people
         matches = []
-        for fp in famous_people:
-            # Check strict matches
+        for fp in all_famous_people:
+            # Calculate comprehensive score for everyone
+            comprehensive_score = calculate_comprehensive_similarity_score(chart_data, fp)
+            
+            # Only include if score > 0 (has actual matches)
+            if comprehensive_score > 0.0:
+                # Check match types for display purposes
             strict_match, strict_reasons = check_strict_matches(
                 chart_data, fp, numerology_data, chinese_zodiac_data
             )
-            
-            # Check aspect matches
             aspect_match, aspect_reasons = check_aspect_matches(chart_data, fp)
-            
-            # Check stellium matches
             stellium_match, stellium_reasons = check_stellium_matches(chart_data, fp)
-            
-            # Include if matches any criteria
-            if strict_match or aspect_match or stellium_match:
-                # Calculate comprehensive score
-                comprehensive_score = calculate_comprehensive_similarity_score(chart_data, fp)
-                
-                # If score is 0 but we have matches, give a minimum baseline score
-                # This handles cases where placements aren't found but matches exist
-                if comprehensive_score == 0.0 and (strict_match or aspect_match or stellium_match):
-                    # Give baseline scores based on match type
-                    if strict_match:
-                        comprehensive_score = 25.0  # Baseline for strict matches
-                    elif aspect_match:
-                        comprehensive_score = 15.0  # Baseline for aspect matches
-                    elif stellium_match:
-                        comprehensive_score = 10.0  # Baseline for stellium matches
                 
                 # Combine all match reasons
                 all_reasons = strict_reasons + aspect_reasons + stellium_reasons
+                
+                # Determine match type for display
+                match_type = "strict" if strict_match else ("aspect" if aspect_match else ("stellium" if stellium_match else "general"))
                 
                 matches.append({
                     "famous_person": fp,
                     "similarity_score": comprehensive_score,
                     "match_reasons": all_reasons,
-                    "match_type": "strict" if strict_match else ("aspect" if aspect_match else "stellium")
+                    "match_type": match_type
                 })
         
-        # Sort by similarity score (highest first), then by match type priority
-        def sort_key(m):
-            # Prioritize strict matches, then aspect, then stellium
-            type_priority = {"strict": 3, "aspect": 2, "stellium": 1}.get(m["match_type"], 0)
-            return (type_priority, m["similarity_score"])
+        # Sort by similarity score ONLY (highest first)
+        matches.sort(key=lambda m: m["similarity_score"], reverse=True)
         
-        matches.sort(key=sort_key, reverse=True)
-        
-        # Take top matches
-        top_matches = matches[:limit]
+        # Take top 20 matches (always return top 20 from entire database)
+        top_matches = matches[:20]
         
         # Helper function to extract all matching factors
         def extract_all_matching_factors(user_chart_data: dict, fp: FamousPerson, fp_planetary: dict, fp_chart: dict) -> list:
@@ -5136,30 +5148,30 @@ async def find_similar_famous_people_internal(
         if conditions:
             query = query.filter(or_(*conditions))
         
-        famous_people = query.limit(2000).all()
+        # Get ALL famous people with chart data (search entire database)
+        all_famous_people = db.query(FamousPerson).filter(
+            FamousPerson.chart_data_json.isnot(None)
+        ).all()
         
-        if not famous_people:
+        if not all_famous_people:
             return {"matches": [], "total_compared": 0, "matches_found": 0}
         
-        # Apply matching criteria (same as endpoint)
+        # Calculate comprehensive scores for ALL famous people
         matches = []
-        for fp in famous_people:
-            strict_match, strict_reasons = check_strict_matches(chart_data, fp, numerology_data, chinese_zodiac_data)
-            aspect_match, aspect_reasons = check_aspect_matches(chart_data, fp)
-            stellium_match, stellium_reasons = check_stellium_matches(chart_data, fp)
+        for fp in all_famous_people:
+            # Calculate comprehensive score for everyone
+            comprehensive_score = calculate_comprehensive_similarity_score(chart_data, fp)
             
-            if strict_match or aspect_match or stellium_match:
-                comprehensive_score = calculate_comprehensive_similarity_score(chart_data, fp)
-                
-                if comprehensive_score == 0.0 and (strict_match or aspect_match or stellium_match):
-                    if strict_match:
-                        comprehensive_score = 25.0
-                    elif aspect_match:
-                        comprehensive_score = 15.0
-                    elif stellium_match:
-                        comprehensive_score = 10.0
+            # Only include if score > 0 (has actual matches)
+            if comprehensive_score > 0.0:
+                strict_match, strict_reasons = check_strict_matches(chart_data, fp, numerology_data, chinese_zodiac_data)
+                aspect_match, aspect_reasons = check_aspect_matches(chart_data, fp)
+                stellium_match, stellium_reasons = check_stellium_matches(chart_data, fp)
                 
                 all_reasons = strict_reasons + aspect_reasons + stellium_reasons
+                
+                # Determine match type
+                match_type = "strict" if strict_match else ("aspect" if aspect_match else ("stellium" if stellium_match else "general"))
                 
                 # Get planetary placements and chart data
                 fp_planetary = {}
@@ -5275,17 +5287,15 @@ async def find_similar_famous_people_internal(
                     "famous_person": fp,
                     "similarity_score": comprehensive_score,
                     "match_reasons": all_reasons,
-                    "match_type": "strict" if strict_match else ("aspect" if aspect_match else "stellium"),
+                    "match_type": match_type,
                     "matching_factors": matching_factors
                 })
         
-        # Sort and limit
-        def sort_key(m):
-            type_priority = {"strict": 3, "aspect": 2, "stellium": 1}.get(m["match_type"], 0)
-            return (type_priority, m["similarity_score"])
+        # Sort by similarity score ONLY (highest first)
+        matches.sort(key=lambda m: m["similarity_score"], reverse=True)
         
-        matches.sort(key=sort_key, reverse=True)
-        top_matches = matches[:limit]
+        # Always return top 20 from entire database
+        top_matches = matches[:20]
         
         # Format response
         result = []
@@ -5302,7 +5312,7 @@ async def find_similar_famous_people_internal(
         
         return {
             "matches": result,
-            "total_compared": len(famous_people),
+            "total_compared": len(all_famous_people),
             "matches_found": len(result)
         }
     

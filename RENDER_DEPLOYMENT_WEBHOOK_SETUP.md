@@ -31,31 +31,21 @@ When the API server (`true-sidereal-api`) completes a deployment, it will automa
    - **Value**: Paste the Deploy Hook URL you copied in Step 1
 5. Click **Save Changes**
 
-### Step 3: Configure Deployment Hook in API Service
+### Step 3: That's It!
 
-1. Go to your **API service** (`true-sidereal-api`) in Render Dashboard
-2. Navigate to **Settings** tab
-3. Scroll down to **Deploy Hook** section
-4. You should see your API service's deploy hook URL
-5. Now we need to set up a way to call the webhook endpoint after deployment
+The API service is now configured to automatically trigger the webpage deployment whenever it starts up (which happens after every deployment).
 
-**Option A: Using Render's Deployment Hook (if available)**
-- Look for **Deployment Hooks** or **Post-Deploy Scripts** section
-- Add a command:
-  ```bash
-  curl -X POST https://true-sidereal-api.onrender.com/api/webhooks/render-deploy
-  ```
-
-**Option B: Using a Simple Script**
-- If Render doesn't have deployment hooks, you can use a GitHub Action or similar
-- Or manually trigger the webhook after each API deployment
+**How it works:**
+- When the API service deploys and starts, it automatically calls the webpage's Deploy Hook URL
+- The webpage service will then start deploying automatically
+- No additional configuration needed!
 
 ## How It Works
 
-1. API service completes deployment successfully
-2. A deployment hook (or manual trigger) calls `/api/webhooks/render-deploy`
-3. The endpoint uses the webpage's Deploy Hook URL to trigger a new deployment
-4. Webpage service starts deploying automatically
+1. API service completes deployment and starts up
+2. On startup, the API automatically calls the webpage's Deploy Hook URL
+3. Webpage service receives the deploy trigger and starts deploying automatically
+4. Both services are now in sync!
 
 ## Security Considerations
 
@@ -91,10 +81,11 @@ When the API server (`true-sidereal-api`) completes a deployment, it will automa
 - Check that the webpage service is active and not paused
 - The URL should start with `https://api.render.com/deploy/`
 
-### Deployment hook not running
+### Webpage not deploying automatically
 
-- If Render doesn't have a deployment hook feature, you may need to:
-  - Use a GitHub Action to trigger the webhook after API deployment
-  - Manually call the webhook endpoint after deployments
-  - Set up a monitoring service to detect API deployments and trigger the webhook
+- The deployment trigger happens on API startup, so check API logs for messages like:
+  - "Triggering webpage deployment via deploy hook..."
+  - "Successfully triggered webpage deployment"
+- If you see warnings, verify the `WEBPAGE_DEPLOY_HOOK_URL` is set correctly
+- The trigger happens automatically - no manual steps needed!
 
