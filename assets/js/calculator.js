@@ -686,7 +686,7 @@ const AstrologyCalculator = {
 		// 	this.resultsTitle.parentElement.style.display = 'none';
 		// }
 		
-		// Add full reading advertisement section after snapshot
+		// Add full reading advertisement section after snapshot (above Famous People section)
 		this.addFullReadingAdvertisement(chartData);
 		
 		// Display the chart placements (Full Report)
@@ -1269,7 +1269,7 @@ const AstrologyCalculator = {
 							border-radius: 20px;
 							font-size: 0.85em;
 							font-weight: bold;
-						">${match.similarity_score}% match</div>
+						">Synthesis Score: ${match.similarity_score}</div>
 					</div>
 					${match.occupation ? `<p style="color: rgba(255, 255, 255, 0.8); margin: 0.5em 0; font-style: italic;">${match.occupation}</p>` : ''}
 					<div style="margin: 1em 0; padding: 1em; background: rgba(0, 0, 0, 0.2); border-radius: 4px;">
@@ -1388,6 +1388,25 @@ const AstrologyCalculator = {
 					</p>
 				</div>
 			`;
+		}
+
+		// Insert the ad directly after the Snapshot section and before Famous People section
+		const snapshotSection = document.getElementById('snapshot-title');
+		const famousPeopleSection = document.getElementById('famous-people-section');
+		if (snapshotSection && snapshotSection.parentNode) {
+			if (famousPeopleSection) {
+				// Insert before Famous People section
+				snapshotSection.parentNode.insertBefore(adSection, famousPeopleSection);
+			} else {
+				// Fallback: insert right after snapshot section
+				snapshotSection.parentNode.insertBefore(adSection, snapshotSection.nextSibling);
+			}
+		} else {
+			// Fallback: append to main results container
+			const resultsContainer = document.querySelector('#results .inner') || document.querySelector('#results');
+			if (resultsContainer) {
+				resultsContainer.appendChild(adSection);
+			}
 		}
 		
 		// Insert after snapshot section
