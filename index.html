@@ -36,6 +36,20 @@
 				background-color: white;
 				color: #242943; /* Body color from main.css */
 			}
+			/* Ensure header is visible even if JS doesn't load */
+			/* Fallback: remove preload class after a delay if JS fails */
+			body.is-preload #header.alt {
+				animation: fadeInHeader 0.5s ease-in 1s forwards;
+			}
+			@keyframes fadeInHeader {
+				to {
+					opacity: 1;
+				}
+			}
+			/* Also ensure header is visible after JS removes preload class */
+			body:not(.is-preload) #header.alt {
+				opacity: 1 !important;
+			}
 		</style>
 	</head>
 	<body class="is-preload">
@@ -406,6 +420,18 @@
 		<script src="assets/js/main.js"></script>
 		<script src="assets/js/calculator.js"></script>
 		<script src="assets/js/auth.js"></script>
+		
+		<!-- Fallback: Remove is-preload class if main.js fails to load -->
+		<script>
+			// Fallback to ensure header is visible even if main.js doesn't load
+			window.addEventListener('load', function() {
+				setTimeout(function() {
+					if (document.body.classList.contains('is-preload')) {
+						document.body.classList.remove('is-preload');
+					}
+				}, 200);
+			});
+		</script>
 
 	</body>
 </html>

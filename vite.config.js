@@ -45,7 +45,7 @@ export default defineConfig({
     copyPublicDir: true,
   },
   publicDir: 'public',
-  // Legacy scripts should be copied, not bundled
-  // Vite will copy them from public/ or keep them as external references
+  // Legacy scripts and CSS in public/assets/ will be copied as-is to dist/assets/
+  // These files are not processed/bundled - they're static assets
 });
 
