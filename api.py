@@ -491,7 +491,7 @@ class Gemini3Client:
         self.total_cost_usd = 0.0
         self.call_count = 0
         self.model_name = GEMINI3_MODEL or "gemini-3-pro-preview"
-        self.default_max_tokens = int(os.getenv("GEMINI3_MAX_OUTPUT_TOKENS", "65000"))
+        self.default_max_tokens = int(os.getenv("GEMINI3_MAX_OUTPUT_TOKENS", "81920"))
         self.model = None
         if GEMINI_API_KEY and AI_MODE != "stub":
             try:
@@ -538,7 +538,7 @@ class Gemini3Client:
                 "temperature": 0.85,
                 "top_p": 0.9,
                 "top_k": 40,
-                "max_output_tokens": 60000,
+                "max_output_tokens": 81920,
             }
             response = await self.model.generate_content_async(
                 combined_prompt,
@@ -734,55 +734,82 @@ Rules:
     if unknown_time:
         houses_instruction = "SKIP THIS SECTION ENTIRELY. Since birth time is unknown, we cannot calculate houses. Do NOT write anything about houses or life domains. Do NOT mention that birth time is unknown here—that was already covered in the What We Know section. Simply omit this section completely."
     else:
-        houses_instruction = """For ALL 12 houses, provide a comprehensive analysis. Cover each house in this order:
+        houses_instruction = """CRITICAL: You MUST cover ALL 12 houses. Do not skip any house. Each house gets its own detailed subsection.
 
-1st HOUSE (Self & Identity): Physical appearance, first impressions, how you project yourself, vitality, personal identity
-2nd HOUSE (Resources & Values): Money, possessions, values, self-worth, material security, what you value
-3rd HOUSE (Communication & Learning): Siblings, early education, communication style, local travel, thinking patterns, writing/speaking
-4th HOUSE (Home & Roots): Family, home environment, emotional foundations, private life, ancestry, inner security
-5th HOUSE (Creativity & Pleasure): Romance, children, creativity, self-expression, hobbies, fun, risk-taking, play
-6th HOUSE (Work & Health): Daily work, routines, health, service, pets, habits, duty, practical skills
-7th HOUSE (Relationships & Partnerships): Marriage, partnerships, close relationships, contracts, others, projection
-8th HOUSE (Transformation & Shared Resources): Death, rebirth, transformation, shared resources, inheritance, taxes, psychology, intimacy
-9th HOUSE (Philosophy & Higher Learning): Higher education, philosophy, religion, long-distance travel, publishing, beliefs, expansion of mind
-10th HOUSE (Career & Public Standing): Career, reputation, public image, authority, status, life direction, achievements
-11th HOUSE (Friends & Aspirations): Friends, groups, hopes, dreams, social causes, technology, innovation, community
-12th HOUSE (Spirituality & Unconscious): Subconscious, spirituality, hidden enemies, karma, isolation, secrets, transcendence
+Cover each house in this exact order with the heading format: [NUMBER]st/nd/rd/th HOUSE: [NAME]
 
-For each house, provide COMPREHENSIVE analysis covering:
+1st HOUSE: SELF & IDENTITY
+2nd HOUSE: RESOURCES & VALUES
+3rd HOUSE: COMMUNICATION & LEARNING
+4th HOUSE: HOME & ROOTS
+5th HOUSE: CREATIVITY & PLEASURE
+6th HOUSE: WORK & HEALTH
+7th HOUSE: RELATIONSHIPS & PARTNERSHIPS
+8th HOUSE: TRANSFORMATION & SHARED RESOURCES
+9th HOUSE: PHILOSOPHY & HIGHER LEARNING
+10th HOUSE: CAREER & PUBLIC STANDING
+11th HOUSE: FRIENDS & ASPIRATIONS
+12th HOUSE: SPIRITUALITY & UNCONSCIOUS
 
-1. HOUSE CUSP & RULER:
-   - The sign on the cusp (both sidereal and tropical - note if they differ)
+For EACH of the 12 houses, you MUST provide a COMPREHENSIVE, DETAILED analysis following this structure:
+
+1. HOUSE CUSP & RULER (2-3 paragraphs):
+   - The sign on the cusp in BOTH sidereal and tropical systems (note if they differ and what that means)
    - The ruling planet(s) for that sign
    - Where the ruling planet is located (sign, house, degree) in BOTH sidereal and tropical systems
-   - The condition of the ruler (dignified, debilitated, retrograde, etc.) in both systems
+   - The condition of the ruler (dignified, debilitated, retrograde, in fall, in detriment, etc.) in both systems
+   - What the ruler's condition tells us about how this life domain functions
+   - How the ruler's placement in another house connects this domain to that other area of life
 
-2. ALL PLANETS IN THE HOUSE:
+2. ALL PLANETS IN THE HOUSE (3-5 paragraphs):
    - List EVERY planet that falls in this house in the SIDEREAL system (Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Chiron, Nodes, etc.)
    - List EVERY planet that falls in this house in the TROPICAL system
-   - For each planet, note: its sign, degree, house position, aspects, retrograde status
-   - Compare sidereal vs tropical placements - note where planets appear in different houses between systems and what that means
+   - For EACH planet, provide detailed analysis:
+     * Its sign placement (in both systems if different)
+     * Its exact degree
+     * Its house position
+     * Its aspects (list all major aspects to other planets)
+     * Whether it's retrograde
+     * What this planet's presence in this house means for this life domain
+   - Compare sidereal vs tropical placements - note where planets appear in different houses between systems and what that contradiction means
+   - If a planet appears in this house in one system but not the other, explain the significance
 
-3. ALL ZODIAC SIGNS IN THE HOUSE:
+3. ALL ZODIAC SIGNS IN THE HOUSE (2-3 paragraphs):
    - Identify ALL signs that appear within this house (houses can span multiple signs)
-   - Note the degree ranges for each sign within the house
+   - Note the exact degree ranges for each sign within the house
    - Explain how each sign's energy influences this life domain
    - Compare sidereal vs tropical sign distributions in the house
+   - Show how different signs within the house create layers or phases in this domain
 
-4. SYNTHESIS:
+4. SYNTHESIS & INTEGRATION (4-6 paragraphs):
    - Show how the domain is "engineered" by multiple factors converging (house ruler + ALL planets in house + sign distributions + aspects to cusp)
    - Explain how sidereal placements reveal the SOUL-LEVEL approach to this domain
    - Explain how tropical placements reveal the PERSONALITY-LEVEL approach to this domain
-   - Note any contradictions or tensions between sidereal and tropical placements
-   - Give concrete examples of how this shows up in real life
-   - Connect to numerology where relevant
-   - Note if the house is empty (no planets) and what that means - but still analyze the ruler and sign distributions
+   - Note any contradictions or tensions between sidereal and tropical placements and what that means
+   - Give MULTIPLE concrete examples of how this shows up in real life (at least 3-4 specific scenarios)
+   - Connect to numerology where relevant (Life Path, Day Number, etc.)
+   - Connect to Chinese zodiac if relevant
+   - If the house is empty (no planets), explain what that means - but still provide substantial analysis of the ruler and sign distributions
+   - Show how this house connects to other houses through planetary rulerships
 
-5. STELLIUMS & CONCENTRATIONS:
-   - If 3+ planets are in this house, analyze the stellium energy and how it concentrates focus in this domain
+5. STELLIUMS & CONCENTRATIONS (if applicable, 2-3 paragraphs):
+   - If 3+ planets are in this house, analyze the stellium energy in detail
+   - Explain how it concentrates focus in this domain
    - Note if the stellium appears in sidereal, tropical, or both systems
+   - Show how the stellium creates intensity, focus, or complexity in this area
 
-Be thorough - examine every planet, every sign, and both systems for each of the 12 houses."""
+6. REAL-LIFE EXPRESSION (2-3 paragraphs):
+   - Provide concrete, specific examples of how this house manifests in daily life
+   - Give scenarios, behaviors, or life patterns that show this house's energy
+   - Connect to the overall chart themes from earlier sections
+
+CRITICAL REQUIREMENTS:
+- You MUST cover ALL 12 houses - do not skip any
+- Each house should be substantial (at least 10-15 paragraphs total per house)
+- Be thorough - examine every planet, every sign, and both systems
+- Use specific degree references and aspect details
+- Provide concrete examples, not generic descriptions
+- Show the forensic analysis - make the reader feel the weight of the analysis"""
     
     snapshot_notes = ""
     if blueprint.get("parsed") and getattr(blueprint['parsed'], "snapshot", None):
@@ -878,7 +905,7 @@ Blueprint notes for Snapshot (use them to prioritize chart factors):
     return await llm.generate(
         system=system_prompt,
         user=user_prompt,
-        max_output_tokens=45000,
+        max_output_tokens=81920,
         temperature=0.7,
         call_label="G1_natal_foundation"
     )
@@ -966,66 +993,105 @@ SPIRITUAL PATH & MEANING
 
 MAJOR LIFE DYNAMICS: THE TIGHTEST ASPECTS & PATTERNS
 
-This section should be SUBSTANTIAL and well-formatted. Each aspect gets its own clearly separated subsection.
+This section covers the TOP 5 TIGHTEST ASPECTS (by orb) plus any significant aspect patterns in the chart.
 
-FORMAT FOR EACH ASPECT (cover AT LEAST 10 major aspects):
+FORMAT FOR EACH ASPECT (cover ONLY the TOP 5 tightest aspects, ordered by orb from tightest to widest):
 
 [PLANET 1] [ASPECT TYPE] [PLANET 2] ([orb]°)
 
-Core Dynamic: [1-2 sentences naming the fundamental tension or gift this creates]
+[Paragraph 1: Core Dynamic - Name the fundamental tension or gift this creates. Explain the archetypal meaning of this aspect combination. What is the essential dynamic between these two planetary energies?]
 
-Why This Matters: [3-4 sentences explaining the psychological mechanism. What does this aspect create internally? How does it shape their default responses? Reference both sidereal and tropical contexts if relevant.]
+[Paragraph 2: Why This Matters - Explain the psychological mechanism. What does this aspect create internally? How does it shape their default responses, emotional patterns, and decision-making? Reference both sidereal and tropical contexts if relevant. Show how this aspect amplifies or modifies the individual planet meanings. Provide concrete examples of how this shows up in relationships, work, or daily life.]
 
-How It Shows Up:
-- In relationships: [specific example]
-- At work: [specific example]  
-- Internally: [what they experience in their own mind/emotions]
-
-The Growth Edge: [2-3 sentences on what shifts when they work with this consciously. What's the integrated expression vs the reactive pattern?]
+[Paragraph 3: The Growth Edge - What shifts when they work with this consciously? What's the integrated expression vs the reactive pattern? What does mastery of this aspect look like?]
 
 ---
 
 [Leave a blank line and "---" separator between each aspect for readability]
 
-AFTER ALL ASPECTS, ADD A SECTION ON PATTERNS:
+AFTER THE 5 ASPECTS, ADD A SECTION ON ASPECT PATTERNS:
 
 ASPECT PATTERNS IN YOUR CHART
 
-For each pattern (Grand Trines, T-Squares, Stelliums, Yods, Kites, Grand Crosses):
+For each significant pattern found in the chart (Grand Trines, T-Squares, Stelliums, Yods, Kites, Grand Crosses, Mystic Rectangles, etc.):
 
-[PATTERN NAME]: [Planets involved]
+[PATTERN NAME]: [Planets involved - list all planets with their signs and houses]
 
-What This Geometry Creates: [3-4 sentences explaining the psychological function—how does this shape concentrate or distribute energy?]
+[Paragraph 1: What This Geometry Creates - Explain the psychological function. How does this shape concentrate or distribute energy? What is the archetypal meaning of this pattern? How do the planets interact within this geometry? What are the strengths and challenges?]
 
-The Life Theme: [2-3 sentences connecting to earlier themes in the reading]
+[Paragraph 2: The Life Theme - Connect to earlier themes in the reading. How does this pattern reinforce or complicate themes from the Chart Overview? What life areas does this pattern most strongly influence? Provide concrete examples of how this pattern shows up in their daily life or major life decisions.]
 
-Real-Life Expression: [Concrete example of how this pattern shows up in their daily life or major life decisions]
+[Paragraph 3: The Integration Path - How to work with this pattern consciously. What awareness or practices help them navigate this pattern? What does integration look like?]
+
+---
+
+[Use "---" between each pattern for visual separation]
+
+CRITICAL REQUIREMENTS:
+- Cover ONLY the TOP 5 tightest aspects (prioritize by orb - tightest first)
+- Each aspect should be EXACTLY 3 paragraphs (not more, not less)
+- Be detailed and specific - show the forensic analysis
+- Provide concrete examples, not generic descriptions
+- Reference both sidereal and tropical placements where relevant
+- Connect aspects to the overall chart themes
+- Include ALL significant aspect patterns found in the chart
+- Each pattern should be EXACTLY 3 paragraphs
 
 SHADOW, CONTRADICTIONS & GROWTH EDGES
 
-FORMAT THIS SECTION WITH CLEAR SUBSECTIONS:
+This section should be COMPREHENSIVE and DEEP. Format with clear subsections and substantial content.
 
-For each shadow pattern, use this structure:
+For each shadow pattern, use this detailed structure:
 
 SHADOW: [Name of the Shadow Pattern]
 
-The Pattern: [2-3 sentences describing what this looks like in behavior]
+The Pattern: [3-4 paragraphs describing what this looks like in behavior. Be specific and detailed. Give concrete examples of how this shadow pattern manifests. What are the observable behaviors, reactions, or patterns? How does this show up in relationships, work, or internal experience?]
 
-The Driver: [2-3 sentences explaining WHY this pattern exists - what chart factors create it]
+The Driver: [4-5 paragraphs explaining WHY this pattern exists - what chart factors create it. Reference specific placements, aspects, and patterns from the chart. Show the forensic analysis - which planets, signs, houses, and aspects create this shadow? Explain the psychological mechanism. How do sidereal and tropical placements contribute? Connect to numerology or other factors if relevant. Show the evidence chain that creates this pattern.]
 
-The Cost: [1-2 sentences on what this costs them in life/relationships]
+The Contradiction: [2-3 paragraphs explaining the internal contradiction or tension. What are the competing needs or energies? How does this create internal conflict? What is the person avoiding or not seeing?]
 
-The Integration: [2-3 sentences with a concrete "pattern interrupt" - what they can DO differently]
+The Cost: [3-4 paragraphs on what this costs them in life/relationships. Be specific - how does this shadow pattern limit them? What opportunities does it close? What relationships does it damage? What growth does it prevent? Give concrete examples.]
+
+The Integration: [4-5 paragraphs with concrete "pattern interrupts" and integration strategies. What can they DO differently? Provide specific practices, awareness exercises, or approaches. What does working with this shadow consciously look like? What is the integrated expression? How can they transform this pattern? Give actionable steps and concrete examples of the shift.]
+
+Real-Life Example: [2-3 paragraphs with a concrete scenario showing this shadow pattern in action, and then showing how the integrated approach would look different.]
 
 ---
 
 [Use "---" between each shadow pattern for visual separation]
 
-Cover at least 3 shadow patterns from blueprint.shadow_contradictions.
+Cover at least 4-5 shadow patterns from blueprint.shadow_contradictions. Be thorough and comprehensive.
 
 GROWTH EDGES
 
-After the shadow patterns, add a section called "Growth Edges" with actionable experiments:
+After the shadow patterns, add a section called "Growth Edges" with actionable experiments and practices:
+
+For each growth edge, provide:
+
+[GROWTH EDGE NAME]
+
+The Opportunity: [2-3 paragraphs explaining what this growth edge represents. What potential does this unlock? What becomes possible when they develop this?]
+
+The Chart Evidence: [2-3 paragraphs showing which chart factors support this growth. Reference specific placements, aspects, or patterns that indicate this potential.]
+
+The Practice: [3-4 paragraphs with specific, actionable experiments or practices. What can they do to develop this? Give concrete exercises, awareness practices, or approaches. Be detailed and specific - not vague suggestions.]
+
+The Integration: [2-3 paragraphs on how this growth edge connects to the overall chart themes and shadow patterns. How does developing this help integrate the shadows?]
+
+---
+
+[Use "---" between each growth edge for visual separation]
+
+Cover at least 4-5 growth edges from blueprint.growth_edges. Make them substantial and actionable.
+
+CRITICAL REQUIREMENTS:
+- Each shadow pattern should be substantial (at least 15-20 paragraphs per pattern)
+- Each growth edge should be substantial (at least 10-12 paragraphs per edge)
+- Be extremely detailed and specific - show the forensic analysis
+- Provide concrete examples, practices, and actionable steps
+- Reference specific chart factors throughout
+- Make the reader feel the depth and weight of the analysis
 
 - [Growth edge 1]: [Concrete experiment they can try, tied to a specific pattern]
 - [Growth edge 2]: [Concrete experiment they can try, tied to a specific pattern]
@@ -1072,7 +1138,7 @@ FINAL INSTRUCTION: The reading should end with a single paragraph that returns t
     return await llm.generate(
         system=system_prompt,
         user=user_prompt,
-        max_output_tokens=45000,
+        max_output_tokens=81920,
         temperature=0.7,
         call_label="G2_deep_dive_chapters"
     )
@@ -1124,7 +1190,7 @@ Return the polished reading. Ensure:
     return await llm.generate(
         system=system_prompt,
         user=user_prompt,
-        max_output_tokens=65000,
+        max_output_tokens=81920,
         temperature=0.4,
         call_label="G3_polish_full_reading"
     )
@@ -1143,9 +1209,9 @@ async def g4_famous_people_section(
     logger.info(f"Number of matches: {len(famous_people_matches)}")
     logger.info("="*60)
     
-    # Format famous people data for the LLM
+    # Format famous people data for the LLM - limit to top 8
     famous_people_data = []
-    for match in famous_people_matches[:10]:  # Limit to top 10
+    for match in famous_people_matches[:8]:  # Limit to top 8
         fp_data = {
             "name": match.get("name", "Unknown"),
             "occupation": match.get("occupation", ""),
@@ -1160,15 +1226,19 @@ async def g4_famous_people_section(
     
     system_prompt = """You are an expert astrologer analyzing chart similarities between the user and famous historical figures.
 
-Your task is to explain:
-1. WHAT chart similarities they share (specific planetary placements, aspects, numerology, etc.)
-2. WHAT personal/psychological similarities these chart patterns suggest
+Your task is to provide DEEP, DETAILED analysis that:
+1. References EACH matching placement explicitly and explains what it means
+2. Shows how multiple matching placements create a coherent psychological pattern
+3. Connects chart similarities to observable traits, life patterns, and archetypal energies
+4. Provides substantial, insightful analysis (not brief summaries)
 
-Be specific and forensic:
-- Name exact chart factors that match (e.g., "Both have Sun in Aries (Sidereal) and Moon in Scorpio (Tropical)")
-- Explain what these shared patterns mean psychologically
-- Connect chart similarities to observable traits or life patterns
-- Be insightful, not generic
+Be extremely specific and forensic:
+- Name EVERY matching placement from the matching_factors list
+- Explain what EACH placement means individually
+- Show how the COMBINATION of placements creates a unique pattern
+- Connect to psychological traits, life themes, strengths, and challenges
+- Provide concrete examples of how these patterns manifest
+- Be insightful, detailed, and comprehensive
 
 Tone: Clinical precision with warm delivery. Second person ("you share...", "like [famous person], you...")."""
     
@@ -1181,33 +1251,59 @@ Tone: Clinical precision with warm delivery. Second person ("you share...", "lik
 **Instructions:**
 Write a section titled "Famous People & Chart Similarities" that:
 
-1. Introduces the concept: Explain that sharing chart patterns with notable figures can reveal archetypal energies and life themes.
+1. Introduction (2-3 paragraphs): Explain that sharing chart patterns with notable figures reveals archetypal energies and life themes. Explain how these similarities work and what they mean.
 
-2. For each famous person (focus on top 3-5 highest scoring matches):
-   - Name the person and their occupation/notability
-   - List the SPECIFIC chart similarities (use the matching_factors list)
+2. For EACH of the top 8 highest scoring matches (process ALL 8, ordered by similarity_score from highest to lowest):
+
+   Format each person as follows:
+   
+   [PERSON NAME] ([OCCUPATION/NOTABILITY])
+   
+   Chart Similarities:
+   - Go through EACH matching factor from the matching_factors list
+   - For EACH matching placement, write 2-3 sentences explaining:
+     * What this specific placement means (e.g., "Sun in Aries (Sidereal) indicates...")
+     * How this placement shapes personality, behavior, or life patterns
+     * What this suggests about core identity, emotional needs, or life themes
+   
+   Psychological Patterns:
+   - Write 3-4 paragraphs analyzing the COMBINATION of matching placements
+   - Show how multiple placements create a coherent psychological profile
    - Explain what these shared patterns suggest about:
-     * Psychological traits
+     * Core psychological traits and motivations
      * Life themes or archetypal energies
-     * Potential strengths or challenges
-   - Be specific: "You share [X planet] in [Y sign] (Sidereal), which suggests [psychological trait]. Like [famous person], this manifests as [concrete example]."
+     * Potential strengths and how they manifest
+     * Potential challenges and how they show up
+   - Be specific: "The combination of [Placement 1] and [Placement 2] creates [pattern]. Like [famous person], this manifests as [concrete example from their life or work]. In your life, this might show up as [specific scenario]."
+   
+   What This Reveals:
+   - Write 2-3 paragraphs connecting the chart similarities to observable traits
+   - Reference specific examples from the famous person's life or work
+   - Explain what these patterns suggest about the user's potential
+   - Be detailed and insightful, not generic
 
-3. Synthesis: End with a paragraph that synthesizes what these collective similarities reveal about the user's archetypal patterns and potential life themes.
+3. Synthesis (3-4 paragraphs): After covering all 8 people, write a comprehensive synthesis that:
+   - Identifies common themes across multiple matches
+   - Explains what these collective similarities reveal about the user's archetypal patterns
+   - Shows how different matches highlight different aspects of the user's chart
+   - Connects to the overall reading themes
+   - Provides insight into potential life themes and directions
 
-**Important:**
-- Use the matching_factors to be precise about what matches
-- Don't just list similarities—explain what they MEAN
-- Connect chart patterns to psychological/life patterns
-- Be insightful, not generic
-- Focus on the highest scoring matches (similarity_score)
+**Critical Requirements:**
+- Cover ALL 8 top matches (not just 3-5)
+- Reference EACH matching placement explicitly from the matching_factors list
+- Write SUBSTANTIAL content for each person (at least 5-7 paragraphs per person)
+- Don't just list similarities—explain what they MEAN in depth
+- Connect chart patterns to psychological/life patterns with concrete examples
+- Be insightful, detailed, and comprehensive
 - If birth time is unknown, don't mention house placements
-
-Write in second person. No markdown, bold, or decorative separators."""
+- Use second person throughout
+- No markdown, bold, or decorative separators"""
     
     return await llm.generate(
         system=system_prompt,
         user=user_prompt,
-        max_output_tokens=4000,
+        max_output_tokens=32768,  # Increased for detailed famous people analysis
         temperature=0.7,
         call_label="G4_famous_people_section"
     )
@@ -1587,7 +1683,7 @@ async def get_gemini3_reading(chart_data: dict, unknown_time: bool, db: Session 
         famous_people_section = ""
         if db:
             try:
-                famous_people_matches = await find_similar_famous_people_internal(chart_data, limit=10, db=db)
+                famous_people_matches = await find_similar_famous_people_internal(chart_data, limit=8, db=db)
                 if famous_people_matches and len(famous_people_matches.get('matches', [])) > 0:
                     logger.info(f"Found {len(famous_people_matches['matches'])} famous people matches, generating section...")
                     famous_people_section = await g4_famous_people_section(
@@ -2445,7 +2541,7 @@ async def send_emails_in_background(chart_data: Dict, reading_text: str, user_in
 # --- API Endpoints ---
 
 @app.post("/calculate_chart")
-@limiter.limit("50/day")
+@limiter.limit("200/day")
 async def calculate_chart_endpoint(
     request: Request, 
     data: ChartRequest, 
@@ -2865,7 +2961,7 @@ async def generate_reading_endpoint(
 
 
 @app.get("/get_reading/{chart_hash}")
-@limiter.limit("100/hour")
+@limiter.limit("500/hour")
 async def get_reading_endpoint(
     request: Request, 
     chart_hash: str,
@@ -4003,7 +4099,10 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
         fp_planetary_placements = {}
         if famous_person.planetary_placements_json:
             try:
-                fp_planetary_placements = json.loads(famous_person.planetary_placements_json)
+                parsed = json.loads(famous_person.planetary_placements_json)
+                # Ensure it's a dict, not a string
+                if isinstance(parsed, dict):
+                    fp_planetary_placements = parsed
             except:
                 pass
         
@@ -4050,7 +4149,7 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
                 user_planet_s = extract_sign(s_positions[planet_name].get('position'))
             
             # Try to get from famous person's stored placements
-            if fp_planetary_placements.get('sidereal', {}).get(planet_name):
+            if isinstance(fp_planetary_placements, dict) and fp_planetary_placements.get('sidereal', {}).get(planet_name):
                 fp_planet_s = fp_planetary_placements['sidereal'][planet_name].get('sign')
             # Fallback to database columns (for Sun/Moon which are indexed)
             elif planet_name == 'Sun' and famous_person.sun_sign_sidereal:
@@ -4077,7 +4176,7 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
                 user_planet_t = extract_sign(t_positions[planet_name].get('position'))
             
             # Try to get from famous person's stored placements
-            if fp_planetary_placements.get('tropical', {}).get(planet_name):
+            if isinstance(fp_planetary_placements, dict) and fp_planetary_placements.get('tropical', {}).get(planet_name):
                 fp_planet_t = fp_planetary_placements['tropical'][planet_name].get('sign')
             # Fallback to database columns (for Sun/Moon which are indexed)
             elif planet_name == 'Sun' and famous_person.sun_sign_tropical:
@@ -4273,7 +4372,10 @@ def calculate_chart_similarity(user_chart_data: dict, famous_person: FamousPerso
         fp_planetary_placements = {}
         if famous_person.planetary_placements_json:
             try:
-                fp_planetary_placements = json.loads(famous_person.planetary_placements_json)
+                parsed = json.loads(famous_person.planetary_placements_json)
+                # Ensure it's a dict, not a string
+                if isinstance(parsed, dict):
+                    fp_planetary_placements = parsed
             except:
                 pass
         
@@ -4317,7 +4419,7 @@ def calculate_chart_similarity(user_chart_data: dict, famous_person: FamousPerso
                 user_planet_s = extract_sign(s_positions[planet_name].get('position'))
             
             # Try to get from famous person's stored placements
-            if fp_planetary_placements.get('sidereal', {}).get(planet_name):
+            if isinstance(fp_planetary_placements, dict) and fp_planetary_placements.get('sidereal', {}).get(planet_name):
                 fp_planet_s = fp_planetary_placements['sidereal'][planet_name].get('sign')
             # Fallback to database columns (for Sun/Moon which are indexed)
             elif planet_name == 'Sun' and famous_person.sun_sign_sidereal:
@@ -4344,7 +4446,7 @@ def calculate_chart_similarity(user_chart_data: dict, famous_person: FamousPerso
                 user_planet_t = extract_sign(t_positions[planet_name].get('position'))
             
             # Try to get from famous person's stored placements
-            if fp_planetary_placements.get('tropical', {}).get(planet_name):
+            if isinstance(fp_planetary_placements, dict) and fp_planetary_placements.get('tropical', {}).get(planet_name):
                 fp_planet_t = fp_planetary_placements['tropical'][planet_name].get('sign')
             # Fallback to database columns (for Sun/Moon which are indexed)
             elif planet_name == 'Sun' and famous_person.sun_sign_tropical:
@@ -4513,7 +4615,7 @@ class SimilarPeopleRequest(BaseModel):
     limit: int = 10
 
 @app.post("/api/find-similar-famous-people")
-@limiter.limit("100/day")
+@limiter.limit("500/day")
 async def find_similar_famous_people_endpoint(
     request: Request,
     data: SimilarPeopleRequest,

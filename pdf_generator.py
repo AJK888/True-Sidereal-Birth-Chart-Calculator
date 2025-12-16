@@ -463,6 +463,19 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
                     return True
         return False
     
+    def is_pattern_heading(line: str) -> bool:
+        """Check if line is an aspect pattern heading like 'GRAND TRINE:' or 'T-SQUARE: Planets involved'."""
+        patterns = ['grand trine', 't-square', 't square', 'stellium', 'yod', 'kite', 
+                   'grand cross', 'mystic rectangle', 'rectangle', 'grand sextile']
+        line_clean = line.strip().lower()
+        # Check if line starts with or contains a pattern name and looks like a heading
+        for pattern in patterns:
+            if pattern in line_clean and len(line_clean) < 150:
+                # Should be formatted as a heading (ends with colon or contains "planets involved")
+                if line_clean.endswith(':') or 'planets involved' in line_clean or ':' in line_clean:
+                    return True
+        return False
+    
     def is_separator_line(line: str) -> bool:
         """Check if line is a separator (---, ***, or similar)."""
         line_clean = line.strip()
@@ -499,6 +512,18 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
             story.append(Spacer(1, 0.2*inch))  # Space before aspect heading
             story.append(Paragraph(f"<b>{line}</b>", heading_style))
             story.append(Spacer(1, 0.12*inch))  # Space after aspect heading
+            continue
+        
+        # Check for pattern headings (like "GRAND TRINE: Planets involved")
+        if is_pattern_heading(line):
+            if current_para:
+                para_text = ' '.join(current_para)
+                story.append(Paragraph(para_text, body_style))
+                story.append(Spacer(1, 0.15*inch))
+                current_para = []
+            story.append(Spacer(1, 0.2*inch))  # Space before pattern heading
+            story.append(Paragraph(f"<b>{line}</b>", heading_style))
+            story.append(Spacer(1, 0.12*inch))  # Space after pattern heading
             continue
         
         # Check for shadow headings (like "SHADOW: The Passive-Aggressive Peacemaker")
