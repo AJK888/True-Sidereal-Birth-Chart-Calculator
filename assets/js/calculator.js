@@ -56,21 +56,38 @@ const AstrologyCalculator = {
 		const unknownTimeCheckbox = document.getElementById('unknownTime');
 		const birthTimeInput = document.getElementById('birthTime');
 		
-		unknownTimeCheckbox.addEventListener('change', function() {
-			const isChecked = this.checked;
-			birthTimeInput.disabled = isChecked;
-			if (isChecked) {
-				birthTimeInput.value = '12:00 PM';
-			}
+		if (unknownTimeCheckbox && birthTimeInput) {
+			unknownTimeCheckbox.addEventListener('change', function() {
+				const isChecked = this.checked;
+				birthTimeInput.disabled = isChecked;
+				if (isChecked) {
+					birthTimeInput.value = '12:00 PM';
+				}
+			});
+		}
+		
+		if (!this.form) {
+			console.error('Form element not found! Cannot attach submit handler.');
+			return;
+		}
+		
+		this.form.addEventListener("submit", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			this.handleFormSubmit(e);
+			return false;
 		});
-		this.form.addEventListener("submit", (e) => this.handleFormSubmit(e));
+		
 		if (this.copyReadingBtn) {
             this.copyReadingBtn.addEventListener('click', () => this.copyReadingToClipboard());
         }
 	},
 
 	async handleFormSubmit(e) {
-		e.preventDefault();
+		if (e) {
+			e.preventDefault();
+			e.stopPropagation();
+		}
 
 		const termsCheckbox = document.getElementById('terms');
 		const termsError = document.getElementById('termsError');
@@ -83,6 +100,11 @@ const AstrologyCalculator = {
 		}
 
 		this.setLoadingState(true);
+
+		// Scroll to results section smoothly
+		if (this.resultsContainer) {
+			this.resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}
 
 		try {
 			const chartData = await this.fetchChartData();
@@ -1406,17 +1428,6 @@ const AstrologyCalculator = {
 			const resultsContainer = document.querySelector('#results .inner') || document.querySelector('#results');
 			if (resultsContainer) {
 				resultsContainer.appendChild(adSection);
-			}
-		}
-		
-		// Insert after snapshot section
-		const snapshotSection = document.getElementById('snapshot-title');
-		if (snapshotSection && snapshotSection.parentElement) {
-			snapshotSection.parentElement.insertAdjacentElement('afterend', adSection);
-		} else {
-			// Fallback: insert after results container
-			if (this.resultsContainer) {
-				this.resultsContainer.appendChild(adSection);
 			}
 		}
 	},
