@@ -613,6 +613,7 @@ pre {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.85);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
@@ -1497,4 +1498,41 @@ pre {
     .pricing-tier.featured:hover {
         transform: translateY(-5px);
     }
+}
+
+/* ============================================================
+   Font Awesome Compatibility Fixes
+   ============================================================ */
+
+/* Modern browser fallbacks for Font Awesome rotation/flip classes */
+/* These override the -ms-filter properties with standard transform for Chrome/Firefox/Safari */
+.fa-rotate-90 {
+    filter: none;
+    transform: rotate(90deg);
+}
+
+.fa-rotate-180 {
+    filter: none;
+    transform: rotate(180deg);
+}
+
+.fa-rotate-270 {
+    filter: none;
+    transform: rotate(270deg);
+}
+
+.fa-flip-horizontal {
+    filter: none;
+    transform: scaleX(-1);
+}
+
+.fa-flip-vertical {
+    filter: none;
+    transform: scaleY(-1);
+}
+
+.fa-flip-both,
+.fa-flip-horizontal.fa-flip-vertical {
+    filter: none;
+    transform: scale(-1);
 }

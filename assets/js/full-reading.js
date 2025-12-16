@@ -27,7 +27,8 @@ const FullReadingManager = {
 			}
 			
 			// Check authentication
-			if (AuthManager.isAuthenticated && AuthManager.isAuthenticated()) {
+			if (AuthManager.isLoggedIn && AuthManager.isLoggedIn()) {
+				// User is authenticated, load the reading
 				this.loadFullReading();
 			} else {
 				// Show signup prompt
@@ -47,7 +48,7 @@ const FullReadingManager = {
 						if (this.chartHash) {
 							localStorage.setItem('pending_chart_hash', this.chartHash);
 						}
-						AuthManager.showSignupModal();
+						AuthManager.showRegisterModal();
 						// Listen for successful signup
 						window.addEventListener('auth-success', () => {
 							// Try to save chart if we have pending chart data
@@ -139,7 +140,7 @@ const FullReadingManager = {
 	},
 	
 	async findChartByHash() {
-		if (typeof AuthManager === 'undefined' || !AuthManager.isAuthenticated || !AuthManager.isAuthenticated()) {
+		if (typeof AuthManager === 'undefined' || !AuthManager.isLoggedIn || !AuthManager.isLoggedIn()) {
 			return;
 		}
 		
@@ -299,7 +300,7 @@ const FullReadingManager = {
 		
 		try {
 			// Get chart data from main page if available
-			if (window.currentChartData && typeof AuthManager !== 'undefined' && AuthManager.isAuthenticated && AuthManager.isAuthenticated()) {
+			if (window.currentChartData && typeof AuthManager !== 'undefined' && AuthManager.isLoggedIn && AuthManager.isLoggedIn()) {
 				const chartData = window.currentChartData;
 				const userInputs = window.currentUserInputs;
 				
