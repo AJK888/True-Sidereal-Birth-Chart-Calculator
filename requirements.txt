@@ -12,7 +12,7 @@ slowapi
 reportlab
 cairosvg
 Pillow
-google-generativeai
+google-genai
 # Authentication & Database
 sqlalchemy
 aiosqlite

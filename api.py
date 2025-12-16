@@ -15,7 +15,7 @@ import pendulum
 import os
 import logging
 from logtail import LogtailHandler
-import google.generativeai as genai
+import google.genai as genai
 import asyncio
 from slowapi import Limiter
 import hashlib
@@ -87,6 +87,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI3_MODEL = os.getenv("GEMINI3_MODEL", "gemini-3-pro-preview")
 if GEMINI_API_KEY:
     try:
+        # New google.genai package uses Client instead of configure
         genai.configure(api_key=GEMINI_API_KEY)
         logger.info("Gemini API client configured successfully")
     except Exception as e:
@@ -3401,7 +3402,8 @@ async def get_gemini_chat_response(
     conversation_history: List[dict],
     user_message: str,
     chart_name: str = "User",
-    famous_matches: Optional[List[dict]] = None
+    famous_matches: Optional[List[dict]] = None,
+    db: Optional[Session] = None
 ) -> str:
     """Generate a chat response using Gemini based on the user's chart.
     
@@ -3445,7 +3447,10 @@ Reference this reading when answering questions - it contains deep insights abou
 """
     
     # Include famous people matches (if available)
+    # Also check if user is asking about a specific famous person and include their full chart data
     famous_matches_context = ""
+    famous_person_chart_context = ""
+    
     if famous_matches:
         top_famous = famous_matches[:10]  # limit for prompt size
         lines = ["", "=== FAMOUS PEOPLE MATCHES FOR THIS CHART ==="]
@@ -3453,14 +3458,56 @@ Reference this reading when answering questions - it contains deep insights abou
             name = m.get("name", "Unknown")
             occ = m.get("occupation") or ""
             score = m.get("similarity_score")
-            score_str = f"{score}%" if isinstance(score, (int, float)) else "N/A"
+            score_str = f"{score}" if isinstance(score, (int, float)) else "N/A"
             factors = m.get("matching_factors", []) or []
-            header = f"- {name} ({occ}) – similarity: {score_str}".strip()
+            header = f"- {name} ({occ}) – synthesis score: {score_str}".strip()
             lines.append(header)
             if factors:
                 lines.append(f"  Matching factors: {', '.join(factors)}")
         lines.append("=== END OF FAMOUS PEOPLE MATCHES ===")
         famous_matches_context = "\n".join(lines)
+    
+    # Check if user is asking about a specific famous person and fetch their full chart data
+    if db and famous_matches:
+        user_message_lower = user_message.lower()
+        for match in famous_matches[:10]:  # Check top 10 matches
+            famous_name = match.get("name", "").lower()
+            if famous_name and famous_name in user_message_lower:
+                # User is asking about this famous person - fetch their full chart data
+                try:
+                    from database import FamousPerson
+                    # Get the FamousPerson object from database
+                    fp = db.query(FamousPerson).filter(
+                        FamousPerson.name.ilike(f"%{match.get('name')}%")
+                    ).first()
+                    
+                    if fp and fp.chart_data_json:
+                        fp_chart_data = json.loads(fp.chart_data_json)
+                        # Serialize the famous person's chart for LLM
+                        fp_serialized = serialize_chart_for_llm(
+                            fp_chart_data, 
+                            unknown_time=fp.unknown_time if hasattr(fp, 'unknown_time') else True
+                        )
+                        fp_chart_summary = format_serialized_chart_for_prompt(fp_serialized)
+                        
+                        famous_person_chart_context = f"""
+
+=== FULL CHART DATA FOR {match.get('name').upper()} ===
+You have access to the complete birth chart data for {match.get('name')} ({match.get('occupation', '')}).
+This is their FULL chart data - use it to provide detailed comparisons when the user asks about them.
+
+Birth Date: {match.get('birth_date', 'Unknown')}
+Birth Location: {match.get('birth_location', 'Unknown')}
+
+{fp_chart_summary}
+
+=== END OF {match.get('name').upper()}'S CHART DATA ===
+"""
+                        logger.info(f"Including full chart data for {match.get('name')} in chat context")
+                        break  # Only include the first matching famous person's chart
+                except Exception as e:
+                    logger.warning(f"Could not fetch full chart data for famous person: {e}")
+                    # Continue without the full chart data
     
     user_prompt = f"""=== CHART OWNER ===
 You are speaking directly with the chart owner about THEIR chart. All data below belongs to them.
@@ -3469,6 +3516,7 @@ You are speaking directly with the chart owner about THEIR chart. All data below
 {chart_summary}
 {reading_context}
 {famous_matches_context}
+{famous_person_chart_context}
 {conversation_context}
 
 === USER'S CURRENT QUESTION ===
@@ -3480,7 +3528,8 @@ Provide a helpful, personalized response that:
 2. References their chart placements and aspects when relevant
 3. Quotes or paraphrases relevant parts of their reading if it applies to their question
 4. Offers practical, actionable insights based on their unique astrological blueprint
-5. Speaks directly to them as the owner of this chart"""
+5. Speaks directly to them as the owner of this chart
+6. If the user is asking about a specific famous person, use the full chart data provided above to make detailed comparisons between their chart and the famous person's chart"""
     
     response = await llm.generate(
         system=CHART_ASTROLOGER_SYSTEM_PROMPT,
@@ -3618,6 +3667,7 @@ async def send_chat_message_endpoint(
             user_message=data.message,
             chart_name=chart.chart_name,
             famous_matches=famous_matches,
+            db=db,
         )
         
         # Save AI response
