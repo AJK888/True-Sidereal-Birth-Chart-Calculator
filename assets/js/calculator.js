@@ -681,12 +681,16 @@ const AstrologyCalculator = {
 		if (this.geminiTitle && this.geminiTitle.parentElement) {
 			this.geminiTitle.parentElement.style.display = 'none';
 		}
-		if (this.resultsTitle && this.resultsTitle.parentElement) {
-			this.resultsTitle.parentElement.style.display = 'none';
-		}
+		// Don't hide results-title (Full Report) - it should be visible
+		// if (this.resultsTitle && this.resultsTitle.parentElement) {
+		// 	this.resultsTitle.parentElement.style.display = 'none';
+		// }
 		
 		// Add full reading advertisement section after snapshot
 		this.addFullReadingAdvertisement(chartData);
+		
+		// Display the chart placements (Full Report)
+		this.renderTextResults(chartData);
 		
 		// Auto-save chart if user is logged in
 		if (typeof AuthManager !== 'undefined' && AuthManager.isAuthenticated && AuthManager.isAuthenticated()) {
