@@ -4778,11 +4778,11 @@ async def find_similar_famous_people_endpoint(
             # Only include if score > 0 (has actual matches)
             if comprehensive_score > 0.0:
                 # Check match types for display purposes
-            strict_match, strict_reasons = check_strict_matches(
-                chart_data, fp, numerology_data, chinese_zodiac_data
-            )
-            aspect_match, aspect_reasons = check_aspect_matches(chart_data, fp)
-            stellium_match, stellium_reasons = check_stellium_matches(chart_data, fp)
+                strict_match, strict_reasons = check_strict_matches(
+                    chart_data, fp, numerology_data, chinese_zodiac_data
+                )
+                aspect_match, aspect_reasons = check_aspect_matches(chart_data, fp)
+                stellium_match, stellium_reasons = check_stellium_matches(chart_data, fp)
                 
                 # Combine all match reasons
                 all_reasons = strict_reasons + aspect_reasons + stellium_reasons
