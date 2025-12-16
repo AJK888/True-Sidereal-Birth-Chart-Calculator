@@ -279,10 +279,7 @@ async def send_message(
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     
-    # Check access: subscription OR credits (with admin bypass support)
-    # Refresh user to ensure we have latest credit balance
-    db.refresh(current_user)
-    
+    # Check for FRIENDS_AND_FAMILY_KEY (for logging purposes)
     # Check both query params and headers (case-insensitive)
     friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY')
     if not friends_and_family_key:
@@ -291,44 +288,10 @@ async def send_message(
             if header_name.lower() == "x-friends-and-family-key":
                 friends_and_family_key = header_value
                 break
-    has_subscription, reason = check_subscription_access(current_user, db, friends_and_family_key)
-    has_credits = check_credits(current_user, CHAT_CREDIT_COST)
     
-    # Allow if user has subscription OR has credits
-    if not has_subscription and not has_credits:
-        # Log admin bypass attempt if secret was provided but invalid
-        if friends_and_family_key:
-            try:
-                log_entry = AdminBypassLog(
-                    user_email=current_user.email,
-                    endpoint="/api/chat/conversations/{conversation_id}/messages",
-                    ip_address=request.client.host if request.client else None,
-                    user_agent=request.headers.get("user-agent"),
-                    details=f"Invalid admin secret attempt for chat"
-                )
-                db.add(log_entry)
-                db.commit()
-            except Exception as log_error:
-                # Handle sequence sync issues gracefully
-                error_str = str(log_error)
-                if "UniqueViolation" in error_str and "admin_bypass_logs_pkey" in error_str:
-                    logger.warning(f"Admin bypass log sequence out of sync. Run fix_admin_logs_sequence.py to resolve. Error: {log_error}")
-                    try:
-                        db.rollback()
-                    except:
-                        pass
-                else:
-                    logger.warning(f"Could not log admin bypass attempt: {log_error}")
-        
-        raise HTTPException(
-            status_code=402,
-            detail={
-                "error": "Chat access required",
-                "message": f"You've used all {current_user.credits} free chats. Purchase a full reading for $28 to get unlimited chats for a month, or subscribe for $8/month.",
-                "credits_remaining": current_user.credits,
-                "reason": reason
-            }
-        )
+    # Subscription and credit checks removed - all users can access chat
+    # FRIENDS_AND_FAMILY_KEY still works for logging purposes
+    has_subscription, reason = check_subscription_access(current_user, db, friends_and_family_key)
     
     # Log successful admin bypass if used
     if reason == "admin_bypass":
@@ -371,15 +334,9 @@ async def send_message(
         db=db
     )
     
-    # Deduct credits if user doesn't have subscription (free users use credits)
-    # Skip credit deduction for FRIENDS_AND_FAMILY_KEY users
+    # Credits no longer required - all users have free access
     credits_charged = 0
     credits_remaining = None
-    
-    if not has_subscription and reason != "admin_bypass":
-        # Free user - deduct credits (but not for FRIENDS_AND_FAMILY_KEY users)
-        credits_remaining = deduct_credits(db, current_user, CHAT_CREDIT_COST, f"Chat message in conversation {conversation_id}")
-        credits_charged = CHAT_CREDIT_COST
     
     # Save assistant message
     assistant_message = ChatMessage(

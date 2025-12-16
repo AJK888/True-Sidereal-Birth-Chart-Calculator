@@ -1104,6 +1104,89 @@ Return the polished reading. Ensure:
     )
 
 
+async def g4_famous_people_section(
+    llm: Gemini3Client,
+    serialized_chart: dict,
+    chart_summary: str,
+    famous_people_matches: list,
+    unknown_time: bool
+) -> str:
+    """Gemini Call 4 - Generate famous people comparison section."""
+    logger.info("="*60)
+    logger.info("G4: Generating Famous People Section")
+    logger.info(f"Number of matches: {len(famous_people_matches)}")
+    logger.info("="*60)
+    
+    # Format famous people data for the LLM
+    famous_people_data = []
+    for match in famous_people_matches[:10]:  # Limit to top 10
+        fp_data = {
+            "name": match.get("name", "Unknown"),
+            "occupation": match.get("occupation", ""),
+            "similarity_score": match.get("similarity_score", 0),
+            "matching_factors": match.get("matching_factors", []),
+            "birth_date": match.get("birth_date", ""),
+            "birth_location": match.get("birth_location", ""),
+        }
+        famous_people_data.append(fp_data)
+    
+    famous_people_json = json.dumps(famous_people_data, indent=2)
+    
+    system_prompt = """You are an expert astrologer analyzing chart similarities between the user and famous historical figures.
+
+Your task is to explain:
+1. WHAT chart similarities they share (specific planetary placements, aspects, numerology, etc.)
+2. WHAT personal/psychological similarities these chart patterns suggest
+
+Be specific and forensic:
+- Name exact chart factors that match (e.g., "Both have Sun in Aries (Sidereal) and Moon in Scorpio (Tropical)")
+- Explain what these shared patterns mean psychologically
+- Connect chart similarities to observable traits or life patterns
+- Be insightful, not generic
+
+Tone: Clinical precision with warm delivery. Second person ("you share...", "like [famous person], you...")."""
+    
+    user_prompt = f"""**User's Chart Summary:**
+{chart_summary}
+
+**Famous People Matches:**
+{famous_people_json}
+
+**Instructions:**
+Write a section titled "Famous People & Chart Similarities" that:
+
+1. Introduces the concept: Explain that sharing chart patterns with notable figures can reveal archetypal energies and life themes.
+
+2. For each famous person (focus on top 3-5 highest scoring matches):
+   - Name the person and their occupation/notability
+   - List the SPECIFIC chart similarities (use the matching_factors list)
+   - Explain what these shared patterns suggest about:
+     * Psychological traits
+     * Life themes or archetypal energies
+     * Potential strengths or challenges
+   - Be specific: "You share [X planet] in [Y sign] (Sidereal), which suggests [psychological trait]. Like [famous person], this manifests as [concrete example]."
+
+3. Synthesis: End with a paragraph that synthesizes what these collective similarities reveal about the user's archetypal patterns and potential life themes.
+
+**Important:**
+- Use the matching_factors to be precise about what matches
+- Don't just list similarities—explain what they MEAN
+- Connect chart patterns to psychological/life patterns
+- Be insightful, not generic
+- Focus on the highest scoring matches (similarity_score)
+- If birth time is unknown, don't mention house placements
+
+Write in second person. No markdown, bold, or decorative separators."""
+    
+    return await llm.generate(
+        system=system_prompt,
+        user=user_prompt,
+        max_output_tokens=4000,
+        temperature=0.7,
+        call_label="G4_famous_people_section"
+    )
+
+
 def serialize_snapshot_data(chart_data: dict, unknown_time: bool) -> dict:
     """
     Serialize only the snapshot data: 2 tightest aspects, stelliums, Sun/Moon/Rising
@@ -1450,8 +1533,8 @@ Provide 4-6 paragraphs of insightful, specific analysis that gives readers a mea
         return "Snapshot reading is temporarily unavailable."
 
 
-async def get_gemini3_reading(chart_data: dict, unknown_time: bool) -> str:
-    """Four-call Gemini 3 pipeline."""
+async def get_gemini3_reading(chart_data: dict, unknown_time: bool, db: Session = None) -> str:
+    """Four-call Gemini 3 pipeline with optional famous people section."""
     if not GEMINI_API_KEY and AI_MODE != "stub":
         logger.error("Gemini API key not configured - AI reading unavailable")
         raise Exception("Gemini API key not configured. AI reading is unavailable.")
@@ -1473,6 +1556,22 @@ async def get_gemini3_reading(chart_data: dict, unknown_time: bool) -> str:
         deep_sections = await g2_deep_dive_chapters(llm, serialized_chart, chart_summary, blueprint, natal_sections, unknown_time)
         full_draft = f"{natal_sections}\n\n{deep_sections}"
         final_reading = await g3_polish_full_reading(llm, full_draft, chart_summary)
+        
+        # Generate famous people section if database session is available
+        famous_people_section = ""
+        if db:
+            try:
+                famous_people_matches = await find_similar_famous_people_internal(chart_data, limit=10, db=db)
+                if famous_people_matches and len(famous_people_matches.get('matches', [])) > 0:
+                    logger.info(f"Found {len(famous_people_matches['matches'])} famous people matches, generating section...")
+                    famous_people_section = await g4_famous_people_section(
+                        llm, serialized_chart, chart_summary, famous_people_matches['matches'], unknown_time
+                    )
+                    final_reading = f"{final_reading}\n\n{famous_people_section}"
+            except Exception as e:
+                logger.warning(f"Could not generate famous people section: {e}", exc_info=True)
+                # Continue without famous people section
+        
         final_reading = sanitize_reading_text(final_reading).strip()
         
         summary = llm.get_summary()
@@ -2100,7 +2199,13 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
         
         # Generate the reading
         try:
-            reading_text = await get_gemini3_reading(chart_data, unknown_time)
+            # Get database session for famous people matching
+            from database import SessionLocal
+            db = SessionLocal()
+            try:
+                reading_text = await get_gemini3_reading(chart_data, unknown_time, db=db)
+            finally:
+                db.close()
             logger.info(f"AI Reading successfully generated for: {chart_name} (length: {len(reading_text)} characters)")
             
             # Store reading in cache for frontend retrieval
@@ -2111,6 +2216,38 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
                 'chart_name': chart_name
             }
             logger.info(f"Reading stored in cache with hash: {chart_hash}")
+            
+            # Also save reading to user's saved chart if user exists
+            if user_email:
+                try:
+                    from database import SessionLocal
+                    db = SessionLocal()
+                    try:
+                        # Find user by email
+                        user = db.query(User).filter(User.email == user_email).first()
+                        if user:
+                            # Find saved chart by hash
+                            saved_charts = db.query(SavedChart).filter(
+                                SavedChart.user_id == user.id
+                            ).all()
+                            
+                            for chart in saved_charts:
+                                if chart.chart_data_json:
+                                    try:
+                                        saved_chart_data = json.loads(chart.chart_data_json)
+                                        saved_chart_hash = generate_chart_hash(saved_chart_data, chart.unknown_time)
+                                        if saved_chart_hash == chart_hash:
+                                            chart.ai_reading = reading_text
+                                            db.commit()
+                                            logger.info(f"Reading saved to chart ID {chart.id} for user {user_email}")
+                                            break
+                                    except Exception as e:
+                                        logger.warning(f"Error checking chart hash: {e}")
+                                        continue
+                    finally:
+                        db.close()
+                except Exception as e:
+                    logger.warning(f"Could not save reading to chart: {e}")
         except Exception as e:
             logger.error(f"Error generating reading: {e}", exc_info=True)
             # Still try to send an error notification email if possible
@@ -2283,7 +2420,13 @@ async def send_emails_in_background(chart_data: Dict, reading_text: str, user_in
 
 @app.post("/calculate_chart")
 @limiter.limit("50/day")
-async def calculate_chart_endpoint(request: Request, data: ChartRequest, background_tasks: BackgroundTasks):
+async def calculate_chart_endpoint(
+    request: Request, 
+    data: ChartRequest, 
+    background_tasks: BackgroundTasks,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db: Session = Depends(get_db)
+):
     try:
         log_data = data.dict()
         if 'full_name' in log_data:
@@ -2532,6 +2675,49 @@ async def calculate_chart_endpoint(request: Request, data: ChartRequest, backgro
                     full_response["chart_hash"] = chart_hash
                     full_response["full_reading_queued"] = True
                     logger.info(f"Full reading queued for FRIENDS_AND_FAMILY_KEY user with chart_hash: {chart_hash}")
+        
+        # Generate chart_hash for all charts (needed for full reading page)
+        chart_hash = generate_chart_hash(full_response, data.unknown_time)
+        full_response["chart_hash"] = chart_hash
+        
+        # Auto-save chart if user is logged in
+        if current_user:
+            try:
+                # Check if chart already exists for this user
+                existing_chart = db.query(SavedChart).filter(
+                    SavedChart.user_id == current_user.id,
+                    SavedChart.chart_name == data.full_name,
+                    SavedChart.birth_year == data.year,
+                    SavedChart.birth_month == data.month,
+                    SavedChart.birth_day == data.day,
+                    SavedChart.birth_location == data.location
+                ).first()
+                
+                if not existing_chart:
+                    # Auto-save the chart
+                    saved_chart = SavedChart(
+                        user_id=current_user.id,
+                        chart_name=data.full_name,
+                        birth_year=data.year,
+                        birth_month=data.month,
+                        birth_day=data.day,
+                        birth_hour=data.hour if not data.unknown_time else 12,
+                        birth_minute=data.minute if not data.unknown_time else 0,
+                        birth_location=data.location,
+                        unknown_time=data.unknown_time,
+                        chart_data_json=json.dumps(full_response)
+                    )
+                    db.add(saved_chart)
+                    db.commit()
+                    db.refresh(saved_chart)
+                    logger.info(f"Chart auto-saved for user {current_user.email}: {data.full_name} (ID: {saved_chart.id})")
+                    full_response["saved_chart_id"] = saved_chart.id
+                else:
+                    logger.info(f"Chart already exists for user {current_user.email}: {data.full_name} (ID: {existing_chart.id})")
+                    full_response["saved_chart_id"] = existing_chart.id
+            except Exception as e:
+                logger.warning(f"Could not auto-save chart for user {current_user.email}: {e}", exc_info=True)
+                # Don't fail the request if auto-save fails
             
         return full_response
 
@@ -2576,7 +2762,7 @@ async def generate_reading_endpoint(
                 detail="Email address is required. Your reading will be sent to your email when complete."
             )
         
-        # Check subscription access (with admin bypass support)
+        # Check for FRIENDS_AND_FAMILY_KEY (for logging purposes)
         # Check both query params and headers (case-insensitive)
         friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY')
         if not friends_and_family_key:
@@ -2588,44 +2774,12 @@ async def generate_reading_endpoint(
         if friends_and_family_key:
             logger.info(f"[generate_reading] FRIENDS_AND_FAMILY_KEY received (length: {len(friends_and_family_key)}, first 3 chars: {friends_and_family_key[:3] if len(friends_and_family_key) >= 3 else friends_and_family_key})")
             logger.info(f"[generate_reading] ADMIN_SECRET_KEY configured: {bool(ADMIN_SECRET_KEY)}, length: {len(ADMIN_SECRET_KEY) if ADMIN_SECRET_KEY else 0}")
+        
+        # Subscription checks removed - all users can access full readings
+        # FRIENDS_AND_FAMILY_KEY still works for logging purposes
         has_access, reason = check_subscription_access(current_user, db, friends_and_family_key)
         if friends_and_family_key:
             logger.info(f"[generate_reading] Access check result: has_access={has_access}, reason={reason}")
-        
-        if not has_access:
-            # Log admin bypass attempt if secret was provided but invalid
-            if friends_and_family_key:
-                try:
-                    log_entry = AdminBypassLog(
-                        user_email=user_email,
-                        endpoint="/generate_reading",
-                        ip_address=request.client.host if request.client else None,
-                        user_agent=request.headers.get("user-agent"),
-                        details=f"Invalid admin secret attempt for {user_email}"
-                    )
-                    db.add(log_entry)
-                    db.commit()
-                except Exception as log_error:
-                    # Handle sequence sync issues gracefully
-                    error_str = str(log_error)
-                    if "UniqueViolation" in error_str and "admin_bypass_logs_pkey" in error_str:
-                        logger.warning(f"Admin bypass log sequence out of sync. Run fix_admin_logs_sequence.py to resolve. Error: {log_error}")
-                        # Try to rollback and continue - logging failure shouldn't block the request
-                        try:
-                            db.rollback()
-                        except:
-                            pass
-                    else:
-                        logger.warning(f"Could not log admin bypass attempt: {log_error}")
-            
-            raise HTTPException(
-                status_code=402,
-                detail={
-                    "error": "Subscription required",
-                    "message": "A monthly subscription is required to generate full comprehensive readings. Snapshot readings are available for free.",
-                    "reason": reason
-                }
-            )
         
         # Log successful admin bypass if used (works even without logged-in user)
         if reason == "admin_bypass":
@@ -2686,11 +2840,20 @@ async def generate_reading_endpoint(
 
 @app.get("/get_reading/{chart_hash}")
 @limiter.limit("100/hour")
-async def get_reading_endpoint(request: Request, chart_hash: str):
+async def get_reading_endpoint(
+    request: Request, 
+    chart_hash: str,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db: Session = Depends(get_db)
+):
     """
     Retrieve a completed reading from the cache by chart hash.
     Used by frontend to poll for completed readings.
+    Requires authentication to access full reading page.
     """
+    # Require authentication for full reading access
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required to access full reading")
     # Clean up expired cache entries
     now = datetime.now()
     expired_keys = [
@@ -2704,12 +2867,59 @@ async def get_reading_endpoint(request: Request, chart_hash: str):
     # Check if reading exists in cache
     if chart_hash in reading_cache:
         cached_data = reading_cache[chart_hash]
+        
+        # Try to find saved chart by hash (for chat functionality)
+        chart_id = None
+        try:
+            # Look for saved chart with matching hash
+            saved_charts = db.query(SavedChart).filter(
+                SavedChart.user_id == current_user.id
+            ).all()
+            
+            for chart in saved_charts:
+                if chart.chart_data_json:
+                    try:
+                        chart_data = json.loads(chart.chart_data_json)
+                        chart_data_hash = generate_chart_hash(chart_data, chart.unknown_time)
+                        if chart_data_hash == chart_hash:
+                            chart_id = chart.id
+                            break
+                    except:
+                        continue
+        except Exception as e:
+            logger.warning(f"Could not find chart by hash: {e}")
+        
         return {
             "status": "completed",
             "reading": cached_data['reading'],
-            "chart_name": cached_data.get('chart_name', 'N/A')
+            "chart_name": cached_data.get('chart_name', 'N/A'),
+            "chart_id": chart_id
         }
     else:
+        # Check if reading exists in saved chart
+        try:
+            saved_charts = db.query(SavedChart).filter(
+                SavedChart.user_id == current_user.id,
+                SavedChart.ai_reading.isnot(None)
+            ).all()
+            
+            for chart in saved_charts:
+                if chart.chart_data_json:
+                    try:
+                        chart_data = json.loads(chart.chart_data_json)
+                        chart_data_hash = generate_chart_hash(chart_data, chart.unknown_time)
+                        if chart_data_hash == chart_hash and chart.ai_reading:
+                            return {
+                                "status": "completed",
+                                "reading": chart.ai_reading,
+                                "chart_name": chart.chart_name,
+                                "chart_id": chart.id
+                            }
+                    except:
+                        continue
+        except Exception as e:
+            logger.warning(f"Could not check saved charts: {e}")
+        
         return {
             "status": "processing",
             "message": "Reading is still being generated. Please check again in a moment."
@@ -3324,15 +3534,18 @@ async def get_subscription_status(
     ADMIN_SECRET_KEY = os.getenv("FRIENDS_AND_FAMILY_KEY")
     has_friends_family_access = friends_and_family_key and ADMIN_SECRET_KEY and friends_and_family_key == ADMIN_SECRET_KEY
     
-    is_active = has_active_subscription(current_user, db) or has_friends_family_access
+    # All users now have access (Stripe requirements removed)
+    # FRIENDS_AND_FAMILY_KEY still tracked for logging
+    is_active = True  # Always return True - no payment required
     
     return {
         "has_subscription": is_active,
-        "status": "active" if has_friends_family_access else current_user.subscription_status,
+        "status": "active" if has_friends_family_access else "free_access",
         "start_date": current_user.subscription_start_date.isoformat() if current_user.subscription_start_date else None,
         "end_date": current_user.subscription_end_date.isoformat() if current_user.subscription_end_date else None,
         "has_purchased_reading": current_user.has_purchased_reading or has_friends_family_access,
         "reading_purchase_date": current_user.reading_purchase_date.isoformat() if current_user.reading_purchase_date else None,
+        "friends_family_access": has_friends_family_access
         "free_chat_month_end_date": current_user.free_chat_month_end_date.isoformat() if current_user.free_chat_month_end_date else None,
         "is_admin": current_user.is_admin,
         "friends_family_access": has_friends_family_access
@@ -3741,16 +3954,16 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
         
         # All planets to compare (weighted by importance)
         planets_to_compare = [
-            ('Sun', 8.0),
-            ('Moon', 8.0),
+            ('Sun', 5.0),
+            ('Moon', 5.0),
             ('Mercury', 3.0),
             ('Venus', 3.0),
             ('Mars', 3.0),
-            ('Jupiter', 2.0),
-            ('Saturn', 2.0),
-            ('Uranus', 1.5),
-            ('Neptune', 1.5),
-            ('Pluto', 1.5),
+            ('Jupiter', 3.0),
+            ('Saturn', 3.0),
+            ('Uranus', 3.0),
+            ('Neptune', 3.0),
+            ('Pluto', 3.0),
         ]
         
         for planet_name, weight in planets_to_compare:
@@ -3764,6 +3977,11 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
             # Try to get from famous person's stored placements
             if fp_planetary_placements.get('sidereal', {}).get(planet_name):
                 fp_planet_s = fp_planetary_placements['sidereal'][planet_name].get('sign')
+            # Fallback to database columns (for Sun/Moon which are indexed)
+            elif planet_name == 'Sun' and famous_person.sun_sign_sidereal:
+                fp_planet_s = famous_person.sun_sign_sidereal
+            elif planet_name == 'Moon' and famous_person.moon_sign_sidereal:
+                fp_planet_s = famous_person.moon_sign_sidereal
             # Fallback to chart_data_json
             elif fp_chart.get('sidereal_major_positions'):
                 for p in fp_chart['sidereal_major_positions']:
@@ -3786,6 +4004,11 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
             # Try to get from famous person's stored placements
             if fp_planetary_placements.get('tropical', {}).get(planet_name):
                 fp_planet_t = fp_planetary_placements['tropical'][planet_name].get('sign')
+            # Fallback to database columns (for Sun/Moon which are indexed)
+            elif planet_name == 'Sun' and famous_person.sun_sign_tropical:
+                fp_planet_t = famous_person.sun_sign_tropical
+            elif planet_name == 'Moon' and famous_person.moon_sign_tropical:
+                fp_planet_t = famous_person.moon_sign_tropical
             # Fallback to chart_data_json
             elif fp_chart.get('tropical_major_positions'):
                 for p in fp_chart['tropical_major_positions']:
@@ -3798,7 +4021,7 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
                 if user_planet_t == fp_planet_t:
                     score += weight
         
-        # Rising/Ascendant signs (if birth time known) - weight: 4 points each system
+        # Rising/Ascendant signs (if birth time known) - weight: 5 points each system
         if not user_chart_data.get('unknown_time'):
             user_rising_s = None
             user_rising_t = None
@@ -3829,26 +4052,28 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
                         break
             
             if user_rising_s and fp_rising_s:
-                max_possible_score += 4.0
+                max_possible_score += 5.0
                 if user_rising_s == fp_rising_s:
-                    score += 4.0
+                    score += 5.0
             
             if user_rising_t and fp_rising_t:
-                max_possible_score += 4.0
+                max_possible_score += 5.0
                 if user_rising_t == fp_rising_t:
-                    score += 4.0
+                    score += 5.0
         
         # ========================================================================
-        # ASPECTS (Top 10 from both systems)
+        # ASPECTS (Top 3 from both systems)
         # ========================================================================
+        # If at least 2 out of 3 top aspects match, award 10 points
         
-        user_aspects = extract_top_aspects_from_chart(user_chart_data, top_n=10)
+        user_aspects = extract_top_aspects_from_chart(user_chart_data, top_n=3)
         
         if famous_person.top_aspects_json:
             try:
                 fp_aspects = json.loads(famous_person.top_aspects_json)
                 
-                # Compare sidereal aspects (weight: 2 points per match)
+                # Count matching aspects in sidereal
+                sidereal_matches = 0
                 user_s_aspects = user_aspects.get('sidereal', [])
                 fp_s_aspects = fp_aspects.get('sidereal', [])
                 
@@ -3857,11 +4082,11 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
                         u_pair = sorted([u_aspect['p1'], u_aspect['p2']])
                         fp_pair = sorted([fp_aspect['p1'], fp_aspect['p2']])
                         if u_pair == fp_pair and u_aspect['type'] == fp_aspect['type']:
-                            max_possible_score += 2.0
-                            score += 2.0
+                            sidereal_matches += 1
                             break
                 
-                # Compare tropical aspects
+                # Count matching aspects in tropical
+                tropical_matches = 0
                 user_t_aspects = user_aspects.get('tropical', [])
                 fp_t_aspects = fp_aspects.get('tropical', [])
                 
@@ -3870,9 +4095,13 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
                         u_pair = sorted([u_aspect['p1'], u_aspect['p2']])
                         fp_pair = sorted([fp_aspect['p1'], fp_aspect['p2']])
                         if u_pair == fp_pair and u_aspect['type'] == fp_aspect['type']:
-                            max_possible_score += 2.0
-                            score += 2.0
+                            tropical_matches += 1
                             break
+                
+                # Award 10 points if at least 2 out of 3 aspects match in either system
+                if sidereal_matches >= 2 or tropical_matches >= 2:
+                    max_possible_score += 10.0
+                    score += 10.0
             except:
                 pass
         
@@ -3880,64 +4109,48 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
         # NUMEROLOGY
         # ========================================================================
         
-        # Life Path Number - weight: 5 points
+        # Life Path Number - weight: 10 points
         user_life_path = user_chart_data.get('numerology', {}).get('life_path_number')
         fp_life_path = famous_person.life_path_number
         
         if user_life_path and fp_life_path:
-            max_possible_score += 5.0
+            max_possible_score += 10.0
             user_lp_norm = normalize_master_number(user_life_path)
             fp_lp_norm = normalize_master_number(fp_life_path)
             
             if any(lp in fp_lp_norm for lp in user_lp_norm) or any(lp in user_lp_norm for lp in fp_lp_norm):
-                score += 5.0
+                score += 10.0
         
-        # Day Number - weight: 3 points
+        # Day Number - weight: 10 points
         user_day_num = user_chart_data.get('numerology', {}).get('day_number')
         fp_day_num = famous_person.day_number
         
         if user_day_num and fp_day_num:
-            max_possible_score += 3.0
+            max_possible_score += 10.0
             user_day_norm = normalize_master_number(user_day_num)
             fp_day_norm = normalize_master_number(fp_day_num)
             
             if any(d in fp_day_norm for d in user_day_norm) or any(d in user_day_norm for d in fp_day_norm):
-                score += 3.0
+                score += 10.0
         
         # ========================================================================
         # CHINESE ZODIAC
         # ========================================================================
         
-        # Chinese Zodiac Animal - weight: 4 points
+        # Chinese Zodiac Animal - weight: 10 points
         user_chinese_animal = user_chart_data.get('chinese_zodiac', {}).get('animal')
         fp_chinese_animal = famous_person.chinese_zodiac_animal
         
         if user_chinese_animal and fp_chinese_animal:
-            max_possible_score += 4.0
+            max_possible_score += 10.0
             if user_chinese_animal.lower() == fp_chinese_animal.lower():
-                score += 4.0
+                score += 10.0
         
         # ========================================================================
-        # DOMINANT ELEMENT
+        # DOMINANT ELEMENT - Not included in scoring (only shown in matching_factors for display)
         # ========================================================================
-        
-        # Dominant Element - Sidereal (weight: 2 points)
-        user_dom_elem_s = user_chart_data.get('sidereal_chart_analysis', {}).get('dominant_element')
-        fp_dom_elem_s = fp_chart.get('sidereal_chart_analysis', {}).get('dominant_element')
-        
-        if user_dom_elem_s and fp_dom_elem_s:
-            max_possible_score += 2.0
-            if user_dom_elem_s.lower() == fp_dom_elem_s.lower():
-                score += 2.0
-        
-        # Dominant Element - Tropical (weight: 2 points)
-        user_dom_elem_t = user_chart_data.get('tropical_chart_analysis', {}).get('dominant_element')
-        fp_dom_elem_t = fp_chart.get('tropical_chart_analysis', {}).get('dominant_element')
-        
-        if user_dom_elem_t and fp_dom_elem_t:
-            max_possible_score += 2.0
-            if user_dom_elem_t.lower() == fp_dom_elem_t.lower():
-                score += 2.0
+        # Dominant Element is still extracted and shown in matching_factors list,
+        # but it is NOT included in the score calculation per user requirements
         
         # ========================================================================
         # CALCULATE FINAL SCORE
@@ -3947,9 +4160,23 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
         if max_possible_score > 0:
             normalized_score = (score / max_possible_score) * 100.0
         else:
+            # If max_possible_score is 0, it means no planetary placements were found to compare
+            # This could happen if chart data structure is unexpected
+            # Log this for debugging
+            logger.warning(
+                f"max_possible_score is 0 for {famous_person.name if famous_person else 'unknown'}. "
+                f"Score: {score}, "
+                f"User has sidereal: {bool(user_chart_data.get('sidereal_major_positions'))}, "
+                f"User has tropical: {bool(user_chart_data.get('tropical_major_positions'))}, "
+                f"FP has placements: {bool(fp_planetary_placements)}, "
+                f"FP has chart: {bool(fp_chart)}"
+            )
+            # If we have matches (strict/aspect/stellium), give a minimum score
+            # Otherwise return 0
             normalized_score = 0.0
         
-        return min(normalized_score, 100.0)
+        result = min(normalized_score, 100.0)
+        return result
     
     except Exception as e:
         logger.error(f"Error calculating comprehensive similarity: {e}", exc_info=True)
@@ -4017,6 +4244,11 @@ def calculate_chart_similarity(user_chart_data: dict, famous_person: FamousPerso
             # Try to get from famous person's stored placements
             if fp_planetary_placements.get('sidereal', {}).get(planet_name):
                 fp_planet_s = fp_planetary_placements['sidereal'][planet_name].get('sign')
+            # Fallback to database columns (for Sun/Moon which are indexed)
+            elif planet_name == 'Sun' and famous_person.sun_sign_sidereal:
+                fp_planet_s = famous_person.sun_sign_sidereal
+            elif planet_name == 'Moon' and famous_person.moon_sign_sidereal:
+                fp_planet_s = famous_person.moon_sign_sidereal
             # Fallback to chart_data_json
             elif fp_chart.get('sidereal_major_positions'):
                 for p in fp_chart['sidereal_major_positions']:
@@ -4039,6 +4271,11 @@ def calculate_chart_similarity(user_chart_data: dict, famous_person: FamousPerso
             # Try to get from famous person's stored placements
             if fp_planetary_placements.get('tropical', {}).get(planet_name):
                 fp_planet_t = fp_planetary_placements['tropical'][planet_name].get('sign')
+            # Fallback to database columns (for Sun/Moon which are indexed)
+            elif planet_name == 'Sun' and famous_person.sun_sign_tropical:
+                fp_planet_t = famous_person.sun_sign_tropical
+            elif planet_name == 'Moon' and famous_person.moon_sign_tropical:
+                fp_planet_t = famous_person.moon_sign_tropical
             # Fallback to chart_data_json
             elif fp_chart.get('tropical_major_positions'):
                 for p in fp_chart['tropical_major_positions']:
@@ -4173,9 +4410,23 @@ def calculate_chart_similarity(user_chart_data: dict, famous_person: FamousPerso
         if max_possible_score > 0:
             normalized_score = (score / max_possible_score) * 100.0
         else:
+            # If max_possible_score is 0, it means no planetary placements were found to compare
+            # This could happen if chart data structure is unexpected
+            # Log this for debugging
+            logger.warning(
+                f"max_possible_score is 0 for {famous_person.name if famous_person else 'unknown'}. "
+                f"Score: {score}, "
+                f"User has sidereal: {bool(user_chart_data.get('sidereal_major_positions'))}, "
+                f"User has tropical: {bool(user_chart_data.get('tropical_major_positions'))}, "
+                f"FP has placements: {bool(fp_planetary_placements)}, "
+                f"FP has chart: {bool(fp_chart)}"
+            )
+            # If we have matches (strict/aspect/stellium), give a minimum score
+            # Otherwise return 0
             normalized_score = 0.0
         
-        return min(normalized_score, 100.0)
+        result = min(normalized_score, 100.0)
+        return result
     
     except Exception as e:
         logger.error(f"Error calculating similarity: {e}", exc_info=True)
@@ -4459,6 +4710,17 @@ async def find_similar_famous_people_endpoint(
                 # Calculate comprehensive score
                 comprehensive_score = calculate_comprehensive_similarity_score(chart_data, fp)
                 
+                # If score is 0 but we have matches, give a minimum baseline score
+                # This handles cases where placements aren't found but matches exist
+                if comprehensive_score == 0.0 and (strict_match or aspect_match or stellium_match):
+                    # Give baseline scores based on match type
+                    if strict_match:
+                        comprehensive_score = 25.0  # Baseline for strict matches
+                    elif aspect_match:
+                        comprehensive_score = 15.0  # Baseline for aspect matches
+                    elif stellium_match:
+                        comprehensive_score = 10.0  # Baseline for stellium matches
+                
                 # Combine all match reasons
                 all_reasons = strict_reasons + aspect_reasons + stellium_reasons
                 
@@ -4480,6 +4742,186 @@ async def find_similar_famous_people_endpoint(
         # Take top matches
         top_matches = matches[:limit]
         
+        # Helper function to extract all matching factors
+        def extract_all_matching_factors(user_chart_data: dict, fp: FamousPerson, fp_planetary: dict, fp_chart: dict) -> list:
+            """Extract a detailed list of all matching factors between user and famous person."""
+            matches_list = []
+            
+            # Extract user's positions
+            s_positions = {p['name']: p for p in user_chart_data.get('sidereal_major_positions', []) if isinstance(p, dict) and 'name' in p}
+            t_positions = {p['name']: p for p in user_chart_data.get('tropical_major_positions', []) if isinstance(p, dict) and 'name' in p}
+            s_extra = {p['name']: p for p in user_chart_data.get('sidereal_additional_points', []) if isinstance(p, dict) and 'name' in p}
+            t_extra = {p['name']: p for p in user_chart_data.get('tropical_additional_points', []) if isinstance(p, dict) and 'name' in p}
+            
+            def extract_sign(position_str):
+                if not position_str:
+                    return None
+                parts = position_str.split()
+                return parts[-1] if parts else None
+            
+            # All planets to check
+            planets = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
+            
+            # Check each planet in both systems
+            for planet_name in planets:
+                # Sidereal
+                user_planet_s = None
+                fp_planet_s = None
+                
+                if planet_name in s_positions:
+                    user_planet_s = extract_sign(s_positions[planet_name].get('position'))
+                
+                if fp_planetary.get('sidereal', {}).get(planet_name):
+                    fp_planet_s = fp_planetary['sidereal'][planet_name].get('sign')
+                elif planet_name == 'Sun' and fp.sun_sign_sidereal:
+                    fp_planet_s = fp.sun_sign_sidereal
+                elif planet_name == 'Moon' and fp.moon_sign_sidereal:
+                    fp_planet_s = fp.moon_sign_sidereal
+                elif fp_chart.get('sidereal_major_positions'):
+                    for p in fp_chart['sidereal_major_positions']:
+                        if p.get('name') == planet_name:
+                            fp_planet_s = extract_sign(p.get('position'))
+                            break
+                
+                if user_planet_s and fp_planet_s and user_planet_s == fp_planet_s:
+                    matches_list.append(f"{planet_name} (Sidereal)")
+                
+                # Tropical
+                user_planet_t = None
+                fp_planet_t = None
+                
+                if planet_name in t_positions:
+                    user_planet_t = extract_sign(t_positions[planet_name].get('position'))
+                
+                if fp_planetary.get('tropical', {}).get(planet_name):
+                    fp_planet_t = fp_planetary['tropical'][planet_name].get('sign')
+                elif planet_name == 'Sun' and fp.sun_sign_tropical:
+                    fp_planet_t = fp.sun_sign_tropical
+                elif planet_name == 'Moon' and fp.moon_sign_tropical:
+                    fp_planet_t = fp.moon_sign_tropical
+                elif fp_chart.get('tropical_major_positions'):
+                    for p in fp_chart['tropical_major_positions']:
+                        if p.get('name') == planet_name:
+                            fp_planet_t = extract_sign(p.get('position'))
+                            break
+                
+                if user_planet_t and fp_planet_t and user_planet_t == fp_planet_t:
+                    matches_list.append(f"{planet_name} (Tropical)")
+            
+            # Check Rising/Ascendant (if birth time known)
+            if not user_chart_data.get('unknown_time') and not fp.unknown_time:
+                user_rising_s = None
+                user_rising_t = None
+                fp_rising_s = None
+                fp_rising_t = None
+                
+                if 'Ascendant' in s_extra:
+                    asc_info = s_extra['Ascendant'].get('info', '')
+                    user_rising_s = asc_info.split()[0] if asc_info else None
+                
+                if 'Ascendant' in t_extra:
+                    asc_info = t_extra['Ascendant'].get('info', '')
+                    user_rising_t = asc_info.split()[0] if asc_info else None
+                
+                if fp_chart.get('sidereal_additional_points'):
+                    for p in fp_chart['sidereal_additional_points']:
+                        if p.get('name') == 'Ascendant':
+                            asc_info = p.get('info', '')
+                            fp_rising_s = asc_info.split()[0] if asc_info else None
+                            break
+                
+                if fp_chart.get('tropical_additional_points'):
+                    for p in fp_chart['tropical_additional_points']:
+                        if p.get('name') == 'Ascendant':
+                            asc_info = p.get('info', '')
+                            fp_rising_t = asc_info.split()[0] if asc_info else None
+                            break
+                
+                if user_rising_s and fp_rising_s and user_rising_s == fp_rising_s:
+                    matches_list.append("Rising/Ascendant (Sidereal)")
+                
+                if user_rising_t and fp_rising_t and user_rising_t == fp_rising_t:
+                    matches_list.append("Rising/Ascendant (Tropical)")
+            
+            # Check Numerology
+            user_numerology = user_chart_data.get('numerology', {})
+            if isinstance(user_numerology, str):
+                try:
+                    user_numerology = json.loads(user_numerology)
+                except:
+                    user_numerology = {}
+            
+            user_life_path = user_numerology.get('life_path_number') if isinstance(user_numerology, dict) else None
+            user_day = user_numerology.get('day_number') if isinstance(user_numerology, dict) else None
+            
+            if user_life_path and fp.life_path_number:
+                user_lp_norm = normalize_master_number(user_life_path)
+                fp_lp_norm = normalize_master_number(fp.life_path_number)
+                if any(lp in fp_lp_norm for lp in user_lp_norm) or any(lp in user_lp_norm for lp in fp_lp_norm):
+                    matches_list.append(f"Life Path Number ({user_life_path})")
+            
+            if user_day and fp.day_number:
+                user_day_norm = normalize_master_number(user_day)
+                fp_day_norm = normalize_master_number(fp.day_number)
+                if any(d in fp_day_norm for d in user_day_norm) or any(d in user_day_norm for d in fp_day_norm):
+                    matches_list.append(f"Day Number ({user_day})")
+            
+            # Check Chinese Zodiac
+            user_chinese = user_chart_data.get('chinese_zodiac', {})
+            if isinstance(user_chinese, str):
+                try:
+                    user_chinese = json.loads(user_chinese)
+                except:
+                    user_chinese = {}
+            
+            user_chinese_animal = user_chinese.get('animal') if isinstance(user_chinese, dict) else None
+            if user_chinese_animal and fp.chinese_zodiac_animal:
+                if user_chinese_animal.lower() == fp.chinese_zodiac_animal.lower():
+                    matches_list.append(f"Chinese Zodiac ({user_chinese_animal})")
+            
+            # Check Dominant Element
+            user_dom_elem_s = user_chart_data.get('sidereal_chart_analysis', {}).get('dominant_element')
+            fp_dom_elem_s = fp_chart.get('sidereal_chart_analysis', {}).get('dominant_element')
+            if user_dom_elem_s and fp_dom_elem_s and user_dom_elem_s.lower() == fp_dom_elem_s.lower():
+                matches_list.append(f"Dominant Element - Sidereal ({user_dom_elem_s})")
+            
+            user_dom_elem_t = user_chart_data.get('tropical_chart_analysis', {}).get('dominant_element')
+            fp_dom_elem_t = fp_chart.get('tropical_chart_analysis', {}).get('dominant_element')
+            if user_dom_elem_t and fp_dom_elem_t and user_dom_elem_t.lower() == fp_dom_elem_t.lower():
+                matches_list.append(f"Dominant Element - Tropical ({user_dom_elem_t})")
+            
+            # Check Aspects (from match_reasons if available, or calculate)
+            user_aspects = extract_top_aspects_from_chart(user_chart_data, top_n=10)
+            if fp.top_aspects_json:
+                try:
+                    fp_aspects = json.loads(fp.top_aspects_json)
+                    
+                    # Check sidereal aspects
+                    user_s_aspects = user_aspects.get('sidereal', [])
+                    fp_s_aspects = fp_aspects.get('sidereal', [])
+                    for u_aspect in user_s_aspects:
+                        for fp_aspect in fp_s_aspects:
+                            u_pair = sorted([u_aspect['p1'], u_aspect['p2']])
+                            fp_pair = sorted([fp_aspect['p1'], fp_aspect['p2']])
+                            if u_pair == fp_pair and u_aspect['type'] == fp_aspect['type']:
+                                matches_list.append(f"Aspect (Sidereal): {u_aspect['p1']} {u_aspect['type']} {u_aspect['p2']}")
+                                break
+                    
+                    # Check tropical aspects
+                    user_t_aspects = user_aspects.get('tropical', [])
+                    fp_t_aspects = fp_aspects.get('tropical', [])
+                    for u_aspect in user_t_aspects:
+                        for fp_aspect in fp_t_aspects:
+                            u_pair = sorted([u_aspect['p1'], u_aspect['p2']])
+                            fp_pair = sorted([fp_aspect['p1'], fp_aspect['p2']])
+                            if u_pair == fp_pair and u_aspect['type'] == fp_aspect['type']:
+                                matches_list.append(f"Aspect (Tropical): {u_aspect['p1']} {u_aspect['type']} {u_aspect['p2']}")
+                                break
+                except:
+                    pass
+            
+            return matches_list
+        
         # Format response with comprehensive matching details
         result = []
         for match in top_matches:
@@ -4493,43 +4935,28 @@ async def find_similar_famous_people_endpoint(
                 except:
                     pass
             
+            # Get chart data
+            fp_chart = {}
+            if fp.chart_data_json:
+                try:
+                    fp_chart = json.loads(fp.chart_data_json)
+                except:
+                    pass
+            
+            # Extract all matching factors
+            matching_factors = extract_all_matching_factors(chart_data, fp, fp_planetary, fp_chart)
+            
             # Build match details
             match_details = {
                 "name": fp.name,
                 "wikipedia_url": fp.wikipedia_url,
                 "occupation": fp.occupation,
                 "similarity_score": round(match["similarity_score"], 1),
-                "match_reasons": match.get("match_reasons", []),
+                "matching_factors": matching_factors,  # List of all matching factors
+                "match_reasons": match.get("match_reasons", []),  # Keep for backward compatibility
                 "match_type": match.get("match_type", "general"),
                 "birth_date": f"{fp.birth_month}/{fp.birth_day}/{fp.birth_year}",
                 "birth_location": fp.birth_location,
-                # Sun & Moon (always available)
-                "sun_sign_sidereal": fp.sun_sign_sidereal,
-                "sun_sign_tropical": fp.sun_sign_tropical,
-                "moon_sign_sidereal": fp.moon_sign_sidereal,
-                "moon_sign_tropical": fp.moon_sign_tropical,
-                # Additional planets if available
-                "mercury_sign_sidereal": fp_planetary.get('sidereal', {}).get('Mercury', {}).get('sign'),
-                "mercury_sign_tropical": fp_planetary.get('tropical', {}).get('Mercury', {}).get('sign'),
-                "venus_sign_sidereal": fp_planetary.get('sidereal', {}).get('Venus', {}).get('sign'),
-                "venus_sign_tropical": fp_planetary.get('tropical', {}).get('Venus', {}).get('sign'),
-                "mars_sign_sidereal": fp_planetary.get('sidereal', {}).get('Mars', {}).get('sign'),
-                "mars_sign_tropical": fp_planetary.get('tropical', {}).get('Mars', {}).get('sign'),
-                "jupiter_sign_sidereal": fp_planetary.get('sidereal', {}).get('Jupiter', {}).get('sign'),
-                "jupiter_sign_tropical": fp_planetary.get('tropical', {}).get('Jupiter', {}).get('sign'),
-                "saturn_sign_sidereal": fp_planetary.get('sidereal', {}).get('Saturn', {}).get('sign'),
-                "saturn_sign_tropical": fp_planetary.get('tropical', {}).get('Saturn', {}).get('sign'),
-                "uranus_sign_sidereal": fp_planetary.get('sidereal', {}).get('Uranus', {}).get('sign'),
-                "uranus_sign_tropical": fp_planetary.get('tropical', {}).get('Uranus', {}).get('sign'),
-                "neptune_sign_sidereal": fp_planetary.get('sidereal', {}).get('Neptune', {}).get('sign'),
-                "neptune_sign_tropical": fp_planetary.get('tropical', {}).get('Neptune', {}).get('sign'),
-                "pluto_sign_sidereal": fp_planetary.get('sidereal', {}).get('Pluto', {}).get('sign'),
-                "pluto_sign_tropical": fp_planetary.get('tropical', {}).get('Pluto', {}).get('sign'),
-                # Numerology
-                "life_path_number": fp.life_path_number,
-                "day_number": fp.day_number,
-                # Chinese Zodiac
-                "chinese_zodiac_animal": fp.chinese_zodiac_animal,
             }
             
             result.append(match_details)
@@ -4548,3 +4975,288 @@ async def find_similar_famous_people_endpoint(
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error finding similar famous people: {str(e)}")
+
+
+async def find_similar_famous_people_internal(
+    chart_data: dict,
+    limit: int = 10,
+    db: Session = None
+) -> dict:
+    """
+    Internal function to find similar famous people (for use in reading generation).
+    Returns the same format as the endpoint but can be called internally.
+    """
+    if not db:
+        logger.warning("No database session provided to find_similar_famous_people_internal")
+        return {"matches": [], "total_compared": 0, "matches_found": 0}
+    
+    try:
+        # Use the endpoint logic by calling it programmatically
+        # We'll reuse the same matching logic
+        from sqlalchemy import or_, and_
+        
+        # Extract user's signs (same as endpoint)
+        sidereal_positions = chart_data.get('sidereal_major_positions', [])
+        tropical_positions = chart_data.get('tropical_major_positions', [])
+        
+        s_positions = {p['name']: p for p in sidereal_positions if isinstance(p, dict) and 'name' in p}
+        t_positions = {p['name']: p for p in tropical_positions if isinstance(p, dict) and 'name' in p}
+        
+        def extract_sign(position_str):
+            if not position_str:
+                return None
+            parts = position_str.split()
+            return parts[-1] if parts else None
+        
+        user_sun_s = extract_sign(s_positions.get('Sun', {}).get('position')) if 'Sun' in s_positions and s_positions['Sun'].get('position') else None
+        user_sun_t = extract_sign(t_positions.get('Sun', {}).get('position')) if 'Sun' in t_positions and t_positions['Sun'].get('position') else None
+        user_moon_s = extract_sign(s_positions.get('Moon', {}).get('position')) if 'Moon' in s_positions and s_positions['Moon'].get('position') else None
+        user_moon_t = extract_sign(t_positions.get('Moon', {}).get('position')) if 'Moon' in t_positions and t_positions['Moon'].get('position') else None
+        
+        # Get numerology and Chinese zodiac
+        numerology_data = chart_data.get('numerology', {})
+        if isinstance(numerology_data, str):
+            try:
+                numerology_data = json.loads(numerology_data)
+            except:
+                numerology_data = {}
+        if not isinstance(numerology_data, dict):
+            numerology_data = {}
+        
+        chinese_zodiac_data = chart_data.get('chinese_zodiac', {})
+        if isinstance(chinese_zodiac_data, str):
+            try:
+                chinese_zodiac_data = json.loads(chinese_zodiac_data)
+            except:
+                chinese_zodiac_data = {}
+        if not isinstance(chinese_zodiac_data, dict):
+            chinese_zodiac_data = {}
+        
+        user_life_path = numerology_data.get('life_path_number')
+        user_day = numerology_data.get('day_number')
+        user_chinese_animal = chinese_zodiac_data.get('animal')
+        
+        # Build query (same logic as endpoint)
+        query = db.query(FamousPerson)
+        conditions = []
+        
+        if user_sun_s and user_moon_s:
+            conditions.append(
+                and_(
+                    FamousPerson.sun_sign_sidereal == user_sun_s,
+                    FamousPerson.moon_sign_sidereal == user_moon_s
+                )
+            )
+        
+        if user_sun_t and user_moon_t:
+            conditions.append(
+                and_(
+                    FamousPerson.sun_sign_tropical == user_sun_t,
+                    FamousPerson.moon_sign_tropical == user_moon_t
+                )
+            )
+        
+        if user_day and user_life_path:
+            user_day_norm = normalize_master_number(user_day)
+            user_lp_norm = normalize_master_number(user_life_path)
+            lp_conditions = [FamousPerson.life_path_number == lp for lp in user_lp_norm]
+            day_conditions = [FamousPerson.day_number == day for day in user_day_norm]
+            if lp_conditions and day_conditions:
+                conditions.append(and_(or_(*lp_conditions), or_(*day_conditions)))
+        
+        if user_chinese_animal:
+            chinese_conditions = [FamousPerson.chinese_zodiac_animal.ilike(f"%{user_chinese_animal}%")]
+            numer_conditions = []
+            if user_day:
+                user_day_norm = normalize_master_number(user_day)
+                numer_conditions.extend([FamousPerson.day_number == day for day in user_day_norm])
+            if user_life_path:
+                user_lp_norm = normalize_master_number(user_life_path)
+                numer_conditions.extend([FamousPerson.life_path_number == lp for lp in user_lp_norm])
+            if numer_conditions:
+                conditions.append(and_(chinese_conditions[0], or_(*numer_conditions)))
+        
+        if not conditions:
+            conditions.append(FamousPerson.chart_data_json.isnot(None))
+        else:
+            conditions.extend([
+                FamousPerson.top_aspects_json.isnot(None),
+                FamousPerson.chart_data_json.isnot(None)
+            ])
+        
+        if conditions:
+            query = query.filter(or_(*conditions))
+        
+        famous_people = query.limit(2000).all()
+        
+        if not famous_people:
+            return {"matches": [], "total_compared": 0, "matches_found": 0}
+        
+        # Apply matching criteria (same as endpoint)
+        matches = []
+        for fp in famous_people:
+            strict_match, strict_reasons = check_strict_matches(chart_data, fp, numerology_data, chinese_zodiac_data)
+            aspect_match, aspect_reasons = check_aspect_matches(chart_data, fp)
+            stellium_match, stellium_reasons = check_stellium_matches(chart_data, fp)
+            
+            if strict_match or aspect_match or stellium_match:
+                comprehensive_score = calculate_comprehensive_similarity_score(chart_data, fp)
+                
+                if comprehensive_score == 0.0 and (strict_match or aspect_match or stellium_match):
+                    if strict_match:
+                        comprehensive_score = 25.0
+                    elif aspect_match:
+                        comprehensive_score = 15.0
+                    elif stellium_match:
+                        comprehensive_score = 10.0
+                
+                all_reasons = strict_reasons + aspect_reasons + stellium_reasons
+                
+                # Get planetary placements and chart data
+                fp_planetary = {}
+                if fp.planetary_placements_json:
+                    try:
+                        fp_planetary = json.loads(fp.planetary_placements_json)
+                    except:
+                        pass
+                
+                fp_chart = {}
+                if fp.chart_data_json:
+                    try:
+                        fp_chart = json.loads(fp.chart_data_json)
+                    except:
+                        pass
+                
+                # Extract matching factors (reuse the function from endpoint scope)
+                # We need to define it here or extract it
+                def extract_all_matching_factors_internal(user_chart_data: dict, fp: FamousPerson, fp_planetary: dict, fp_chart: dict) -> list:
+                    """Extract matching factors - same logic as endpoint."""
+                    matches_list = []
+                    s_positions = {p['name']: p for p in user_chart_data.get('sidereal_major_positions', []) if isinstance(p, dict) and 'name' in p}
+                    t_positions = {p['name']: p for p in user_chart_data.get('tropical_major_positions', []) if isinstance(p, dict) and 'name' in p}
+                    s_extra = {p['name']: p for p in user_chart_data.get('sidereal_additional_points', []) if isinstance(p, dict) and 'name' in p}
+                    t_extra = {p['name']: p for p in user_chart_data.get('tropical_additional_points', []) if isinstance(p, dict) and 'name' in p}
+                    
+                    def extract_sign_internal(position_str):
+                        if not position_str:
+                            return None
+                        parts = position_str.split()
+                        return parts[-1] if parts else None
+                    
+                    planets = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']
+                    
+                    for planet_name in planets:
+                        # Sidereal
+                        user_planet_s = None
+                        fp_planet_s = None
+                        if planet_name in s_positions:
+                            user_planet_s = extract_sign_internal(s_positions[planet_name].get('position'))
+                        if fp_planetary.get('sidereal', {}).get(planet_name):
+                            fp_planet_s = fp_planetary['sidereal'][planet_name].get('sign')
+                        elif planet_name == 'Sun' and fp.sun_sign_sidereal:
+                            fp_planet_s = fp.sun_sign_sidereal
+                        elif planet_name == 'Moon' and fp.moon_sign_sidereal:
+                            fp_planet_s = fp.moon_sign_sidereal
+                        elif fp_chart.get('sidereal_major_positions'):
+                            for p in fp_chart['sidereal_major_positions']:
+                                if p.get('name') == planet_name:
+                                    fp_planet_s = extract_sign_internal(p.get('position'))
+                                    break
+                        if user_planet_s and fp_planet_s and user_planet_s == fp_planet_s:
+                            matches_list.append(f"{planet_name} (Sidereal)")
+                        
+                        # Tropical
+                        user_planet_t = None
+                        fp_planet_t = None
+                        if planet_name in t_positions:
+                            user_planet_t = extract_sign_internal(t_positions[planet_name].get('position'))
+                        if fp_planetary.get('tropical', {}).get(planet_name):
+                            fp_planet_t = fp_planetary['tropical'][planet_name].get('sign')
+                        elif planet_name == 'Sun' and fp.sun_sign_tropical:
+                            fp_planet_t = fp.sun_sign_tropical
+                        elif planet_name == 'Moon' and fp.moon_sign_tropical:
+                            fp_planet_t = fp.moon_sign_tropical
+                        elif fp_chart.get('tropical_major_positions'):
+                            for p in fp_chart['tropical_major_positions']:
+                                if p.get('name') == planet_name:
+                                    fp_planet_t = extract_sign_internal(p.get('position'))
+                                    break
+                        if user_planet_t and fp_planet_t and user_planet_t == fp_planet_t:
+                            matches_list.append(f"{planet_name} (Tropical)")
+                    
+                    # Check numerology
+                    user_numerology = user_chart_data.get('numerology', {})
+                    if isinstance(user_numerology, str):
+                        try:
+                            user_numerology = json.loads(user_numerology)
+                        except:
+                            user_numerology = {}
+                    user_life_path = user_numerology.get('life_path_number') if isinstance(user_numerology, dict) else None
+                    user_day = user_numerology.get('day_number') if isinstance(user_numerology, dict) else None
+                    
+                    if user_life_path and fp.life_path_number:
+                        user_lp_norm = normalize_master_number(user_life_path)
+                        fp_lp_norm = normalize_master_number(fp.life_path_number)
+                        if any(lp in fp_lp_norm for lp in user_lp_norm) or any(lp in user_lp_norm for lp in fp_lp_norm):
+                            matches_list.append(f"Life Path Number ({user_life_path})")
+                    
+                    if user_day and fp.day_number:
+                        user_day_norm = normalize_master_number(user_day)
+                        fp_day_norm = normalize_master_number(fp.day_number)
+                        if any(d in fp_day_norm for d in user_day_norm) or any(d in user_day_norm for d in fp_day_norm):
+                            matches_list.append(f"Day Number ({user_day})")
+                    
+                    # Check Chinese Zodiac
+                    user_chinese = user_chart_data.get('chinese_zodiac', {})
+                    if isinstance(user_chinese, str):
+                        try:
+                            user_chinese = json.loads(user_chinese)
+                        except:
+                            user_chinese = {}
+                    user_chinese_animal = user_chinese.get('animal') if isinstance(user_chinese, dict) else None
+                    if user_chinese_animal and fp.chinese_zodiac_animal:
+                        if user_chinese_animal.lower() == fp.chinese_zodiac_animal.lower():
+                            matches_list.append(f"Chinese Zodiac ({user_chinese_animal})")
+                    
+                    return matches_list
+                
+                matching_factors = extract_all_matching_factors_internal(chart_data, fp, fp_planetary, fp_chart)
+                
+                matches.append({
+                    "famous_person": fp,
+                    "similarity_score": comprehensive_score,
+                    "match_reasons": all_reasons,
+                    "match_type": "strict" if strict_match else ("aspect" if aspect_match else "stellium"),
+                    "matching_factors": matching_factors
+                })
+        
+        # Sort and limit
+        def sort_key(m):
+            type_priority = {"strict": 3, "aspect": 2, "stellium": 1}.get(m["match_type"], 0)
+            return (type_priority, m["similarity_score"])
+        
+        matches.sort(key=sort_key, reverse=True)
+        top_matches = matches[:limit]
+        
+        # Format response
+        result = []
+        for match in top_matches:
+            fp = match["famous_person"]
+            result.append({
+                "name": fp.name,
+                "occupation": fp.occupation,
+                "similarity_score": round(match["similarity_score"], 1),
+                "matching_factors": match.get("matching_factors", []),
+                "birth_date": f"{fp.birth_month}/{fp.birth_day}/{fp.birth_year}",
+                "birth_location": fp.birth_location,
+            })
+        
+        return {
+            "matches": result,
+            "total_compared": len(famous_people),
+            "matches_found": len(result)
+        }
+    
+    except Exception as e:
+        logger.error(f"Error in find_similar_famous_people_internal: {e}", exc_info=True)
+        return {"matches": [], "total_compared": 0, "matches_found": 0}

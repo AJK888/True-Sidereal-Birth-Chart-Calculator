@@ -91,8 +91,7 @@ def has_active_subscription(user, db: Session) -> bool:
 def check_subscription_access(user, db: Session, admin_secret: Optional[str] = None) -> tuple[bool, str]:
     """
     Check if user has subscription access, with optional FRIENDS_AND_FAMILY_KEY bypass.
-    For full readings: requires reading purchase or subscription.
-    For chat: requires reading purchase (free month) or active subscription.
+    FRIENDS_AND_FAMILY_KEY bypasses all payment requirements.
     
     Args:
         user: User database object (can be None)
@@ -103,24 +102,19 @@ def check_subscription_access(user, db: Session, admin_secret: Optional[str] = N
         Tuple of (has_access: bool, reason: str)
     """
     # Check FRIENDS_AND_FAMILY_KEY bypass FIRST (works even without logged-in user)
+    # This bypasses ALL payment requirements
     ADMIN_SECRET_KEY = os.getenv("FRIENDS_AND_FAMILY_KEY")
     if admin_secret and ADMIN_SECRET_KEY and admin_secret == ADMIN_SECRET_KEY:
         # Log admin bypass usage (logging happens in endpoint, not here)
         return True, "admin_bypass"
     
-    # If no user, require subscription (admin bypass already checked above)
+    # For now, allow all access (Stripe requirements removed)
+    # If no user, still allow (for friends and family key users)
     if not user:
-        return False, "User not authenticated"
+        return True, "no_auth_required"
     
-    # Check subscription or free month
-    if has_active_subscription(user, db):
-        # Determine the reason
-        if user.has_purchased_reading and user.free_chat_month_end_date and user.free_chat_month_end_date > datetime.utcnow():
-            return True, "free_month"
-        elif user.subscription_status == "active":
-            return True, "active_subscription"
-    
-    return False, "no_subscription"
+    # Allow all authenticated users access (no payment required)
+    return True, "free_access"
 
 
 # ============================================================================

@@ -224,6 +224,7 @@ PDF_SECTIONS = [
     {"key": "aspects", "title": "Major Life Dynamics: The Tightest Aspects & Patterns", "style": "major", "bullets": False},
     {"key": "shadow", "title": "Shadow, Contradictions & Growth Edges", "style": "major", "bullets": False},
     {"key": "owners_manual", "title": "Owner's Manual: Final Integration", "style": "major", "bullets": False},
+    {"key": "famous_people", "title": "Famous People & Chart Similarities", "style": "major", "bullets": False},
     {"key": "action_checklist", "title": "Action Checklist", "style": "subsection", "bullets": True},
 ]
 
@@ -241,6 +242,7 @@ SECTION_PATTERNS = {
     "aspects": [r"major life dynamics.*aspects", r"tightest aspects.*patterns", r"aspects.*patterns"],
     "shadow": [r"shadow.*contradictions.*growth", r"shadow.*growth edges", r"contradictions.*growth"],
     "owners_manual": [r"owner'?s manual.*integration", r"final integration", r"owner'?s manual", r"operating system"],
+    "famous_people": [r"famous people.*chart similarities", r"famous people.*similarities", r"chart similarities.*famous"],
     "action_checklist": [r"action checklist", r"checklist:?\s*$"],
 }
 
@@ -962,6 +964,8 @@ def format_chart_text(chart_data: Dict[str, Any], chart_type: str) -> str:
             line = f"{p.get('name')}: {p.get('position', 'N/A')}"
             if p.get('retrograde'):
                 line += " (Rx)"
+            if p.get('house_info'):
+                line += f" {p.get('house_info')}"
             output.append(line)
         
         output.append("")
@@ -977,6 +981,8 @@ def format_chart_text(chart_data: Dict[str, Any], chart_type: str) -> str:
             line = f"{p.get('name')}: {p.get('position', 'N/A')}"
             if p.get('retrograde'):
                 line += " (Rx)"
+            if p.get('house_info'):
+                line += f" {p.get('house_info')}"
             output.append(line)
         
         output.append("")
