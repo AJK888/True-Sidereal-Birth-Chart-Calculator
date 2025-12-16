@@ -538,16 +538,11 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
         # Dominant Element is NOT included in scoring or matching_factors per user requirements
         
         # ========================================================================
-        # CALCULATE FINAL SCORE
+        # CALCULATE FINAL SCORE (RAW SYNTHESIS SCORE)
         # ========================================================================
-        
-        # Normalize to 0-100 scale based on maximum possible score
-        if max_possible_score > 0:
-            normalized_score = (score / max_possible_score) * 100.0
-        else:
-            # If max_possible_score is 0, it means no planetary placements were found to compare
-            # This could happen if chart data structure is unexpected
-            # Log this for debugging
+        # Return the raw additive score (no normalization to percentage).
+        # This reflects the exact weighting scheme (planets + numerology + zodiac + aspects).
+        if max_possible_score == 0:
             logger.warning(
                 f"max_possible_score is 0 for {famous_person.name if famous_person else 'unknown'}. "
                 f"Score: {score}, "
@@ -556,12 +551,10 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
                 f"FP has placements: {bool(fp_planetary_placements)}, "
                 f"FP has chart: {bool(fp_chart)}"
             )
-            # If we have matches (strict/aspect/stellium), give a minimum score
-            # Otherwise return 0
-            normalized_score = 0.0
+            return 0.0
         
-        result = min(normalized_score, 100.0)
-        return result
+        # Cap at max_possible_score just in case
+        return min(score, max_possible_score)
     
     except Exception as e:
         logger.error(f"Error calculating comprehensive similarity: {e}", exc_info=True)
