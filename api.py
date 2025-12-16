@@ -3376,7 +3376,14 @@ WHEN ASKED ABOUT SERIOUS MATTERS:
 Remember: Your purpose is to facilitate self-reflection and exploration through the symbolic language of astrology. You illuminate possibilities; the user decides what resonates and what to do with that understanding."""
 
 
-async def get_gemini_chat_response(chart_data: dict, reading: Optional[str], conversation_history: List[dict], user_message: str, chart_name: str = "User") -> str:
+async def get_gemini_chat_response(
+    chart_data: dict,
+    reading: Optional[str],
+    conversation_history: List[dict],
+    user_message: str,
+    chart_name: str = "User",
+    famous_matches: Optional[List[dict]] = None
+) -> str:
     """Generate a chat response using Gemini based on the user's chart.
     
     SECURITY: This function receives chart data that has already been verified
@@ -3418,12 +3425,31 @@ Reference this reading when answering questions - it contains deep insights abou
 === END OF PERSONALIZED READING ===
 """
     
+    # Include famous people matches (if available)
+    famous_matches_context = ""
+    if famous_matches:
+        top_famous = famous_matches[:10]  # limit for prompt size
+        lines = ["", "=== FAMOUS PEOPLE MATCHES FOR THIS CHART ==="]
+        for m in top_famous:
+            name = m.get("name", "Unknown")
+            occ = m.get("occupation") or ""
+            score = m.get("similarity_score")
+            score_str = f"{score}%" if isinstance(score, (int, float)) else "N/A"
+            factors = m.get("matching_factors", []) or []
+            header = f"- {name} ({occ}) – similarity: {score_str}".strip()
+            lines.append(header)
+            if factors:
+                lines.append(f"  Matching factors: {', '.join(factors)}")
+        lines.append("=== END OF FAMOUS PEOPLE MATCHES ===")
+        famous_matches_context = "\n".join(lines)
+    
     user_prompt = f"""=== CHART OWNER ===
 You are speaking directly with the chart owner about THEIR chart. All data below belongs to them.
 
 === CHART DATA ===
 {chart_summary}
 {reading_context}
+{famous_matches_context}
 {conversation_context}
 
 === USER'S CURRENT QUESTION ===
@@ -3511,16 +3537,30 @@ async def send_chat_message_endpoint(
     
     # Parse chart data
     chart_data = json.loads(chart.chart_data_json) if chart.chart_data_json else {}
-    
+
+    # Compute famous-people matches for this chart so chat AI can reference them
+    famous_matches: List[dict] = []
     try:
-        # Get AI response - passing verified user's chart data
+        if chart_data:
+            matches_result = await find_similar_famous_people_internal(
+                chart_data=chart_data,
+                limit=30,
+                db=db,
+            )
+            famous_matches = matches_result.get("matches", []) or []
+    except Exception as e:
+        logger.warning(f"Could not compute famous people matches for chat context: {e}")
+
+    try:
+        # Get AI response - passing verified user's chart data and famous matches
         # Security: chart ownership already verified above (user_id check)
         ai_response = await get_gemini_chat_response(
             chart_data=chart_data,
             reading=chart.ai_reading,
             conversation_history=conversation_history,
             user_message=data.message,
-            chart_name=chart.chart_name
+            chart_name=chart.chart_name,
+            famous_matches=famous_matches,
         )
         
         # Save AI response
