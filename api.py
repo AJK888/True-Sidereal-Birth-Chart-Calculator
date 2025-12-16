@@ -3921,13 +3921,22 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
         # DOMINANT ELEMENT
         # ========================================================================
         
-        # Dominant Element - weight: 2 points
-        user_dom_elem = user_chart_data.get('sidereal_chart_analysis', {}).get('dominant_element')
-        fp_dom_elem = fp_chart.get('sidereal_chart_analysis', {}).get('dominant_element')
+        # Dominant Element - Sidereal (weight: 2 points)
+        user_dom_elem_s = user_chart_data.get('sidereal_chart_analysis', {}).get('dominant_element')
+        fp_dom_elem_s = fp_chart.get('sidereal_chart_analysis', {}).get('dominant_element')
         
-        if user_dom_elem and fp_dom_elem:
+        if user_dom_elem_s and fp_dom_elem_s:
             max_possible_score += 2.0
-            if user_dom_elem.lower() == fp_dom_elem.lower():
+            if user_dom_elem_s.lower() == fp_dom_elem_s.lower():
+                score += 2.0
+        
+        # Dominant Element - Tropical (weight: 2 points)
+        user_dom_elem_t = user_chart_data.get('tropical_chart_analysis', {}).get('dominant_element')
+        fp_dom_elem_t = fp_chart.get('tropical_chart_analysis', {}).get('dominant_element')
+        
+        if user_dom_elem_t and fp_dom_elem_t:
+            max_possible_score += 2.0
+            if user_dom_elem_t.lower() == fp_dom_elem_t.lower():
                 score += 2.0
         
         # ========================================================================
@@ -4138,13 +4147,22 @@ def calculate_chart_similarity(user_chart_data: dict, famous_person: FamousPerso
         # DOMINANT ELEMENT
         # ========================================================================
         
-        # Dominant Element - weight: 2 points
-        user_dom_elem = user_chart_data.get('sidereal_chart_analysis', {}).get('dominant_element')
-        fp_dom_elem = fp_chart.get('sidereal_chart_analysis', {}).get('dominant_element')
+        # Dominant Element - Sidereal (weight: 2 points)
+        user_dom_elem_s = user_chart_data.get('sidereal_chart_analysis', {}).get('dominant_element')
+        fp_dom_elem_s = fp_chart.get('sidereal_chart_analysis', {}).get('dominant_element')
         
-        if user_dom_elem and fp_dom_elem:
+        if user_dom_elem_s and fp_dom_elem_s:
             max_possible_score += 2.0
-            if user_dom_elem.lower() == fp_dom_elem.lower():
+            if user_dom_elem_s.lower() == fp_dom_elem_s.lower():
+                score += 2.0
+        
+        # Dominant Element - Tropical (weight: 2 points)
+        user_dom_elem_t = user_chart_data.get('tropical_chart_analysis', {}).get('dominant_element')
+        fp_dom_elem_t = fp_chart.get('tropical_chart_analysis', {}).get('dominant_element')
+        
+        if user_dom_elem_t and fp_dom_elem_t:
+            max_possible_score += 2.0
+            if user_dom_elem_t.lower() == fp_dom_elem_t.lower():
                 score += 2.0
         
         # ========================================================================
