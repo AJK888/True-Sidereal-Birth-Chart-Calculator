@@ -3585,6 +3585,56 @@ async def create_subscription_checkout_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/webhooks/render-deploy")
+async def render_deploy_webhook(request: Request):
+    """Handle Render deployment webhook to trigger webpage deployment.
+    
+    This endpoint is called by Render when the API deployment completes.
+    It then triggers a deployment of the webpage service using Render's Deploy Hook URL.
+    """
+    try:
+        # Get webpage deploy hook URL from environment
+        WEBPAGE_DEPLOY_HOOK_URL = os.getenv("WEBPAGE_DEPLOY_HOOK_URL")
+        
+        if not WEBPAGE_DEPLOY_HOOK_URL:
+            logger.warning("Webpage deploy hook URL not configured. Skipping webpage deployment trigger.")
+            return {"status": "skipped", "message": "Webpage deploy hook URL not configured"}
+        
+        # Trigger webpage deployment using Render's Deploy Hook
+        response = requests.post(
+            WEBPAGE_DEPLOY_HOOK_URL,
+            timeout=10
+        )
+        
+        if response.status_code == 200 or response.status_code == 201:
+            logger.info(f"Successfully triggered webpage deployment via deploy hook. Status: {response.status_code}")
+            return {
+                "status": "success",
+                "message": "Webpage deployment triggered",
+                "response_status": response.status_code
+            }
+        else:
+            logger.error(f"Failed to trigger webpage deployment. Status: {response.status_code}, Response: {response.text}")
+            return {
+                "status": "error",
+                "message": f"Failed to trigger deployment: {response.status_code}",
+                "error": response.text[:500]  # Limit error message length
+            }
+    
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Network error triggering webpage deployment: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": f"Network error: {str(e)}"
+        }
+    except Exception as e:
+        logger.error(f"Error triggering webpage deployment: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": f"Error: {str(e)}"
+        }
+
+
 @app.post("/api/webhooks/stripe")
 async def stripe_webhook_endpoint(request: Request, db: Session = Depends(get_db)):
     """Handle Stripe webhook events for subscriptions."""
