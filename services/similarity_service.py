@@ -505,8 +505,18 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
         # NUMEROLOGY
         # ========================================================================
         
+        # Parse numerology if it's a string (JSON)
+        user_numerology = user_chart_data.get('numerology', {})
+        if isinstance(user_numerology, str):
+            try:
+                user_numerology = json.loads(user_numerology)
+            except:
+                user_numerology = {}
+        if not isinstance(user_numerology, dict):
+            user_numerology = {}
+        
         # Life Path Number - weight: 10 points
-        user_life_path = user_chart_data.get('numerology', {}).get('life_path_number')
+        user_life_path = user_numerology.get('life_path_number')
         fp_life_path = famous_person.life_path_number
         
         if user_life_path and fp_life_path:
@@ -518,7 +528,7 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
                 score += 10.0
         
         # Day Number - weight: 10 points
-        user_day_num = user_chart_data.get('numerology', {}).get('day_number')
+        user_day_num = user_numerology.get('day_number')
         fp_day_num = famous_person.day_number
         
         if user_day_num and fp_day_num:
@@ -533,8 +543,18 @@ def calculate_comprehensive_similarity_score(user_chart_data: dict, famous_perso
         # CHINESE ZODIAC
         # ========================================================================
         
+        # Parse chinese_zodiac if it's a string (JSON)
+        user_chinese_zodiac = user_chart_data.get('chinese_zodiac', {})
+        if isinstance(user_chinese_zodiac, str):
+            try:
+                user_chinese_zodiac = json.loads(user_chinese_zodiac)
+            except:
+                user_chinese_zodiac = {}
+        if not isinstance(user_chinese_zodiac, dict):
+            user_chinese_zodiac = {}
+        
         # Chinese Zodiac Animal - weight: 10 points
-        user_chinese_animal = user_chart_data.get('chinese_zodiac', {}).get('animal')
+        user_chinese_animal = user_chinese_zodiac.get('animal')
         fp_chinese_animal = famous_person.chinese_zodiac_animal
         
         if user_chinese_animal and fp_chinese_animal:
