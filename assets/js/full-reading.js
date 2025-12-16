@@ -5,43 +5,78 @@ const FullReadingManager = {
 	conversationId: null,
 	
 	init() {
-		// Get chart_hash from URL
-		const urlParams = new URLSearchParams(window.location.search);
-		this.chartHash = urlParams.get('chart_hash');
-		
-		if (!this.chartHash) {
-			document.getElementById('loading-message').innerHTML = `
-				<h2>No Chart Found</h2>
-				<p>Please generate a chart first, then access your full reading.</p>
-				<a href="index.html" class="button primary">Go to Calculator</a>
-			`;
-			return;
-		}
-		
-		// Check authentication
-		if (typeof AuthManager !== 'undefined' && AuthManager.isAuthenticated && AuthManager.isAuthenticated()) {
-			this.loadFullReading();
-		} else {
-			// Show signup prompt
-			document.getElementById('loading-message').style.display = 'none';
-			document.getElementById('auth-required').style.display = 'block';
+		// Wait for AuthManager to be available
+		const checkAuthManager = () => {
+			if (typeof AuthManager === 'undefined') {
+				// Wait a bit more for AuthManager to load
+				setTimeout(checkAuthManager, 100);
+				return;
+			}
 			
-			document.getElementById('signup-btn').addEventListener('click', () => {
-				if (typeof AuthManager !== 'undefined') {
-					// Store chart_hash in localStorage so we can save chart after signup
-					if (this.chartHash) {
-						localStorage.setItem('pending_chart_hash', this.chartHash);
-					}
-					AuthManager.showSignupModal();
-					// Listen for successful signup
-					window.addEventListener('auth-success', () => {
-						// Try to save chart if we have pending chart data
-						this.savePendingChart();
-						this.loadFullReading();
+			// Get chart_hash from URL
+			const urlParams = new URLSearchParams(window.location.search);
+			this.chartHash = urlParams.get('chart_hash');
+			
+			if (!this.chartHash) {
+				document.getElementById('loading-message').innerHTML = `
+					<h2>No Chart Found</h2>
+					<p>Please generate a chart first, then access your full reading.</p>
+					<a href="index.html" class="button primary">Go to Calculator</a>
+				`;
+				return;
+			}
+			
+			// Check authentication
+			if (AuthManager.isAuthenticated && AuthManager.isAuthenticated()) {
+				this.loadFullReading();
+			} else {
+				// Show signup prompt
+				document.getElementById('loading-message').style.display = 'none';
+				document.getElementById('auth-required').style.display = 'block';
+				
+				const signupBtn = document.getElementById('signup-btn');
+				const loginBtn = document.getElementById('login-btn');
+				
+				if (signupBtn) {
+					// Remove any existing listeners
+					const newSignupBtn = signupBtn.cloneNode(true);
+					signupBtn.parentNode.replaceChild(newSignupBtn, signupBtn);
+					
+					newSignupBtn.addEventListener('click', () => {
+						// Store chart_hash in localStorage so we can save chart after signup
+						if (this.chartHash) {
+							localStorage.setItem('pending_chart_hash', this.chartHash);
+						}
+						AuthManager.showSignupModal();
+						// Listen for successful signup
+						window.addEventListener('auth-success', () => {
+							// Try to save chart if we have pending chart data
+							this.savePendingChart();
+							this.loadFullReading();
+						}, { once: true }); // Use once: true to prevent multiple listeners
 					});
 				}
-			});
-		}
+				
+				if (loginBtn) {
+					// Remove any existing listeners
+					const newLoginBtn = loginBtn.cloneNode(true);
+					loginBtn.parentNode.replaceChild(newLoginBtn, loginBtn);
+					
+					newLoginBtn.addEventListener('click', () => {
+						AuthManager.showLoginModal();
+						// Listen for successful login
+						window.addEventListener('auth-success', () => {
+							// Try to save chart if we have pending chart data
+							this.savePendingChart();
+							this.loadFullReading();
+						}, { once: true }); // Use once: true to prevent multiple listeners
+					});
+				}
+			}
+		};
+		
+		// Start checking for AuthManager
+		checkAuthManager();
 	},
 	
 	async loadFullReading() {

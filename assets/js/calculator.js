@@ -102,26 +102,9 @@ const AstrologyCalculator = {
 			// Find similar famous people (free feature)
 			this.findSimilarFamousPeople(chartData);
 			
-			// Check if full reading was automatically queued (for FRIENDS_AND_FAMILY_KEY users)
-			if (chartData.full_reading_queued && chartData.chart_hash) {
-				// Display processing message and start polling
-				this.geminiOutput.innerHTML = `
-					<div style="padding: 20px; background-color: #f0f7ff; border-left: 4px solid #1b6ca8; margin-bottom: 15px;">
-						<h3 style="margin-top: 0; color: #1b6ca8;">⏳ Your comprehensive full reading is being generated</h3>
-						<p style="margin-bottom: 10px; color: #2c3e50;"><strong style="color: #2c3e50;">Estimated time:</strong> up to 15 minutes</p>
-						<p style="margin-bottom: 0; color: #2c3e50;">Your reading will appear here when complete. You can also check your email.</p>
-						<p id="pollingStatus" style="margin-top: 10px; font-size: 0.85em; color: #666; font-style: italic;">Checking for completed reading...</p>
-					</div>
-				`;
-				if (this.copyReadingBtn) {
-					this.copyReadingBtn.style.display = 'none';
-				}
-				// Start polling for the completed reading
-				this.startPollingForReading(chartData.chart_hash);
-			} else {
-				// Fetch and display AI reading directly on the page (normal flow)
-				await this.fetchAndDisplayAIReading(chartData);
-			}
+			// Full reading is no longer displayed on main page
+			// Users should go to full-reading.html page to access their reading
+			// No need to fetch or display reading here
 		} catch (err) {
             // Display error and ensure loading state is off
 			this.resultsContainer.style.display = 'block';
@@ -1241,9 +1224,14 @@ const AstrologyCalculator = {
 		const resultsDiv = document.getElementById('famous-people-results');
 		if (!resultsDiv) return;
 		
+		// Sort matches by similarity score (highest to lowest) to ensure correct order
+		const sortedMatches = [...matches].sort((a, b) => {
+			return (b.similarity_score || 0) - (a.similarity_score || 0);
+		});
+		
 		let html = '';
 		
-		matches.forEach(match => {
+		sortedMatches.forEach(match => {
 			const similarityColor = match.similarity_score >= 70 ? '#4CAF50' : 
 			                       match.similarity_score >= 50 ? '#FF9800' : '#2196F3';
 			
