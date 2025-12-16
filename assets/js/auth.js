@@ -201,9 +201,11 @@ const AuthManager = {
         }
     },
     
-    async saveCurrentChart(chartData, reading, userInputs) {
+    async saveCurrentChart(chartData, reading, userInputs, silent = false) {
         if (!this.isLoggedIn()) {
-            this.showLoginModal();
+            if (!silent) {
+                this.showLoginModal();
+            }
             return;
         }
         
@@ -234,12 +236,16 @@ const AuthManager = {
                 throw new Error(data.detail || 'Failed to save chart');
             }
             
-            this.showNotification('Chart saved successfully!', 'success');
+            if (!silent) {
+                this.showNotification('Chart saved successfully!', 'success');
+            }
             await this.loadSavedCharts();
             
             return data.id;
         } catch (error) {
-            this.showNotification(error.message, 'error');
+            if (!silent) {
+                this.showNotification(error.message, 'error');
+            }
             throw error;
         }
     },

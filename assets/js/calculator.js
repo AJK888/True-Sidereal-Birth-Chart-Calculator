@@ -694,15 +694,21 @@ const AstrologyCalculator = {
 			}
 		}
 		
-        // Updated initial message for synchronous loading
-		this.geminiOutput.innerHTML = "Generating AI Synthesis... This deep analysis can take up to 10 minutes. Please do not leave this page while it loads.";
-		this.renderTextResults(chartData);
-
-		this.geminiTitle.parentElement.style.display = 'block';
-		this.resultsTitle.parentElement.style.display = 'block';
-        if(this.copyReadingBtn) { // Hide copy button initially
-            this.copyReadingBtn.style.display = 'none';
-        }
+		// Hide full reading section on main page
+		if (this.geminiTitle && this.geminiTitle.parentElement) {
+			this.geminiTitle.parentElement.style.display = 'none';
+		}
+		if (this.resultsTitle && this.resultsTitle.parentElement) {
+			this.resultsTitle.parentElement.style.display = 'none';
+		}
+		
+		// Add full reading advertisement section after snapshot
+		this.addFullReadingAdvertisement(chartData);
+		
+		// Auto-save chart if user is logged in
+		if (typeof AuthManager !== 'undefined' && AuthManager.isAuthenticated && AuthManager.isAuthenticated()) {
+			this.autoSaveChart(chartData);
+		}
 		
 		// Add save chart button if AuthManager is available
 		if (typeof AuthManager !== 'undefined') {
@@ -1241,6 +1247,18 @@ const AstrologyCalculator = {
 			const similarityColor = match.similarity_score >= 70 ? '#4CAF50' : 
 			                       match.similarity_score >= 50 ? '#FF9800' : '#2196F3';
 			
+			// Build matching factors list
+			let matchingFactorsHtml = '';
+			if (match.matching_factors && match.matching_factors.length > 0) {
+				matchingFactorsHtml = '<div style="margin-top: 1em; padding-top: 1em; border-top: 1px solid rgba(27, 108, 168, 0.3);">';
+				matchingFactorsHtml += '<p style="margin: 0.5em 0; font-size: 0.9em; font-weight: bold; color: #1b6ca8;">Matching Factors:</p>';
+				matchingFactorsHtml += '<ul style="margin: 0.5em 0; padding-left: 1.5em; list-style-type: disc;">';
+				match.matching_factors.forEach(factor => {
+					matchingFactorsHtml += `<li style="margin: 0.3em 0; font-size: 0.9em; color: rgba(255, 255, 255, 0.9);">${factor}</li>`;
+				});
+				matchingFactorsHtml += '</ul></div>';
+			}
+			
 			html += `
 				<div class="famous-person-card" style="
 					background: rgba(27, 108, 168, 0.1);
@@ -1266,9 +1284,8 @@ const AstrologyCalculator = {
 						<p style="margin: 0.3em 0; font-size: 0.9em;">
 							<strong>Born:</strong> ${match.birth_date} in ${match.birth_location}
 						</p>
-						${match.sun_sign_sidereal ? `<p style="margin: 0.3em 0; font-size: 0.9em;"><strong>Sun:</strong> ${match.sun_sign_sidereal} (Sidereal), ${match.sun_sign_tropical || 'N/A'} (Tropical)</p>` : ''}
-						${match.moon_sign_sidereal ? `<p style="margin: 0.3em 0; font-size: 0.9em;"><strong>Moon:</strong> ${match.moon_sign_sidereal} (Sidereal), ${match.moon_sign_tropical || 'N/A'} (Tropical)</p>` : ''}
 					</div>
+					${matchingFactorsHtml}
 					<a href="${match.wikipedia_url}" target="_blank" rel="noopener noreferrer" 
 					   style="
 						display: inline-block;
@@ -1306,6 +1323,137 @@ const AstrologyCalculator = {
 				}
 			`;
 			document.head.appendChild(style);
+		}
+	},
+	
+	addFullReadingAdvertisement(chartData) {
+		// Remove any existing advertisement
+		const existingAd = document.getElementById('full-reading-advertisement');
+		if (existingAd) {
+			existingAd.remove();
+		}
+		
+		// Create advertisement section
+		const adSection = document.createElement('div');
+		adSection.id = 'full-reading-advertisement';
+		adSection.className = 'result-section';
+		adSection.style.cssText = 'margin-top: 2em; padding: 2em; background: linear-gradient(135deg, rgba(27, 108, 168, 0.15) 0%, rgba(27, 108, 168, 0.05) 100%); border: 2px solid rgba(27, 108, 168, 0.3); border-radius: 12px;';
+		
+		const isAuthenticated = typeof AuthManager !== 'undefined' && AuthManager.isAuthenticated && AuthManager.isAuthenticated();
+		const hasSubscription = typeof AuthManager !== 'undefined' && AuthManager.hasActiveSubscription && AuthManager.hasActiveSubscription();
+		
+		if (isAuthenticated && hasSubscription) {
+			// User is logged in and has subscription - show link to full reading page
+			adSection.innerHTML = `
+				<header class="major" style="margin-bottom: 1.5em;">
+					<h2 style="color: #1b6ca8; margin-bottom: 0.5em;">✨ Get Your Complete Astrological Analysis</h2>
+					<p style="color: rgba(255, 255, 255, 0.9); font-size: 1.1em; margin: 0;">You have access to comprehensive full readings!</p>
+				</header>
+				<div style="margin: 1.5em 0;">
+					<p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 1em; line-height: 1.6;">
+						If you were impressed with this snapshot reading from just a glimpse of your chart, imagine what a comprehensive 15+ page full reading can reveal. 
+						Your full reading includes:
+					</p>
+					<ul style="color: rgba(255, 255, 255, 0.9); margin-left: 1.5em; line-height: 1.8;">
+						<li>Complete chart analysis covering all 12 houses and life domains</li>
+						<li>Deep dive into love, work, emotional life, and spiritual path</li>
+						<li>Analysis of your shadow patterns and growth edges</li>
+						<li>Famous people with similar charts and what you share</li>
+						<li>Interactive chatbot to ask questions about your chart</li>
+					</ul>
+				</div>
+				<div style="margin-top: 2em;">
+					<a href="full-reading.html?chart_hash=${chartData.chart_hash || ''}" class="button primary" style="display: inline-block; padding: 1em 2em; font-size: 1.1em; text-decoration: none;">
+						View Your Full Reading →
+					</a>
+				</div>
+			`;
+		} else {
+			// User not logged in or no subscription - show sign up/purchase CTA
+			adSection.innerHTML = `
+				<header class="major" style="margin-bottom: 1.5em;">
+					<h2 style="color: #1b6ca8; margin-bottom: 0.5em;">✨ Get Your Complete Astrological Analysis</h2>
+					<p style="color: rgba(255, 255, 255, 0.9); font-size: 1.1em; margin: 0;">If you were impressed with this snapshot, wait until you see your full reading!</p>
+				</header>
+				<div style="margin: 1.5em 0;">
+					<p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 1em; line-height: 1.6;">
+						This snapshot reading only scratches the surface. Your comprehensive full reading includes:
+					</p>
+					<ul style="color: rgba(255, 255, 255, 0.9); margin-left: 1.5em; line-height: 1.8;">
+						<li>Complete 15+ page analysis covering all 12 houses and life domains</li>
+						<li>Deep dive into love, work, emotional life, and spiritual path</li>
+						<li>Analysis of your shadow patterns and growth edges</li>
+						<li>Famous people with similar charts and what you share</li>
+						<li>Interactive chatbot to ask unlimited questions about your chart</li>
+					</ul>
+				</div>
+				<div style="margin-top: 2em; display: flex; gap: 1em; flex-wrap: wrap;">
+					<a href="full-reading.html?chart_hash=${chartData.chart_hash || ''}" class="button primary" style="display: inline-block; padding: 1em 2em; font-size: 1.1em; text-decoration: none;">
+						Create Account & Get Full Reading →
+					</a>
+					<p style="color: rgba(255, 255, 255, 0.7); margin: 0; align-self: center; font-size: 0.9em;">
+						Your chart will be automatically saved to your account
+					</p>
+				</div>
+			`;
+		}
+		
+		// Insert after snapshot section
+		const snapshotSection = document.getElementById('snapshot-title');
+		if (snapshotSection && snapshotSection.parentElement) {
+			snapshotSection.parentElement.insertAdjacentElement('afterend', adSection);
+		} else {
+			// Fallback: insert after results container
+			if (this.resultsContainer) {
+				this.resultsContainer.appendChild(adSection);
+			}
+		}
+	},
+	
+	async autoSaveChart(chartData) {
+		if (typeof AuthManager === 'undefined' || !AuthManager.isAuthenticated || !AuthManager.isAuthenticated()) {
+			return;
+		}
+		
+		try {
+			// Check if chart is already saved
+			const savedCharts = await AuthManager.getSavedCharts();
+			const chartHash = chartData.chart_hash;
+			
+			if (chartHash && savedCharts) {
+				// Check if any saved chart matches this hash
+				for (const chart of savedCharts) {
+					if (chart.chart_data_json) {
+						try {
+							const savedChartData = JSON.parse(chart.chart_data_json);
+							const savedHash = savedChartData.chart_hash;
+							if (savedHash === chartHash) {
+								console.log('Chart already saved, skipping auto-save');
+								return;
+							}
+						} catch (e) {
+							continue;
+						}
+					}
+				}
+			}
+			
+			// Get user inputs from stored global variable or extract from chartData
+			const userInputs = window.currentUserInputs || {
+				full_name: chartData.name || 'Unknown',
+				birth_date: `${chartData.birth_month || 1}/${chartData.birth_day || 1}/${chartData.birth_year || 2000}`,
+				birth_time: chartData.unknown_time ? '12:00' : `${chartData.birth_hour || 12}:${chartData.birth_minute || 0}`,
+				location: chartData.location || 'Unknown'
+			};
+			
+			// Auto-save the chart (silently, no notification)
+			const saveResult = await AuthManager.saveCurrentChart(chartData, null, userInputs, true);
+			if (saveResult) {
+				console.log('Chart automatically saved to account');
+			}
+		} catch (error) {
+			console.error('Error auto-saving chart:', error);
+			// Don't show error to user - this is a background operation
 		}
 	}
 };
