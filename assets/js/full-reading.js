@@ -13,23 +13,28 @@ const FullReadingManager = {
 				return;
 			}
 			
-			// Get chart_hash from URL
+			// Get chart_hash from URL (may or may not be present)
 			const urlParams = new URLSearchParams(window.location.search);
 			this.chartHash = urlParams.get('chart_hash');
 			
-			if (!this.chartHash) {
-				document.getElementById('loading-message').innerHTML = `
-					<h2>No Chart Found</h2>
-					<p>Please generate a chart first, then access your full reading.</p>
-					<a href="index.html" class="button primary">Go to Calculator</a>
-				`;
-				return;
-			}
+			// Wire up inline full-reading form (if present)
+			this.initInlineForm();
 			
 			// Check authentication
 			if (AuthManager.isLoggedIn && AuthManager.isLoggedIn()) {
-				// User is authenticated, load the reading
-				this.loadFullReading();
+				// User is authenticated, try to load existing reading if we have a chart_hash
+				if (this.chartHash) {
+					this.loadFullReading();
+				} else {
+					// No existing hash; prompt user to use the inline form
+					const loadingEl = document.getElementById('loading-message');
+					if (loadingEl) {
+						loadingEl.innerHTML = `
+							<h2>No Saved Full Reading Found</h2>
+							<p>You can generate a new complete reading using the form above.</p>
+						`;
+					}
+				}
 			} else {
 				// Show signup prompt
 				document.getElementById('loading-message').style.display = 'none';
@@ -78,6 +83,142 @@ const FullReadingManager = {
 		
 		// Start checking for AuthManager
 		checkAuthManager();
+	},
+	
+	initInlineForm() {
+		const form = document.getElementById('fullReadingForm');
+		if (!form) return;
+		
+		form.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			
+			try {
+				// Basic auth check: require login for full reading
+				if (!(typeof AuthManager !== 'undefined' && AuthManager.isLoggedIn && AuthManager.isLoggedIn())) {
+					document.getElementById('loading-message').style.display = 'none';
+					document.getElementById('auth-required').style.display = 'block';
+					return;
+				}
+				
+				const loadingEl = document.getElementById('loading-message');
+				if (loadingEl) {
+					loadingEl.style.display = 'block';
+					loadingEl.innerHTML = `
+						<h2>Queuing Your Full Reading...</h2>
+						<p>We are recalculating your chart and generating a fresh full report. This can take several minutes.</p>
+					`;
+				}
+				const readingContent = document.getElementById('reading-content');
+				if (readingContent) {
+					readingContent.style.display = 'none';
+				}
+				
+				// Parse birth date
+				const birthDateInput = form.querySelector("[name='birthDate']").value;
+				const birthDateParts = birthDateInput.split('/');
+				if (birthDateParts.length !== 3) {
+					throw new Error("Please enter the date in MM/DD/YYYY format.");
+				}
+				let [month, day, year] = birthDateParts.map(s => parseInt(s, 10));
+				
+				// Parse time unless unknown
+				let hour = 12;
+				let minute = 0;
+				const unknownTime = form.querySelector("[name='unknownTime']").checked;
+				if (!unknownTime) {
+					const timeInput = form.querySelector("[name='birthTime']").value;
+					const timeRegex = /(\d{1,2}):(\d{2})\s*(AM|PM)/i;
+					const timeMatch = timeInput.match(timeRegex);
+					if (!timeMatch) throw new Error("Please enter the time in HH:MM AM/PM format (e.g., 02:30 PM).");
+					
+					hour = parseInt(timeMatch[1], 10);
+					minute = parseInt(timeMatch[2], 10);
+					const ampm = timeMatch[3].toUpperCase();
+					if (ampm === 'PM' && hour < 12) hour += 12;
+					if (ampm === 'AM' && hour === 12) hour = 0;
+				}
+				
+				// Call calculate_chart to get chart_data
+				const calcRes = await fetch(this.API_BASE.replace('/onrender.com', '/onrender.com') + '/calculate_chart', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						full_name: form.querySelector("[name='fullName']").value,
+						year, month, day, hour, minute,
+						location: form.querySelector("[name='location']").value,
+						unknown_time: unknownTime,
+						user_email: form.querySelector("[name='userEmail']").value,
+						is_full_birth_name: form.querySelector("[name='isFullBirthName']").checked
+					})
+				});
+				
+				if (!calcRes.ok) {
+					const errData = await calcRes.json().catch(() => ({}));
+					throw new Error(errData.detail || `Chart calculation failed (${calcRes.status}).`);
+				}
+				
+				const chartData = await calcRes.json();
+				
+				// Queue full reading via /generate_reading
+				const userInputs = {
+					full_name: form.querySelector("[name='fullName']").value,
+					birth_date: birthDateInput,
+					birth_time: form.querySelector("[name='birthTime']").value,
+					location: form.querySelector("[name='location']").value,
+					user_email: form.querySelector("[name='userEmail']").value
+				};
+				
+				const readingRes = await fetch(`${this.API_BASE}/generate_reading`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						chart_data: chartData,
+						unknown_time: chartData.unknown_time,
+						user_inputs: userInputs,
+						chart_image_base64: null
+					})
+				});
+				
+				if (!readingRes.ok) {
+					const errData = await readingRes.json().catch(() => ({}));
+					throw new Error(errData.detail || `Failed to queue full reading (${readingRes.status}).`);
+				}
+				
+				const readingInfo = await readingRes.json();
+				if (readingInfo.chart_hash) {
+					this.chartHash = readingInfo.chart_hash;
+					
+					// Update URL so refresh uses the same hash
+					try {
+						const url = new URL(window.location.href);
+						url.searchParams.set('chart_hash', this.chartHash);
+						window.history.replaceState({}, '', url.toString());
+					} catch (e) {
+						console.warn('Could not update URL with chart_hash:', e);
+					}
+					
+					// Start polling for completed reading
+					this.loadFullReading();
+				}
+				
+				if (loadingEl) {
+					loadingEl.innerHTML = `
+						<h2>Your Reading is Being Generated</h2>
+						<p>This can take up to 15 minutes. We'll email you when it's ready.</p>
+						<p>You can check back here later or refresh the page.</p>
+					`;
+				}
+			} catch (error) {
+				console.error('Error starting full reading from inline form:', error);
+				const loadingEl = document.getElementById('loading-message');
+				if (loadingEl) {
+					loadingEl.innerHTML = `
+						<h2>Error Starting Full Reading</h2>
+						<p>${error.message}</p>
+					`;
+				}
+			}
+		});
 	},
 	
 	async loadFullReading() {

@@ -125,6 +125,62 @@
 			</section>
 
 			<div id="main">
+				<!-- Inline inputs so users can (re)enter their data and generate a full reading directly on this page -->
+				<section id="full-reading-inputs">
+					<div class="inner">
+						<header class="major">
+							<h2>Generate or Regenerate Your Full Reading</h2>
+						</header>
+						<p>
+							Re‑enter your birth details here to recalculate your complete report. Your full reading will also be
+							sent to the email address you provide.
+						</p>
+						<form id="fullReadingForm">
+							<div class="row gtr-uniform">
+								<div class="col-6 col-12-xsmall">
+									<label for="fr-fullName">Full Name</label>
+									<input type="text" name="fullName" id="fr-fullName" placeholder="Alexander James Kostas" required />
+								</div>
+								<div class="col-6 col-12-xsmall">
+									<label for="fr-birthDate">Birth Date</label>
+									<input type="text" name="birthDate" id="fr-birthDate" placeholder="MM/DD/YYYY" required />
+								</div>
+								<div class="col-6 col-12-xsmall">
+									<label for="fr-birthTime">Birth Time</label>
+									<input type="text" name="birthTime" id="fr-birthTime" placeholder="02:30 PM" required />
+									<div style="margin-top: 0.5em;">
+										<input type="checkbox" id="fr-unknownTime" name="unknownTime" />
+										<label for="fr-unknownTime">I don't know my exact birth time</label>
+									</div>
+								</div>
+								<div class="col-6 col-12-xsmall">
+									<label for="fr-location">Birth Location</label>
+									<input type="text" name="location" id="fr-location" placeholder="City, State/Region, Country" required />
+								</div>
+								<div class="col-6 col-12-xsmall">
+									<label for="fr-userEmail">Your Email</label>
+									<input type="email" name="userEmail" id="fr-userEmail" placeholder="you@example.com" required />
+								</div>
+								<div class="col-12">
+									<input type="checkbox" id="fr-isFullBirthName" name="isFullBirthName" />
+									<label for="fr-isFullBirthName">
+										This is my full birth name (including middle name) – calculate my complete name numerology
+									</label>
+								</div>
+								<div class="col-12">
+									<ul class="actions">
+										<li>
+											<button type="submit" class="primary" id="fr-generate-btn">
+												Generate / Regenerate Full Reading
+											</button>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</form>
+					</div>
+				</section>
+
 				<section id="full-reading-content" class="tiles">
 					<div class="inner">
 						<div id="loading-message" style="text-align: center; padding: 3em;">
