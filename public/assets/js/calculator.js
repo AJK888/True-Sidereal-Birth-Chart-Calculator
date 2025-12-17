@@ -282,9 +282,6 @@ const AstrologyCalculator = {
                             <h3 style="margin-top: 0; color: #1b6ca8;">Unlock Full Readings & Premium Features</h3>
                             <p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 1em;">${message}</p>
                             <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 1em;">Good news! You can still get <strong>unlimited free snapshot readings</strong> with your chart calculation. The snapshot provides quick insights into your core patterns.</p>
-                            <div style="margin-top: 1.5em;">
-                                <a href="#pricing-section" class="button primary" onclick="window.scrollTo({top: document.getElementById('pricing-section').offsetTop - 100, behavior: 'smooth'})">View Pricing & Subscribe</a>
-                            </div>
                         </div>
                     `;
                     if (this.copyReadingBtn) {
@@ -371,9 +368,6 @@ const AstrologyCalculator = {
 								<h3 style="margin-top: 0; color: #1b6ca8;">Subscription Required</h3>
 								<p style="color: rgba(255, 255, 255, 0.9);">${readingResult.detail.message || 'A monthly subscription is required for comprehensive full readings.'}</p>
 								<p style="color: rgba(255, 255, 255, 0.7); margin-top: 1em;">Good news! You can still get <strong>unlimited free snapshot readings</strong> with your chart calculation. The snapshot provides quick insights into your core patterns.</p>
-								<div style="margin-top: 1.5em;">
-									<a href="#pricing-section" class="button primary" onclick="window.scrollTo({top: document.getElementById('pricing-section').offsetTop - 100, behavior: 'smooth'})">View Pricing & Subscribe</a>
-								</div>
 							</div>
 						`;
 						if (typeof AuthManager !== 'undefined' && AuthManager.showUpgradePrompt) {
@@ -673,21 +667,7 @@ const AstrologyCalculator = {
 			}
 			if (this.snapshotOutput) {
 				const snapshotText = String(chartData.snapshot_reading).replace(/\n/g, '<br>');
-				// Check if user has subscription (if AuthManager is available)
-				const hasSubscription = typeof AuthManager !== 'undefined' && AuthManager.hasActiveSubscription && AuthManager.hasActiveSubscription();
-				
-				if (!hasSubscription) {
-					// Add upgrade prompt after snapshot
-					this.snapshotOutput.innerHTML = snapshotText + `
-						<div style="margin-top: 2em; padding: 1.5em; background-color: rgba(27, 108, 168, 0.1); border-left: 4px solid #1b6ca8; border-radius: 4px;">
-							<h4 style="margin-top: 0; color: #1b6ca8;">Want a Deeper Analysis?</h4>
-							<p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 1em;">This is your free snapshot reading. Subscribe to get a comprehensive 15+ page full reading covering all aspects of your chart, plus unlimited chat conversations with our AI astrologer.</p>
-							<a href="#pricing-section" class="button primary" onclick="window.scrollTo({top: document.getElementById('pricing-section').offsetTop - 100, behavior: 'smooth'})">View Pricing & Subscribe</a>
-						</div>
-					`;
-				} else {
-					this.snapshotOutput.innerHTML = snapshotText;
-				}
+				this.snapshotOutput.innerHTML = snapshotText;
 				console.log("Snapshot output populated");
 			} else {
 				console.error("Snapshot output element not found!");
