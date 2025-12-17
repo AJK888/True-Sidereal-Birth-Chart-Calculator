@@ -636,6 +636,17 @@ def _blueprint_to_json(blueprint: Dict[str, Any]) -> str:
 
 async def g0_global_blueprint(llm: Gemini3Client, serialized_chart: dict, chart_summary: str, unknown_time: bool) -> Dict[str, Any]:
     """Gemini Call 0 - produce JSON planning blueprint with forensic depth."""
+    import time
+    step_start_time = time.time()
+    logger.info("="*80)
+    logger.info("STEP 0: GLOBAL BLUEPRINT GENERATION")
+    logger.info("="*80)
+    logger.info(f"Starting G0_global_blueprint - Chart summary length: {len(chart_summary)} chars")
+    logger.info(f"Unknown time: {unknown_time}")
+    
+    # Track cost before call
+    cost_before = llm.total_cost_usd
+    call_count_before = llm.call_count
     system_prompt = """You are a master astrological analyst performing FORENSIC CHART SYNTHESIS. Your job is to find the hidden architecture of this person's psyche by weighing every signal.
 
 WEIGHTING HIERARCHY (use this to resolve conflicts):
@@ -701,12 +712,26 @@ Return ONLY the JSON object."""
         call_label="G0_global_blueprint"
     )
     
+    # Calculate step cost and timing
+    step_duration = time.time() - step_start_time
+    cost_after = llm.total_cost_usd
+    step_cost = cost_after - cost_before
+    call_count_after = llm.call_count
+    step_calls = call_count_after - call_count_before
+    
+    logger.info(f"G0_global_blueprint completed in {step_duration:.2f} seconds")
+    logger.info(f"G0 API calls made: {step_calls}")
+    logger.info(f"G0 step cost: ${step_cost:.6f} USD")
+    logger.info(f"G0 response length: {len(response_text)} characters")
+    
     blueprint_parsed = parse_json_response(response_text, GlobalReadingBlueprint)
     if blueprint_parsed:
         logger.info("G0 parsed blueprint successfully")
+        logger.info("="*80)
         return {"parsed": blueprint_parsed, "raw_text": response_text}
     
     logger.warning("G0 blueprint parsing failed - returning raw JSON text fallback")
+    logger.info("="*80)
     return {"parsed": None, "raw_text": response_text}
 
 
@@ -718,6 +743,18 @@ async def g1_natal_foundation(
     unknown_time: bool
 ) -> str:
     """Gemini Call 1 - Natal foundations + personal/social planets."""
+    import time
+    step_start_time = time.time()
+    logger.info("="*80)
+    logger.info("STEP 1: NATAL FOUNDATION GENERATION")
+    logger.info("="*80)
+    logger.info(f"Starting G1_natal_foundation - Chart summary length: {len(chart_summary)} chars")
+    logger.info(f"Blueprint parsed: {blueprint.get('parsed') is not None}")
+    logger.info(f"Unknown time: {unknown_time}")
+    
+    # Track cost before call
+    cost_before = llm.total_cost_usd
+    call_count_before = llm.call_count
     blueprint_json = _blueprint_to_json(blueprint)
     serialized_chart_json = json.dumps(serialized_chart, indent=2)
     time_note = "After the Snapshot, include a short 'What We Know / What We Don't Know' paragraph clarifying birth time is unknown. Avoid houses/angles entirely." if unknown_time else "You may cite houses and angles explicitly."
@@ -930,13 +967,28 @@ Blueprint notes for Snapshot (use them to prioritize chart factors):
 
 8. Keep Action Checklist for later sections."""
     
-    return await llm.generate(
+    response_text = await llm.generate(
         system=system_prompt,
         user=user_prompt,
         max_output_tokens=81920,
         temperature=0.7,
         call_label="G1_natal_foundation"
     )
+    
+    # Calculate step cost and timing
+    step_duration = time.time() - step_start_time
+    cost_after = llm.total_cost_usd
+    step_cost = cost_after - cost_before
+    call_count_after = llm.call_count
+    step_calls = call_count_after - call_count_before
+    
+    logger.info(f"G1_natal_foundation completed in {step_duration:.2f} seconds")
+    logger.info(f"G1 API calls made: {step_calls}")
+    logger.info(f"G1 step cost: ${step_cost:.6f} USD")
+    logger.info(f"G1 response length: {len(response_text)} characters")
+    logger.info("="*80)
+    
+    return response_text
 
 
 async def g2_deep_dive_chapters(
@@ -948,6 +1000,18 @@ async def g2_deep_dive_chapters(
     unknown_time: bool
 ) -> str:
     """Gemini Call 2 - Themed chapters, aspects, shadow, owner's manual."""
+    import time
+    step_start_time = time.time()
+    logger.info("="*80)
+    logger.info("STEP 2: DEEP DIVE CHAPTERS GENERATION")
+    logger.info("="*80)
+    logger.info(f"Starting G2_deep_dive_chapters - Chart summary length: {len(chart_summary)} chars")
+    logger.info(f"Natal sections length: {len(natal_sections)} characters")
+    logger.info(f"Unknown time: {unknown_time}")
+    
+    # Track cost before call
+    cost_before = llm.total_cost_usd
+    call_count_before = llm.call_count
     blueprint_json = _blueprint_to_json(blueprint)
     serialized_chart_json = json.dumps(serialized_chart, indent=2)
     
@@ -1163,13 +1227,28 @@ Unknown time handling: {'Do NOT cite houses/angles; speak in terms of domains, s
 
 FINAL INSTRUCTION: The reading should end with a single paragraph that returns to the life_thesis from the blueprint—the ONE sentence that captures their entire journey. This creates closure and makes the reader feel the coherence of the entire analysis."""
     
-    return await llm.generate(
+    response_text = await llm.generate(
         system=system_prompt,
         user=user_prompt,
         max_output_tokens=81920,
         temperature=0.7,
         call_label="G2_deep_dive_chapters"
     )
+    
+    # Calculate step cost and timing
+    step_duration = time.time() - step_start_time
+    cost_after = llm.total_cost_usd
+    step_cost = cost_after - cost_before
+    call_count_after = llm.call_count
+    step_calls = call_count_after - call_count_before
+    
+    logger.info(f"G2_deep_dive_chapters completed in {step_duration:.2f} seconds")
+    logger.info(f"G2 API calls made: {step_calls}")
+    logger.info(f"G2 step cost: ${step_cost:.6f} USD")
+    logger.info(f"G2 response length: {len(response_text)} characters")
+    logger.info("="*80)
+    
+    return response_text
 
 
 async def g3_polish_full_reading(
@@ -1178,6 +1257,17 @@ async def g3_polish_full_reading(
     chart_summary: str
 ) -> str:
     """Gemini Call 3 - polish entire reading for forensic coherence."""
+    import time
+    step_start_time = time.time()
+    logger.info("="*80)
+    logger.info("STEP 3: POLISH FULL READING")
+    logger.info("="*80)
+    logger.info(f"Starting G3_polish_full_reading - Full draft length: {len(full_draft)} characters")
+    logger.info(f"Chart summary length: {len(chart_summary)} chars")
+    
+    # Track cost before call
+    cost_before = llm.total_cost_usd
+    call_count_before = llm.call_count
     system_prompt = """You are the final editor ensuring this reading feels like a FORENSIC RECONSTRUCTION—coherent, weighted, and undeniably specific.
 
 COHERENCE CHECK:
@@ -1215,13 +1305,28 @@ Return the polished reading. Ensure:
 3. Evidence is specific and weighted
 4. The reading feels like a forensic reconstruction, not a horoscope"""
     
-    return await llm.generate(
+    response_text = await llm.generate(
         system=system_prompt,
         user=user_prompt,
         max_output_tokens=81920,
         temperature=0.4,
         call_label="G3_polish_full_reading"
     )
+    
+    # Calculate step cost and timing
+    step_duration = time.time() - step_start_time
+    cost_after = llm.total_cost_usd
+    step_cost = cost_after - cost_before
+    call_count_after = llm.call_count
+    step_calls = call_count_after - call_count_before
+    
+    logger.info(f"G3_polish_full_reading completed in {step_duration:.2f} seconds")
+    logger.info(f"G3 API calls made: {step_calls}")
+    logger.info(f"G3 step cost: ${step_cost:.6f} USD")
+    logger.info(f"G3 response length: {len(response_text)} characters")
+    logger.info("="*80)
+    
+    return response_text
 
 
 async def g4_famous_people_section(
@@ -1232,10 +1337,18 @@ async def g4_famous_people_section(
     unknown_time: bool
 ) -> str:
     """Gemini Call 4 - Generate famous people comparison section."""
-    logger.info("="*60)
-    logger.info("G4: Generating Famous People Section")
-    logger.info(f"Number of matches: {len(famous_people_matches)}")
-    logger.info("="*60)
+    import time
+    step_start_time = time.time()
+    logger.info("="*80)
+    logger.info("STEP 4: FAMOUS PEOPLE SECTION GENERATION")
+    logger.info("="*80)
+    logger.info(f"Starting G4_famous_people_section - Number of matches: {len(famous_people_matches)}")
+    logger.info(f"Chart summary length: {len(chart_summary)} chars")
+    logger.info(f"Unknown time: {unknown_time}")
+    
+    # Track cost before call
+    cost_before = llm.total_cost_usd
+    call_count_before = llm.call_count
     
     # Format famous people data for the LLM - limit to top 8
     famous_people_data = []
@@ -1328,13 +1441,28 @@ Write a section titled "Famous People & Chart Similarities" that:
 - Use second person throughout
 - No markdown, bold, or decorative separators"""
     
-    return await llm.generate(
+    response_text = await llm.generate(
         system=system_prompt,
         user=user_prompt,
         max_output_tokens=32768,  # Increased for detailed famous people analysis
         temperature=0.7,
         call_label="G4_famous_people_section"
     )
+    
+    # Calculate step cost and timing
+    step_duration = time.time() - step_start_time
+    cost_after = llm.total_cost_usd
+    step_cost = cost_after - cost_before
+    call_count_after = llm.call_count
+    step_calls = call_count_after - call_count_before
+    
+    logger.info(f"G4_famous_people_section completed in {step_duration:.2f} seconds")
+    logger.info(f"G4 API calls made: {step_calls}")
+    logger.info(f"G4 step cost: ${step_cost:.6f} USD")
+    logger.info(f"G4 response length: {len(response_text)} characters")
+    logger.info("="*80)
+    
+    return response_text
 
 
 def serialize_snapshot_data(chart_data: dict, unknown_time: bool) -> dict:
@@ -1685,76 +1813,130 @@ Provide 4-6 paragraphs of insightful, specific analysis that gives readers a mea
 
 async def get_gemini3_reading(chart_data: dict, unknown_time: bool, db: Session = None) -> str:
     """Four-call Gemini 3 pipeline with optional famous people section."""
+    import time
+    reading_start_time = time.time()
+    
     if not GEMINI_API_KEY and AI_MODE != "stub":
         logger.error("Gemini API key not configured - AI reading unavailable")
         raise Exception("Gemini API key not configured. AI reading is unavailable.")
     
-    logger.info("="*60)
-    logger.info("Starting Gemini 3 reading generation...")
+    logger.info("="*80)
+    logger.info("="*80)
+    logger.info("FULL READING GENERATION - STARTING")
+    logger.info("="*80)
+    logger.info("="*80)
     logger.info(f"AI_MODE: {AI_MODE}")
     logger.info(f"Unknown time: {unknown_time}")
-    logger.info("="*60)
+    logger.info(f"Database session available: {db is not None}")
+    logger.info("="*80)
     
     llm = Gemini3Client()
     
     try:
+        # Step 0: Serialize chart data
+        logger.info("Preparing chart data for LLM...")
         serialized_chart = serialize_chart_for_llm(chart_data, unknown_time=unknown_time)
         chart_summary = format_serialized_chart_for_prompt(serialized_chart)
+        logger.info(f"Chart serialized - Summary length: {len(chart_summary)} characters")
+        logger.info("="*80)
         
+        # Step 1: Global Blueprint
         blueprint = await g0_global_blueprint(llm, serialized_chart, chart_summary, unknown_time)
+        
+        # Step 2: Natal Foundation
         natal_sections = await g1_natal_foundation(llm, serialized_chart, chart_summary, blueprint, unknown_time)
+        
+        # Step 3: Deep Dive Chapters
         deep_sections = await g2_deep_dive_chapters(llm, serialized_chart, chart_summary, blueprint, natal_sections, unknown_time)
+        
+        # Step 4: Combine and Polish
         full_draft = f"{natal_sections}\n\n{deep_sections}"
+        logger.info(f"Combined draft length: {len(full_draft)} characters")
         final_reading = await g3_polish_full_reading(llm, full_draft, chart_summary)
         
-        # Generate famous people section if database session is available
+        # Step 5: Generate famous people section if database session is available
         famous_people_section = ""
         if db:
             try:
+                logger.info("="*80)
+                logger.info("FAMOUS PEOPLE MATCHING - STARTING")
+                logger.info("="*80)
                 logger.info("Calling find_similar_famous_people_internal to find matches...")
+                famous_start = time.time()
                 famous_people_matches = await find_similar_famous_people_internal(chart_data, limit=8, db=db)
+                famous_duration = time.time() - famous_start
+                logger.info(f"Famous people matching completed in {famous_duration:.2f} seconds")
                 logger.info(f"find_similar_famous_people_internal returned: {famous_people_matches.get('matches_found', 0)} matches out of {famous_people_matches.get('total_compared', 0)} compared")
+                
                 if famous_people_matches and len(famous_people_matches.get('matches', [])) > 0:
                     logger.info(f"Found {len(famous_people_matches['matches'])} famous people matches, generating section...")
                     famous_people_section = await g4_famous_people_section(
                         llm, serialized_chart, chart_summary, famous_people_matches['matches'], unknown_time
                     )
                     final_reading = f"{final_reading}\n\n{famous_people_section}"
+                    logger.info(f"Famous people section added - Final reading length: {len(final_reading)} characters")
                 else:
                     logger.info("No famous people matches found or empty result")
+                logger.info("="*80)
             except Exception as e:
                 logger.error(f"Error generating famous people section: {e}", exc_info=True)
                 # Continue without famous people section
         
+        # Finalize reading
         final_reading = sanitize_reading_text(final_reading).strip()
+        reading_duration = time.time() - reading_start_time
         
+        # Calculate final costs
         summary = llm.get_summary()
         cost_info = calculate_gemini3_cost(summary['total_prompt_tokens'], summary['total_completion_tokens'])
         
-        logger.info("=== GEMINI 3 API COST SUMMARY ===")
-        logger.info(f"Total Calls: {summary['call_count']}")
+        # Comprehensive cost summary
+        logger.info("="*80)
+        logger.info("="*80)
+        logger.info("FULL READING GENERATION - COMPLETE")
+        logger.info("="*80)
+        logger.info("="*80)
+        logger.info(f"Total Generation Time: {reading_duration:.2f} seconds ({reading_duration/60:.2f} minutes)")
+        logger.info(f"Final Reading Length: {len(final_reading):,} characters")
+        logger.info("")
+        logger.info("=== GEMINI 3 API USAGE SUMMARY ===")
+        logger.info(f"Total API Calls: {summary['call_count']}")
         logger.info(f"Total Input Tokens: {summary['total_prompt_tokens']:,}")
         logger.info(f"Total Output Tokens: {summary['total_completion_tokens']:,}")
         logger.info(f"Total Tokens: {summary['total_tokens']:,}")
-        logger.info(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
-        logger.info(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
-        logger.info(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
-        logger.info("=" * 50)
+        logger.info("")
+        logger.info("=== GEMINI 3 API COST BREAKDOWN ===")
+        logger.info(f"Input Cost:  ${cost_info['input_cost_usd']:.6f} USD")
+        logger.info(f"Output Cost: ${cost_info['output_cost_usd']:.6f} USD")
+        logger.info(f"───────────────────────────────────")
+        logger.info(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f} USD")
+        logger.info("="*80)
+        logger.info("="*80)
         
-        print(f"\n{'='*60}")
-        print("GEMINI 3 API COST SUMMARY")
-        print(f"Total Calls: {summary['call_count']}")
+        # Also print to stdout for Render visibility
+        print(f"\n{'='*80}")
+        print("FULL READING GENERATION - COMPLETE")
+        print(f"{'='*80}")
+        print(f"Total Generation Time: {reading_duration:.2f} seconds ({reading_duration/60:.2f} minutes)")
+        print(f"Final Reading Length: {len(final_reading):,} characters")
+        print("")
+        print("=== GEMINI 3 API USAGE SUMMARY ===")
+        print(f"Total API Calls: {summary['call_count']}")
         print(f"Total Input Tokens: {summary['total_prompt_tokens']:,}")
         print(f"Total Output Tokens: {summary['total_completion_tokens']:,}")
         print(f"Total Tokens: {summary['total_tokens']:,}")
-        print(f"Input Cost: ${cost_info['input_cost_usd']:.6f}")
-        print(f"Output Cost: ${cost_info['output_cost_usd']:.6f}")
-        print(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f}")
-        print(f"{'='*60}\n")
+        print("")
+        print("=== GEMINI 3 API COST BREAKDOWN ===")
+        print(f"Input Cost:  ${cost_info['input_cost_usd']:.6f} USD")
+        print(f"Output Cost: ${cost_info['output_cost_usd']:.6f} USD")
+        print(f"───────────────────────────────────")
+        print(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f} USD")
+        print(f"{'='*80}\n")
         
         return final_reading
     except Exception as e:
-        logger.error(f"Error during Gemini 3 reading generation: {e}", exc_info=True)
+        reading_duration = time.time() - reading_start_time
+        logger.error(f"Error during Gemini 3 reading generation after {reading_duration:.2f} seconds: {e}", exc_info=True)
         raise Exception(f"An error occurred while generating the detailed AI reading: {e}")
 
 
@@ -2339,20 +2521,31 @@ def send_chart_email_via_sendgrid(pdf_bytes: bytes, recipient_email: str, subjec
 
 async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, user_inputs: Dict):
     """Background task to generate reading and send emails with PDF attachments."""
+    import time
+    task_start_time = time.time()
+    
     try:
-        logger.info("="*60)
-        logger.info("Starting background task for reading generation and email sending.")
-        logger.info("="*60)
+        logger.info("="*80)
+        logger.info("="*80)
+        logger.info("BACKGROUND TASK: READING GENERATION & EMAIL SENDING")
+        logger.info("="*80)
+        logger.info("="*80)
         chart_name = user_inputs.get('full_name', 'N/A')
         user_email = user_inputs.get('user_email')
         # Strip whitespace if email is provided
         if user_email and isinstance(user_email, str):
             user_email = user_email.strip() or None  # Convert empty string to None
         
-        logger.info(f"Generating AI reading for: {chart_name}")
+        logger.info(f"Chart Name: {chart_name}")
+        logger.info(f"User Email: {user_email if user_email else 'Not provided'}")
+        logger.info(f"Unknown Time: {unknown_time}")
+        logger.info("="*80)
+        logger.info("Starting AI reading generation...")
+        logger.info("="*80)
         
         # Generate the reading
         try:
+            reading_start = time.time()
             # Get database session for famous people matching
             from database import SessionLocal
             db = SessionLocal()
@@ -2360,7 +2553,13 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
                 reading_text = await get_gemini3_reading(chart_data, unknown_time, db=db)
             finally:
                 db.close()
-            logger.info(f"AI Reading successfully generated for: {chart_name} (length: {len(reading_text)} characters)")
+            
+            reading_duration = time.time() - reading_start
+            logger.info("="*80)
+            logger.info(f"AI Reading successfully generated for: {chart_name}")
+            logger.info(f"Reading generation time: {reading_duration:.2f} seconds ({reading_duration/60:.2f} minutes)")
+            logger.info(f"Reading length: {len(reading_text):,} characters")
+            logger.info("="*80)
             
             # Store reading in cache for frontend retrieval
             chart_hash = generate_chart_hash(chart_data, unknown_time)
@@ -2372,6 +2571,7 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
             logger.info(f"Reading stored in cache with hash: {chart_hash}")
             
             # Also save reading to user's saved chart if user exists
+            # If chart doesn't exist, create it automatically
             if user_email:
                 try:
                     from database import SessionLocal
@@ -2385,19 +2585,124 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
                                 SavedChart.user_id == user.id
                             ).all()
                             
+                            matching_chart = None
                             for chart in saved_charts:
                                 if chart.chart_data_json:
                                     try:
                                         saved_chart_data = json.loads(chart.chart_data_json)
                                         saved_chart_hash = generate_chart_hash(saved_chart_data, chart.unknown_time)
                                         if saved_chart_hash == chart_hash:
-                                            chart.ai_reading = reading_text
-                                            db.commit()
-                                            logger.info(f"Reading saved to chart ID {chart.id} for user {user_email}")
+                                            matching_chart = chart
                                             break
                                     except Exception as e:
                                         logger.warning(f"Error checking chart hash: {e}")
                                         continue
+                            
+                            if matching_chart:
+                                # Update existing chart with reading
+                                matching_chart.ai_reading = reading_text
+                                db.commit()
+                                logger.info(f"Reading saved to existing chart ID {matching_chart.id} for user {user_email}")
+                            else:
+                                # Chart doesn't exist - create it automatically
+                                # Extract birth data from chart_data or user_inputs
+                                try:
+                                    # Try to get birth data from chart_data metadata or user_inputs
+                                    birth_year = None
+                                    birth_month = None
+                                    birth_day = None
+                                    birth_hour = 12  # Default to noon
+                                    birth_minute = 0
+                                    birth_location = "Unknown"
+                                    
+                                    # Try to extract from chart_data
+                                    if isinstance(chart_data, dict):
+                                        # Check if chart_data has birth info directly
+                                        if 'birth_year' in chart_data:
+                                            birth_year = chart_data.get('birth_year')
+                                            birth_month = chart_data.get('birth_month')
+                                            birth_day = chart_data.get('birth_day')
+                                            birth_hour = chart_data.get('birth_hour', 12)
+                                            birth_minute = chart_data.get('birth_minute', 0)
+                                            birth_location = chart_data.get('birth_location', 'Unknown')
+                                        # Or check metadata
+                                        elif 'metadata' in chart_data and isinstance(chart_data['metadata'], dict):
+                                            metadata = chart_data['metadata']
+                                            birth_year = metadata.get('birth_year')
+                                            birth_month = metadata.get('birth_month')
+                                            birth_day = metadata.get('birth_day')
+                                            birth_hour = metadata.get('birth_hour', 12)
+                                            birth_minute = metadata.get('birth_minute', 0)
+                                            birth_location = metadata.get('birth_location', 'Unknown')
+                                    
+                                    # Fallback to user_inputs if available (primary source)
+                                    if user_inputs:
+                                        # Try to parse from birth_date string if present
+                                        birth_date_str = user_inputs.get('birth_date', '')
+                                        if birth_date_str:
+                                            try:
+                                                # Format: "MM/DD/YYYY" or "M/D/YYYY"
+                                                parts = birth_date_str.split('/')
+                                                if len(parts) == 3:
+                                                    birth_month = int(parts[0])
+                                                    birth_day = int(parts[1])
+                                                    birth_year = int(parts[2])
+                                            except Exception as date_error:
+                                                logger.warning(f"Could not parse birth_date '{birth_date_str}': {date_error}")
+                                        
+                                        # Get location from user_inputs
+                                        location_input = user_inputs.get('location', '')
+                                        if location_input:
+                                            birth_location = location_input
+                                        
+                                        # Get time from user_inputs if available
+                                        birth_time_str = user_inputs.get('birth_time', '')
+                                        if birth_time_str and not unknown_time:
+                                            try:
+                                                # Try to parse time string (format: "HH:MM AM/PM" or "H:MM AM/PM")
+                                                birth_time_upper = birth_time_str.upper().strip()
+                                                if ':' in birth_time_upper:
+                                                    # Remove AM/PM and split
+                                                    time_without_ampm = birth_time_upper.replace(' AM', '').replace(' PM', '').replace('AM', '').replace('PM', '')
+                                                    time_parts = time_without_ampm.split(':')
+                                                    if len(time_parts) >= 2:
+                                                        hour = int(time_parts[0])
+                                                        minute = int(time_parts[1])
+                                                        # Handle PM
+                                                        if 'PM' in birth_time_upper and hour < 12:
+                                                            hour += 12
+                                                        # Handle 12 AM (midnight)
+                                                        elif 'AM' in birth_time_upper and hour == 12:
+                                                            hour = 0
+                                                        birth_hour = hour
+                                                        birth_minute = minute
+                                            except Exception as time_error:
+                                                logger.warning(f"Could not parse birth_time '{birth_time_str}': {time_error}")
+                                    
+                                    # If we still don't have birth data, we can't create the chart
+                                    if not birth_year or not birth_month or not birth_day:
+                                        logger.warning(f"Cannot auto-save chart for {user_email}: missing birth data in chart_data or user_inputs")
+                                    else:
+                                        # Create new saved chart with reading
+                                        new_chart = SavedChart(
+                                            user_id=user.id,
+                                            chart_name=chart_name,
+                                            birth_year=birth_year,
+                                            birth_month=birth_month,
+                                            birth_day=birth_day,
+                                            birth_hour=birth_hour if not unknown_time else 12,
+                                            birth_minute=birth_minute if not unknown_time else 0,
+                                            birth_location=birth_location,
+                                            unknown_time=unknown_time,
+                                            chart_data_json=json.dumps(chart_data),
+                                            ai_reading=reading_text
+                                        )
+                                        db.add(new_chart)
+                                        db.commit()
+                                        db.refresh(new_chart)
+                                        logger.info(f"New chart created and reading saved (ID: {new_chart.id}) for user {user_email}")
+                                except Exception as create_error:
+                                    logger.warning(f"Could not create new chart for reading: {create_error}")
                     finally:
                         db.close()
                 except Exception as e:
@@ -2490,7 +2795,21 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
         else:
             logger.info("No admin email configured, skipping admin email.")
         
-        logger.info(f"Background task completed for {chart_name}.")
+        # Final task summary
+        task_duration = time.time() - task_start_time
+        logger.info("="*80)
+        logger.info("="*80)
+        logger.info("BACKGROUND TASK - COMPLETE")
+        logger.info("="*80)
+        logger.info("="*80)
+        logger.info(f"Chart Name: {chart_name}")
+        logger.info(f"Total Task Duration: {task_duration:.2f} seconds ({task_duration/60:.2f} minutes)")
+        logger.info(f"Reading Length: {len(reading_text):,} characters")
+        logger.info(f"User Email: {user_email if user_email else 'Not provided'}")
+        logger.info(f"User Email Sent: {'Yes' if user_email else 'No'}")
+        logger.info(f"Admin Email Sent: {'Yes' if ADMIN_EMAIL else 'No'}")
+        logger.info("="*80)
+        logger.info("="*80)
     except Exception as e:
         logger.error(f"Error in background task: {e}", exc_info=True)
 
@@ -2812,10 +3131,23 @@ async def calculate_chart_endpoint(
                     # Generate chart hash for polling
                     chart_hash = generate_chart_hash(full_response, data.unknown_time)
                     
-                    # Prepare user inputs for reading generation
+                    # Prepare user inputs for reading generation (include birth data for auto-saving)
+                    # Format time in 12-hour format for user_inputs
+                    if not data.unknown_time:
+                        hour_12 = data.hour % 12
+                        if hour_12 == 0:
+                            hour_12 = 12
+                        am_pm = 'AM' if data.hour < 12 else 'PM'
+                        birth_time_str = f"{hour_12}:{data.minute:02d} {am_pm}"
+                    else:
+                        birth_time_str = ''
+                    
                     user_inputs = {
                         'full_name': data.full_name,
-                        'user_email': data.user_email
+                        'user_email': data.user_email,
+                        'birth_date': f"{data.month}/{data.day}/{data.year}",
+                        'birth_time': birth_time_str,
+                        'location': data.location
                     }
                     
                     # Queue full reading generation in background
@@ -3806,6 +4138,98 @@ async def get_conversation_endpoint(
             for msg in messages
         ]
     }
+
+
+@app.post("/api/log-clicks")
+@limiter.limit("1000/hour")  # Allow many clicks but prevent abuse
+async def log_clicks_endpoint(
+    request: Request,
+    data: dict
+):
+    """Log user clicks for debugging purposes."""
+    try:
+        clicks = data.get('clicks', [])
+        page = data.get('page', 'unknown')
+        timestamp = data.get('timestamp', datetime.now().isoformat())
+        
+        # Log each click with detailed information
+        logger.info("="*80)
+        logger.info("CLICK TRACKING - BATCH RECEIVED")
+        logger.info("="*80)
+        logger.info(f"Page: {page}")
+        logger.info(f"Batch timestamp: {timestamp}")
+        logger.info(f"Number of clicks: {len(clicks)}")
+        logger.info(f"Client IP: {request.client.host if request.client else 'unknown'}")
+        logger.info(f"User Agent: {request.headers.get('user-agent', 'unknown')}")
+        logger.info("")
+        
+        for i, click in enumerate(clicks, 1):
+            element = click.get('element', {})
+            page_info = click.get('page', {})
+            user_info = click.get('user', {})
+            viewport = click.get('viewport', {})
+            event_info = click.get('event', {})
+            
+            logger.info(f"--- Click #{i} ---")
+            logger.info(f"Timestamp: {click.get('timestamp', 'unknown')}")
+            logger.info(f"Page URL: {page_info.get('url', 'unknown')}")
+            logger.info(f"Page Title: {page_info.get('title', 'unknown')}")
+            logger.info(f"User Logged In: {user_info.get('loggedIn', False)}")
+            if user_info.get('email'):
+                logger.info(f"User Email: {user_info.get('email')}")
+            logger.info(f"Element Tag: {element.get('tag', 'unknown')}")
+            if element.get('id'):
+                logger.info(f"Element ID: {element.get('id')}")
+            if element.get('className'):
+                logger.info(f"Element Class: {element.get('className')}")
+            if element.get('text'):
+                logger.info(f"Element Text: {element.get('text')[:100]}")
+            if element.get('href'):
+                logger.info(f"Element Href: {element.get('href')}")
+            if element.get('type'):
+                logger.info(f"Element Type: {element.get('type')}")
+            if element.get('name'):
+                logger.info(f"Element Name: {element.get('name')}")
+            if element.get('value'):
+                logger.info(f"Element Value: {element.get('value')}")
+            if element.get('dataset'):
+                logger.info(f"Element Dataset: {element.get('dataset')}")
+            if element.get('ariaLabel'):
+                logger.info(f"Element Aria Label: {element.get('ariaLabel')}")
+            if element.get('role'):
+                logger.info(f"Element Role: {element.get('role')}")
+            
+            parent = click.get('parent')
+            if parent:
+                logger.info(f"Parent Tag: {parent.get('tag', 'unknown')}")
+                if parent.get('id'):
+                    logger.info(f"Parent ID: {parent.get('id')}")
+                if parent.get('className'):
+                    logger.info(f"Parent Class: {parent.get('className')}")
+            
+            logger.info(f"Viewport: {viewport.get('width')}x{viewport.get('height')}")
+            logger.info(f"Scroll Position: ({viewport.get('scrollX', 0)}, {viewport.get('scrollY', 0)})")
+            
+            if event_info.get('ctrlKey') or event_info.get('shiftKey') or event_info.get('altKey') or event_info.get('metaKey'):
+                modifiers = []
+                if event_info.get('ctrlKey'): modifiers.append('Ctrl')
+                if event_info.get('shiftKey'): modifiers.append('Shift')
+                if event_info.get('altKey'): modifiers.append('Alt')
+                if event_info.get('metaKey'): modifiers.append('Meta')
+                logger.info(f"Modifier Keys: {', '.join(modifiers)}")
+            
+            logger.info("")
+        
+        logger.info("="*80)
+        logger.info("CLICK TRACKING - BATCH COMPLETE")
+        logger.info("="*80)
+        
+        return {"status": "logged", "count": len(clicks)}
+    
+    except Exception as e:
+        logger.error(f"Error logging clicks: {e}", exc_info=True)
+        # Don't raise - we don't want click logging to break the site
+        return {"status": "error", "message": str(e)}
 
 
 @app.delete("/chat/conversation/{conversation_id}")
