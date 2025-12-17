@@ -85,13 +85,24 @@ if logtail_token:
 # --- SETUP GEMINI ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI3_MODEL = os.getenv("GEMINI3_MODEL", "gemini-3-pro-preview")
+# Try to determine which API is available
+GEMINI_USE_NEW_API = False
 if GEMINI_API_KEY:
     try:
-        # New google.genai package uses Client instead of configure
-        genai.configure(api_key=GEMINI_API_KEY)
-        logger.info("Gemini API client configured successfully")
-    except Exception as e:
-        logger.error(f"Failed to configure Gemini client: {e}")
+        # Try new google.genai Client API
+        from google.genai import Client
+        GEMINI_USE_NEW_API = True
+        logger.info("Detected new google.genai Client API")
+    except ImportError:
+        try:
+            # Fallback to old API with configure
+            if hasattr(genai, 'configure'):
+                genai.configure(api_key=GEMINI_API_KEY)
+                logger.info("Using legacy google.genai API (configure method)")
+            else:
+                logger.warning("Could not determine Gemini API version - will try both in runtime")
+        except Exception as e:
+            logger.error(f"Failed to configure Gemini client: {e}")
 else:
     logger.warning("GEMINI_API_KEY not configured - Gemini 3 readings unavailable unless AI_MODE=stub")
 
@@ -520,10 +531,20 @@ class Gemini3Client:
         self.call_count = 0
         self.model_name = GEMINI3_MODEL or "gemini-3-pro-preview"
         self.default_max_tokens = int(os.getenv("GEMINI3_MAX_OUTPUT_TOKENS", "81920"))
+        self.client = None
         self.model = None
+        self.use_new_api = GEMINI_USE_NEW_API
         if GEMINI_API_KEY and AI_MODE != "stub":
             try:
-                self.model = genai.GenerativeModel(self.model_name)
+                if self.use_new_api:
+                    # New google.genai package uses Client API
+                    from google.genai import Client
+                    self.client = Client(api_key=GEMINI_API_KEY)
+                    # Get the model from the client
+                    self.model = self.client.models.get(name=self.model_name)
+                else:
+                    # Old API
+                    self.model = genai.GenerativeModel(self.model_name)
             except Exception as e:
                 logger.error(f"Error initializing Gemini model '{self.model_name}': {e}")
                 self.model = None
@@ -549,7 +570,15 @@ class Gemini3Client:
         
         if self.model is None:
             try:
-                self.model = genai.GenerativeModel(self.model_name)
+                if self.use_new_api:
+                    # New Client API
+                    if self.client is None:
+                        from google.genai import Client
+                        self.client = Client(api_key=GEMINI_API_KEY)
+                    self.model = self.client.models.get(name=self.model_name)
+                else:
+                    # Old API
+                    self.model = genai.GenerativeModel(self.model_name)
             except Exception as e:
                 logger.error(f"[{call_label}] Failed to initialize Gemini model '{self.model_name}': {e}")
                 raise
@@ -563,15 +592,40 @@ class Gemini3Client:
         try:
             logger.info(f"[{call_label}] Calling Gemini model '{self.model_name}'...")
             generation_config = {
-                "temperature": 0.85,
+                "temperature": temperature,
                 "top_p": 0.9,
                 "top_k": 40,
-                "max_output_tokens": 81920,
+                "max_output_tokens": max_tokens,
             }
-            response = await self.model.generate_content_async(
-                combined_prompt,
-                generation_config=generation_config
-            )
+            
+            # Use appropriate API based on which one is available
+            if self.use_new_api and self.client is not None:
+                # New google.genai Client API - try different approaches
+                try:
+                    # Try with config dict
+                    response = await self.model.generate_content(
+                        contents=combined_prompt,
+                        config=generation_config
+                    )
+                except (TypeError, AttributeError):
+                    # Try without config, set parameters directly
+                    try:
+                        response = await self.model.generate_content(
+                            contents=combined_prompt,
+                            temperature=generation_config["temperature"],
+                            top_p=generation_config["top_p"],
+                            top_k=generation_config["top_k"],
+                            max_output_tokens=generation_config["max_output_tokens"]
+                        )
+                    except Exception:
+                        # Last resort: try simple call
+                        response = await self.model.generate_content(contents=combined_prompt)
+            else:
+                # Old API
+                response = await self.model.generate_content_async(
+                    combined_prompt,
+                    generation_config=generation_config
+                )
             logger.info(f"[{call_label}] Gemini API call completed successfully")
         except Exception as e:
             logger.error(f"[{call_label}] Gemini API error: {e}", exc_info=True)
