@@ -1482,10 +1482,9 @@ const AstrologyCalculator = {
 
 document.addEventListener('DOMContentLoaded', () => {
 	AstrologyCalculator.init();
-	window.addEventListener('load', () => {
-		setTimeout(() => {
-			AstrologyCalculator.loadAndDrawTransitChart();
-		}, 100);
-	});
+	// Load transit chart immediately after DOM is ready, don't wait for window load
+	setTimeout(() => {
+		AstrologyCalculator.loadAndDrawTransitChart();
+	}, 100);
 });
 

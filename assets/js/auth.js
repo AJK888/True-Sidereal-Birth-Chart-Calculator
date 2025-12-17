@@ -413,35 +413,47 @@ const AuthManager = {
             }
         });
         
-        // Login form submit
+        // Login form submit - use attribute selector to match any login form
         document.addEventListener('submit', async (e) => {
-            if (e.target.matches('#loginForm')) {
+            if (e.target.id && e.target.id.startsWith('loginForm-')) {
                 e.preventDefault();
-                const email = e.target.querySelector('#loginEmail').value;
-                const password = e.target.querySelector('#loginPassword').value;
+                const formId = e.target.id;
+                const emailInput = e.target.querySelector(`input[type="email"]`);
+                const passwordInput = e.target.querySelector(`input[type="password"]`);
+                if (!emailInput || !passwordInput) return;
+                
+                const email = emailInput.value;
+                const password = passwordInput.value;
                 const errorEl = e.target.querySelector('.form-error');
                 const submitBtn = e.target.querySelector('button[type="submit"]');
                 
                 try {
                     submitBtn.disabled = true;
                     submitBtn.textContent = 'Logging in...';
-                    errorEl.style.display = 'none';
+                    if (errorEl) errorEl.style.display = 'none';
                     await this.login(email, password);
                 } catch (error) {
-                    errorEl.textContent = error.message;
-                    errorEl.style.display = 'block';
+                    if (errorEl) {
+                        errorEl.textContent = error.message;
+                        errorEl.style.display = 'block';
+                    }
                 } finally {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Login';
                 }
             }
             
-            if (e.target.matches('#registerForm')) {
+            if (e.target.id && e.target.id.startsWith('registerForm-')) {
                 e.preventDefault();
-                const email = e.target.querySelector('#registerEmail').value;
-                const password = e.target.querySelector('#registerPassword').value;
-                const confirmPassword = e.target.querySelector('#registerConfirmPassword').value;
-                const fullName = e.target.querySelector('#registerFullName').value;
+                const emailInput = e.target.querySelector(`input[type="email"]`);
+                const passwordInputs = e.target.querySelectorAll(`input[type="password"]`);
+                const fullNameInput = e.target.querySelector(`input[type="text"]`);
+                if (!emailInput || !passwordInputs || passwordInputs.length < 2) return;
+                
+                const email = emailInput.value;
+                const password = passwordInputs[0].value;
+                const confirmPassword = passwordInputs[1].value;
+                const fullName = fullNameInput ? fullNameInput.value : '';
                 const errorEl = e.target.querySelector('.form-error');
                 const submitBtn = e.target.querySelector('button[type="submit"]');
                 
@@ -556,22 +568,25 @@ const AuthManager = {
     
     showLoginModal() {
         this.closeModals();
+        // Use unique ID with timestamp to prevent duplicates
+        const uniqueId = `login-${Date.now()}`;
         const modal = document.createElement('div');
         modal.className = 'modal-overlay auth-modal';
+        modal.setAttribute('data-modal-type', 'login');
         modal.innerHTML = `
             <div class="modal-content">
                 <button class="modal-close">&times;</button>
                 <h2>Welcome Back</h2>
                 <p class="modal-subtitle">Login to access your saved charts and explore them with our astrologer</p>
-                <form id="loginForm">
+                <form id="loginForm-${uniqueId}">
                     <div class="form-error" style="display: none;"></div>
                     <div class="form-group">
-                        <label for="loginEmail">Email</label>
-                        <input type="email" id="loginEmail" required placeholder="your@email.com">
+                        <label for="loginEmail-${uniqueId}">Email</label>
+                        <input type="email" id="loginEmail-${uniqueId}" required placeholder="your@email.com">
                     </div>
                     <div class="form-group">
-                        <label for="loginPassword">Password</label>
-                        <input type="password" id="loginPassword" required placeholder="••••••••">
+                        <label for="loginPassword-${uniqueId}">Password</label>
+                        <input type="password" id="loginPassword-${uniqueId}" required placeholder="••••••••">
                     </div>
                     <button type="submit" class="btn-primary">Login</button>
                 </form>
@@ -582,35 +597,41 @@ const AuthManager = {
         `;
         document.body.appendChild(modal);
         setTimeout(() => modal.classList.add('active'), 10);
-        modal.querySelector('#loginEmail').focus();
+        const emailInput = modal.querySelector(`#loginEmail-${uniqueId}`);
+        if (emailInput) emailInput.focus();
+        
+        // Form submit is handled by the global event listener using id.startsWith()
     },
     
     showRegisterModal() {
         this.closeModals();
+        // Use unique ID with timestamp to prevent duplicates
+        const uniqueId = `register-${Date.now()}`;
         const modal = document.createElement('div');
         modal.className = 'modal-overlay auth-modal';
+        modal.setAttribute('data-modal-type', 'register');
         modal.innerHTML = `
             <div class="modal-content">
                 <button class="modal-close">&times;</button>
                 <h2>Create Your Account</h2>
                 <p class="modal-subtitle">Save your charts and unlock personalized AI guidance</p>
-                <form id="registerForm">
+                <form id="registerForm-${uniqueId}">
                     <div class="form-error" style="display: none;"></div>
                     <div class="form-group">
-                        <label for="registerFullName">Full Name <span class="optional">(optional)</span></label>
-                        <input type="text" id="registerFullName" placeholder="Your name">
+                        <label for="registerFullName-${uniqueId}">Full Name <span class="optional">(optional)</span></label>
+                        <input type="text" id="registerFullName-${uniqueId}" placeholder="Your name">
                     </div>
                     <div class="form-group">
-                        <label for="registerEmail">Email</label>
-                        <input type="email" id="registerEmail" required placeholder="your@email.com">
+                        <label for="registerEmail-${uniqueId}">Email</label>
+                        <input type="email" id="registerEmail-${uniqueId}" required placeholder="your@email.com">
                     </div>
                     <div class="form-group">
-                        <label for="registerPassword">Password</label>
-                        <input type="password" id="registerPassword" required minlength="8" placeholder="At least 8 characters">
+                        <label for="registerPassword-${uniqueId}">Password</label>
+                        <input type="password" id="registerPassword-${uniqueId}" required minlength="8" placeholder="At least 8 characters">
                     </div>
                     <div class="form-group">
-                        <label for="registerConfirmPassword">Confirm Password</label>
-                        <input type="password" id="registerConfirmPassword" required placeholder="••••••••">
+                        <label for="registerConfirmPassword-${uniqueId}">Confirm Password</label>
+                        <input type="password" id="registerConfirmPassword-${uniqueId}" required placeholder="••••••••">
                     </div>
                     <button type="submit" class="btn-primary">Create Account</button>
                 </form>
@@ -621,7 +642,8 @@ const AuthManager = {
         `;
         document.body.appendChild(modal);
         setTimeout(() => modal.classList.add('active'), 10);
-        modal.querySelector('#registerFullName').focus();
+        const emailInput = modal.querySelector(`#registerEmail-${uniqueId}`);
+        if (emailInput) emailInput.focus();
     },
     
     showDashboard() {
