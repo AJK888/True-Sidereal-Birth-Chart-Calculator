@@ -580,16 +580,18 @@ class Gemini3Client:
             logger.error(f"[{call_label}] GEMINI_API_KEY not configured - cannot call Gemini 3")
             raise Exception("Gemini API key not configured")
         
-        if self.model is None and self.client is None:
+        if self.model is None:
             try:
                 if GEMINI_PACKAGE_TYPE == "generativeai":
                     # Old API
                     self.model = genai.GenerativeModel(self.model_name)
                 elif GEMINI_PACKAGE_TYPE == "genai":
-                    # New Client API
+                    # New Client API - need to get model from client
                     if self.client is None:
                         from google.genai import Client
                         self.client = Client(api_key=GEMINI_API_KEY)
+                    # Get the model instance
+                    self.model = self.client.get_model(self.model_name)
             except Exception as e:
                 logger.error(f"[{call_label}] Failed to initialize Gemini model '{self.model_name}': {e}")
                 raise
@@ -610,11 +612,10 @@ class Gemini3Client:
             }
             
             # Use appropriate API based on which package is available
-            if GEMINI_PACKAGE_TYPE == "genai" and self.client is not None:
-                # New google.genai Client API
+            if GEMINI_PACKAGE_TYPE == "genai" and self.model is not None:
+                # New google.genai Client API - use model.generate_content()
                 try:
-                    response = await self.client.models.generate_content(
-                        model=self.model_name,
+                    response = await self.model.generate_content(
                         contents=combined_prompt,
                         config={
                             "temperature": generation_config["temperature"],
@@ -626,8 +627,7 @@ class Gemini3Client:
                 except (TypeError, AttributeError, ValueError) as e:
                     # Fallback: try with individual parameters
                     try:
-                        response = await self.client.models.generate_content(
-                            model=self.model_name,
+                        response = await self.model.generate_content(
                             contents=combined_prompt,
                             temperature=generation_config["temperature"],
                             top_p=generation_config["top_p"],
@@ -637,8 +637,7 @@ class Gemini3Client:
                     except Exception as e2:
                         # Last resort: try simple call
                         logger.warning(f"[{call_label}] Trying simple generate_content call: {e2}")
-                        response = await self.client.models.generate_content(
-                            model=self.model_name,
+                        response = await self.model.generate_content(
                             contents=combined_prompt
                         )
             elif GEMINI_PACKAGE_TYPE == "generativeai" and self.model is not None:
