@@ -917,10 +917,10 @@ async def find_similar_famous_people_internal(
         # Sort by similarity score ONLY (highest first)
         matches.sort(key=lambda m: m["similarity_score"], reverse=True)
         
-        # Filter to only include matches with synthesis score >= 30
-        top_matches = [m for m in matches if m["similarity_score"] >= 30.0]
+        # Filter to only include matches with synthesis score >= 20
+        top_matches = [m for m in matches if m["similarity_score"] >= 20.0]
         
-        logger.info(f"Found {len(matches)} matches with score > 0, returning {len(top_matches)} with score >= 30")
+        logger.info(f"Found {len(matches)} matches with score > 0, returning {len(top_matches)} with score >= 20")
         
         # Format response
         result = []
