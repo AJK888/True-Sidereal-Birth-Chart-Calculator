@@ -158,23 +158,6 @@ html {
     animation-delay: 0.3s;
 }
 
-/* Continuous spin animation for transit wheels */
-@keyframes transitWheelSpin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-#sidereal-transit-wheel-container svg,
-#tropical-transit-wheel-container svg {
-    animation: wheelRotateIn 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards,
-                transitWheelSpin 120s linear infinite;
-    transform-origin: center center;
-}
-
 /* Hover effects on chart wheels */
 #sidereal-wheel-container:hover svg,
 #tropical-wheel-container:hover svg,
@@ -182,12 +165,6 @@ html {
 #tropical-transit-wheel-container:hover svg {
     transform: scale(1.02);
     filter: drop-shadow(0 0 40px rgba(159, 122, 234, 0.3));
-}
-
-/* Pause spin on hover for transit wheels */
-#sidereal-transit-wheel-container:hover svg,
-#tropical-transit-wheel-container:hover svg {
-    animation-play-state: paused;
 }
 
 /* Chart wheel container styling */
