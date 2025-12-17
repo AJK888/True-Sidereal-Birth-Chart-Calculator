@@ -612,38 +612,41 @@ class Gemini3Client:
             
             # Use appropriate API based on which package is available
             if GEMINI_PACKAGE_TYPE == "genai" and self.client is not None:
-                # New google.genai Client API - use client.models.generate_content()
+                # New google.genai Client API - use client.models.generate_content() (synchronous, not async)
                 try:
-                    logger.info(f"[{call_label}] Attempting client.models.generate_content() with config")
-                    response = await self.client.models.generate_content(
+                    from google.genai import types
+                    logger.info(f"[{call_label}] Using google.genai Client API with GenerateContentConfig")
+                    # Create config object using types.GenerateContentConfig
+                    config = types.GenerateContentConfig(
+                        temperature=generation_config["temperature"],
+                        top_p=generation_config["top_p"],
+                        top_k=generation_config["top_k"],
+                        max_output_tokens=generation_config["max_output_tokens"]
+                    )
+                    # Note: generate_content is synchronous, not async
+                    response = self.client.models.generate_content(
                         model=self.model_name,
                         contents=combined_prompt,
-                        config={
-                            "temperature": generation_config["temperature"],
-                            "top_p": generation_config["top_p"],
-                            "top_k": generation_config["top_k"],
-                            "max_output_tokens": generation_config["max_output_tokens"]
-                        }
+                        config=config
                     )
-                except (TypeError, AttributeError, ValueError) as e:
-                    logger.warning(f"[{call_label}] First attempt failed: {e}, trying with individual parameters")
-                    # Fallback: try with individual parameters
+                except ImportError:
+                    # Fallback if types module not available
+                    logger.warning(f"[{call_label}] types module not available, trying without config")
+                    response = self.client.models.generate_content(
+                        model=self.model_name,
+                        contents=combined_prompt
+                    )
+                except Exception as e:
+                    logger.error(f"[{call_label}] Error calling google.genai API: {e}", exc_info=True)
+                    # Last resort: try simple call without config
                     try:
-                        response = await self.client.models.generate_content(
-                            model=self.model_name,
-                            contents=combined_prompt,
-                            temperature=generation_config["temperature"],
-                            top_p=generation_config["top_p"],
-                            top_k=generation_config["top_k"],
-                            max_output_tokens=generation_config["max_output_tokens"]
-                        )
-                    except Exception as e2:
-                        logger.warning(f"[{call_label}] Second attempt failed: {e2}, trying simple call")
-                        # Last resort: try simple call
-                        response = await self.client.models.generate_content(
+                        response = self.client.models.generate_content(
                             model=self.model_name,
                             contents=combined_prompt
                         )
+                    except Exception as e2:
+                        logger.error(f"[{call_label}] Simple call also failed: {e2}")
+                        raise
             elif GEMINI_PACKAGE_TYPE == "generativeai" and self.model is not None:
                 # Old google-generativeai API
                 response = await self.model.generate_content_async(
