@@ -1,0 +1,232 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>Synastry Analysis - Synthesis Astrology</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+		<link rel="icon" type="image/jpeg" href="images/star-background.jpg" />
+		<link rel="shortcut icon" type="image/jpeg" href="images/star-background.jpg" />
+		<link rel="apple-touch-icon" href="images/star-background.jpg" />
+		<style>
+			.synastry-container {
+				max-width: 1200px;
+				margin: 0 auto;
+				padding: 2em;
+			}
+			
+			.input-section {
+				margin-bottom: 2em;
+			}
+			
+			.input-section label {
+				display: block;
+				margin-bottom: 0.5em;
+				font-weight: bold;
+				font-size: 1.1em;
+			}
+			
+			.input-section textarea {
+				width: 100%;
+				min-height: 400px;
+				padding: 1em;
+				font-family: 'Courier New', monospace;
+				font-size: 0.9em;
+				border: 2px solid #1b6ca8;
+				border-radius: 6px;
+				resize: vertical;
+			}
+			
+			.email-input {
+				width: 100%;
+				max-width: 500px;
+				padding: 0.8em;
+				margin-bottom: 1.5em;
+				border: 2px solid #1b6ca8;
+				border-radius: 6px;
+				font-size: 1em;
+			}
+			
+			.submit-btn {
+				background: #1b6ca8;
+				color: white;
+				padding: 1em 2em;
+				border: none;
+				border-radius: 6px;
+				font-size: 1.1em;
+				cursor: pointer;
+				transition: background 0.3s;
+			}
+			
+			.submit-btn:hover {
+				background: #155a8a;
+			}
+			
+			.submit-btn:disabled {
+				background: #ccc;
+				cursor: not-allowed;
+			}
+			
+			.loading {
+				text-align: center;
+				padding: 3em;
+			}
+			
+			.loading-spinner {
+				border: 4px solid #f3f3f3;
+				border-top: 4px solid #1b6ca8;
+				border-radius: 50%;
+				width: 50px;
+				height: 50px;
+				animation: spin 1s linear infinite;
+				margin: 0 auto 1em;
+			}
+			
+			@keyframes spin {
+				0% { transform: rotate(0deg); }
+				100% { transform: rotate(360deg); }
+			}
+			
+			.results-section {
+				margin-top: 3em;
+				padding: 2em;
+				background: #f9f9f9;
+				border-radius: 8px;
+				display: none;
+			}
+			
+			.results-section h2 {
+				margin-top: 0;
+				color: #1b6ca8;
+			}
+			
+			.results-content {
+				line-height: 1.8;
+				white-space: pre-wrap;
+			}
+			
+			.error-message {
+				background: #fee;
+				color: #c00;
+				padding: 1em;
+				border-radius: 6px;
+				margin: 1em 0;
+				display: none;
+			}
+			
+			.instructions {
+				background: #e8f4f8;
+				padding: 1.5em;
+				border-radius: 6px;
+				margin-bottom: 2em;
+				border-left: 4px solid #1b6ca8;
+			}
+			
+			.instructions h3 {
+				margin-top: 0;
+				color: #1b6ca8;
+			}
+			
+			.instructions ul {
+				margin: 0.5em 0;
+				padding-left: 1.5em;
+			}
+			
+			.instructions li {
+				margin: 0.5em 0;
+			}
+		</style>
+	</head>
+	<body class="is-preload">
+		<div id="wrapper">
+			<header id="header" class="alt">
+				<a href="index.html" class="logo"><strong>Synthesis</strong> <span>Astrology</span></a>
+				<nav>
+					<a href="#menu">Menu</a>
+				</nav>
+			</header>
+
+			<nav id="menu">
+				<ul class="links">
+					<li><a href="index.html">Home</a></li>
+					<li><a href="index.html#calculator">Calculator</a></li>
+					<li id="synastry-menu-item" style="display: none;"><a href="synastry.html">Synastry Analysis</a></li>
+				</ul>
+			</nav>
+
+			<section id="banner" class="major">
+				<div class="inner">
+					<header class="major">
+						<h1>Synastry Analysis</h1>
+					</header>
+					<div class="content">
+						<p>Comprehensive relationship compatibility analysis using true sidereal astrology, numerology, and Chinese zodiac</p>
+					</div>
+				</div>
+			</section>
+
+			<div id="main">
+				<section class="tiles">
+					<div class="inner synastry-container">
+						<div class="instructions">
+							<h3>How to Use This Tool</h3>
+							<ul>
+								<li><strong>Person 1:</strong> Paste the complete full reading text and all astrological placements from the website</li>
+								<li><strong>Person 2:</strong> Paste the complete full reading text and all astrological placements from the website</li>
+								<li>Include all data: tropical placements, sidereal placements, aspects, numerology, Chinese zodiac, and the full personalized reading</li>
+								<li>The analysis will be comprehensive and sent to your email when complete</li>
+							</ul>
+						</div>
+
+						<form id="synastryForm">
+							<div class="input-section">
+								<label for="person1Data">Person 1 - Full Reading & Astrological Data</label>
+								<textarea id="person1Data" name="person1Data" placeholder="Paste Person 1's complete full reading and all astrological placements here..."></textarea>
+							</div>
+
+							<div class="input-section">
+								<label for="person2Data">Person 2 - Full Reading & Astrological Data</label>
+								<textarea id="person2Data" name="person2Data" placeholder="Paste Person 2's complete full reading and all astrological placements here..."></textarea>
+							</div>
+
+							<div class="input-section">
+								<label for="userEmail">Your Email Address</label>
+								<input type="email" id="userEmail" name="userEmail" class="email-input" placeholder="your.email@example.com" required />
+								<p style="font-size: 0.9em; color: #666;">The comprehensive synastry analysis will be sent to this email address.</p>
+							</div>
+
+							<button type="submit" class="submit-btn" id="submitBtn">
+								Generate Comprehensive Synastry Analysis
+							</button>
+						</form>
+
+						<div id="loading" class="loading" style="display: none;">
+							<div class="loading-spinner"></div>
+							<h3>Generating Comprehensive Synastry Analysis...</h3>
+							<p>This may take several minutes. Please do not close this page.</p>
+							<p>The analysis will be sent to your email when complete.</p>
+						</div>
+
+						<div id="errorMessage" class="error-message"></div>
+
+						<div id="results" class="results-section">
+							<h2>Synastry Analysis Results</h2>
+							<div id="resultsContent" class="results-content"></div>
+						</div>
+					</div>
+				</section>
+			</div>
+		</div>
+
+		<script src="assets/js/jquery.min.js"></script>
+		<script src="assets/js/jquery.scrolly.min.js"></script>
+		<script src="assets/js/jquery.scrollex.min.js"></script>
+		<script src="assets/js/browser.min.js"></script>
+		<script src="assets/js/breakpoints.min.js"></script>
+		<script src="assets/js/util.js"></script>
+		<script src="assets/js/main.js"></script>
+		<script src="assets/js/synastry.js"></script>
+	</body>
+</html>
+
