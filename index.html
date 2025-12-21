@@ -52,87 +52,168 @@
 			body:not(.is-preload) #header.alt {
 				opacity: 1 !important;
 			}
+			/* Mobile sticky CTA */
+			.mobile-sticky-cta {
+				position: fixed;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				background: rgba(36, 41, 62, 0.95);
+				backdrop-filter: blur(10px);
+				padding: 1em;
+				z-index: 999;
+				box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+				border-top: 1px solid rgba(255, 255, 255, 0.1);
+			}
+			.sticky-cta-button {
+				width: 100%;
+				padding: 1em;
+				background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
+				color: white;
+				border: none;
+				border-radius: 6px;
+				font-size: 1.1em;
+				font-weight: bold;
+				cursor: pointer;
+				box-shadow: 0 4px 20px rgba(159, 122, 234, 0.3);
+				transition: all 0.3s ease;
+			}
+			.sticky-cta-button:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 6px 30px rgba(159, 122, 234, 0.5);
+			}
+			/* Loading skeletons */
+			.loading-skeleton {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 2em;
+				padding: 2em 0;
+			}
+			.skeleton-chart-wheel {
+				width: 100%;
+				aspect-ratio: 1;
+				background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+				background-size: 200% 100%;
+				border-radius: 50%;
+				animation: skeleton-loading 1.5s ease-in-out infinite;
+			}
+			.loading-skeleton-text {
+				padding: 1em 0;
+			}
+			.skeleton-line {
+				height: 1em;
+				background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+				background-size: 200% 100%;
+				border-radius: 4px;
+				margin-bottom: 0.8em;
+				animation: skeleton-loading 1.5s ease-in-out infinite;
+			}
+			.skeleton-line.short {
+				width: 60%;
+			}
+			.loading-skeleton-cards {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+				gap: 1.5em;
+				padding: 1em 0;
+			}
+			.skeleton-card {
+				height: 150px;
+				background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+				background-size: 200% 100%;
+				border-radius: 8px;
+				animation: skeleton-loading 1.5s ease-in-out infinite;
+			}
+			@keyframes skeleton-loading {
+				0% { background-position: 200% 0; }
+				100% { background-position: -200% 0; }
+			}
+			/* Screen reader only */
+			.sr-only {
+				position: absolute;
+				width: 1px;
+				height: 1px;
+				padding: 0;
+				margin: -1px;
+				overflow: hidden;
+				clip: rect(0, 0, 0, 0);
+				white-space: nowrap;
+				border-width: 0;
+			}
+			/* Mobile optimizations */
+			@media screen and (max-width: 736px) {
+				#banner {
+					padding: 2em 0 1em 0;
+				}
+				#banner .inner {
+					padding: 1em;
+				}
+				#banner h1 {
+					font-size: 2em;
+					margin-bottom: 0.5em;
+				}
+				#banner .content p {
+					font-size: 0.9em;
+					margin-bottom: 0;
+				}
+				#description-wrapper {
+					padding: 1.5em 0;
+				}
+				.mobile-sticky-cta {
+					display: block !important;
+				}
+				#form-section {
+					padding: 2em 0;
+				}
+			}
 		</style>
 	</head>
 	<body class="is-preload">
 
 		<div id="wrapper">
 
-				<header id="header" class="alt">
-						<a href="index.html" class="logo"><strong>Synthesis</strong> <span>Astrology</span></a>
-						<nav>
-							<a href="#menu">Menu</a>
+				<header id="header" class="alt" role="banner">
+						<a href="index.html" class="logo" aria-label="Synthesis Astrology home"><strong>Synthesis</strong> <span>Astrology</span></a>
+						<nav role="navigation" aria-label="Site navigation">
+							<a href="#menu" aria-label="Open navigation menu">Menu</a>
 						</nav>
 					</header>
 
-				<nav id="menu">
+				<nav id="menu" role="navigation" aria-label="Main navigation">
 						<ul class="links">
-							<li><a href="index.html">Home</a></li>
-							<li><a href="examples/index.html">Example Readings</a></li>
-							<li id="synastry-menu-item" style="display: none;"><a href="synastry.html">Synastry Analysis</a></li>
+							<li><a href="index.html" aria-label="Go to home page">Home</a></li>
+							<li><a href="examples/index.html" aria-label="View example readings">Example Readings</a></li>
+							<li id="synastry-menu-item" style="display: none;"><a href="synastry.html" aria-label="Access synastry analysis">Synastry Analysis</a></li>
 						</ul>
 						<ul class="links auth-menu-section" id="authMenuSection">
 							<!-- Auth links will be populated by auth.js -->
 						</ul>
 					</nav>
 
-				<section id="banner" class="major">
-						<div class="inner">
-							<header class="major">
-								<h1>Synthesis Astrology</h1>
-							</header>
-							<div class="content">
-								<p>Using modern analytical methods to provide deep insights into your personality, life patterns, and spiritual growth based on numerology, Sidereal, Tropical, and Chinese astrology.</p>
-							</div>
+			<section id="banner" class="major">
+					<div class="inner">
+						<header class="major">
+							<h1>Synthesis Astrology</h1>
+						</header>
+						<div class="content">
+							<p>Using modern analytical methods to provide deep insights into your personality, life patterns, and spiritual growth based on numerology, Sidereal, Tropical, and Chinese astrology.</p>
 						</div>
-					</section>
+					</div>
+				</section>
 
-				<div id="main">
-
-						<section id="description-wrapper">
-							<div class="inner">
-								<div class="description-content">
-									<header class="major">
-										<h2>Your Astrological Blueprint</h2>
-									</header>
-									<p>This platform uniquely uses powerful python code to calculate a dual-zodiac analysis of your unique birth chart providing you your raw astrological placements, Chinese zodiac sign, and name and birthdate numerology. <strong>Get a free snapshot reading instantly</strong> - a quick AI-generated overview of your core patterns delivered via email. For deeper insights, subscribe for comprehensive full readings and unlimited chat conversations with our AI astrologer about your chart. All your personal information (name, birthdate, location) is fully blinded and private to the AI.</p>
-									<h4>Sidereal Astrology:</h4>
-									<p>The Tropical zodiac is the system used by most Western astrologers. It's based on the Earth's seasons and divides the sky into twelve equal 30-degree signs. Tropical astrology describes how cosmic energies express themselves through your personality and daily life. The Sidereal zodiac, on the other hand, aligns with the actual constellations in the sky. Each sign covers a different portion of the ecliptic, revealing deeper insights into your soul's karmic path and spiritual evolution. By exploring both systems side by side, you gain a more complete and nuanced understanding of yourself—connecting the outer personality with the inner essence.</p>
-									<p style="margin-top: 2em;"><a href="examples/index.html" class="button primary">View Example Readings</a></p>
-								</div>
-							</div>
-						</section>
-
-						<section id="transit-section">
-							<div class="inner">
-								<div id="transit-chart">
-									<header class="major">
-										<h2>Where the Stars and Planets Currently Are at Your Location</h2>
-									</header>
-									<div class="chart-wheels-wrapper">
-										<div id="sidereal-transit-wheel-container">
-											<h3>Sidereal</h3>
-											<svg id="sidereal-transit-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
-										</div>
-										<div id="tropical-transit-wheel-container">
-											<h3>Tropical</h3>
-											<svg id="tropical-transit-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
-										</div>
-									</div>
-								</div>
-							</div>
-						</section>
-
-						<section id="form-section">
+			<div id="main">
+					<!-- Form moved above fold for better mobile conversion -->
+					<section id="form-section">
 							<div class="inner">
 								<header class="major">
 									<h2>Generate Your Chart</h2>
 								</header>
-								<form id="chartForm" onsubmit="return false;">
+								<form id="chartForm" onsubmit="return false;" aria-label="Birth chart calculation form">
 									<div class="fields">
 										<div class="field">
 											<label for="fullName">Name <span class="field-note">Enter the name you go by</span></label>
-											<input type="text" id="fullName" name="fullName" required>
+											<input type="text" id="fullName" name="fullName" required aria-required="true" aria-describedby="fullName-note">
+											<span id="fullName-note" class="sr-only">Enter the name you go by</span>
 											<div class="name-numerology-toggle">
 												<input type="checkbox" id="isFullBirthName" name="isFullBirthName">
 												<label for="isFullBirthName">This is my full birth name (including middle name) – calculate my complete name numerology</label>
@@ -141,7 +222,8 @@
 						
 										<div class="field">
 											<label for="userEmail">Your Email <span class="field-note">Required: Your comprehensive reading will be sent to this email address.</span></label>
-											<input type="email" id="userEmail" name="userEmail" required>
+											<input type="email" id="userEmail" name="userEmail" required aria-required="true" aria-describedby="userEmail-note" autocomplete="email">
+											<span id="userEmail-note" class="sr-only">Required: Your comprehensive reading will be sent to this email address</span>
 										</div>
 						
 										<div class="field half">
@@ -174,24 +256,75 @@
 									</div>
 
 									<ul class="actions">
-										<li><button type="submit" id="submitBtn" class="primary">Generate My Reading</button></li>
+										<li><button type="submit" id="submitBtn" class="primary" aria-label="Generate your astrological reading">Generate My Reading</button></li>
 									</ul>
 								</form>
 							</div>
 						</section>
+
+					<!-- Sticky CTA for mobile -->
+					<div id="mobile-sticky-cta" class="mobile-sticky-cta" style="display: none;">
+						<button type="button" class="sticky-cta-button" onclick="document.getElementById('form-section').scrollIntoView({behavior: 'smooth'})">
+							Generate My Reading
+						</button>
+					</div>
+
+					<section id="description-wrapper">
+						<div class="inner">
+							<div class="description-content">
+								<header class="major">
+									<h2>Your Astrological Blueprint</h2>
+								</header>
+								<p>This platform uniquely uses powerful python code to calculate a dual-zodiac analysis of your unique birth chart providing you your raw astrological placements, Chinese zodiac sign, and name and birthdate numerology. <strong>Get a free snapshot reading instantly</strong> - a quick AI-generated overview of your core patterns delivered via email. For deeper insights, subscribe for comprehensive full readings and unlimited chat conversations with our AI astrologer about your chart. All your personal information (name, birthdate, location) is fully blinded and private to the AI.</p>
+								<h4>Sidereal Astrology:</h4>
+								<p>The Tropical zodiac is the system used by most Western astrologers. It's based on the Earth's seasons and divides the sky into twelve equal 30-degree signs. Tropical astrology describes how cosmic energies express themselves through your personality and daily life. The Sidereal zodiac, on the other hand, aligns with the actual constellations in the sky. Each sign covers a different portion of the ecliptic, revealing deeper insights into your soul's karmic path and spiritual evolution. By exploring both systems side by side, you gain a more complete and nuanced understanding of yourself—connecting the outer personality with the inner essence.</p>
+								<p style="margin-top: 2em;"><a href="examples/index.html" class="button primary">View Example Readings</a></p>
+							</div>
+						</div>
+					</section>
+
+					<!-- Transit section with lazy loading -->
+					<section id="transit-section" data-lazy-load="true">
+						<div class="inner">
+							<div id="transit-chart">
+								<header class="major">
+									<h2>Where the Stars and Planets Currently Are at Your Location</h2>
+								</header>
+								<div id="transit-loading-skeleton" class="loading-skeleton" style="display: none;">
+									<div class="skeleton-chart-wheel"></div>
+									<div class="skeleton-chart-wheel"></div>
+								</div>
+								<div class="chart-wheels-wrapper" id="transit-wheels-container" style="display: none;">
+									<div id="sidereal-transit-wheel-container">
+										<h3>Sidereal</h3>
+										<svg id="sidereal-transit-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Sidereal transit chart wheel"></svg>
+									</div>
+									<div id="tropical-transit-wheel-container">
+										<h3>Tropical</h3>
+										<svg id="tropical-transit-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Tropical transit chart wheel"></svg>
+									</div>
+								</div>
+							</div>
+						</div>
+					</section>
 					
-						<section id="results" class="results-container" aria-live="polite">
+						<section id="results" class="results-container" aria-live="polite" aria-label="Chart calculation results">
 								<div class="inner">
 									<div id="wheel-title" class="result-section">
 										<header class="major"><h2>Your Natal Chart</h2></header>
-										<div class="chart-wheels-wrapper">
+										<!-- Loading skeleton for chart wheels -->
+										<div id="chart-loading-skeleton" class="loading-skeleton" style="display: none;">
+											<div class="skeleton-chart-wheel"></div>
+											<div class="skeleton-chart-wheel"></div>
+										</div>
+										<div class="chart-wheels-wrapper" id="chart-wheels-container" style="display: none;">
 											<div id="sidereal-wheel-container">
 												<h3>Sidereal</h3>
-												<svg id="sidereal-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
+												<svg id="sidereal-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Sidereal natal chart wheel"></svg>
 											</div>
 											<div id="tropical-wheel-container">
 												<h3>Tropical</h3>
-												<svg id="tropical-wheel-svg" viewBox="-100 -100 1200 1200"></svg>
+												<svg id="tropical-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Tropical natal chart wheel"></svg>
 											</div>
 										</div>
 										<div id="chart-placeholder" class="chart-placeholder-message" style="display: none;">
@@ -203,15 +336,39 @@
 										<header class="major">
 											<h2>Chart Snapshot</h2>
 										</header>
+										<!-- Loading skeleton for snapshot -->
+										<div id="snapshot-loading-skeleton" class="loading-skeleton-text" style="display: none;">
+											<div class="skeleton-line"></div>
+											<div class="skeleton-line"></div>
+											<div class="skeleton-line short"></div>
+											<div class="skeleton-line"></div>
+											<div class="skeleton-line short"></div>
+										</div>
 										<div id="snapshot-output" class="content"></div>
 									</div>
 							
 								<div id="gemini-title" class="result-section" style="display: none;">
 									<header class="major">
 										<h2>AI Astrological Synthesis</h2>
-										<button id="copyReadingBtn" class="copy-button" style="display: none;">Copy Reading</button>
+										<button id="copyReadingBtn" class="copy-button" style="display: none;" aria-label="Copy reading to clipboard">Copy Reading</button>
 									</header>
+									<!-- Loading skeleton for AI reading -->
+									<div id="gemini-loading-skeleton" class="loading-skeleton-text" style="display: none;">
+										<div class="skeleton-line"></div>
+										<div class="skeleton-line"></div>
+										<div class="skeleton-line short"></div>
+										<div class="skeleton-line"></div>
+										<div class="skeleton-line"></div>
+										<div class="skeleton-line short"></div>
+										<div class="skeleton-line"></div>
+									</div>
 									<div id="gemini-output" class="content"></div>
+									<!-- CTA for full reading -->
+									<div id="full-reading-cta" class="full-reading-cta" style="display: none; margin-top: 2em; padding: 1.5em; background: rgba(27, 108, 168, 0.1); border-left: 4px solid #1b6ca8; border-radius: 6px;">
+										<h3 style="margin-top: 0; color: #1b6ca8;">Get Your Complete Full Reading</h3>
+										<p style="margin-bottom: 1em;">Unlock comprehensive insights with your full astrological reading, including detailed planetary analysis, aspect patterns, and personalized guidance.</p>
+										<a href="full-reading.html" class="button primary">View Full Reading</a>
+									</div>
 								</div>
 									
 								<div id="famous-people-section" class="result-section" style="display: none;">
@@ -221,10 +378,16 @@
 											Discover which famous people share similar astrological patterns with you
 										</p>
 									</header>
-									<div id="famous-people-loading" style="text-align: center; padding: 2em;">
+									<!-- Loading skeleton for famous people -->
+									<div id="famous-people-loading-skeleton" class="loading-skeleton-cards" style="display: none;">
+										<div class="skeleton-card"></div>
+										<div class="skeleton-card"></div>
+										<div class="skeleton-card"></div>
+									</div>
+									<div id="famous-people-loading" style="text-align: center; padding: 2em; display: none;">
 										<p>Finding your astrological matches...</p>
 									</div>
-									<div id="famous-people-results" class="famous-people-grid" style="display: none;"></div>
+									<div id="famous-people-results" class="famous-people-grid" style="display: none;" role="list" aria-label="Famous people with similar astrological patterns"></div>
 								</div>
 								
 								<div id="results-title" class="result-section">
@@ -350,16 +513,21 @@
 
 			</div>
 
+<!-- Critical scripts loaded immediately -->
 <script src="assets/js/jquery.min.js"></script>
-		<script src="assets/js/jquery.scrolly.min.js"></script>
-		<script src="assets/js/jquery.scrollex.min.js"></script>
-		<script src="assets/js/browser.min.js"></script>
-		<script src="assets/js/breakpoints.min.js"></script>
 		<script src="assets/js/util.js"></script>
 		<script src="assets/js/main.js"></script>
+		<!-- New modular structure -->
+		<script src="assets/js/state-manager.js"></script>
+		<script src="assets/js/api-client.js"></script>
 		<script src="assets/js/calculator.js"></script>
 		<script src="assets/js/auth.js"></script>
-		<script src="assets/js/click-tracker.js"></script>
+		<!-- Non-critical scripts deferred -->
+		<script defer src="assets/js/jquery.scrolly.min.js"></script>
+		<script defer src="assets/js/jquery.scrollex.min.js"></script>
+		<script defer src="assets/js/browser.min.js"></script>
+		<script defer src="assets/js/breakpoints.min.js"></script>
+		<script defer src="assets/js/click-tracker.js"></script>
 		
 		<!-- Fallback: Remove is-preload class if main.js fails to load -->
 		<script>

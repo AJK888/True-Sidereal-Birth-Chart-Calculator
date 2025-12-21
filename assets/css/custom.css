@@ -196,7 +196,227 @@ html {
     }
 }
 
+/* ============================================================
+   0.6 LOADING SKELETONS & PERFORMANCE
+   ============================================================ */
+
+.loading-skeleton {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2em;
+    padding: 2em 0;
+}
+
+.skeleton-chart-wheel {
+    width: 100%;
+    aspect-ratio: 1;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+    background-size: 200% 100%;
+    border-radius: 50%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+.loading-skeleton-text {
+    padding: 1em 0;
+}
+
+.skeleton-line {
+    height: 1em;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    margin-bottom: 0.8em;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+.skeleton-line.short {
+    width: 60%;
+}
+
+.loading-skeleton-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5em;
+    padding: 1em 0;
+}
+
+.skeleton-card {
+    height: 150px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+    background-size: 200% 100%;
+    border-radius: 8px;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ============================================================
+   0.7 ACCESSIBILITY IMPROVEMENTS
+   ============================================================ */
+
+/* Screen reader only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Focus indicators */
+*:focus-visible {
+    outline: 2px solid #9f7aea;
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+button:focus-visible,
+a:focus-visible {
+    outline: 2px solid #9f7aea;
+    outline-offset: 2px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: 2px solid #9f7aea;
+    outline-offset: 2px;
+}
+
+/* Skip link */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #1b6ca8;
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 100;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* ============================================================
+   0.8 MOBILE STICKY CTA
+   ============================================================ */
+
+.mobile-sticky-cta {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(36, 41, 62, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 1em;
+    z-index: 999;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sticky-cta-button {
+    width: 100%;
+    padding: 1em;
+    background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(159, 122, 234, 0.3);
+    transition: all 0.3s ease;
+    min-height: 50px;
+}
+
+.sticky-cta-button:hover,
+.sticky-cta-button:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 30px rgba(159, 122, 234, 0.5);
+    outline: 2px solid #9f7aea;
+    outline-offset: 2px;
+}
+
+/* ============================================================
+   0.9 FULL READING CTA
+   ============================================================ */
+
+.full-reading-cta {
+    margin-top: 2em;
+    padding: 1.5em;
+    background: rgba(27, 108, 168, 0.1);
+    border-left: 4px solid #1b6ca8;
+    border-radius: 6px;
+}
+
+.full-reading-cta h3 {
+    margin-top: 0;
+    color: #1b6ca8;
+}
+
+.full-reading-cta p {
+    margin-bottom: 1em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* ============================================================
+   0.10 RESULTS SECTION IMPROVEMENTS
+   ============================================================ */
+
+.result-section {
+    margin-bottom: 3em;
+    padding-bottom: 2em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.result-section:last-child {
+    border-bottom: none;
+}
+
+/* ============================================================
+   0.11 MOBILE OPTIMIZATIONS
+   ============================================================ */
+
 @media screen and (max-width: 736px) {
+    /* Reduce banner height on mobile */
+    #banner {
+        padding: 2em 0 1em 0;
+        min-height: auto;
+    }
+    
+    #banner .inner {
+        padding: 1em;
+    }
+    
+    #banner h1 {
+        font-size: 2em;
+        margin-bottom: 0.5em;
+    }
+    
+    #banner .content p {
+        font-size: 0.9em;
+        margin-bottom: 0;
+    }
+    
+    /* Reduce description section padding */
+    #description-wrapper {
+        padding: 1.5em 0;
+    }
+    
+    /* Ensure form section is prominent */
+    #form-section {
+        padding: 2em 0;
+    }
+    
     /* Ensure touch-friendly input sizes */
     #form-section input[type="text"],
     #form-section input[type="email"],

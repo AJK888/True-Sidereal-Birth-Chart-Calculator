@@ -100,6 +100,9 @@ const AstrologyCalculator = {
 		}
 
 		this.setLoadingState(true);
+		
+		// Show loading skeletons
+		this.showLoadingSkeletons();
 
 		// Scroll to results section smoothly
 		if (this.resultsContainer) {
@@ -136,7 +139,88 @@ const AstrologyCalculator = {
 			if(siderealOutput) siderealOutput.innerText = "Error: " + err.message;
             this.setLoadingState(false); // Make sure loading stops on error
 		} 
-        // finally block is removed as loading state is handled in fetchAndDisplayAIReading or catch block
+		// finally block is removed as loading state is handled in fetchAndDisplayAIReading or catch block
+	},
+	
+	showLoadingSkeletons() {
+		// Show chart loading skeleton
+		const chartLoadingSkeleton = document.getElementById('chart-loading-skeleton');
+		const chartWheelsContainer = document.getElementById('chart-wheels-container');
+		if (chartLoadingSkeleton && chartWheelsContainer) {
+			chartLoadingSkeleton.style.display = 'grid';
+			chartWheelsContainer.style.display = 'none';
+		}
+		
+		// Show snapshot loading skeleton
+		const snapshotLoadingSkeleton = document.getElementById('snapshot-loading-skeleton');
+		const snapshotOutput = document.getElementById('snapshot-output');
+		if (snapshotLoadingSkeleton && snapshotOutput) {
+			snapshotLoadingSkeleton.style.display = 'block';
+			snapshotOutput.style.display = 'none';
+		}
+	},
+	
+	hideLoadingSkeletons() {
+		// Hide chart loading skeleton
+		const chartLoadingSkeleton = document.getElementById('chart-loading-skeleton');
+		const chartWheelsContainer = document.getElementById('chart-wheels-container');
+		if (chartLoadingSkeleton) chartLoadingSkeleton.style.display = 'none';
+		if (chartWheelsContainer) chartWheelsContainer.style.display = 'grid';
+		
+		// Hide snapshot loading skeleton
+		const snapshotLoadingSkeleton = document.getElementById('snapshot-loading-skeleton');
+		const snapshotOutput = document.getElementById('snapshot-output');
+		if (snapshotLoadingSkeleton) snapshotLoadingSkeleton.style.display = 'none';
+		if (snapshotOutput) snapshotOutput.style.display = 'block';
+	},
+	
+	initLazyLoading() {
+		// Lazy load transit chart when it comes into view
+		const transitSection = document.getElementById('transit-section');
+		if (!transitSection) return;
+		
+		// Check if Intersection Observer is supported
+		if ('IntersectionObserver' in window) {
+			const observer = new IntersectionObserver((entries) => {
+				entries.forEach(entry => {
+					if (entry.isIntersecting) {
+						// Load transit chart when section is visible
+						this.loadAndDrawTransitChart();
+						observer.unobserve(entry.target);
+					}
+				});
+			}, {
+				rootMargin: '100px' // Start loading 100px before section is visible
+			});
+			
+			observer.observe(transitSection);
+		} else {
+			// Fallback: load immediately if IntersectionObserver not supported
+			this.loadAndDrawTransitChart();
+		}
+	},
+	
+	initMobileStickyCTA() {
+		// Show/hide sticky CTA based on scroll position
+		const stickyCTA = document.getElementById('mobile-sticky-cta');
+		const formSection = document.getElementById('form-section');
+		if (!stickyCTA || !formSection) return;
+		
+		// Only show on mobile
+		if (window.innerWidth > 736) {
+			stickyCTA.style.display = 'none';
+			return;
+		}
+		
+		const checkScroll = () => {
+			const formRect = formSection.getBoundingClientRect();
+			const isFormVisible = formRect.top < window.innerHeight && formRect.bottom > 0;
+			stickyCTA.style.display = isFormVisible ? 'none' : 'block';
+		};
+		
+		window.addEventListener('scroll', checkScroll, { passive: true });
+		window.addEventListener('resize', checkScroll, { passive: true });
+		checkScroll(); // Initial check
 	},
 	
 	async fetchChartData() {
@@ -219,6 +303,14 @@ const AstrologyCalculator = {
 	},
 
 	async fetchAndDisplayAIReading(chartData) {
+		// Show loading skeleton for AI reading
+		const geminiLoadingSkeleton = document.getElementById('gemini-loading-skeleton');
+		const geminiOutput = document.getElementById('gemini-output');
+		if (geminiLoadingSkeleton && geminiOutput) {
+			geminiLoadingSkeleton.style.display = 'block';
+			geminiOutput.style.display = 'none';
+		}
+		
 		try {
 			const userInputs = {
 				full_name: this.form.querySelector("[name='fullName']").value,
@@ -304,6 +396,10 @@ const AstrologyCalculator = {
 				throw new Error("Invalid response format from server. Please try again.");
 			}
             
+			// Hide loading skeleton
+			if (geminiLoadingSkeleton) geminiLoadingSkeleton.style.display = 'none';
+			if (geminiOutput) geminiOutput.style.display = 'block';
+			
 			// Check if this is the new async processing response
 			if (readingResult && readingResult.status === "processing") {
 				// Display the processing message with instructions
@@ -347,6 +443,9 @@ const AstrologyCalculator = {
 				return; // Exit early after showing processing message
 			} else if (readingResult && readingResult.gemini_reading) {
 				// Legacy format: reading is immediately available
+				// Hide loading skeleton
+				if (geminiLoadingSkeleton) geminiLoadingSkeleton.style.display = 'none';
+				if (geminiOutput) geminiOutput.style.display = 'block';
 				this.geminiOutput.innerHTML = readingResult.gemini_reading.replace(/\n/g, '<br>');
 				if (this.copyReadingBtn) {
 					this.copyReadingBtn.style.display = 'inline-block'; // Show copy button
@@ -398,6 +497,12 @@ const AstrologyCalculator = {
 				// Already handled, don't show error
 				return;
 			}
+			// Hide loading skeleton on error
+			const geminiLoadingSkeleton = document.getElementById('gemini-loading-skeleton');
+			const geminiOutput = document.getElementById('gemini-output');
+			if (geminiLoadingSkeleton) geminiLoadingSkeleton.style.display = 'none';
+			if (geminiOutput) geminiOutput.style.display = 'block';
+			
 			this.geminiOutput.innerHTML = `<div style="padding: 15px; background-color: #fee; border-left: 4px solid #e53e3e; color: #c33;">
 				<strong>Error:</strong> The AI reading is currently unavailable. ${err.message}
 			</div>`;
@@ -446,10 +551,18 @@ const AstrologyCalculator = {
 				if (result.status === "completed" && result.reading) {
 					// Reading is ready!
 					this.stopPolling();
+					// Hide loading skeleton
+					const geminiLoadingSkeleton = document.getElementById('gemini-loading-skeleton');
+					const geminiOutput = document.getElementById('gemini-output');
+					if (geminiLoadingSkeleton) geminiLoadingSkeleton.style.display = 'none';
+					if (geminiOutput) geminiOutput.style.display = 'block';
 					this.geminiOutput.innerHTML = result.reading.replace(/\n/g, '<br>');
 					if (this.copyReadingBtn) {
 						this.copyReadingBtn.style.display = 'inline-block'; // Show copy button
 					}
+					// Show full reading CTA
+					const fullReadingCTA = document.getElementById('full-reading-cta');
+					if (fullReadingCTA) fullReadingCTA.style.display = 'block';
 					console.log("Reading successfully retrieved and displayed!");
 					// Show popup for free users about saving and chatting
 					this.showSaveAndChatPopup();
@@ -501,6 +614,12 @@ const AstrologyCalculator = {
 	},
 
 	async loadAndDrawTransitChart() {
+		// Show loading skeleton
+		const transitLoadingSkeleton = document.getElementById('transit-loading-skeleton');
+		const transitWheelsContainer = document.getElementById('transit-wheels-container');
+		if (transitLoadingSkeleton) transitLoadingSkeleton.style.display = 'block';
+		if (transitWheelsContainer) transitWheelsContainer.style.display = 'none';
+		
 		try {
 			// Get user's current location
 			let location = await this.getUserLocation();
@@ -530,6 +649,11 @@ const AstrologyCalculator = {
 				throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
 			}
 			const transitData = await apiRes.json();
+			
+			// Hide skeleton, show wheels
+			if (transitLoadingSkeleton) transitLoadingSkeleton.style.display = 'none';
+			if (transitWheelsContainer) transitWheelsContainer.style.display = 'grid';
+			
 			this.drawChartWheel(transitData, 'sidereal-transit-wheel-svg', 'sidereal');
 			this.drawChartWheel(transitData, 'tropical-transit-wheel-svg', 'tropical');
 
@@ -543,6 +667,9 @@ const AstrologyCalculator = {
 
 		} catch (err) {
 			console.error("Failed to load transit chart:", err);
+			// Hide skeleton on error
+			if (transitLoadingSkeleton) transitLoadingSkeleton.style.display = 'none';
+			if (transitWheelsContainer) transitWheelsContainer.style.display = 'grid';
 			document.getElementById('sidereal-transit-wheel-svg').innerHTML = '<text x="500" y="500" fill="white" font-size="20" text-anchor="middle">Could not load transits.</text>';
 		}
 	},
@@ -645,6 +772,9 @@ const AstrologyCalculator = {
 		// Ensure results container is visible
 		this.resultsContainer.style.display = 'block';
 		
+		// Hide loading skeletons
+		this.hideLoadingSkeletons();
+		
         // Display snapshot reading if available
 		console.log("Chart data received:", chartData);
 		console.log("Snapshot reading:", chartData.snapshot_reading);
@@ -708,9 +838,14 @@ const AstrologyCalculator = {
 
 		const chartWheelsWrapper = document.querySelector('#results .chart-wheels-wrapper');
 		const chartPlaceholder = document.getElementById('chart-placeholder');
+		const chartLoadingSkeleton = document.getElementById('chart-loading-skeleton');
+		const chartWheelsContainer = document.getElementById('chart-wheels-container');
 
 		if (!chartData.unknown_time) {
 			this.wheelTitle.parentElement.style.display = 'block';
+			// Hide skeleton, show wheels
+			if (chartLoadingSkeleton) chartLoadingSkeleton.style.display = 'none';
+			if (chartWheelsContainer) chartWheelsContainer.style.display = 'grid';
 			chartWheelsWrapper.style.display = 'grid';
 			chartPlaceholder.style.display = 'none';
 
@@ -725,6 +860,9 @@ const AstrologyCalculator = {
 			chartWheelsWrapper.insertAdjacentHTML('afterend', legendHtml);
 		} else {
 			this.wheelTitle.parentElement.style.display = 'block';
+			// Hide skeleton and wheels, show placeholder
+			if (chartLoadingSkeleton) chartLoadingSkeleton.style.display = 'none';
+			if (chartWheelsContainer) chartWheelsContainer.style.display = 'none';
 			chartWheelsWrapper.style.display = 'none';
 			chartPlaceholder.style.display = 'block';
             // Also clear the SVGs explicitly if time is unknown
@@ -1183,13 +1321,16 @@ const AstrologyCalculator = {
 	async findSimilarFamousPeople(chartData) {
 		// Show the famous people section
 		const famousPeopleSection = document.getElementById('famous-people-section');
+		const loadingSkeleton = document.getElementById('famous-people-loading-skeleton');
 		const loadingDiv = document.getElementById('famous-people-loading');
 		const resultsDiv = document.getElementById('famous-people-results');
 		
 		if (!famousPeopleSection) return;
 		
 		famousPeopleSection.style.display = 'block';
-		loadingDiv.style.display = 'block';
+		// Show skeleton instead of loading text
+		if (loadingSkeleton) loadingSkeleton.style.display = 'grid';
+		if (loadingDiv) loadingDiv.style.display = 'none';
 		resultsDiv.style.display = 'none';
 		
 		try {
@@ -1211,18 +1352,32 @@ const AstrologyCalculator = {
 			
 			const data = await response.json();
 			
+			// Hide skeleton
+			if (loadingSkeleton) loadingSkeleton.style.display = 'none';
+			
 			if (data.matches && data.matches.length > 0) {
 				this.displayFamousPeopleMatches(data.matches);
-				loadingDiv.style.display = 'none';
+				if (loadingDiv) loadingDiv.style.display = 'none';
 				resultsDiv.style.display = 'grid';
 			} else if (data.message) {
-				loadingDiv.innerHTML = `<p>${data.message}</p>`;
+				if (loadingDiv) {
+					loadingDiv.style.display = 'block';
+					loadingDiv.innerHTML = `<p>${data.message}</p>`;
+				}
 			} else {
-				loadingDiv.innerHTML = '<p>No matches found yet. Check back soon as we add more famous people!</p>';
+				if (loadingDiv) {
+					loadingDiv.style.display = 'block';
+					loadingDiv.innerHTML = '<p>No matches found yet. Check back soon as we add more famous people!</p>';
+				}
 			}
 		} catch (error) {
 			console.error('Error finding similar famous people:', error);
-			loadingDiv.innerHTML = `<p>Unable to find matches at this time. ${error.message || 'Please try again later.'}</p>`;
+			// Hide skeleton on error
+			if (loadingSkeleton) loadingSkeleton.style.display = 'none';
+			if (loadingDiv) {
+				loadingDiv.style.display = 'block';
+				loadingDiv.innerHTML = `<p>Unable to find matches at this time. ${error.message || 'Please try again later.'}</p>`;
+			}
 		}
 	},
 	
@@ -1457,14 +1612,92 @@ const AstrologyCalculator = {
 			console.error('Error auto-saving chart:', error);
 			// Don't show error to user - this is a background operation
 		}
+	},
+	
+	showLoadingSkeletons() {
+		// Show chart loading skeleton
+		const chartLoadingSkeleton = document.getElementById('chart-loading-skeleton');
+		const chartWheelsContainer = document.getElementById('chart-wheels-container');
+		if (chartLoadingSkeleton && chartWheelsContainer) {
+			chartLoadingSkeleton.style.display = 'grid';
+			chartWheelsContainer.style.display = 'none';
+		}
+		
+		// Show snapshot loading skeleton
+		const snapshotLoadingSkeleton = document.getElementById('snapshot-loading-skeleton');
+		const snapshotOutput = document.getElementById('snapshot-output');
+		if (snapshotLoadingSkeleton && snapshotOutput) {
+			snapshotLoadingSkeleton.style.display = 'block';
+			snapshotOutput.style.display = 'none';
+		}
+	},
+	
+	hideLoadingSkeletons() {
+		// Hide chart loading skeleton
+		const chartLoadingSkeleton = document.getElementById('chart-loading-skeleton');
+		const chartWheelsContainer = document.getElementById('chart-wheels-container');
+		if (chartLoadingSkeleton) chartLoadingSkeleton.style.display = 'none';
+		if (chartWheelsContainer) chartWheelsContainer.style.display = 'grid';
+		
+		// Hide snapshot loading skeleton
+		const snapshotLoadingSkeleton = document.getElementById('snapshot-loading-skeleton');
+		const snapshotOutput = document.getElementById('snapshot-output');
+		if (snapshotLoadingSkeleton) snapshotLoadingSkeleton.style.display = 'none';
+		if (snapshotOutput) snapshotOutput.style.display = 'block';
+	},
+	
+	initLazyLoading() {
+		// Lazy load transit chart when it comes into view
+		const transitSection = document.getElementById('transit-section');
+		if (!transitSection) return;
+		
+		// Check if Intersection Observer is supported
+		if ('IntersectionObserver' in window) {
+			const observer = new IntersectionObserver((entries) => {
+				entries.forEach(entry => {
+					if (entry.isIntersecting) {
+						// Load transit chart when section is visible
+						this.loadAndDrawTransitChart();
+						observer.unobserve(entry.target);
+					}
+				});
+			}, {
+				rootMargin: '100px' // Start loading 100px before section is visible
+			});
+			
+			observer.observe(transitSection);
+		} else {
+			// Fallback: load immediately if IntersectionObserver not supported
+			this.loadAndDrawTransitChart();
+		}
+	},
+	
+	initMobileStickyCTA() {
+		// Show/hide sticky CTA based on scroll position
+		const stickyCTA = document.getElementById('mobile-sticky-cta');
+		const formSection = document.getElementById('form-section');
+		if (!stickyCTA || !formSection) return;
+		
+		// Only show on mobile
+		if (window.innerWidth > 736) {
+			stickyCTA.style.display = 'none';
+			return;
+		}
+		
+		const checkScroll = () => {
+			const formRect = formSection.getBoundingClientRect();
+			const isFormVisible = formRect.top < window.innerHeight && formRect.bottom > 0;
+			stickyCTA.style.display = isFormVisible ? 'none' : 'block';
+		};
+		
+		window.addEventListener('scroll', checkScroll, { passive: true });
+		window.addEventListener('resize', checkScroll, { passive: true });
+		checkScroll(); // Initial check
 	}
 };
 
 document.addEventListener('DOMContentLoaded', () => {
 	AstrologyCalculator.init();
-	// Load transit chart immediately after DOM is ready, don't wait for window load
-	setTimeout(() => {
-		AstrologyCalculator.loadAndDrawTransitChart();
-	}, 100);
+	// Transit chart now loads lazily via IntersectionObserver in initLazyLoading()
 });
 
