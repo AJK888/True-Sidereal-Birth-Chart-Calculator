@@ -989,9 +989,30 @@ def format_chart_text(chart_data: Dict[str, Any], chart_type: str) -> str:
             line = f"{p.get('name')}: {p.get('position', 'N/A')}"
             if p.get('retrograde'):
                 line += " (Rx)"
-            if p.get('house_info'):
-                line += f" {p.get('house_info')}"
+            # Include house info - check both house_info and house_num
+            house_info = p.get('house_info', '')
+            if house_info:
+                line += f" {house_info}"
+            elif p.get('house_num') and p.get('house_num') > 0:
+                # Fallback: construct house info from house_num if house_info is missing
+                house_num = p.get('house_num')
+                house_degrees = p.get('house_degrees', '')
+                if house_degrees:
+                    line += f" – House {house_num}, {house_degrees}"
+                else:
+                    line += f" – House {house_num}"
             output.append(line)
+        
+        # Include additional points (asteroids, etc.) if available
+        additional_points = chart_data.get(f'{chart_type}_additional_points', [])
+        if additional_points:
+            output.append("")
+            output.append("--- ADDITIONAL POINTS ---")
+            for p in additional_points:
+                line = f"{p.get('name')}: {p.get('info', 'N/A')}"
+                if p.get('retrograde'):
+                    line += " (Rx)"
+                output.append(line)
         
         output.append("")
         output.append("--- MAJOR ASPECTS ---")
@@ -1006,9 +1027,30 @@ def format_chart_text(chart_data: Dict[str, Any], chart_type: str) -> str:
             line = f"{p.get('name')}: {p.get('position', 'N/A')}"
             if p.get('retrograde'):
                 line += " (Rx)"
-            if p.get('house_info'):
-                line += f" {p.get('house_info')}"
+            # Include house info - check both house_info and house_num
+            house_info = p.get('house_info', '')
+            if house_info:
+                line += f" {house_info}"
+            elif p.get('house_num') and p.get('house_num') > 0:
+                # Fallback: construct house info from house_num if house_info is missing
+                house_num = p.get('house_num')
+                house_degrees = p.get('house_degrees', '')
+                if house_degrees:
+                    line += f" – House {house_num}, {house_degrees}"
+                else:
+                    line += f" – House {house_num}"
             output.append(line)
+        
+        # Include additional points (asteroids, etc.) if available
+        additional_points = chart_data.get(f'{chart_type}_additional_points', [])
+        if additional_points:
+            output.append("")
+            output.append("--- ADDITIONAL POINTS ---")
+            for p in additional_points:
+                line = f"{p.get('name')}: {p.get('info', 'N/A')}"
+                if p.get('retrograde'):
+                    line += " (Rx)"
+                output.append(line)
         
         output.append("")
         output.append("--- MAJOR ASPECTS ---")

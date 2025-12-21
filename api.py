@@ -1433,9 +1433,9 @@ async def g4_famous_people_section(
     cost_before = llm.total_cost_usd
     call_count_before = llm.call_count
     
-    # Format famous people data for the LLM - limit to top 8
+    # Format famous people data for the LLM - limit to top 5
     famous_people_data = []
-    for match in famous_people_matches[:8]:  # Limit to top 8
+    for match in famous_people_matches[:5]:  # Limit to top 5
         fp_data = {
             "name": match.get("name", "Unknown"),
             "occupation": match.get("occupation", ""),
@@ -1477,7 +1477,7 @@ Write a section titled "Famous People & Chart Similarities" that:
 
 1. Introduction (2-3 paragraphs): Explain that sharing chart patterns with notable figures reveals archetypal energies and life themes. Explain how these similarities work and what they mean.
 
-2. For EACH of the top 8 highest scoring matches (process ALL 8, ordered by similarity_score from highest to lowest):
+2. For EACH of the top 5 highest scoring matches (process ALL 5, ordered by similarity_score from highest to lowest):
 
    Format each person as follows:
    
@@ -1514,7 +1514,7 @@ Write a section titled "Famous People & Chart Similarities" that:
    - Provides insight into potential life themes and directions
 
 **Critical Requirements:**
-- Cover ALL 8 top matches (not just 3-5)
+- Cover ALL 5 top matches (not just 2-3)
 - Reference EACH matching placement explicitly from the matching_factors list
 - Write SUBSTANTIAL content for each person (at least 5-7 paragraphs per person)
 - Don't just list similarities—explain what they MEAN in depth
