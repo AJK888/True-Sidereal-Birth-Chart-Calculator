@@ -1075,8 +1075,29 @@ const AuthManager = {
     
     async checkSubscriptionStatus() {
         // Check for FRIENDS_AND_FAMILY_KEY in URL
+        // Handle case where key contains & character (e.g., F&FKEY)
         const urlParams = new URLSearchParams(window.location.search);
-        const friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
+        let friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
+        
+        // Handle URL-encoded values and split values
+        if (!friendsAndFamilyKey) {
+            const allParams = new URLSearchParams(window.location.search);
+            const keys = Array.from(allParams.keys());
+            const keyIndex = keys.indexOf('FRIENDS_AND_FAMILY_KEY');
+            if (keyIndex !== -1 && keyIndex < keys.length - 1) {
+                // Check if next param might be part of the value
+                const nextKey = keys[keyIndex + 1];
+                if (nextKey === 'FKEY' || !allParams.get(nextKey)) {
+                    // Likely split value, try to reconstruct
+                    friendsAndFamilyKey = allParams.get('FRIENDS_AND_FAMILY_KEY') + '&' + nextKey;
+                }
+            }
+        }
+        
+        // Decode URL-encoded characters
+        if (friendsAndFamilyKey) {
+            friendsAndFamilyKey = decodeURIComponent(friendsAndFamilyKey);
+        }
         
         // If FRIENDS_AND_FAMILY_KEY is present, treat as having full access
         if (friendsAndFamilyKey) {

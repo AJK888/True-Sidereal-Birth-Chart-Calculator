@@ -13,14 +13,39 @@ const SynastryManager = {
 	
 	checkFriendsFamilyKey() {
 		// Check for FRIENDS_AND_FAMILY_KEY in URL
+		// Handle case where key contains & character (e.g., F&FKEY)
+		let friendsAndFamilyKey = null;
 		const urlParams = new URLSearchParams(window.location.search);
-		const friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
+		friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
+		
+		// Handle URL-encoded values and split values
+		if (!friendsAndFamilyKey) {
+			const allParams = new URLSearchParams(window.location.search);
+			const keys = Array.from(allParams.keys());
+			const keyIndex = keys.indexOf('FRIENDS_AND_FAMILY_KEY');
+			if (keyIndex !== -1 && keyIndex < keys.length - 1) {
+				// Check if next param might be part of the value
+				const nextKey = keys[keyIndex + 1];
+				if (nextKey === 'FKEY' || !allParams.get(nextKey)) {
+					// Likely split value, try to reconstruct
+					friendsAndFamilyKey = allParams.get('FRIENDS_AND_FAMILY_KEY') + '&' + nextKey;
+				}
+			}
+		}
+		
+		// Decode URL-encoded characters
+		if (friendsAndFamilyKey) {
+			friendsAndFamilyKey = decodeURIComponent(friendsAndFamilyKey);
+		}
 		
 		if (!friendsAndFamilyKey) {
 			// Redirect to home if no key
 			window.location.href = 'index.html';
 			return;
 		}
+		
+		// Store the key for later use
+		this.friendsAndFamilyKey = friendsAndFamilyKey;
 		
 		// Show synastry menu item
 		const menuItem = document.getElementById('synastry-menu-item');
@@ -54,9 +79,34 @@ const SynastryManager = {
 			return;
 		}
 		
-		// Get FRIENDS_AND_FAMILY_KEY from URL
-		const urlParams = new URLSearchParams(window.location.search);
-		const friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
+		// Get FRIENDS_AND_FAMILY_KEY (use stored value or extract from URL)
+		let friendsAndFamilyKey = this.friendsAndFamilyKey;
+		if (!friendsAndFamilyKey) {
+			const urlParams = new URLSearchParams(window.location.search);
+			friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
+			
+			// Handle URL-encoded values and split values
+			if (!friendsAndFamilyKey) {
+				const allParams = new URLSearchParams(window.location.search);
+				const keys = Array.from(allParams.keys());
+				const keyIndex = keys.indexOf('FRIENDS_AND_FAMILY_KEY');
+				if (keyIndex !== -1 && keyIndex < keys.length - 1) {
+					const nextKey = keys[keyIndex + 1];
+					if (nextKey === 'FKEY' || !allParams.get(nextKey)) {
+						friendsAndFamilyKey = allParams.get('FRIENDS_AND_FAMILY_KEY') + '&' + nextKey;
+					}
+				}
+			}
+			
+			if (friendsAndFamilyKey) {
+				friendsAndFamilyKey = decodeURIComponent(friendsAndFamilyKey);
+			}
+		}
+		
+		if (!friendsAndFamilyKey) {
+			this.showError('Friends and family key is required. Please access this page with the correct key.');
+			return;
+		}
 		
 		// Show loading, hide results and error
 		document.getElementById('loading').style.display = 'block';
@@ -66,12 +116,9 @@ const SynastryManager = {
 		
 		try {
 			const headers = {
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
+				'X-Friends-And-Family-Key': friendsAndFamilyKey
 			};
-			
-			if (friendsAndFamilyKey) {
-				headers['X-Friends-And-Family-Key'] = friendsAndFamilyKey;
-			}
 			
 			const response = await fetch(`${this.API_BASE}/api/synastry`, {
 				method: 'POST',
