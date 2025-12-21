@@ -312,6 +312,11 @@ class ReadingRequest(BaseModel):
     user_inputs: Dict[str, Any]
     chart_image_base64: Optional[str] = None
 
+class SynastryRequest(BaseModel):
+    person1_data: str
+    person2_data: str
+    user_email: str
+
 # --- Functions ---
 
 def get_full_text_report(res: dict) -> str:
@@ -4497,5 +4502,413 @@ async def stripe_webhook_endpoint(request: Request, db: Session = Depends(get_db
     except Exception as e:
         logger.error(f"Error processing webhook: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+# ============================================================
+# Synastry Analysis Endpoint
+# ============================================================
+
+def parse_pasted_chart_data(pasted_text: str) -> Dict[str, Any]:
+    """
+    Parse pasted chart data and full reading text.
+    Extracts structured information from the pasted text.
+    """
+    result = {
+        "full_reading": "",
+        "chart_data": {},
+        "core_identity": {"sidereal": {}, "tropical": {}},
+        "planetary_placements": {"sidereal": [], "tropical": []},
+        "major_aspects": [],
+        "numerology": {},
+        "chinese_zodiac": "",
+        "unknown_time": True
+    }
+    
+    # Try to extract full reading (usually at the beginning or end)
+    # Look for common reading section markers
+    reading_markers = [
+        "Snapshot: What Will Feel Most True About You",
+        "Chart Overview and Core Themes",
+        "Your Astrological Blueprint",
+        "Major Life Dynamics"
+    ]
+    
+    reading_start = -1
+    for marker in reading_markers:
+        idx = pasted_text.find(marker)
+        if idx != -1:
+            reading_start = idx
+            break
+    
+    if reading_start != -1:
+        # Extract reading (everything before structured data sections)
+        result["full_reading"] = pasted_text[:reading_start].strip()
+        structured_data = pasted_text[reading_start:]
+    else:
+        # Assume all text is reading if no markers found
+        result["full_reading"] = pasted_text
+        structured_data = ""
+    
+    # Parse structured sections
+    lines = pasted_text.split('\n')
+    current_section = None
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        # Detect sections
+        if "=== SIDEREAL" in line.upper() or "SIDEREAL CHART" in line.upper():
+            current_section = "sidereal"
+        elif "=== TROPICAL" in line.upper() or "TROPICAL CHART" in line.upper():
+            current_section = "tropical"
+        elif "CORE IDENTITY" in line.upper():
+            current_section = "core_identity"
+        elif "MAJOR POSITIONS" in line.upper() or "PLANETARY PLACEMENTS" in line.upper():
+            current_section = "placements"
+        elif "MAJOR ASPECTS" in line.upper():
+            current_section = "aspects"
+        elif "NUMEROLOGY" in line.upper():
+            current_section = "numerology"
+        elif "CHINESE ZODIAC" in line.upper():
+            current_section = "chinese_zodiac"
+        elif "UNKNOWN TIME" in line.upper():
+            result["unknown_time"] = "true" in line.lower()
+        
+        # Parse placements
+        if current_section == "placements" and ":" in line:
+            # Format: "Sun: 25°30' Capricorn – House 10, 15°30'"
+            parts = line.split(":")
+            if len(parts) == 2:
+                planet = parts[0].strip()
+                position = parts[1].strip()
+                result["planetary_placements"]["sidereal"].append({
+                    "planet": planet,
+                    "position": position
+                })
+        
+        # Parse aspects
+        if current_section == "aspects" and ("conjunction" in line.lower() or "opposition" in line.lower() or 
+                                               "trine" in line.lower() or "square" in line.lower() or 
+                                               "sextile" in line.lower()):
+            result["major_aspects"].append(line)
+        
+        # Parse numerology
+        if current_section == "numerology":
+            if "life path" in line.lower():
+                result["numerology"]["life_path"] = line
+            elif "day number" in line.lower():
+                result["numerology"]["day_number"] = line
+            elif "expression" in line.lower():
+                result["numerology"]["expression"] = line
+        
+        # Parse Chinese zodiac
+        if current_section == "chinese_zodiac" and not result["chinese_zodiac"]:
+            result["chinese_zodiac"] = line
+    
+    return result
+
+
+async def generate_comprehensive_synastry(
+    llm: Gemini3Client,
+    person1_data: Dict[str, Any],
+    person2_data: Dict[str, Any]
+) -> str:
+    """
+    Generate comprehensive synastry analysis using the prompt structure from SYNANSTRY_PROMPT_GUIDE.md
+    """
+    logger.info("="*80)
+    logger.info("GENERATING COMPREHENSIVE SYNANSTRY ANALYSIS")
+    logger.info("="*80)
+    
+    # Build structured prompt following the guide
+    system_prompt = """You are an expert true sidereal astrologer specializing in synastry (relationship chart comparison). You analyze the compatibility, dynamics, and karmic connections between two people using both tropical and sidereal astrology, numerology, and Chinese zodiac.
+
+Your approach:
+- Synthesize insights from BOTH sidereal and tropical systems
+- Identify both harmonious and challenging aspects
+- Explain how numerology and Chinese zodiac add depth to the astrological picture
+- Use clear, psychologically literate language
+- Be specific and concrete, not generic
+- Acknowledge both strengths and growth areas in the relationship
+
+CRITICAL RULES:
+- Base your analysis ONLY on the chart data provided
+- Do not invent placements, aspects, or interpretations not in the data
+- Compare placements between Person 1 and Person 2 systematically
+- Consider both individual chart patterns AND their interaction"""
+    
+    # Format Person 1 data
+    person1_text = f"""=== PERSON 1 ===
+
+{person1_data.get('full_reading', 'Full reading not provided')}
+
+=== CHART DATA ===
+{json.dumps(person1_data.get('chart_data', {}), indent=2)}
+
+=== PLANETARY PLACEMENTS ===
+{chr(10).join(person1_data.get('planetary_placements', {}).get('sidereal', []))}
+
+=== MAJOR ASPECTS ===
+{chr(10).join(person1_data.get('major_aspects', [])[:10])}
+
+=== NUMEROLOGY ===
+{json.dumps(person1_data.get('numerology', {}), indent=2)}
+
+=== CHINESE ZODIAC ===
+{person1_data.get('chinese_zodiac', 'Not provided')}
+
+=== END PERSON 1 ===
+"""
+    
+    # Format Person 2 data
+    person2_text = f"""=== PERSON 2 ===
+
+{person2_data.get('full_reading', 'Full reading not provided')}
+
+=== CHART DATA ===
+{json.dumps(person2_data.get('chart_data', {}), indent=2)}
+
+=== PLANETARY PLACEMENTS ===
+{chr(10).join(person2_data.get('planetary_placements', {}).get('sidereal', []))}
+
+=== MAJOR ASPECTS ===
+{chr(10).join(person2_data.get('major_aspects', [])[:10])}
+
+=== NUMEROLOGY ===
+{json.dumps(person2_data.get('numerology', {}), indent=2)}
+
+=== CHINESE ZODIAC ===
+{person2_data.get('chinese_zodiac', 'Not provided')}
+
+=== END PERSON 2 ===
+"""
+    
+    user_prompt = f"""=== SYNANSTRY ANALYSIS REQUEST ===
+
+I need a comprehensive synastry analysis comparing two people's complete astrological profiles. Please analyze their compatibility, relationship dynamics, and karmic connections using all available data: tropical placements, sidereal placements, aspects, numerology, and Chinese zodiac.
+
+{person1_text}
+
+{person2_text}
+
+=== SYNANSTRY ANALYSIS TASK ===
+
+Please provide a comprehensive synastry analysis structured as follows:
+
+**1. Executive Summary: The Core Connection**
+Write 3-4 paragraphs that synthesize the overall relationship dynamic. What is the fundamental nature of this connection? What brings them together? What are the primary themes?
+
+**2. Sidereal Synastry: The True Zodiac Connection**
+- Compare Person 1's sidereal placements with Person 2's sidereal placements
+- Analyze sidereal-to-sidereal aspects (Person 1's planets aspecting Person 2's planets)
+- Identify the most significant sidereal connections
+- Explain what these reveal about their karmic and soul-level connection
+
+**3. Tropical Synastry: The Personality-Level Interaction**
+- Compare Person 1's tropical placements with Person 2's tropical placements
+- Analyze tropical-to-tropical aspects
+- Identify how their personalities interact in day-to-day life
+- Explain compatibility at the personality level
+
+**4. Cross-System Analysis: Where Systems Align or Diverge**
+- Compare Person 1's sidereal placements with Person 2's tropical placements (and vice versa)
+- Identify where the two systems tell the same story vs. where they diverge
+- Explain what this means for the relationship
+
+**5. Numerology Compatibility**
+- Compare Life Path numbers, Expression numbers, Day numbers
+- Analyze how their numerological energies interact
+- Identify numerological themes in the relationship
+
+**6. Chinese Zodiac Compatibility**
+- Compare their Chinese zodiac signs and elements
+- Explain traditional compatibility and how it relates to the Western astrological picture
+- Identify any interesting cross-cultural patterns
+
+**7. Major Synastry Aspects (Most Important)**
+Analyze the top 10-15 most significant synastry aspects between the two charts. For each:
+- Which person's planet aspects which person's planet
+- The aspect type and orb
+- What this means for their relationship dynamic
+- Concrete examples of how this might show up
+
+**8. Relationship Strengths**
+- What works well between them?
+- Where do they naturally support each other?
+- What gifts do they bring to each other?
+
+**9. Relationship Challenges & Growth Areas**
+- Where might they trigger each other?
+- What patterns might create friction?
+- How can they work with these challenges for mutual growth?
+
+**10. Synthesis: The Complete Picture**
+- Weave together insights from sidereal, tropical, numerology, and Chinese zodiac
+- Provide a holistic view of the relationship
+- Offer practical guidance for navigating the relationship
+
+**11. Karmic & Evolutionary Themes**
+- What might they be learning together?
+- What past-life or soul-level themes are present?
+- How can this relationship support their individual and mutual evolution?
+
+Please be thorough, specific, and reference the actual chart data throughout your analysis."""
+    
+    # Track cost before call
+    cost_before = llm.total_cost_usd
+    call_count_before = llm.call_count
+    
+    logger.info("Calling Gemini API for comprehensive synastry analysis...")
+    logger.info(f"Person 1 data length: {len(person1_text)} chars")
+    logger.info(f"Person 2 data length: {len(person2_text)} chars")
+    logger.info(f"Total prompt length: {len(user_prompt)} chars")
+    
+    response_text = await llm.generate(
+        system=system_prompt,
+        user=user_prompt,
+        max_output_tokens=32768,  # Very high limit for comprehensive analysis
+        temperature=0.7,
+        call_label="synastry_analysis"
+    )
+    
+    # Calculate cost
+    cost_after = llm.total_cost_usd
+    step_cost = cost_after - cost_before
+    call_count_after = llm.call_count
+    step_calls = call_count_after - call_count_before
+    
+    logger.info(f"Synastry analysis completed")
+    logger.info(f"API calls made: {step_calls}")
+    logger.info(f"Cost: ${step_cost:.6f} USD")
+    logger.info(f"Response length: {len(response_text)} characters")
+    logger.info("="*80)
+    
+    return response_text
+
+
+async def send_synastry_email(analysis_text: str, recipient_email: str):
+    """Send synastry analysis via email using SendGrid."""
+    SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+    SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL")
+    
+    if not SENDGRID_API_KEY or not SENDGRID_FROM_EMAIL:
+        logger.warning("SendGrid not configured, skipping email send")
+        return False
+    
+    try:
+        # Create HTML email
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #1b6ca8;">Synastry Analysis</h2>
+            <p>Your comprehensive synastry analysis is complete.</p>
+            <div style="white-space: pre-wrap; background: #f9f9f9; padding: 1.5em; border-radius: 6px; margin-top: 1em;">
+{analysis_text}
+            </div>
+            <p style="margin-top: 2em; color: #666; font-size: 0.9em;">
+                This analysis was generated by Synthesis Astrology using true sidereal astrology, numerology, and Chinese zodiac.
+            </p>
+        </body>
+        </html>
+        """
+        
+        message = Mail(
+            from_email=SENDGRID_FROM_EMAIL,
+            to_emails=recipient_email,
+            subject="Your Comprehensive Synastry Analysis",
+            html_content=html_content
+        )
+        
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        
+        if response.status_code in [200, 202]:
+            logger.info(f"Synastry analysis email sent successfully to {recipient_email}")
+            return True
+        else:
+            logger.error(f"Failed to send email: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error sending synastry email: {e}", exc_info=True)
+        return False
+
+
+@app.post("/api/synastry")
+@limiter.limit("10/day")
+async def synastry_endpoint(
+    request: Request,
+    data: SynastryRequest,
+    background_tasks: BackgroundTasks,
+    current_user: Optional[User] = Depends(get_current_user_optional),
+    db: Session = Depends(get_db)
+):
+    """
+    Comprehensive synastry analysis endpoint.
+    Only accessible with FRIENDS_AND_FAMILY_KEY.
+    """
+    # Check for FRIENDS_AND_FAMILY_KEY
+    friends_and_family_key = None
+    # Check query params first
+    if hasattr(request, 'query_params'):
+        friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY')
+    # Also check URL directly
+    if not friends_and_family_key and hasattr(request, 'url'):
+        from urllib.parse import urlparse, parse_qs
+        parsed = urlparse(str(request.url))
+        params = parse_qs(parsed.query)
+        if 'FRIENDS_AND_FAMILY_KEY' in params:
+            friends_and_family_key = params['FRIENDS_AND_FAMILY_KEY'][0]
+    # Check headers
+    if not friends_and_family_key:
+        for header_name, header_value in request.headers.items():
+            if header_name.lower() == "x-friends-and-family-key":
+                friends_and_family_key = header_value
+                break
+    
+    ADMIN_SECRET_KEY = os.getenv("FRIENDS_AND_FAMILY_KEY")
+    if not friends_and_family_key or not ADMIN_SECRET_KEY or friends_and_family_key != ADMIN_SECRET_KEY:
+        raise HTTPException(status_code=403, detail="Synastry analysis requires friends and family access")
+    
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=500, detail="Gemini API key not configured")
+    
+    logger.info("="*80)
+    logger.info("SYNANSTRY ANALYSIS REQUEST RECEIVED")
+    logger.info("="*80)
+    logger.info(f"User email: {data.user_email}")
+    logger.info(f"Person 1 data length: {len(data.person1_data)} chars")
+    logger.info(f"Person 2 data length: {len(data.person2_data)} chars")
+    
+    try:
+        # Parse the pasted data
+        logger.info("Parsing Person 1 data...")
+        person1_parsed = parse_pasted_chart_data(data.person1_data)
+        
+        logger.info("Parsing Person 2 data...")
+        person2_parsed = parse_pasted_chart_data(data.person2_data)
+        
+        # Initialize LLM client
+        llm = Gemini3Client()
+        
+        # Generate comprehensive synastry analysis
+        logger.info("Generating comprehensive synastry analysis...")
+        analysis = await generate_comprehensive_synastry(llm, person1_parsed, person2_parsed)
+        
+        # Send email in background
+        background_tasks.add_task(send_synastry_email, analysis, data.user_email)
+        
+        logger.info("Synastry analysis completed successfully")
+        
+        return {
+            "status": "success",
+            "analysis": analysis,
+            "message": "Analysis complete. Email sent to your address."
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating synastry analysis: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error generating synastry analysis: {str(e)}")
+
 # Famous People Similarity Matching endpoint has been moved to routers/famous_people_routes.py
 # The internal function has been moved to services/similarity_service.py
