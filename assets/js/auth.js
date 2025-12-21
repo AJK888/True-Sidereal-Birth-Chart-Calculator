@@ -1086,8 +1086,23 @@ const AuthManager = {
                 has_purchased_reading: true,
                 friends_family_access: true
             };
+            // Show synastry menu item with F&F key in URL
+            const synastryMenuItem = document.getElementById('synastry-menu-item');
+            if (synastryMenuItem) {
+                synastryMenuItem.style.display = 'block';
+                const link = synastryMenuItem.querySelector('a');
+                if (link) {
+                    link.href = `synastry.html?FRIENDS_AND_FAMILY_KEY=${encodeURIComponent(friendsAndFamilyKey)}`;
+                }
+            }
             this.updateSubscriptionUI();
             return;
+        } else {
+            // Hide synastry menu item if no key
+            const synastryMenuItem = document.getElementById('synastry-menu-item');
+            if (synastryMenuItem) {
+                synastryMenuItem.style.display = 'none';
+            }
         }
         
         if (!this.isLoggedIn()) {
