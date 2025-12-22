@@ -1155,18 +1155,22 @@ async def send_emails_in_background(chart_data: Dict, reading_text: str, user_in
         logger.error(f"Error in email background task: {e}", exc_info=True)
 
 
-# --- API Endpoints ---
+# ============================================================
+# OLD ENDPOINTS - MOVED TO app.api.v1.charts
+# ============================================================
+# These endpoints have been moved to app/api/v1/charts.py
+# Keeping commented for reference - can be removed after verification
 
-@app.post("/calculate_chart")
-@limiter.limit("200/day")
-async def calculate_chart_endpoint(
-    request: Request, 
-    data: ChartRequest, 
-    background_tasks: BackgroundTasks,
-    current_user: Optional[User] = Depends(get_current_user_optional),
-    db: Session = Depends(get_db)
-):
-    try:
+# @app.post("/calculate_chart")
+# @limiter.limit("200/day")
+# async def calculate_chart_endpoint(
+#     request: Request, 
+# #     data: ChartRequest, 
+#     background_tasks: BackgroundTasks,
+#     current_user: Optional[User] = Depends(get_current_user_optional),
+#     db: Session = Depends(get_db)
+# ):
+#     try:
         log_data = data.dict()
         if 'full_name' in log_data:
             log_data['chart_name'] = log_data.pop('full_name')
@@ -1590,16 +1594,15 @@ async def generate_reading_endpoint(
         # Raise HTTPException to send error detail back to frontend
         raise HTTPException(status_code=500, detail=str(e))
 
-
-@app.get("/get_reading/{chart_hash}")
-@limiter.limit("500/hour")
-async def get_reading_endpoint(
-    request: Request, 
-    chart_hash: str,
-    current_user: Optional[User] = Depends(get_current_user_optional),
-    db: Session = Depends(get_db)
-):
-    """
+# @app.get("/get_reading/{chart_hash}")
+# @limiter.limit("500/hour")
+# async def get_reading_endpoint(
+#     request: Request, 
+#     chart_hash: str,
+#     current_user: Optional[User] = Depends(get_current_user_optional),
+#     db: Session = Depends(get_db)
+# ):
+#     """
     Retrieve a completed reading from the cache by chart hash.
     Used by frontend to poll for completed readings.
     Requires authentication to access full reading page.
@@ -1678,12 +1681,13 @@ async def get_reading_endpoint(
             "message": "Reading is still being generated. Please check again in a moment."
         }
 
-
 # ============================================================
-# USER AUTHENTICATION ENDPOINTS
+# OLD ENDPOINTS - MOVED TO app.api.v1.auth
 # ============================================================
+# These endpoints have been moved to app/api/v1/auth.py
+# Keeping commented for reference - can be removed after verification
 
-class RegisterRequest(BaseModel):
+# class RegisterRequest(BaseModel):
     email: str
     password: str
     full_name: Optional[str] = None
@@ -1693,9 +1697,8 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
-
-@app.post("/auth/register", response_model=Token)
-async def register_endpoint(data: RegisterRequest, db: Session = Depends(get_db)):
+# @app.post("/auth/register", response_model=Token)
+# async def register_endpoint(data: RegisterRequest, db: Session = Depends(get_db)):
     """Register a new user account."""
     try:
         # Check if user already exists
@@ -1741,8 +1744,8 @@ async def register_endpoint(data: RegisterRequest, db: Session = Depends(get_db)
         )
 
 
-@app.post("/auth/login", response_model=Token)
-async def login_endpoint(data: LoginRequest, db: Session = Depends(get_db)):
+# @app.post("/auth/login", response_model=Token)
+# async def login_endpoint(data: LoginRequest, db: Session = Depends(get_db)):
     """Login and get access token."""
     user = authenticate_user(db, data.email, data.password)
     if not user:
@@ -1769,8 +1772,8 @@ async def login_endpoint(data: LoginRequest, db: Session = Depends(get_db)):
     )
 
 
-@app.get("/auth/me", response_model=UserResponse)
-async def get_current_user_endpoint(current_user: User = Depends(get_current_user)):
+# @app.get("/auth/me", response_model=UserResponse)
+# async def get_current_user_endpoint(current_user: User = Depends(get_current_user)):
     """Get current authenticated user."""
     return UserResponse.model_validate(current_user)
 
@@ -1809,8 +1812,8 @@ class SavedChartResponse(BaseModel):
         from_attributes = True
 
 
-@app.post("/charts/save")
-async def save_chart_endpoint(
+# @app.post("/charts/save")
+# async def save_chart_endpoint(
     data: SaveChartRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -1842,8 +1845,8 @@ async def save_chart_endpoint(
     }
 
 
-@app.get("/charts/list")
-async def list_charts_endpoint(
+# @app.get("/charts/list")
+# async def list_charts_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -1864,8 +1867,8 @@ async def list_charts_endpoint(
     ]
 
 
-@app.get("/charts/{chart_id}")
-async def get_chart_endpoint(
+# @app.get("/charts/{chart_id}")
+# async def get_chart_endpoint(
     chart_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -1895,8 +1898,8 @@ async def get_chart_endpoint(
     }
 
 
-@app.delete("/charts/{chart_id}")
-async def delete_chart_endpoint(
+# @app.delete("/charts/{chart_id}")
+# async def delete_chart_endpoint(
     chart_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -2406,9 +2409,9 @@ async def get_conversation_endpoint(
     }
 
 
-@app.post("/api/log-clicks")
-@limiter.limit("1000/hour")  # Allow many clicks but prevent abuse
-async def log_clicks_endpoint(
+# @app.post("/api/log-clicks")
+# @limiter.limit("1000/hour")  # Allow many clicks but prevent abuse
+# async def log_clicks_endpoint(
     request: Request,
     data: dict
 ):
@@ -2526,8 +2529,8 @@ async def delete_conversation_endpoint(
 from subscription import create_subscription_checkout, create_reading_checkout, handle_subscription_webhook
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 
-@app.get("/api/subscription/status")
-async def get_subscription_status(
+# @app.get("/api/subscription/status")
+# async def get_subscription_status(
     request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -2563,8 +2566,8 @@ async def get_subscription_status(
     }
 
 
-@app.post("/api/reading/checkout")
-async def create_reading_checkout_endpoint(
+# @app.post("/api/reading/checkout")
+# async def create_reading_checkout_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -2580,8 +2583,8 @@ async def create_reading_checkout_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/subscription/checkout")
-async def create_subscription_checkout_endpoint(
+# @app.post("/api/subscription/checkout")
+# async def create_subscription_checkout_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -2597,8 +2600,8 @@ async def create_subscription_checkout_endpoint(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/webhooks/render-deploy")
-async def render_deploy_webhook(request: Request):
+# @app.post("/api/webhooks/render-deploy")
+# async def render_deploy_webhook(request: Request):
     """Handle Render deployment webhook to trigger webpage deployment.
     
     This endpoint is called by Render when the API deployment completes.
@@ -2647,8 +2650,8 @@ async def render_deploy_webhook(request: Request):
         }
 
 
-@app.post("/api/webhooks/stripe")
-async def stripe_webhook_endpoint(request: Request, db: Session = Depends(get_db)):
+# @app.post("/api/webhooks/stripe")
+# async def stripe_webhook_endpoint(request: Request, db: Session = Depends(get_db)):
     """Handle Stripe webhook events for subscriptions."""
     payload = await request.body()
     sig_header = request.headers.get("Stripe-Signature")
