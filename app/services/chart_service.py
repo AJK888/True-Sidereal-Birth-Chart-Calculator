@@ -17,7 +17,9 @@ import hashlib
 import logging
 from typing import Dict, Any, Optional
 
-logger = logging.getLogger(__name__)
+from app.core.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def generate_chart_hash(chart_data: Dict, unknown_time: bool) -> str:

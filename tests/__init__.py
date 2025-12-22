@@ -1,2 +1,3 @@
-# Tests package
-
+"""
+Test package for Synthesis Astrology backend.
+"""

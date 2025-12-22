@@ -41,7 +41,9 @@ from .llm_service import (
 # Import for famous people matching
 from services.similarity_service import find_similar_famous_people_internal
 
-logger = logging.getLogger(__name__)
+from app.core.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # --- Configuration ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")

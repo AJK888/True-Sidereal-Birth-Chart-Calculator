@@ -16,7 +16,9 @@ from typing import Optional
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 
-logger = logging.getLogger(__name__)
+from app.core.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 # --- Configuration ---
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
