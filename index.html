@@ -552,6 +552,9 @@
 <!-- Critical scripts loaded immediately -->
 <script src="assets/js/jquery.min.js"></script>
 		<script src="assets/js/util.js"></script>
+		<!-- Load breakpoints and browser BEFORE main.js (main.js depends on them) -->
+		<script src="assets/js/browser.min.js"></script>
+		<script src="assets/js/breakpoints.min.js"></script>
 		<script src="assets/js/main.js"></script>
 		<!-- New modular structure -->
 		<script src="assets/js/utils.js"></script>
@@ -570,8 +573,6 @@
 		<!-- Non-critical scripts deferred -->
 		<script defer src="assets/js/jquery.scrolly.min.js"></script>
 		<script defer src="assets/js/jquery.scrollex.min.js"></script>
-		<script defer src="assets/js/browser.min.js"></script>
-		<script defer src="assets/js/breakpoints.min.js"></script>
 		<script defer src="assets/js/click-tracker.js"></script>
 		
 		<!-- Fallback: Remove is-preload class if main.js fails to load -->
