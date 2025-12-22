@@ -37,19 +37,19 @@ from app.config import SENDGRID_API_KEY, SENDGRID_FROM_EMAIL
 
 
 @router.api_route("/ping", methods=["GET", "HEAD"])
-def ping():
+def ping() -> Dict[str, str]:
     """Ping endpoint for health checks."""
     return {"message": "ok"}
 
 
 @router.get("/")
-def root():
+def root() -> Dict[str, str]:
     """Simple root endpoint so uptime monitors don't hit a 404."""
     return {"message": "ok"}
 
 
 @router.get("/check_email_config")
-def check_email_config():
+def check_email_config() -> Dict[str, Any]:
     """Diagnostic endpoint to check SendGrid email configuration."""
     config_status = {
         "sendgrid_api_key": {
@@ -71,7 +71,7 @@ def check_email_config():
 async def log_clicks_endpoint(
     request: Request,
     data: dict
-):
+) -> Dict[str, Any]:
     """Log user clicks for debugging purposes."""
     try:
         clicks = data.get('clicks', [])

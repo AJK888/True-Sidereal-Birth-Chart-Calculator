@@ -7,6 +7,7 @@ Subscription status, checkout, and webhook endpoints.
 import os
 import requests
 import logging
+from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Request, Depends
 from sqlalchemy.orm import Session
 
@@ -29,7 +30,7 @@ async def get_subscription_status(
     request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
-):
+) -> Dict[str, Any]:
     """Get current user's subscription status and reading purchase info."""
     # Check for FRIENDS_AND_FAMILY_KEY bypass
     friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY')
@@ -65,7 +66,7 @@ async def get_subscription_status(
 async def create_reading_checkout_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
-):
+) -> Dict[str, Any]:
     """Create a Stripe checkout session for $28 one-time full reading purchase."""
     try:
         from subscription import create_reading_checkout
@@ -83,7 +84,7 @@ async def create_reading_checkout_endpoint(
 async def create_subscription_checkout_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
-):
+) -> Dict[str, Any]:
     """Create a Stripe checkout session for $8/month subscription."""
     try:
         from subscription import create_subscription_checkout
@@ -98,7 +99,7 @@ async def create_subscription_checkout_endpoint(
 
 
 @router.post("/webhooks/render-deploy")
-async def render_deploy_webhook(request: Request):
+async def render_deploy_webhook(request: Request) -> Dict[str, Any]:
     """Handle Render deployment webhook to trigger webpage deployment.
     
     This endpoint is called by Render when the API deployment completes.
@@ -147,7 +148,7 @@ async def render_deploy_webhook(request: Request):
 
 
 @router.post("/webhooks/stripe")
-async def stripe_webhook_endpoint(request: Request, db: Session = Depends(get_db)):
+async def stripe_webhook_endpoint(request: Request, db: Session = Depends(get_db)) -> Dict[str, Any]:
     """Handle Stripe webhook events for subscriptions."""
     payload = await request.body()
     sig_header = request.headers.get("Stripe-Signature")

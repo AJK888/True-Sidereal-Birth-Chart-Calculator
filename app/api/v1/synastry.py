@@ -43,7 +43,7 @@ async def synastry_endpoint(
     background_tasks: BackgroundTasks,
     current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
-):
+) -> Dict[str, Any]:
     """
     Comprehensive synastry analysis endpoint.
     Only accessible with FRIENDS_AND_FAMILY_KEY.

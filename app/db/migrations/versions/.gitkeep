@@ -1,0 +1,4 @@
+# This directory will contain Alembic migration files
+# After running: alembic revision --autogenerate -m "Initial schema"
+# Migration files will appear here
+

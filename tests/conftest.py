@@ -1,52 +1,68 @@
 """
-Pytest configuration and shared fixtures.
+Pytest configuration and shared fixtures for testing.
+
+This module provides common test fixtures and configuration
+for all test modules.
 """
 
 import pytest
-import os
-import sys
-from typing import Generator
-from unittest.mock import Mock, MagicMock, patch
-
-# Add project root to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+import os
+import sys
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 # Import app and database
 from api import app
-from database import Base, get_db
+from database import Base, get_db, User
+from auth import create_access_token, get_password_hash
 
 
-# Test database setup
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+# Test database URL (in-memory SQLite for fast tests)
+TEST_DATABASE_URL = "sqlite:///:memory:"
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
+# Create test engine
+test_engine = create_engine(
+    TEST_DATABASE_URL,
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Create test session factory
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 
 @pytest.fixture(scope="function")
-def db_session() -> Generator:
-    """Create a fresh database session for each test."""
-    Base.metadata.create_all(bind=engine)
-    db = TestingSessionLocal()
+def db_session():
+    """
+    Create a fresh database session for each test.
+    Database is created and dropped for each test.
+    """
+    # Create all tables
+    Base.metadata.create_all(bind=test_engine)
+    
+    # Create session
+    session = TestingSessionLocal()
+    
     try:
-        yield db
+        yield session
     finally:
-        db.close()
-        Base.metadata.drop_all(bind=engine)
+        session.close()
+        # Drop all tables after test
+        Base.metadata.drop_all(bind=test_engine)
 
 
 @pytest.fixture(scope="function")
-def client(db_session) -> Generator:
-    """Create a test client with database override."""
+def client(db_session):
+    """
+    Create a test client with database dependency override.
+    """
     def override_get_db():
         try:
             yield db_session
@@ -54,14 +70,71 @@ def client(db_session) -> Generator:
             pass
     
     app.dependency_overrides[get_db] = override_get_db
+    
     with TestClient(app) as test_client:
         yield test_client
+    
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def test_user(db_session):
+    """
+    Create a test user for authentication tests.
+    """
+    user = User(
+        email="test@example.com",
+        hashed_password=get_password_hash("testpassword123"),
+        full_name="Test User",
+        is_active=True,
+        is_admin=False
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def test_admin_user(db_session):
+    """
+    Create a test admin user.
+    """
+    user = User(
+        email="admin@example.com",
+        hashed_password=get_password_hash("adminpassword123"),
+        full_name="Admin User",
+        is_active=True,
+        is_admin=True
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def auth_headers(test_user):
+    """
+    Create authentication headers for a test user.
+    """
+    access_token = create_access_token(data={"sub": str(test_user.id), "email": test_user.email})
+    return {"Authorization": f"Bearer {access_token}"}
+
+
+@pytest.fixture
+def admin_auth_headers(test_admin_user):
+    """
+    Create authentication headers for an admin user.
+    """
+    access_token = create_access_token(data={"sub": str(test_admin_user.id), "email": test_admin_user.email})
+    return {"Authorization": f"Bearer {access_token}"}
 
 
 @pytest.fixture
 def mock_gemini_client():
     """Mock Gemini3Client for testing."""
+    from unittest.mock import Mock
     mock_client = Mock()
     mock_client.total_prompt_tokens = 0
     mock_client.total_completion_tokens = 0
@@ -121,6 +194,7 @@ def sample_user_data():
 @pytest.fixture
 def mock_sendgrid():
     """Mock SendGrid client for testing."""
+    from unittest.mock import Mock, patch
     with patch('app.services.email_service.SendGridAPIClient') as mock_sg:
         mock_response = Mock()
         mock_response.status_code = 200
@@ -135,4 +209,5 @@ def mock_env_vars(monkeypatch):
     monkeypatch.setenv("SENDGRID_API_KEY", "test-sendgrid-key")
     monkeypatch.setenv("SENDGRID_FROM_EMAIL", "test@example.com")
     monkeypatch.setenv("AI_MODE", "stub")  # Use stub mode for testing
-
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key-for-testing")
+    monkeypatch.setenv("DATABASE_URL", "sqlite:///./test.db")

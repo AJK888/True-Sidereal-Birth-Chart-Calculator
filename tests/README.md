@@ -1,65 +1,130 @@
-# Test Suite
+# Testing Guide
 
-This directory contains the test suite for the Synthesis Astrology backend.
+This directory contains tests for the Synthesis Astrology API.
 
-## Structure
+## Test Structure
 
-- `conftest.py` - Shared pytest fixtures and configuration
-- `unit/` - Unit tests
-  - `test_services.py` - Service module tests
-  - `test_calculations_preserved.py` - Calculation regression tests
-  - `test_prompts_preserved.py` - Prompt regression tests
+```
+tests/
+├── conftest.py           # Shared fixtures and configuration
+├── unit/                 # Unit tests (isolated components)
+│   ├── test_auth.py     # Authentication endpoint tests
+│   └── test_utilities.py # Utility endpoint tests
+└── integration/          # Integration tests (full workflows)
+    ├── test_charts.py    # Chart calculation tests
+    └── test_saved_charts.py # Saved charts CRUD tests
+```
 
 ## Running Tests
 
+### Run all tests:
 ```bash
-# Install test dependencies
-pip install pytest pytest-asyncio
-
-# Run all tests
 pytest
+```
 
-# Run specific test file
-pytest tests/unit/test_services.py
+### Run specific test file:
+```bash
+pytest tests/unit/test_auth.py
+```
 
-# Run with coverage
+### Run with coverage:
+```bash
 pytest --cov=app --cov-report=html
+```
 
-# Run with verbose output
+### Run with verbose output:
+```bash
 pytest -v
 ```
 
-## Test Categories
+## Test Fixtures
 
-### Unit Tests (`test_services.py`)
-- Test individual service functions
-- Mock external dependencies (Gemini API, SendGrid)
-- Verify function behavior and return values
+The `conftest.py` file provides the following fixtures:
 
-### Regression Tests (`test_calculations_preserved.py`)
-- ⚠️ **CRITICAL**: Verify calculations remain unchanged
-- Test chart calculation structure
-- Verify numerology and Chinese zodiac calculations
-- Ensure house calculations work correctly
+### Database Fixtures
+- `db_session` - Fresh database session for each test
+- `client` - FastAPI TestClient with database override
 
-### Prompt Tests (`test_prompts_preserved.py`)
-- ⚠️ **CRITICAL**: Verify prompts remain unchanged
-- Test prompt function signatures
-- Verify functions are callable
-- Ensure prompt structure is preserved
+### User Fixtures
+- `test_user` - Regular test user
+- `test_admin_user` - Admin test user
+- `auth_headers` - Authentication headers for test user
+- `admin_auth_headers` - Authentication headers for admin user
 
-## Important Notes
+### Mock Fixtures
+- `mock_gemini_client` - Mock LLM client
+- `mock_sendgrid` - Mock email service
+- `mock_env_vars` - Mock environment variables
 
-- **Preservation Tests**: The calculation and prompt tests are critical for ensuring no breaking changes
-- **Mocking**: External APIs (Gemini, SendGrid) are mocked to avoid API costs during testing
-- **Database**: Tests use an in-memory SQLite database that's created/destroyed per test
-- **Environment**: Tests use stub mode for AI (`AI_MODE=stub`) to avoid API calls
+### Data Fixtures
+- `sample_chart_data` - Sample chart data for testing
+- `sample_user_data` - Sample user data for testing
 
-## Adding New Tests
+## Writing New Tests
 
-When adding new functionality:
-1. Add unit tests to `test_services.py`
-2. If modifying calculations, add regression tests to `test_calculations_preserved.py`
-3. If modifying prompts, add tests to `test_prompts_preserved.py`
-4. Update this README if adding new test categories
+### Example Unit Test:
+```python
+def test_example_endpoint(client, auth_headers):
+    """Test an example endpoint."""
+    response = client.get(
+        "/api/endpoint",
+        headers=auth_headers
+    )
+    
+    assert response.status_code == 200
+    assert "data" in response.json()
+```
 
+### Example Integration Test:
+```python
+def test_workflow(client, db_session, test_user, auth_headers):
+    """Test a complete workflow."""
+    # Step 1: Create resource
+    create_response = client.post(
+        "/api/resource",
+        json={"name": "Test"},
+        headers=auth_headers
+    )
+    assert create_response.status_code == 200
+    
+    # Step 2: Retrieve resource
+    resource_id = create_response.json()["id"]
+    get_response = client.get(
+        f"/api/resource/{resource_id}",
+        headers=auth_headers
+    )
+    assert get_response.status_code == 200
+```
+
+## Test Database
+
+Tests use an in-memory SQLite database that is:
+- Created fresh for each test
+- Dropped after each test
+- Isolated from other tests
+
+This ensures:
+- Tests don't interfere with each other
+- Tests run quickly
+- No cleanup needed between tests
+
+## Best Practices
+
+1. **Use fixtures** - Don't create test data manually, use fixtures
+2. **Test one thing** - Each test should verify one behavior
+3. **Use descriptive names** - Test names should describe what they test
+4. **Clean assertions** - Use clear, readable assertions
+5. **Mock external services** - Don't call real APIs in tests
+
+## Continuous Integration
+
+Tests should be run:
+- Before committing code
+- In CI/CD pipeline
+- Before deploying to production
+
+## Coverage Goals
+
+- **Unit Tests:** 80%+ coverage for services and utilities
+- **Integration Tests:** Cover all critical user workflows
+- **Regression Tests:** Ensure calculations and prompts are preserved

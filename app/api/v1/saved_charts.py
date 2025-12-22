@@ -7,7 +7,7 @@ CRUD operations for user's saved charts.
 import json
 import logging
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -58,7 +58,7 @@ async def save_chart_endpoint(
     data: SaveChartRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
-):
+) -> Dict[str, Any]:
     """Save a chart for the authenticated user."""
     # Create the saved chart
     saved_chart = SavedChart(
@@ -90,7 +90,7 @@ async def save_chart_endpoint(
 async def list_charts_endpoint(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
-):
+) -> List[Dict[str, Any]]:
     """List all saved charts for the authenticated user."""
     charts = db.query(SavedChart).filter(SavedChart.user_id == current_user.id).order_by(SavedChart.created_at.desc()).all()
     
@@ -113,7 +113,7 @@ async def get_chart_endpoint(
     chart_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
-):
+) -> Dict[str, Any]:
     """Get a specific saved chart."""
     chart = db.query(SavedChart).filter(
         SavedChart.id == chart_id,
@@ -144,7 +144,7 @@ async def delete_chart_endpoint(
     chart_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
-):
+) -> Dict[str, str]:
     """Delete a saved chart."""
     chart = db.query(SavedChart).filter(
         SavedChart.id == chart_id,
