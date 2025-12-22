@@ -151,3 +151,4 @@ class TestCalculationsPreserved:
             # Note: This may not always be present depending on implementation
             # Just verify the structure is correct
 
+

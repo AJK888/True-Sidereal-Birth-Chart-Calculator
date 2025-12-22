@@ -49,10 +49,11 @@ def test_security_headers_present(client):
     assert response.headers["Referrer-Policy"] == "no-referrer", \
         f"Expected Referrer-Policy=no-referrer, got: {response.headers.get('Referrer-Policy')}"
     
-    assert "X-Frame-Options" in response.headers, \
-        "X-Frame-Options header missing"
-    assert response.headers["X-Frame-Options"] == "DENY", \
-        f"Expected X-Frame-Options=DENY, got: {response.headers.get('X-Frame-Options')}"
+    # X-Frame-Options is deprecated - CSP frame-ancestors handles this
+    # Verify CSP includes frame-ancestors
+    csp = response.headers.get("Content-Security-Policy", "")
+    assert "frame-ancestors" in csp.lower(), \
+        "Content-Security-Policy should include frame-ancestors directive"
 
 
 def test_api_endpoints_no_cache(client):
@@ -67,18 +68,18 @@ def test_api_endpoints_no_cache(client):
     # Check cache-control headers
     assert "Cache-Control" in response.headers, \
         "Cache-Control header missing on API endpoint"
-    assert "no-store" in response.headers["Cache-Control"].lower(), \
+    cache_control = response.headers["Cache-Control"].lower()
+    assert "no-store" in cache_control, \
         f"Expected no-store in Cache-Control, got: {response.headers.get('Cache-Control')}"
+    assert "must-revalidate" not in cache_control, \
+        "Cache-Control should not include deprecated must-revalidate directive"
     
-    assert "Pragma" in response.headers, \
-        "Pragma header missing on API endpoint"
-    assert response.headers["Pragma"] == "no-cache", \
-        f"Expected Pragma=no-cache, got: {response.headers.get('Pragma')}"
-    
-    assert "Expires" in response.headers, \
-        "Expires header missing on API endpoint"
-    assert response.headers["Expires"] == "0", \
-        f"Expected Expires=0, got: {response.headers.get('Expires')}"
+    # Pragma and Expires are deprecated - Cache-Control is sufficient
+    # These headers should not be present
+    assert "Pragma" not in response.headers, \
+        "Pragma header is deprecated and should not be present"
+    assert "Expires" not in response.headers, \
+        "Expires header is deprecated and should not be present"
 
 
 def test_calculate_chart_no_cache(client):
@@ -98,18 +99,18 @@ def test_calculate_chart_no_cache(client):
     # Check cache-control headers
     assert "Cache-Control" in response.headers, \
         "Cache-Control header missing on /calculate_chart endpoint"
-    assert "no-store" in response.headers["Cache-Control"].lower(), \
+    cache_control = response.headers["Cache-Control"].lower()
+    assert "no-store" in cache_control, \
         f"Expected no-store in Cache-Control, got: {response.headers.get('Cache-Control')}"
+    assert "must-revalidate" not in cache_control, \
+        "Cache-Control should not include deprecated must-revalidate directive"
     
-    assert "Pragma" in response.headers, \
-        "Pragma header missing on /calculate_chart endpoint"
-    assert response.headers["Pragma"] == "no-cache", \
-        f"Expected Pragma=no-cache, got: {response.headers.get('Pragma')}"
-    
-    assert "Expires" in response.headers, \
-        "Expires header missing on /calculate_chart endpoint"
-    assert response.headers["Expires"] == "0", \
-        f"Expected Expires=0, got: {response.headers.get('Expires')}"
+    # Pragma and Expires are deprecated - Cache-Control is sufficient
+    # These headers should not be present
+    assert "Pragma" not in response.headers, \
+        "Pragma header is deprecated and should not be present"
+    assert "Expires" not in response.headers, \
+        "Expires header is deprecated and should not be present"
 
 
 def test_non_api_endpoints_no_cache_headers(client):

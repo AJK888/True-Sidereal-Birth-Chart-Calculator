@@ -108,3 +108,4 @@ class TestPromptsPreserved:
             # If it fails, it should fail gracefully
             assert "unavailable" in str(e).lower() or "error" in str(e).lower()
 
+

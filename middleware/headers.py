@@ -11,7 +11,7 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
-NO_STORE = "no-cache, no-store, must-revalidate"
+NO_STORE = "no-cache, no-store"
 
 
 class NormalizeJsonContentTypeMiddleware(BaseHTTPMiddleware):
@@ -47,13 +47,12 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     
     Adds comprehensive security headers:
     - X-Content-Type-Options: nosniff
-    - Content-Security-Policy: default-src 'none'; frame-ancestors 'none'
+    - Content-Security-Policy: default-src 'none'; frame-ancestors 'none' (replaces X-Frame-Options)
     - Referrer-Policy: no-referrer
-    - X-Frame-Options: DENY
-    - X-XSS-Protection: 1; mode=block
     - Strict-Transport-Security: max-age=31536000; includeSubDomains (HTTPS only)
     - Permissions-Policy: geolocation=(), microphone=(), camera=()
     
+    Note: X-Frame-Options and X-XSS-Protection are deprecated in favor of CSP.
     Uses setdefault so explicit headers from endpoints can override.
     """
     
@@ -67,8 +66,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "default-src 'none'; frame-ancestors 'none'"
         )
         response.headers.setdefault("Referrer-Policy", "no-referrer")
-        response.headers.setdefault("X-Frame-Options", "DENY")
-        response.headers.setdefault("X-XSS-Protection", "1; mode=block")
+        # X-Frame-Options and X-XSS-Protection are deprecated - CSP handles this
         
         # HSTS header (only for HTTPS)
         if request.url.scheme == "https":
@@ -91,9 +89,9 @@ class ApiNoCacheMiddleware(BaseHTTPMiddleware):
     Middleware to add no-cache headers to API endpoints.
     
     For POST /calculate_chart and POST /api/* paths, sets:
-    - Cache-Control: no-cache, no-store, must-revalidate
-    - Pragma: no-cache
-    - Expires: 0
+    - Cache-Control: no-cache, no-store
+    
+    Note: Pragma and Expires headers are deprecated - Cache-Control is sufficient.
     """
     
     async def dispatch(self, request: Request, call_next):
@@ -104,8 +102,7 @@ class ApiNoCacheMiddleware(BaseHTTPMiddleware):
         
         if is_api:
             response.headers["Cache-Control"] = NO_STORE
-            response.headers["Pragma"] = "no-cache"
-            response.headers["Expires"] = "0"
+            # Pragma and Expires are deprecated - Cache-Control is sufficient
         
         return response
 

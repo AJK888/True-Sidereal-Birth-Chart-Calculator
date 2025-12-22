@@ -129,3 +129,4 @@ class TestChartService:
         assert "chart_data" in result
         assert "planetary_placements" in result
 
+
