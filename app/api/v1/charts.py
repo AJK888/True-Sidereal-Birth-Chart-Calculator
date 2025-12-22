@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, Depends
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from sqlalchemy.orm import Session
 
 from app.core.logging_config import setup_logger
@@ -76,6 +76,56 @@ class ChartRequest(BaseModel):
     unknown_time: bool = False
     user_email: Optional[str] = None
     is_full_birth_name: bool = False
+    
+    @validator('year')
+    def validate_year(cls, v):
+        if v < 1900 or v > 2100:
+            raise ValueError('Birth year must be between 1900 and 2100')
+        return v
+    
+    @validator('month')
+    def validate_month(cls, v):
+        if v < 1 or v > 12:
+            raise ValueError('Birth month must be between 1 and 12')
+        return v
+    
+    @validator('day')
+    def validate_day(cls, v, values):
+        if 'month' in values:
+            month = values['month']
+            days_in_month = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+            max_days = days_in_month[month - 1] if month else 31
+            if v < 1 or v > max_days:
+                raise ValueError(f'Birth day must be between 1 and {max_days} for month {month}')
+        return v
+    
+    @validator('hour')
+    def validate_hour(cls, v):
+        if v < 0 or v > 23:
+            raise ValueError('Hour must be between 0 and 23')
+        return v
+    
+    @validator('minute')
+    def validate_minute(cls, v):
+        if v < 0 or v > 59:
+            raise ValueError('Minute must be between 0 and 59')
+        return v
+    
+    @validator('location')
+    def validate_location(cls, v):
+        if not v or len(v.strip()) < 2:
+            raise ValueError('Location must be at least 2 characters')
+        if len(v) > 500:
+            raise ValueError('Location must be less than 500 characters')
+        return v.strip()
+    
+    @validator('full_name')
+    def validate_full_name(cls, v):
+        if not v or len(v.strip()) < 1:
+            raise ValueError('Full name cannot be empty')
+        if len(v) > 255:
+            raise ValueError('Full name must be less than 255 characters')
+        return v.strip()
 
 
 class ReadingRequest(BaseModel):
