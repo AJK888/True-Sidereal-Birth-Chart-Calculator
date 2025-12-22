@@ -226,7 +226,10 @@ class PerformanceMonitor {
 	 * @param {Object} data - Metric data
 	 */
 	logMetric(name, data) {
-		if (process.env.NODE_ENV === 'development') {
+		// Check for development mode (browser-safe)
+		const isDevelopment = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development' ||
+			window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+		if (isDevelopment) {
 			console.log(`[Performance] ${name}:`, data);
 		}
 

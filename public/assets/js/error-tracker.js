@@ -87,8 +87,10 @@ class ErrorTracker {
 			context: errorData.context || {}
 		};
 
-		// Log to console in development
-		if (process.env.NODE_ENV === 'development') {
+		// Log to console in development (browser-safe)
+		const isDevelopment = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development' ||
+			window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+		if (isDevelopment) {
 			console.error('[Error Tracker]', error);
 		}
 
