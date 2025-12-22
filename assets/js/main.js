@@ -307,16 +307,27 @@
 			$(document).off('click', 'a[href="#menu"]');
 			$('a[href="#menu"]').off('click');
 			
-			// Attach handler using capture phase to run before other handlers
+			// Attach handler to menu toggle button by ID (most reliable)
+			$('#menu-toggle').on('click', function(event) {
+				event.preventDefault();
+				event.stopPropagation();
+				event.stopImmediatePropagation();
+				console.log('[Menu] Toggle button clicked (ID handler)');
+				menuToggle();
+				return false;
+			});
+			
+			// Also handle old href="#menu" links for compatibility
 			document.addEventListener('click', function(event) {
 				var target = event.target;
 				// Check if clicked element or its parent is the menu link
 				while (target && target !== document) {
-					if (target.tagName === 'A' && target.getAttribute('href') === '#menu') {
+					if ((target.id === 'menu-toggle') || 
+					    (target.tagName === 'A' && target.getAttribute('href') === '#menu')) {
 						event.preventDefault();
 						event.stopPropagation();
 						event.stopImmediatePropagation();
-						console.log('[Menu] Toggle button clicked (capture phase), preventing default');
+						console.log('[Menu] Toggle button clicked (capture phase)');
 						menuToggle();
 						setTimeout(function() {
 							if (window.location.hash === '#menu') {
@@ -329,9 +340,8 @@
 				}
 			}, true); // Use capture phase
 			
-			// Also attach jQuery handlers for compatibility
+			// Also attach jQuery handlers for compatibility with old href="#menu"
 			$(document).on('click', 'a[href="#menu"]', menuButtonHandler);
-			$('a[href="#menu"]').on('click', menuButtonHandler);
 			
 			// Also handle hashchange to prevent menu from opening on hash navigation
 			$(window).on('hashchange', function() {

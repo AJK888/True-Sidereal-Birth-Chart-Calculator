@@ -814,12 +814,14 @@ body.is-menu-visible #menu {
     visibility: visible !important;
     opacity: 1 !important;
     pointer-events: auto !important;
+    z-index: 10002 !important; /* Ensure menu is above everything */
 }
 
 body.is-menu-visible #menu .inner {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
+    transform: none !important; /* Remove any transforms that might hide it */
 }
 #banner:before {
     background: rgba(36, 41, 62, 0.25) !important; 

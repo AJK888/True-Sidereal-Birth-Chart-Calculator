@@ -28,6 +28,7 @@
 		<!-- PWA -->
 		<meta name="theme-color" content="#9f7aea" />
 		<meta name="mobile-web-app-capable" content="yes" />
+		<!-- apple-mobile-web-app-capable is deprecated but kept for older iOS versions -->
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 		<meta name="apple-mobile-web-app-title" content="Synthesis Astrology" />
@@ -205,7 +206,7 @@
 				<header id="header" class="alt" role="banner">
 						<a href="index.html" class="logo" aria-label="Synthesis Astrology home"><strong>Synthesis</strong> <span>Astrology</span></a>
 						<nav role="navigation" aria-label="Site navigation">
-							<a href="#menu" aria-label="Open navigation menu">Menu</a>
+							<a href="javascript:void(0)" id="menu-toggle" aria-label="Open navigation menu">Menu</a>
 						</nav>
 					</header>
 
