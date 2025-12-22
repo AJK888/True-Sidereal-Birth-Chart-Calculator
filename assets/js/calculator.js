@@ -1,4 +1,8 @@
 const AstrologyCalculator = {
+	// Use centralized API client if available, fallback to direct URLs
+	get apiClient() {
+		return typeof apiClient !== 'undefined' ? apiClient : null;
+	},
 	API_URLS: {
 		calculate: "https://true-sidereal-api.onrender.com/calculate_chart",
 		reading: "https://true-sidereal-api.onrender.com/generate_reading"
@@ -20,6 +24,14 @@ const AstrologyCalculator = {
 		this.ensureEmailRequired();
 		// Initialize polling interval tracker
 		this.pollingInterval = null;
+		// Initialize lazy loading for transit chart
+		this.initLazyLoading();
+		// Initialize mobile sticky CTA
+		this.initMobileStickyCTA();
+		// Initialize form validator
+		if (typeof FormValidator !== 'undefined' && this.form) {
+			this.formValidator = new FormValidator(this.form);
+		}
 	},
 
 	ensureEmailRequired() {
@@ -88,6 +100,17 @@ const AstrologyCalculator = {
 			e.preventDefault();
 			e.stopPropagation();
 		}
+		
+		// Validate form before submission
+		if (this.formValidator && !this.formValidator.validateForm()) {
+			// Scroll to first error
+			const firstError = this.form.querySelector('.field-error');
+			if (firstError) {
+				firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				firstError.focus();
+			}
+			return;
+		}
 
 		const termsCheckbox = document.getElementById('terms');
 		const termsError = document.getElementById('termsError');
@@ -114,13 +137,21 @@ const AstrologyCalculator = {
 			
 			// Store chart data globally for saving later
 			window.currentChartData = chartData;
-			window.currentUserInputs = {
+			const userInputs = {
 				full_name: this.form.querySelector("[name='fullName']").value,
 				birth_date: this.form.querySelector("[name='birthDate']").value,
 				birth_time: this.form.querySelector("[name='birthTime']").value,
 				location: this.form.querySelector("[name='location']").value,
 				user_email: this.form.querySelector("[name='userEmail']").value
 			};
+			window.currentUserInputs = userInputs;
+			
+			// Update state manager if available
+			if (typeof stateManager !== 'undefined') {
+				stateManager.setState('currentChartData', chartData);
+				stateManager.setState('currentUserInputs', userInputs);
+				stateManager.setState('isLoading', false);
+			}
 			
 			this.displayInitialResults(chartData);
 			
@@ -135,9 +166,17 @@ const AstrologyCalculator = {
 			this.resultsContainer.style.display = 'block';
 			this.resultsTitle.parentElement.style.display = 'block';
 			const siderealOutput = document.getElementById('sidereal-output');
-            this.geminiOutput.innerText = "Error calculating chart or generating reading: " + err.message;
-			if(siderealOutput) siderealOutput.innerText = "Error: " + err.message;
+			
+			// Use standardized error handling
+			const errorMessage = this.formatErrorMessage(err);
+            this.geminiOutput.innerText = "Error calculating chart or generating reading: " + errorMessage;
+			if(siderealOutput) siderealOutput.innerText = "Error: " + errorMessage;
             this.setLoadingState(false); // Make sure loading stops on error
+			
+			// Update state manager
+			if (typeof stateManager !== 'undefined') {
+				stateManager.setState('isLoading', false);
+			}
 		} 
 		// finally block is removed as loading state is handled in fetchAndDisplayAIReading or catch block
 	},
@@ -231,6 +270,11 @@ const AstrologyCalculator = {
 		
 		let [month, day, year] = birthDateParts.map(s => parseInt(s, 10));
 		
+		// Use state manager if available
+		if (typeof stateManager !== 'undefined') {
+			stateManager.setState('isLoading', true);
+		}
+		
 		if (birthDateInput === '0/0/0') {
 			month = 8;
 			day = 26;
@@ -253,53 +297,33 @@ const AstrologyCalculator = {
 		if (ampm === 'PM' && hour < 12) hour += 12;
 		if (ampm === 'AM' && hour === 12) hour = 0;
 
-		// Check for FRIENDS_AND_FAMILY_KEY in URL params
-		// Handle URL-encoded values (e.g., F%26FKEY for F&FKEY)
-		const urlParams = new URLSearchParams(window.location.search);
-		let friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
-		// Also check if the value got split due to & character
-		if (!friendsAndFamilyKey) {
-			// Try to reconstruct if it was split: FRIENDS_AND_FAMILY_KEY=F&FKEY becomes FRIENDS_AND_FAMILY_KEY=F and FKEY=
-			const allParams = new URLSearchParams(window.location.search);
-			const keys = Array.from(allParams.keys());
-			const keyIndex = keys.indexOf('FRIENDS_AND_FAMILY_KEY');
-			if (keyIndex !== -1 && keyIndex < keys.length - 1) {
-				// Check if next param might be part of the value
-				const nextKey = keys[keyIndex + 1];
-				if (nextKey === 'FKEY' || !allParams.get(nextKey)) {
-					// Likely split value, try to reconstruct
-					friendsAndFamilyKey = allParams.get('FRIENDS_AND_FAMILY_KEY') + '&' + nextKey;
-				}
-			}
-		}
-		// Decode URL-encoded characters
-		if (friendsAndFamilyKey) {
-			friendsAndFamilyKey = decodeURIComponent(friendsAndFamilyKey);
-		}
-		const headers = { "Content-Type": "application/json" };
-		if (friendsAndFamilyKey) {
-			headers['X-Friends-And-Family-Key'] = friendsAndFamilyKey;
-			console.log('FRIENDS_AND_FAMILY_KEY detected:', friendsAndFamilyKey.substring(0, 3) + '...'); // Log partial for security
-		}
+		// Build chart data object
+		const chartDataPayload = {
+			full_name: this.form.querySelector("[name='fullName']").value,
+			year, month, day, hour, minute,
+			location: this.form.querySelector("[name='location']").value,
+			unknown_time: this.form.querySelector("[name='unknownTime']").checked,
+			user_email: this.form.querySelector("[name='userEmail']").value,
+			is_full_birth_name: this.form.querySelector("[name='isFullBirthName']").checked
+		};
 		
-		const apiRes = await fetch(this.API_URLS.calculate, {
-			method: "POST",
-			headers: headers,
-			body: JSON.stringify({
-				full_name: this.form.querySelector("[name='fullName']").value,
-				year, month, day, hour, minute,
-				location: this.form.querySelector("[name='location']").value,
-				unknown_time: this.form.querySelector("[name='unknownTime']").checked,
-				user_email: this.form.querySelector("[name='userEmail']").value,
-				is_full_birth_name: this.form.querySelector("[name='isFullBirthName']").checked
-			}),
-		});
+		// Use API client if available, otherwise fallback to direct fetch
+		if (this.apiClient) {
+			return await this.apiClient.calculateChart(chartDataPayload);
+		} else {
+			// Fallback to direct fetch
+			const apiRes = await fetch(this.API_URLS.calculate, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(chartDataPayload),
+			});
 
-		if (!apiRes.ok) {
-			const errData = await apiRes.json();
-			throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
+			if (!apiRes.ok) {
+				const errData = await apiRes.json();
+				throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
+			}
+			return await apiRes.json();
 		}
-		return await apiRes.json();
 	},
 
 	async fetchAndDisplayAIReading(chartData) {
@@ -320,40 +344,22 @@ const AstrologyCalculator = {
 				user_email: this.form.querySelector("[name='userEmail']").value
 			};
 
-			let chartImageBase64 = null;
-			// Removed image generation logic as it's not needed without email
-
-			const headers = { "Content-Type": "application/json" };
-			const urlParams = new URLSearchParams(window.location.search);
-			let friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
-			// Handle URL-encoded values and split values
-			if (!friendsAndFamilyKey) {
-				const allParams = new URLSearchParams(window.location.search);
-				const keys = Array.from(allParams.keys());
-				const keyIndex = keys.indexOf('FRIENDS_AND_FAMILY_KEY');
-				if (keyIndex !== -1 && keyIndex < keys.length - 1) {
-					const nextKey = keys[keyIndex + 1];
-					if (nextKey === 'FKEY' || !allParams.get(nextKey)) {
-						friendsAndFamilyKey = allParams.get('FRIENDS_AND_FAMILY_KEY') + '&' + nextKey;
-					}
-				}
-			}
-			if (friendsAndFamilyKey) {
-				friendsAndFamilyKey = decodeURIComponent(friendsAndFamilyKey);
-				headers['X-Friends-And-Family-Key'] = friendsAndFamilyKey;
-			}
-
-            // This fetch now waits for the full reading before proceeding
-			const readingRes = await fetch(this.API_URLS.reading, {
-				method: "POST",
-				headers: headers,
-				body: JSON.stringify({
-					chart_data: chartData,
-					unknown_time: chartData.unknown_time,
-					user_inputs: userInputs,
-					chart_image_base64: null // Not sending image data anymore
-				})
-			});
+			// Use API client if available, otherwise fallback to direct fetch
+			let readingResult;
+			if (this.apiClient) {
+				readingResult = await this.apiClient.generateReading(chartData, userInputs, null);
+			} else {
+				// Fallback to direct fetch
+				const readingRes = await fetch(this.API_URLS.reading, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						chart_data: chartData,
+						unknown_time: chartData.unknown_time,
+						user_inputs: userInputs,
+						chart_image_base64: null
+					})
+				});
 
 			if (!readingRes.ok) {
                 let errorData;
@@ -532,21 +538,39 @@ const AstrologyCalculator = {
 			const elapsedMinutes = Math.floor(elapsedSeconds / 60);
 			
 			try {
-				const response = await fetch(`${this.API_URLS.reading.replace('/generate_reading', '')}/get_reading/${chartHash}`);
-				
-				if (!response.ok) {
-					console.warn(`Polling failed with status: ${response.status} (${elapsedSeconds}s elapsed)`);
-					if (elapsedMs >= maxElapsedMs) {
-						this.stopPolling();
-						const statusEl = document.getElementById('pollingStatus');
-						if (statusEl) {
-							statusEl.textContent = "Reading generation is taking longer than expected. Please check your email.";
+				// Use API client if available
+				let result;
+				if (this.apiClient) {
+					try {
+						result = await this.apiClient.getReading(chartHash);
+					} catch (error) {
+						console.warn(`Polling failed: ${error.message} (${elapsedSeconds}s elapsed)`);
+						if (elapsedMs >= maxElapsedMs) {
+							this.stopPolling();
+							const statusEl = document.getElementById('pollingStatus');
+							if (statusEl) {
+								statusEl.textContent = "Reading generation is taking longer than expected. Please check your email.";
+							}
 						}
+						return;
 					}
-					return;
+				} else {
+					const response = await fetch(`${this.API_URLS.reading.replace('/generate_reading', '')}/get_reading/${chartHash}`);
+					
+					if (!response.ok) {
+						console.warn(`Polling failed with status: ${response.status} (${elapsedSeconds}s elapsed)`);
+						if (elapsedMs >= maxElapsedMs) {
+							this.stopPolling();
+							const statusEl = document.getElementById('pollingStatus');
+							if (statusEl) {
+								statusEl.textContent = "Reading generation is taking longer than expected. Please check your email.";
+							}
+						}
+						return;
+					}
+					
+					result = await response.json();
 				}
-				
-				const result = await response.json();
 				
 				if (result.status === "completed" && result.reading) {
 					// Reading is ready!
@@ -630,25 +654,33 @@ const AstrologyCalculator = {
 			}
 			
 			const now = new Date();
-			const apiRes = await fetch(this.API_URLS.calculate, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					full_name: "Current Transits",
-					year: now.getFullYear(),
-					month: now.getMonth() + 1,
-					day: now.getDate(),
-					hour: now.getHours(),
-					minute: now.getMinutes(),
-					location: location,
-					unknown_time: false
-				}),
-			});
-			if (!apiRes.ok) {
-				const errData = await apiRes.json();
-				throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
+			const transitChartData = {
+				full_name: "Current Transits",
+				year: now.getFullYear(),
+				month: now.getMonth() + 1,
+				day: now.getDate(),
+				hour: now.getHours(),
+				minute: now.getMinutes(),
+				location: location,
+				unknown_time: false
+			};
+			
+			// Use API client if available
+			let transitData;
+			if (this.apiClient) {
+				transitData = await this.apiClient.calculateChart(transitChartData);
+			} else {
+				const apiRes = await fetch(this.API_URLS.calculate, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(transitChartData),
+				});
+				if (!apiRes.ok) {
+					const errData = await apiRes.json();
+					throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
+				}
+				transitData = await apiRes.json();
 			}
-			const transitData = await apiRes.json();
 			
 			// Hide skeleton, show wheels
 			if (transitLoadingSkeleton) transitLoadingSkeleton.style.display = 'none';
@@ -1334,16 +1366,29 @@ const AstrologyCalculator = {
 		resultsDiv.style.display = 'none';
 		
 		try {
-			const response = await fetch(`${this.API_URLS.calculate.replace('/calculate_chart', '/api/find-similar-famous-people')}`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					chart_data: chartData,
-					limit: 10
-				})
-			});
+			// Use API client if available, otherwise fallback to direct fetch
+			let data;
+			if (this.apiClient) {
+				data = await this.apiClient.findSimilarFamousPeople(chartData, 10);
+			} else {
+				const response = await fetch(`${this.API_URLS.calculate.replace('/calculate_chart', '/api/find-similar-famous-people')}`, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						chart_data: chartData,
+						limit: 10
+					})
+				});
+				
+				if (!response.ok) {
+					const errorData = await response.json().catch(() => ({ detail: `HTTP ${response.status}` }));
+					throw new Error(errorData.detail || `API error: ${response.status}`);
+				}
+				
+				data = await response.json();
+			}
 			
 			if (!response.ok) {
 				const errorData = await response.json().catch(() => ({ detail: `HTTP ${response.status}` }));
@@ -1355,6 +1400,7 @@ const AstrologyCalculator = {
 			// Hide skeleton
 			if (loadingSkeleton) loadingSkeleton.style.display = 'none';
 			
+			// data is already defined above (either from apiClient or fetch)
 			if (data.matches && data.matches.length > 0) {
 				this.displayFamousPeopleMatches(data.matches);
 				if (loadingDiv) loadingDiv.style.display = 'none';

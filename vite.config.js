@@ -7,6 +7,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     // Enable content hashing for cache busting
+    // Code splitting for better performance
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
@@ -18,7 +19,24 @@ export default defineConfig({
       output: {
         // Ensure content hashing for all assets
         entryFileNames: 'assets/js/[name]-[hash].js',
-        chunkFileNames: 'assets/js/[name]-[hash].js',
+        // Code splitting: separate chunks for better caching
+        chunkFileNames: 'assets/js/chunks/[name]-[hash].js',
+        manualChunks: (id) => {
+          // Split vendor libraries into separate chunks
+          if (id.includes('node_modules')) {
+            if (id.includes('jquery')) {
+              return 'vendor-jquery';
+            }
+            return 'vendor';
+          }
+          // Split large modules
+          if (id.includes('calculator.js')) {
+            return 'calculator';
+          }
+          if (id.includes('chart') || id.includes('wheel')) {
+            return 'chart-rendering';
+          }
+        },
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name.split('.');
           const ext = info[info.length - 1];

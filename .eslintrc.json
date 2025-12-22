@@ -1,0 +1,30 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "script"
+  },
+  "rules": {
+    "indent": ["error", "tab"],
+    "linebreak-style": ["error", "unix"],
+    "quotes": ["error", "single"],
+    "semi": ["error", "always"],
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "no-debugger": "warn"
+  },
+  "globals": {
+    "apiClient": "readonly",
+    "stateManager": "readonly",
+    "performanceMonitor": "readonly",
+    "errorTracker": "readonly",
+    "Utils": "readonly",
+    "AstrologyCalculator": "readonly",
+    "AuthManager": "readonly"
+  }
+}
+

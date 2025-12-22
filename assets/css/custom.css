@@ -1,5 +1,8 @@
 /* Custom Styles to fully integrate the calculator with the Forty Theme */
 
+/* Import design tokens */
+@import url('./design-tokens.css');
+
 /* ============================================================
    0. GLOBAL ENHANCEMENTS
    ============================================================ */
@@ -67,7 +70,7 @@ html {
     overflow: hidden;
 }
 
-/* Top glow line */
+/* Top glow line - using design tokens */
 #form-section .inner::before {
     content: '';
     position: absolute;
@@ -75,12 +78,13 @@ html {
     left: 50%;
     transform: translateX(-50%);
     width: 60%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent 0%, rgba(159, 122, 234, 0.8) 50%, transparent 100%);
-    border-radius: 2px;
+    height: var(--border-width-thick);
+    background: linear-gradient(90deg, transparent 0%, var(--color-primary) 50%, transparent 100%);
+    border-radius: var(--border-radius-sm);
+    opacity: 0.8;
 }
 
-/* Ambient glow behind form */
+/* Ambient glow behind form - using design tokens */
 #form-section .inner::after {
     content: '';
     position: absolute;
@@ -89,9 +93,9 @@ html {
     transform: translateX(-50%);
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba(159, 122, 234, 0.15) 0%, transparent 70%);
+    background: radial-gradient(circle, var(--color-chart-glow) 0%, transparent 70%);
     pointer-events: none;
-    z-index: -1;
+    z-index: var(--z-base);
 }
 
 /* ============================================================
@@ -106,25 +110,27 @@ html {
 
 #form-section input[type="text"]:focus,
 #form-section input[type="email"]:focus {
-    border-color: #9f7aea !important;
-    box-shadow: 0 0 0 3px rgba(159, 122, 234, 0.2), 0 0 20px rgba(159, 122, 234, 0.15);
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 var(--border-width-focus) rgba(159, 122, 234, 0.2), var(--shadow-glow);
     transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-bg-tertiary);
 }
 
-/* Submit button glow effect */
+/* Submit button glow effect - using design tokens */
 #form-section button[type="submit"],
 #submitBtn {
-    background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%) !important;
-    box-shadow: 0 4px 20px rgba(159, 122, 234, 0.3);
-    transition: all 0.3s ease !important;
-    min-height: 50px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%) !important;
+    box-shadow: var(--shadow-glow);
+    transition: all var(--transition-base) !important;
+    min-height: var(--button-height);
+    padding: var(--button-padding);
+    border-radius: var(--button-border-radius);
 }
 
 #form-section button[type="submit"]:hover,
 #submitBtn:hover {
     transform: translateY(-3px) !important;
-    box-shadow: 0 8px 30px rgba(159, 122, 234, 0.5) !important;
+    box-shadow: var(--shadow-glow-hover) !important;
 }
 
 /* ============================================================
@@ -373,13 +379,244 @@ select:focus-visible {
    ============================================================ */
 
 .result-section {
-    margin-bottom: 3em;
-    padding-bottom: 2em;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: var(--spacing-2xl);
+    padding-bottom: var(--spacing-xl);
+    border-bottom: var(--border-width) solid var(--color-border);
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s ease-out forwards;
+    scroll-margin-top: var(--spacing-xl);
 }
+
+.result-section:nth-child(1) { animation-delay: 0.1s; }
+.result-section:nth-child(2) { animation-delay: 0.2s; }
+.result-section:nth-child(3) { animation-delay: 0.3s; }
+.result-section:nth-child(4) { animation-delay: 0.4s; }
+.result-section:nth-child(5) { animation-delay: 0.5s; }
 
 .result-section:last-child {
     border-bottom: none;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================================
+   0.12 FORM VALIDATION STYLES
+   ============================================================ */
+
+.field-error {
+    border-color: #e53e3e !important;
+    box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.2) !important;
+    background-color: rgba(229, 62, 62, 0.05) !important;
+}
+
+.field-error-message {
+    display: block;
+    color: #e53e3e;
+    font-size: 0.85em;
+    margin-top: 0.5em;
+    padding: 0.5em;
+    background: rgba(229, 62, 62, 0.1);
+    border-left: 3px solid #e53e3e;
+    border-radius: 4px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Success state for validated fields */
+input:valid:not(:placeholder-shown) {
+    border-color: #4CAF50;
+}
+
+input:valid:not(:placeholder-shown):focus {
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
+/* ============================================================
+   0.13 RESULTS NAVIGATION
+   ============================================================ */
+
+.results-nav {
+    position: sticky;
+    top: var(--spacing-md);
+    background: var(--color-bg-secondary);
+    backdrop-filter: blur(10px);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-lg);
+    margin-bottom: var(--spacing-lg);
+    z-index: var(--z-sticky);
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity var(--transition-base), transform var(--transition-base);
+    border: var(--border-width) solid var(--color-border);
+}
+
+.results-nav.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.results-nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.results-nav-link {
+    display: block;
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-base);
+    font-size: var(--font-size-sm);
+}
+
+.results-nav-link:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    transform: translateY(-1px);
+}
+
+.results-nav-link.active {
+    background: var(--color-primary);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+@media screen and (max-width: 736px) {
+    .results-nav {
+        position: relative;
+        top: 0;
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .results-nav-list {
+        flex-direction: column;
+    }
+}
+
+/* ============================================================
+   0.14 MICRO-INTERACTIONS
+   ============================================================ */
+
+/* Button press animation */
+button:active,
+.button:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+}
+
+/* Smooth transitions for all interactive elements */
+a, button, input, select, textarea {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover lift effect for cards */
+.famous-person-card,
+.result-section {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.famous-person-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Loading pulse animation */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.loading {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Focus ring animation */
+*:focus-visible {
+    animation: focusRing 0.3s ease-out;
+}
+
+@keyframes focusRing {
+    0% {
+        outline-width: 0;
+    }
+    100% {
+        outline-width: 2px;
+    }
+}
+
+/* Chart wheel hover effect */
+#sidereal-wheel-container:hover,
+#tropical-wheel-container:hover {
+    transform: scale(1.02);
+    transition: transform 0.3s ease;
+}
+
+/* Form field focus animation */
+#form-section input:focus,
+#form-section textarea:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(159, 122, 234, 0.3);
+}
+
+/* Results appear animation */
+.results-visible .result-section {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Stagger animation for result sections */
+.results-visible .result-section:nth-child(1) { animation-delay: 0.1s; }
+.results-visible .result-section:nth-child(2) { animation-delay: 0.2s; }
+.results-visible .result-section:nth-child(3) { animation-delay: 0.3s; }
+.results-visible .result-section:nth-child(4) { animation-delay: 0.4s; }
+.results-visible .result-section:nth-child(5) { animation-delay: 0.5s; }
+
+/* Success checkmark animation */
+@keyframes checkmark {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.success-icon {
+    animation: checkmark 0.5s ease-out;
 }
 
 /* ============================================================

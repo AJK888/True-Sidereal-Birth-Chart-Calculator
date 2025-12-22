@@ -2,13 +2,19 @@
   "name": "synthesis-astrology-calculator",
   "version": "1.0.0",
   "type": "module",
+  "description": "Synthesis Astrology - True Sidereal Birth Chart Calculator",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint assets/js/**/*.js --fix",
+    "format": "prettier --write \"assets/**/*.{js,css,html}\"",
+    "analyze": "vite build --mode analyze"
   },
   "devDependencies": {
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5"
   }
 }
 

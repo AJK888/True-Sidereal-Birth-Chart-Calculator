@@ -5,6 +5,7 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="stylesheet" href="assets/css/design-tokens.css" />
 		<link rel="stylesheet" href="assets/css/custom.css" />
 		<link rel="stylesheet" href="assets/css/fontawesome-all.min.css" />
 		<link rel="icon" type="image/jpeg" href="images/star-background.jpg" />
@@ -295,14 +296,18 @@
 									<div class="skeleton-chart-wheel"></div>
 								</div>
 								<div class="chart-wheels-wrapper" id="transit-wheels-container" style="display: none;">
-									<div id="sidereal-transit-wheel-container">
-										<h3>Sidereal</h3>
-										<svg id="sidereal-transit-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Sidereal transit chart wheel"></svg>
-									</div>
-									<div id="tropical-transit-wheel-container">
-										<h3>Tropical</h3>
-										<svg id="tropical-transit-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Tropical transit chart wheel"></svg>
-									</div>
+										<div id="sidereal-transit-wheel-container">
+											<h3>Sidereal</h3>
+											<svg id="sidereal-transit-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Sidereal transit chart wheel" role="img">
+												<title>Sidereal transit chart wheel showing current planetary positions</title>
+											</svg>
+										</div>
+										<div id="tropical-transit-wheel-container">
+											<h3>Tropical</h3>
+											<svg id="tropical-transit-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Tropical transit chart wheel" role="img">
+												<title>Tropical transit chart wheel showing current planetary positions</title>
+											</svg>
+										</div>
 								</div>
 							</div>
 						</div>
@@ -320,11 +325,15 @@
 										<div class="chart-wheels-wrapper" id="chart-wheels-container" style="display: none;">
 											<div id="sidereal-wheel-container">
 												<h3>Sidereal</h3>
-												<svg id="sidereal-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Sidereal natal chart wheel"></svg>
+												<svg id="sidereal-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Sidereal natal chart wheel" role="img">
+													<title>Sidereal natal chart wheel showing your birth chart placements</title>
+												</svg>
 											</div>
 											<div id="tropical-wheel-container">
 												<h3>Tropical</h3>
-												<svg id="tropical-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Tropical natal chart wheel"></svg>
+												<svg id="tropical-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Tropical natal chart wheel" role="img">
+													<title>Tropical natal chart wheel showing your birth chart placements</title>
+												</svg>
 											</div>
 										</div>
 										<div id="chart-placeholder" class="chart-placeholder-message" style="display: none;">
@@ -332,9 +341,9 @@
 										</div>
 									</div>
 							
-									<div id="snapshot-title" class="result-section" style="display: none;">
+									<div id="snapshot-title" class="result-section" style="display: none;" aria-labelledby="snapshot-heading">
 										<header class="major">
-											<h2>Chart Snapshot</h2>
+											<h2 id="snapshot-heading">Chart Snapshot</h2>
 										</header>
 										<!-- Loading skeleton for snapshot -->
 										<div id="snapshot-loading-skeleton" class="loading-skeleton-text" style="display: none;">
@@ -347,9 +356,9 @@
 										<div id="snapshot-output" class="content"></div>
 									</div>
 							
-								<div id="gemini-title" class="result-section" style="display: none;">
+								<div id="gemini-title" class="result-section" style="display: none;" aria-labelledby="ai-synthesis-heading">
 									<header class="major">
-										<h2>AI Astrological Synthesis</h2>
+										<h2 id="ai-synthesis-heading">AI Astrological Synthesis</h2>
 										<button id="copyReadingBtn" class="copy-button" style="display: none;" aria-label="Copy reading to clipboard">Copy Reading</button>
 									</header>
 									<!-- Loading skeleton for AI reading -->
@@ -371,9 +380,9 @@
 									</div>
 								</div>
 									
-								<div id="famous-people-section" class="result-section" style="display: none;">
+								<div id="famous-people-section" class="result-section" style="display: none;" aria-labelledby="famous-people-heading">
 									<header class="major">
-										<h2>Famous People Like You</h2>
+										<h2 id="famous-people-heading">Famous People Like You</h2>
 										<p style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7); margin-top: 0.5em;">
 											Discover which famous people share similar astrological patterns with you
 										</p>
@@ -390,8 +399,8 @@
 									<div id="famous-people-results" class="famous-people-grid" style="display: none;" role="list" aria-label="Famous people with similar astrological patterns"></div>
 								</div>
 								
-								<div id="results-title" class="result-section">
-									<header class="major"><h2>Full Report</h2></header>
+								<div id="results-title" class="result-section" aria-labelledby="full-report-heading">
+									<header class="major"><h2 id="full-report-heading">Full Report</h2></header>
 									<div class="report-columns">
 										<div class="report-column">
 											<pre id="sidereal-output"></pre>
@@ -518,8 +527,14 @@
 		<script src="assets/js/util.js"></script>
 		<script src="assets/js/main.js"></script>
 		<!-- New modular structure -->
+		<script src="assets/js/utils.js"></script>
 		<script src="assets/js/state-manager.js"></script>
 		<script src="assets/js/api-client.js"></script>
+		<script src="assets/js/form-validator.js"></script>
+		<script src="assets/js/performance-monitor.js"></script>
+		<script src="assets/js/error-tracker.js"></script>
+		<script src="assets/js/accessibility.js"></script>
+		<script src="assets/js/results-navigation.js"></script>
 		<script src="assets/js/calculator.js"></script>
 		<script src="assets/js/auth.js"></script>
 		<!-- Non-critical scripts deferred -->
