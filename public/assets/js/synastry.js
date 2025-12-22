@@ -47,11 +47,7 @@ const SynastryManager = {
 		// Store the key for later use
 		this.friendsAndFamilyKey = friendsAndFamilyKey;
 		
-		// Show synastry menu item
-		const menuItem = document.getElementById('synastry-menu-item');
-		if (menuItem) {
-			menuItem.style.display = 'block';
-		}
+		// Synastry menu item is now always visible, no need to show it
 	},
 	
 	setupForm() {

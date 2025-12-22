@@ -1107,22 +1107,18 @@ const AuthManager = {
                 has_purchased_reading: true,
                 friends_family_access: true
             };
-            // Show synastry menu item with F&F key in URL
-            const synastryMenuItem = document.getElementById('synastry-menu-item');
-            if (synastryMenuItem) {
-                synastryMenuItem.style.display = 'block';
-                const link = synastryMenuItem.querySelector('a');
-                if (link) {
-                    link.href = `synastry.html?FRIENDS_AND_FAMILY_KEY=${encodeURIComponent(friendsAndFamilyKey)}`;
-                }
+            // Update synastry menu item link with F&F key in URL (menu item is now always visible)
+            const synastryLink = document.querySelector('#menu a[href*="synastry.html"]');
+            if (synastryLink) {
+                synastryLink.href = `synastry.html?FRIENDS_AND_FAMILY_KEY=${encodeURIComponent(friendsAndFamilyKey)}`;
             }
             this.updateSubscriptionUI();
             return;
         } else {
-            // Hide synastry menu item if no key
-            const synastryMenuItem = document.getElementById('synastry-menu-item');
-            if (synastryMenuItem) {
-                synastryMenuItem.style.display = 'none';
+            // Reset synastry menu item link if no key (menu item is now always visible)
+            const synastryLink = document.querySelector('#menu a[href*="synastry.html"]');
+            if (synastryLink) {
+                synastryLink.href = 'synastry.html';
             }
         }
         
