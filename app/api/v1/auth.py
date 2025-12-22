@@ -7,7 +7,7 @@ User registration, login, and current user endpoints.
 import logging
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from sqlalchemy.orm import Session
 
 from app.core.logging_config import setup_logger

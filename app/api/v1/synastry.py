@@ -6,7 +6,7 @@ Comprehensive synastry analysis endpoint (friends & family only).
 
 import os
 import logging
-from typing import Optional
+from typing import Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session

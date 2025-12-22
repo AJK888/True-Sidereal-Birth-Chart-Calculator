@@ -9,13 +9,13 @@ import logging
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from sqlalchemy.orm import Session
 
 from app.core.logging_config import setup_logger
 from database import get_db, SavedChart
 from auth import get_current_user, User
-from pydantic import validator
+from app.utils.query_optimization import get_user_charts_optimized, get_chart_with_conversations
 
 logger = setup_logger(__name__)
 

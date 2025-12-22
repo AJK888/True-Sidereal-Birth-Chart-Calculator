@@ -5,10 +5,9 @@ Provides validation decorators and helper functions for request validation.
 """
 
 import re
-from typing import Any, Callable, Optional
-from functools import wraps
-from fastapi import HTTPException, status
-from pydantic import BaseModel, validator, EmailStr
+from typing import Any, Optional
+from fastapi import HTTPException
+from pydantic import BaseModel
 
 
 def validate_email(email: str) -> bool:
