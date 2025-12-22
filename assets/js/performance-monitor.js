@@ -226,16 +226,12 @@ class PerformanceMonitor {
 	 * @param {Object} data - Metric data
 	 */
 	logMetric(name, data) {
-		// Check for development mode (browser-safe)
-		// Use try-catch to safely check for process (Node.js environment)
-		let isDevelopment = false;
-		try {
-			isDevelopment = (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development') ||
-				window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-		} catch (e) {
-			// process is not available (browser environment)
-			isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-		}
+		// Check for development mode (browser-safe - never access process directly)
+		// In browser, only check hostname to avoid ReferenceError
+		const isDevelopment = window.location.hostname === 'localhost' || 
+		                      window.location.hostname === '127.0.0.1' ||
+		                      window.location.hostname.includes('localhost');
+		
 		if (isDevelopment) {
 			console.log(`[Performance] ${name}:`, data);
 		}
