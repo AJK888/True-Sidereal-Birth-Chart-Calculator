@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "lint": "eslint assets/js/**/*.js --fix",
     "format": "prettier --write \"assets/**/*.{js,css,html}\"",
-    "analyze": "vite build --mode analyze"
+    "analyze": "vite build && npx vite-bundle-visualizer",
+    "bundle-size": "vite build && du -sh dist/ && find dist -type f -name '*.js' -exec du -h {} \\; | sort -hr | head -10"
   },
   "devDependencies": {
     "vite": "^5.0.0",

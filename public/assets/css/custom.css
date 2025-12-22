@@ -1,5 +1,8 @@
 /* Custom Styles to fully integrate the calculator with the Forty Theme */
 
+/* Import design tokens */
+@import url('./design-tokens.css');
+
 /* ============================================================
    0. GLOBAL ENHANCEMENTS
    ============================================================ */
@@ -7,6 +10,52 @@
 /* Smooth scroll behavior */
 html {
     scroll-behavior: smooth;
+}
+
+/* ============================================================
+   PWA INSTALL BUTTON
+   ============================================================ */
+
+.pwa-install-button {
+	display: none;
+	position: fixed;
+	top: 1rem;
+	right: 1rem;
+	z-index: 10000;
+	padding: var(--spacing-sm) var(--spacing-md);
+	background: var(--color-primary);
+	color: var(--color-text-inverse);
+	border: none;
+	border-radius: var(--border-radius-md);
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-medium);
+	cursor: pointer;
+	box-shadow: var(--shadow-md);
+	transition: var(--transition-base);
+}
+
+.pwa-install-button:hover {
+	background: var(--color-primary-dark);
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-lg);
+}
+
+.pwa-install-button:active {
+	transform: translateY(0);
+}
+
+.pwa-install-button i {
+	margin-right: var(--spacing-xs);
+}
+
+@media screen and (max-width: 768px) {
+	.pwa-install-button {
+		top: auto;
+		bottom: 1rem;
+		right: 1rem;
+		font-size: var(--font-size-xs);
+		padding: var(--spacing-xs) var(--spacing-sm);
+	}
 }
 
 /* ============================================================
@@ -52,10 +101,11 @@ html {
     content: '✦';
     display: block;
     text-align: center;
-    font-size: 1.5rem;
-    color: rgba(159, 122, 234, 0.4);
-    margin-top: 3rem;
-    letter-spacing: 1rem;
+    font-size: var(--font-size-xl);
+    color: var(--color-primary);
+    opacity: 0.4;
+    margin-top: var(--spacing-2xl);
+    letter-spacing: var(--spacing-md);
 }
 
 /* ============================================================
@@ -67,7 +117,7 @@ html {
     overflow: hidden;
 }
 
-/* Top glow line */
+/* Top glow line - using design tokens */
 #form-section .inner::before {
     content: '';
     position: absolute;
@@ -75,12 +125,13 @@ html {
     left: 50%;
     transform: translateX(-50%);
     width: 60%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent 0%, rgba(159, 122, 234, 0.8) 50%, transparent 100%);
-    border-radius: 2px;
+    height: var(--border-width-thick);
+    background: linear-gradient(90deg, transparent 0%, var(--color-primary) 50%, transparent 100%);
+    border-radius: var(--border-radius-sm);
+    opacity: 0.8;
 }
 
-/* Ambient glow behind form */
+/* Ambient glow behind form - using design tokens */
 #form-section .inner::after {
     content: '';
     position: absolute;
@@ -89,9 +140,9 @@ html {
     transform: translateX(-50%);
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba(159, 122, 234, 0.15) 0%, transparent 70%);
+    background: radial-gradient(circle, var(--color-chart-glow) 0%, transparent 70%);
     pointer-events: none;
-    z-index: -1;
+    z-index: var(--z-base);
 }
 
 /* ============================================================
@@ -106,25 +157,27 @@ html {
 
 #form-section input[type="text"]:focus,
 #form-section input[type="email"]:focus {
-    border-color: #9f7aea !important;
-    box-shadow: 0 0 0 3px rgba(159, 122, 234, 0.2), 0 0 20px rgba(159, 122, 234, 0.15);
+    border-color: var(--color-primary) !important;
+    box-shadow: 0 0 0 var(--border-width-focus) rgba(159, 122, 234, 0.2), var(--shadow-glow);
     transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-bg-tertiary);
 }
 
-/* Submit button glow effect */
+/* Submit button glow effect - using design tokens */
 #form-section button[type="submit"],
 #submitBtn {
-    background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%) !important;
-    box-shadow: 0 4px 20px rgba(159, 122, 234, 0.3);
-    transition: all 0.3s ease !important;
-    min-height: 50px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%) !important;
+    box-shadow: var(--shadow-glow);
+    transition: all var(--transition-base) !important;
+    min-height: var(--button-height);
+    padding: var(--button-padding);
+    border-radius: var(--button-border-radius);
 }
 
 #form-section button[type="submit"]:hover,
 #submitBtn:hover {
     transform: translateY(-3px) !important;
-    box-shadow: 0 8px 30px rgba(159, 122, 234, 0.5) !important;
+    box-shadow: var(--shadow-glow-hover) !important;
 }
 
 /* ============================================================
@@ -147,15 +200,15 @@ html {
 #tropical-wheel-container svg,
 #sidereal-transit-wheel-container svg,
 #tropical-transit-wheel-container svg {
-    animation: wheelRotateIn 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-    filter: drop-shadow(0 0 30px rgba(159, 122, 234, 0.15));
-    transition: transform 0.5s ease, filter 0.5s ease;
+    animation: wheelRotateIn 1.2s var(--transition-timing-bounce) forwards;
+    filter: drop-shadow(0 0 30px var(--color-chart-glow));
+    transition: transform var(--transition-slow), filter var(--transition-slow);
 }
 
 /* Stagger animation for second wheel */
 #tropical-wheel-container svg,
 #tropical-transit-wheel-container svg {
-    animation-delay: 0.3s;
+    animation-delay: var(--transition-fast);
 }
 
 /* Hover effects on chart wheels */
@@ -164,7 +217,7 @@ html {
 #sidereal-transit-wheel-container:hover svg,
 #tropical-transit-wheel-container:hover svg {
     transform: scale(1.02);
-    filter: drop-shadow(0 0 40px rgba(159, 122, 234, 0.3));
+    filter: drop-shadow(0 0 40px var(--color-chart-glow-hover));
 }
 
 /* Chart wheel container styling */
@@ -172,7 +225,7 @@ html {
 #tropical-wheel-container,
 #sidereal-transit-wheel-container,
 #tropical-transit-wheel-container {
-    transition: transform 0.3s ease;
+    transition: transform var(--transition-base);
     cursor: pointer;
 }
 
@@ -196,7 +249,458 @@ html {
     }
 }
 
+/* ============================================================
+   0.6 LOADING SKELETONS & PERFORMANCE
+   ============================================================ */
+
+.loading-skeleton {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2em;
+    padding: 2em 0;
+}
+
+.skeleton-chart-wheel {
+    width: 100%;
+    aspect-ratio: 1;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+    background-size: 200% 100%;
+    border-radius: 50%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+.loading-skeleton-text {
+    padding: 1em 0;
+}
+
+.skeleton-line {
+    height: 1em;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    margin-bottom: 0.8em;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+.skeleton-line.short {
+    width: 60%;
+}
+
+.loading-skeleton-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5em;
+    padding: 1em 0;
+}
+
+.skeleton-card {
+    height: 150px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+    background-size: 200% 100%;
+    border-radius: 8px;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ============================================================
+   0.7 ACCESSIBILITY IMPROVEMENTS
+   ============================================================ */
+
+/* Screen reader only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Focus indicators */
+*:focus-visible {
+    outline: 2px solid #9f7aea;
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+button:focus-visible,
+a:focus-visible {
+    outline: 2px solid #9f7aea;
+    outline-offset: 2px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    outline: 2px solid #9f7aea;
+    outline-offset: 2px;
+}
+
+/* Skip link */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #1b6ca8;
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 100;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* ============================================================
+   0.8 MOBILE STICKY CTA
+   ============================================================ */
+
+.mobile-sticky-cta {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(36, 41, 62, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 1em;
+    z-index: 999;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sticky-cta-button {
+    width: 100%;
+    padding: 1em;
+    background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(159, 122, 234, 0.3);
+    transition: all 0.3s ease;
+    min-height: 50px;
+}
+
+.sticky-cta-button:hover,
+.sticky-cta-button:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 30px rgba(159, 122, 234, 0.5);
+    outline: 2px solid #9f7aea;
+    outline-offset: 2px;
+}
+
+/* ============================================================
+   0.9 FULL READING CTA
+   ============================================================ */
+
+.full-reading-cta {
+    margin-top: 2em;
+    padding: 1.5em;
+    background: rgba(27, 108, 168, 0.1);
+    border-left: 4px solid #1b6ca8;
+    border-radius: 6px;
+}
+
+.full-reading-cta h3 {
+    margin-top: 0;
+    color: #1b6ca8;
+}
+
+.full-reading-cta p {
+    margin-bottom: 1em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* ============================================================
+   0.10 RESULTS SECTION IMPROVEMENTS
+   ============================================================ */
+
+.result-section {
+    margin-bottom: var(--spacing-2xl);
+    padding-bottom: var(--spacing-xl);
+    border-bottom: var(--border-width) solid var(--color-border);
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s ease-out forwards;
+    scroll-margin-top: var(--spacing-xl);
+}
+
+.result-section:nth-child(1) { animation-delay: 0.1s; }
+.result-section:nth-child(2) { animation-delay: 0.2s; }
+.result-section:nth-child(3) { animation-delay: 0.3s; }
+.result-section:nth-child(4) { animation-delay: 0.4s; }
+.result-section:nth-child(5) { animation-delay: 0.5s; }
+
+.result-section:last-child {
+    border-bottom: none;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================================
+   0.12 FORM VALIDATION STYLES
+   ============================================================ */
+
+.field-error {
+    border-color: #e53e3e !important;
+    box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.2) !important;
+    background-color: rgba(229, 62, 62, 0.05) !important;
+}
+
+.field-error-message {
+    display: block;
+    color: #e53e3e;
+    font-size: 0.85em;
+    margin-top: 0.5em;
+    padding: 0.5em;
+    background: rgba(229, 62, 62, 0.1);
+    border-left: 3px solid #e53e3e;
+    border-radius: 4px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Success state for validated fields */
+input:valid:not(:placeholder-shown) {
+    border-color: #4CAF50;
+}
+
+input:valid:not(:placeholder-shown):focus {
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
+/* ============================================================
+   0.13 RESULTS NAVIGATION
+   ============================================================ */
+
+.results-nav {
+    position: sticky;
+    top: var(--spacing-md);
+    background: var(--color-bg-secondary);
+    backdrop-filter: blur(10px);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-lg);
+    margin-bottom: var(--spacing-lg);
+    z-index: var(--z-sticky);
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity var(--transition-base), transform var(--transition-base);
+    border: var(--border-width) solid var(--color-border);
+}
+
+.results-nav.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.results-nav-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.results-nav-link {
+    display: block;
+    padding: var(--spacing-sm) var(--spacing-md);
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    border-radius: var(--border-radius-md);
+    transition: all var(--transition-base);
+    font-size: var(--font-size-sm);
+}
+
+.results-nav-link:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    transform: translateY(-1px);
+}
+
+.results-nav-link.active {
+    background: var(--color-primary);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
 @media screen and (max-width: 736px) {
+    .results-nav {
+        position: relative;
+        top: 0;
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .results-nav-list {
+        flex-direction: column;
+    }
+}
+
+/* ============================================================
+   0.14 MICRO-INTERACTIONS
+   ============================================================ */
+
+/* Button press animation */
+button:active,
+.button:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+}
+
+/* Smooth transitions for all interactive elements */
+a, button, input, select, textarea {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover lift effect for cards */
+.famous-person-card,
+.result-section {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.famous-person-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Loading pulse animation */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.loading {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Focus ring animation */
+*:focus-visible {
+    animation: focusRing 0.3s ease-out;
+}
+
+@keyframes focusRing {
+    0% {
+        outline-width: 0;
+    }
+    100% {
+        outline-width: 2px;
+    }
+}
+
+/* Chart wheel hover effect */
+#sidereal-wheel-container:hover,
+#tropical-wheel-container:hover {
+    transform: scale(1.02);
+    transition: transform 0.3s ease;
+}
+
+/* Form field focus animation */
+#form-section input:focus,
+#form-section textarea:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(159, 122, 234, 0.3);
+}
+
+/* Results appear animation */
+.results-visible .result-section {
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Stagger animation for result sections */
+.results-visible .result-section:nth-child(1) { animation-delay: 0.1s; }
+.results-visible .result-section:nth-child(2) { animation-delay: 0.2s; }
+.results-visible .result-section:nth-child(3) { animation-delay: 0.3s; }
+.results-visible .result-section:nth-child(4) { animation-delay: 0.4s; }
+.results-visible .result-section:nth-child(5) { animation-delay: 0.5s; }
+
+/* Success checkmark animation */
+@keyframes checkmark {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.success-icon {
+    animation: checkmark 0.5s ease-out;
+}
+
+/* ============================================================
+   0.11 MOBILE OPTIMIZATIONS
+   ============================================================ */
+
+@media screen and (max-width: 736px) {
+    /* Reduce banner height on mobile */
+    #banner {
+        padding: 2em 0 1em 0;
+        min-height: auto;
+    }
+    
+    #banner .inner {
+        padding: 1em;
+    }
+    
+    #banner h1 {
+        font-size: 2em;
+        margin-bottom: 0.5em;
+    }
+    
+    #banner .content p {
+        font-size: 0.9em;
+        margin-bottom: 0;
+    }
+    
+    /* Reduce description section padding */
+    #description-wrapper {
+        padding: 1.5em 0;
+    }
+    
+    /* Ensure form section is prominent */
+    #form-section {
+        padding: 2em 0;
+    }
+    
     /* Ensure touch-friendly input sizes */
     #form-section input[type="text"],
     #form-section input[type="email"],

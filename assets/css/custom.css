@@ -13,6 +13,52 @@ html {
 }
 
 /* ============================================================
+   PWA INSTALL BUTTON
+   ============================================================ */
+
+.pwa-install-button {
+	display: none;
+	position: fixed;
+	top: 1rem;
+	right: 1rem;
+	z-index: 10000;
+	padding: var(--spacing-sm) var(--spacing-md);
+	background: var(--color-primary);
+	color: var(--color-text-inverse);
+	border: none;
+	border-radius: var(--border-radius-md);
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-medium);
+	cursor: pointer;
+	box-shadow: var(--shadow-md);
+	transition: var(--transition-base);
+}
+
+.pwa-install-button:hover {
+	background: var(--color-primary-dark);
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-lg);
+}
+
+.pwa-install-button:active {
+	transform: translateY(0);
+}
+
+.pwa-install-button i {
+	margin-right: var(--spacing-xs);
+}
+
+@media screen and (max-width: 768px) {
+	.pwa-install-button {
+		top: auto;
+		bottom: 1rem;
+		right: 1rem;
+		font-size: var(--font-size-xs);
+		padding: var(--spacing-xs) var(--spacing-sm);
+	}
+}
+
+/* ============================================================
    0.1 SECTION GRADIENT TRANSITIONS
    ============================================================ */
 
@@ -55,10 +101,11 @@ html {
     content: '✦';
     display: block;
     text-align: center;
-    font-size: 1.5rem;
-    color: rgba(159, 122, 234, 0.4);
-    margin-top: 3rem;
-    letter-spacing: 1rem;
+    font-size: var(--font-size-xl);
+    color: var(--color-primary);
+    opacity: 0.4;
+    margin-top: var(--spacing-2xl);
+    letter-spacing: var(--spacing-md);
 }
 
 /* ============================================================
@@ -153,15 +200,15 @@ html {
 #tropical-wheel-container svg,
 #sidereal-transit-wheel-container svg,
 #tropical-transit-wheel-container svg {
-    animation: wheelRotateIn 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-    filter: drop-shadow(0 0 30px rgba(159, 122, 234, 0.15));
-    transition: transform 0.5s ease, filter 0.5s ease;
+    animation: wheelRotateIn 1.2s var(--transition-timing-bounce) forwards;
+    filter: drop-shadow(0 0 30px var(--color-chart-glow));
+    transition: transform var(--transition-slow), filter var(--transition-slow);
 }
 
 /* Stagger animation for second wheel */
 #tropical-wheel-container svg,
 #tropical-transit-wheel-container svg {
-    animation-delay: 0.3s;
+    animation-delay: var(--transition-fast);
 }
 
 /* Hover effects on chart wheels */
@@ -170,7 +217,7 @@ html {
 #sidereal-transit-wheel-container:hover svg,
 #tropical-transit-wheel-container:hover svg {
     transform: scale(1.02);
-    filter: drop-shadow(0 0 40px rgba(159, 122, 234, 0.3));
+    filter: drop-shadow(0 0 40px var(--color-chart-glow-hover));
 }
 
 /* Chart wheel container styling */
@@ -178,7 +225,7 @@ html {
 #tropical-wheel-container,
 #sidereal-transit-wheel-container,
 #tropical-transit-wheel-container {
-    transition: transform 0.3s ease;
+    transition: transform var(--transition-base);
     cursor: pointer;
 }
 
