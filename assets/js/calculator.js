@@ -216,7 +216,21 @@ const AstrologyCalculator = {
 	initLazyLoading() {
 		// Lazy load transit chart when it comes into view
 		const transitSection = document.getElementById('transit-section');
-		if (!transitSection) return;
+		if (!transitSection) {
+			console.warn('[Transit Chart] Transit section not found');
+			return;
+		}
+		
+		// Check if section is already visible (e.g., on page load)
+		const rect = transitSection.getBoundingClientRect();
+		const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+		
+		if (isVisible) {
+			// Section is already visible, load immediately
+			console.log('[Transit Chart] Section already visible, loading immediately');
+			this.loadAndDrawTransitChart();
+			return;
+		}
 		
 		// Check if Intersection Observer is supported
 		if ('IntersectionObserver' in window) {
@@ -224,6 +238,7 @@ const AstrologyCalculator = {
 				entries.forEach(entry => {
 					if (entry.isIntersecting) {
 						// Load transit chart when section is visible
+						console.log('[Transit Chart] Section became visible, loading chart');
 						this.loadAndDrawTransitChart();
 						observer.unobserve(entry.target);
 					}
@@ -233,8 +248,10 @@ const AstrologyCalculator = {
 			});
 			
 			observer.observe(transitSection);
+			console.log('[Transit Chart] IntersectionObserver set up, waiting for section to be visible');
 		} else {
 			// Fallback: load immediately if IntersectionObserver not supported
+			console.log('[Transit Chart] IntersectionObserver not supported, loading immediately');
 			this.loadAndDrawTransitChart();
 		}
 	},
@@ -690,6 +707,11 @@ const AstrologyCalculator = {
 			if (transitLoadingSkeleton) transitLoadingSkeleton.style.display = 'none';
 			if (transitWheelsContainer) transitWheelsContainer.style.display = 'grid';
 			
+			// Log the data structure for debugging
+			console.log('[Transit Chart] Received data:', transitData);
+			console.log('[Transit Chart] Sidereal positions:', transitData?.sidereal_major_positions);
+			console.log('[Transit Chart] Tropical positions:', transitData?.tropical_major_positions);
+			
 			this.drawChartWheel(transitData, 'sidereal-transit-wheel-svg', 'sidereal');
 			this.drawChartWheel(transitData, 'tropical-transit-wheel-svg', 'tropical');
 
@@ -703,10 +725,18 @@ const AstrologyCalculator = {
 
 		} catch (err) {
 			console.error("Failed to load transit chart:", err);
+			console.error("Error details:", err.message, err.stack);
 			// Hide skeleton on error
 			if (transitLoadingSkeleton) transitLoadingSkeleton.style.display = 'none';
 			if (transitWheelsContainer) transitWheelsContainer.style.display = 'grid';
-			document.getElementById('sidereal-transit-wheel-svg').innerHTML = '<text x="500" y="500" fill="white" font-size="20" text-anchor="middle">Could not load transits.</text>';
+			const siderealSvg = document.getElementById('sidereal-transit-wheel-svg');
+			const tropicalSvg = document.getElementById('tropical-transit-wheel-svg');
+			if (siderealSvg) {
+				siderealSvg.innerHTML = '<text x="500" y="500" fill="white" font-size="20" text-anchor="middle">Could not load transits: ' + (err.message || 'Unknown error') + '</text>';
+			}
+			if (tropicalSvg) {
+				tropicalSvg.innerHTML = '<text x="500" y="500" fill="white" font-size="20" text-anchor="middle">Could not load transits: ' + (err.message || 'Unknown error') + '</text>';
+			}
 		}
 	},
 
@@ -1124,8 +1154,17 @@ const AstrologyCalculator = {
 	
 	drawChartWheel(data, svgId, chartType) {
 		const svg = document.getElementById(svgId);
-		if (!svg) return;
+		if (!svg) {
+			console.error(`[Chart] SVG element not found: ${svgId}`);
+			return;
+		}
 		svg.innerHTML = ''; // Clear previous chart
+
+		if (!data) {
+			console.error(`[Chart] No data provided for ${svgId}`);
+			svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">No chart data available.</text>';
+			return;
+		}
 
 		const centerX = 500, centerY = 500;
 		const zodiacRadius = 450, houseRingRadius = 350, innerRadius = 150;
@@ -1134,10 +1173,17 @@ const AstrologyCalculator = {
 		const aspects = data[`${chartType}_aspects`];
 		const houseCusps = data[`${chartType}_house_cusps`];
 
+		if (!positions || !Array.isArray(positions)) {
+			console.error(`[Chart] Invalid positions data for ${svgId}:`, positions);
+			svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart data is incomplete.</text>';
+			return;
+		}
+
 		// Check if Ascendant data is available (needed for rotation)
 		const ascendant = positions.find(p => p.name === 'Ascendant');
 		if (!ascendant || ascendant.degrees === null) {
             // Display message directly in the SVG area if time is unknown
+			console.warn(`[Chart] No Ascendant found for ${svgId}, positions:`, positions);
 			svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text>';
 			return; // Stop drawing if no Ascendant
 		}
@@ -1751,7 +1797,21 @@ const AstrologyCalculator = {
 	initLazyLoading() {
 		// Lazy load transit chart when it comes into view
 		const transitSection = document.getElementById('transit-section');
-		if (!transitSection) return;
+		if (!transitSection) {
+			console.warn('[Transit Chart] Transit section not found');
+			return;
+		}
+		
+		// Check if section is already visible (e.g., on page load)
+		const rect = transitSection.getBoundingClientRect();
+		const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+		
+		if (isVisible) {
+			// Section is already visible, load immediately
+			console.log('[Transit Chart] Section already visible, loading immediately');
+			this.loadAndDrawTransitChart();
+			return;
+		}
 		
 		// Check if Intersection Observer is supported
 		if ('IntersectionObserver' in window) {
@@ -1759,6 +1819,7 @@ const AstrologyCalculator = {
 				entries.forEach(entry => {
 					if (entry.isIntersecting) {
 						// Load transit chart when section is visible
+						console.log('[Transit Chart] Section became visible, loading chart');
 						this.loadAndDrawTransitChart();
 						observer.unobserve(entry.target);
 					}
@@ -1768,8 +1829,10 @@ const AstrologyCalculator = {
 			});
 			
 			observer.observe(transitSection);
+			console.log('[Transit Chart] IntersectionObserver set up, waiting for section to be visible');
 		} else {
 			// Fallback: load immediately if IntersectionObserver not supported
+			console.log('[Transit Chart] IntersectionObserver not supported, loading immediately');
 			this.loadAndDrawTransitChart();
 		}
 	},

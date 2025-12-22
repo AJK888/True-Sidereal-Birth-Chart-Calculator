@@ -530,6 +530,12 @@ const AstrologyCalculator = {
 				throw new Error(`API Error ${apiRes.status}: ${errData.detail}`);
 			}
 			const transitData = await apiRes.json();
+			
+			// Log the data structure for debugging
+			console.log('[Transit Chart] Received data:', transitData);
+			console.log('[Transit Chart] Sidereal positions:', transitData?.sidereal_major_positions);
+			console.log('[Transit Chart] Tropical positions:', transitData?.tropical_major_positions);
+			
 			this.drawChartWheel(transitData, 'sidereal-transit-wheel-svg', 'sidereal');
 			this.drawChartWheel(transitData, 'tropical-transit-wheel-svg', 'tropical');
 
@@ -543,7 +549,15 @@ const AstrologyCalculator = {
 
 		} catch (err) {
 			console.error("Failed to load transit chart:", err);
-			document.getElementById('sidereal-transit-wheel-svg').innerHTML = '<text x="500" y="500" fill="white" font-size="20" text-anchor="middle">Could not load transits.</text>';
+			console.error("Error details:", err.message, err.stack);
+			const siderealSvg = document.getElementById('sidereal-transit-wheel-svg');
+			const tropicalSvg = document.getElementById('tropical-transit-wheel-svg');
+			if (siderealSvg) {
+				siderealSvg.innerHTML = '<text x="500" y="500" fill="white" font-size="20" text-anchor="middle">Could not load transits: ' + (err.message || 'Unknown error') + '</text>';
+			}
+			if (tropicalSvg) {
+				tropicalSvg.innerHTML = '<text x="500" y="500" fill="white" font-size="20" text-anchor="middle">Could not load transits: ' + (err.message || 'Unknown error') + '</text>';
+			}
 		}
 	},
 
@@ -950,8 +964,17 @@ const AstrologyCalculator = {
 	
 	drawChartWheel(data, svgId, chartType) {
 		const svg = document.getElementById(svgId);
-		if (!svg) return;
+		if (!svg) {
+			console.error(`[Chart] SVG element not found: ${svgId}`);
+			return;
+		}
 		svg.innerHTML = ''; // Clear previous chart
+
+		if (!data) {
+			console.error(`[Chart] No data provided for ${svgId}`);
+			svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">No chart data available.</text>';
+			return;
+		}
 
 		const centerX = 500, centerY = 500;
 		const zodiacRadius = 450, houseRingRadius = 350, innerRadius = 150;
@@ -960,10 +983,17 @@ const AstrologyCalculator = {
 		const aspects = data[`${chartType}_aspects`];
 		const houseCusps = data[`${chartType}_house_cusps`];
 
+		if (!positions || !Array.isArray(positions)) {
+			console.error(`[Chart] Invalid positions data for ${svgId}:`, positions);
+			svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart data is incomplete.</text>';
+			return;
+		}
+
 		// Check if Ascendant data is available (needed for rotation)
 		const ascendant = positions.find(p => p.name === 'Ascendant');
 		if (!ascendant || ascendant.degrees === null) {
             // Display message directly in the SVG area if time is unknown
+			console.warn(`[Chart] No Ascendant found for ${svgId}, positions:`, positions);
 			svg.innerHTML = '<text x="500" y="500" font-size="20" fill="white" text-anchor="middle">Chart wheel requires birth time.</text>';
 			return; // Stop drawing if no Ascendant
 		}
