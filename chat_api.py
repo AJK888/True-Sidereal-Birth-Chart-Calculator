@@ -129,33 +129,25 @@ def is_admin(user: User) -> bool:
 
 
 def check_credits(user: User, required: int = CHAT_CREDIT_COST) -> bool:
-    """Check if user has enough credits."""
-    return user.credits >= required
+    """
+    Check if user has enough credits.
+    
+    NOTE: Currently all users have free access - credits not required.
+    Always returns True.
+    """
+    # All users have free access - credits not required
+    return True
 
 
 def deduct_credits(db: Session, user: User, amount: int, description: str) -> int:
-    """Deduct credits from user and log transaction."""
-    if user.credits < amount:
-        raise HTTPException(
-            status_code=402,
-            detail={
-                "error": "Insufficient credits",
-                "required": amount,
-                "available": user.credits
-            }
-        )
+    """
+    Deduct credits from user and log transaction.
     
-    user.credits -= amount
-    
-    transaction = CreditTransaction(
-        user_id=user.id,
-        amount=-amount,
-        transaction_type="chat",
-        description=description
-    )
-    db.add(transaction)
-    db.commit()
-    
+    NOTE: Currently all users have free access - credits not deducted.
+    Returns current credits without deduction.
+    """
+    # All users have free access - no credits deducted
+    # Return current credits without modification
     return user.credits
 
 

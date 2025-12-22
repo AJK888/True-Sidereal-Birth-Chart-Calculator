@@ -29,6 +29,33 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
     full_name: Optional[str] = None
+    
+    @validator('email')
+    def validate_email(cls, v):
+        if not v or len(v.strip()) < 3:
+            raise ValueError('Email is required')
+        # Basic email validation
+        if '@' not in v or '.' not in v.split('@')[1]:
+            raise ValueError('Invalid email format')
+        return v.strip().lower()
+    
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        if len(v) > 128:
+            raise ValueError('Password must be less than 128 characters')
+        return v
+    
+    @validator('full_name')
+    def validate_full_name(cls, v):
+        if v is not None:
+            if len(v.strip()) == 0:
+                return None  # Convert empty string to None
+            if len(v) > 255:
+                raise ValueError('Full name must be less than 255 characters')
+            return v.strip()
+        return v
 
 
 class LoginRequest(BaseModel):

@@ -43,6 +43,7 @@ from natal_chart import (
 from app.services.chart_service import generate_chart_hash, get_quick_highlights
 from app.services.llm_prompts import generate_snapshot_reading
 from app.services.email_service import send_snapshot_email_via_sendgrid
+from app.utils.validators import validate_chart_request_data, sanitize_string
 
 logger = setup_logger(__name__)
 
@@ -60,7 +61,7 @@ if isinstance(DEFAULT_SWISS_EPHEMERIS_PATH, pathlib.Path):
     DEFAULT_SWISS_EPHEMERIS_PATH = str(DEFAULT_SWISS_EPHEMERIS_PATH)
 
 # Reading cache (shared cache module)
-from app.core.cache import reading_cache, CACHE_EXPIRY_HOURS
+from app.core.cache import get_reading_from_cache, set_reading_in_cache, CACHE_EXPIRY_HOURS, reading_cache
 
 
 # Pydantic Models
@@ -130,11 +131,7 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
             
             # Store reading in cache for frontend retrieval
             chart_hash = generate_chart_hash(chart_data, unknown_time)
-            reading_cache[chart_hash] = {
-                'reading': reading_text,
-                'timestamp': datetime.now(),
-                'chart_name': chart_name
-            }
+            set_reading_in_cache(chart_hash, reading_text, chart_name)
             logger.info(f"Reading stored in cache with hash: {chart_hash}")
             
             # Also save reading to user's saved chart if user exists
@@ -811,19 +808,10 @@ async def get_reading_endpoint(
     if not current_user:
         raise HTTPException(status_code=401, detail="Authentication required to access full reading")
     
-    # Clean up expired cache entries
-    now = datetime.now()
-    expired_keys = [
-        key for key, value in reading_cache.items()
-        if now - value['timestamp'] > timedelta(hours=CACHE_EXPIRY_HOURS)
-    ]
-    for key in expired_keys:
-        del reading_cache[key]
-        logger.info(f"Removed expired reading from cache: {key}")
+    # Check if reading exists in cache (cache handles expiry automatically)
+    cached_data = get_reading_from_cache(chart_hash)
     
-    # Check if reading exists in cache
-    if chart_hash in reading_cache:
-        cached_data = reading_cache[chart_hash]
+    if cached_data:
         
         # Try to find saved chart by hash (for chat functionality)
         chart_id = None

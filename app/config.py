@@ -94,6 +94,7 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 # ============================================================
 
 CACHE_EXPIRY_HOURS = int(os.getenv("CACHE_EXPIRY_HOURS", "24"))
+REDIS_URL = os.getenv("REDIS_URL")  # Optional Redis URL for caching
 
 # ============================================================
 # Rate Limiting Configuration

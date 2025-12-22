@@ -56,36 +56,17 @@ def has_active_subscription(user, db: Session) -> bool:
     """
     Check if user has an active subscription or is in their free month.
     
+    NOTE: Currently all users have free access - pricing bypassed.
+    
     Args:
         user: User database object
         db: Database session
     
     Returns:
-        True if user has active subscription or is in free month, False otherwise
+        True for all users (free access enabled)
     """
-    if not user:
-        return False
-    
-    # Admin users always have access
-    if user.is_admin:
-        return True
-    
-    # Check if user is in their free month (after purchasing a reading)
-    if user.has_purchased_reading and user.free_chat_month_end_date:
-        if user.free_chat_month_end_date > datetime.utcnow():
-            return True
-    
-    # Check subscription status
-    if user.subscription_status == "active":
-        # Verify subscription hasn't expired
-        if user.subscription_end_date and user.subscription_end_date < datetime.utcnow():
-            # Subscription expired, update status
-            user.subscription_status = "inactive"
-            db.commit()
-            return False
-        return True
-    
-    return False
+    # All users now have free access - pricing bypassed
+    return True
 
 
 def check_subscription_access(user, db: Session, admin_secret: Optional[str] = None) -> tuple[bool, str]:

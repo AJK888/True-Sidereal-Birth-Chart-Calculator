@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.core.logging_config import setup_logger
 from database import get_db, SavedChart
 from auth import get_current_user, User
+from pydantic import validator
 
 logger = setup_logger(__name__)
 
@@ -34,6 +35,46 @@ class SaveChartRequest(BaseModel):
     unknown_time: bool = False
     chart_data_json: Optional[str] = None
     ai_reading: Optional[str] = None
+    
+    @validator('chart_name')
+    def validate_chart_name(cls, v):
+        if not v or len(v.strip()) < 1:
+            raise ValueError('Chart name cannot be empty')
+        if len(v) > 255:
+            raise ValueError('Chart name must be less than 255 characters')
+        return v.strip()
+    
+    @validator('birth_year')
+    def validate_year(cls, v):
+        if v < 1900 or v > 2100:
+            raise ValueError('Birth year must be between 1900 and 2100')
+        return v
+    
+    @validator('birth_month')
+    def validate_month(cls, v):
+        if v < 1 or v > 12:
+            raise ValueError('Birth month must be between 1 and 12')
+        return v
+    
+    @validator('birth_hour')
+    def validate_hour(cls, v):
+        if v < 0 or v > 23:
+            raise ValueError('Hour must be between 0 and 23')
+        return v
+    
+    @validator('birth_minute')
+    def validate_minute(cls, v):
+        if v < 0 or v > 59:
+            raise ValueError('Minute must be between 0 and 59')
+        return v
+    
+    @validator('birth_location')
+    def validate_location(cls, v):
+        if not v or len(v.strip()) < 2:
+            raise ValueError('Location must be at least 2 characters')
+        if len(v) > 500:
+            raise ValueError('Location must be less than 500 characters')
+        return v.strip()
 
 
 class SavedChartResponse(BaseModel):
@@ -92,7 +133,8 @@ async def list_charts_endpoint(
     db: Session = Depends(get_db)
 ) -> List[Dict[str, Any]]:
     """List all saved charts for the authenticated user."""
-    charts = db.query(SavedChart).filter(SavedChart.user_id == current_user.id).order_by(SavedChart.created_at.desc()).all()
+    # Use optimized query helper
+    charts = get_user_charts_optimized(db, current_user.id)
     
     return [
         {
@@ -115,10 +157,8 @@ async def get_chart_endpoint(
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """Get a specific saved chart."""
-    chart = db.query(SavedChart).filter(
-        SavedChart.id == chart_id,
-        SavedChart.user_id == current_user.id
-    ).first()
+    # Use optimized query with eager loading
+    chart = get_chart_with_conversations(db, chart_id, current_user.id)
     
     if not chart:
         raise HTTPException(status_code=404, detail="Chart not found.")

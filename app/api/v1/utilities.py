@@ -35,6 +35,9 @@ api_router = APIRouter(prefix="/api", tags=["utilities"])
 # Import centralized configuration
 from app.config import SENDGRID_API_KEY, SENDGRID_FROM_EMAIL
 
+# Import monitoring utilities
+from app.utils.metrics import get_health_metrics
+
 
 @router.api_route("/ping", methods=["GET", "HEAD"])
 def ping() -> Dict[str, str]:
@@ -64,6 +67,16 @@ def check_email_config() -> Dict[str, Any]:
         "status": "configured" if (SENDGRID_API_KEY and SENDGRID_FROM_EMAIL) else "not_configured"
     }
     return config_status
+
+
+@router.get("/metrics")
+def get_metrics() -> Dict[str, Any]:
+    """
+    Get application performance metrics.
+    
+    Returns health status and performance statistics.
+    """
+    return get_health_metrics()
 
 
 @api_router.post("/log-clicks")

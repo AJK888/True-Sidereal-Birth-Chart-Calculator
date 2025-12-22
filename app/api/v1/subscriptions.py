@@ -45,20 +45,21 @@ async def get_subscription_status(
     # ADMIN_SECRET_KEY imported from app.config above
     has_friends_family_access = friends_and_family_key and ADMIN_SECRET_KEY and friends_and_family_key == ADMIN_SECRET_KEY
     
-    # All users now have access (Stripe requirements removed)
+    # All users now have full access - pricing bypassed
     # FRIENDS_AND_FAMILY_KEY still tracked for logging
     is_active = True  # Always return True - no payment required
     
     return {
-        "has_subscription": is_active,
-        "status": "active" if has_friends_family_access else "free_access",
+        "has_subscription": True,  # All users have subscription access
+        "status": "active",  # Always active - free access for all
         "start_date": current_user.subscription_start_date.isoformat() if current_user.subscription_start_date else None,
         "end_date": current_user.subscription_end_date.isoformat() if current_user.subscription_end_date else None,
-        "has_purchased_reading": current_user.has_purchased_reading or has_friends_family_access,
+        "has_purchased_reading": True,  # All users can generate readings
         "reading_purchase_date": current_user.reading_purchase_date.isoformat() if current_user.reading_purchase_date else None,
         "free_chat_month_end_date": current_user.free_chat_month_end_date.isoformat() if current_user.free_chat_month_end_date else None,
         "is_admin": current_user.is_admin,
-        "friends_family_access": has_friends_family_access
+        "friends_family_access": has_friends_family_access,
+        "free_access": True  # Explicitly indicate free access
     }
 
 

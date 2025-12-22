@@ -302,11 +302,16 @@ from middleware.headers import (
     ApiNoCacheMiddleware
 )
 
+# --- Performance Monitoring Middleware ---
+from app.core.performance_middleware import PerformanceMonitoringMiddleware
+
 # Add middleware in reverse execution order (last added = first executed on response)
 # Execution order on response (reverse of addition):
 # 1. ApiNoCacheMiddleware (added last, executes first - can override cache headers)
 # 2. SecurityHeadersMiddleware (added second, executes second - sets security defaults)
-# 3. NormalizeJsonContentTypeMiddleware (added first, executes last - normalizes content-type)
+# 3. NormalizeJsonContentTypeMiddleware (added third, executes third - normalizes content-type)
+# 4. PerformanceMonitoringMiddleware (added first, executes last - tracks performance)
+app.add_middleware(PerformanceMonitoringMiddleware)
 app.add_middleware(NormalizeJsonContentTypeMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(ApiNoCacheMiddleware)
