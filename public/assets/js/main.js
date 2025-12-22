@@ -294,14 +294,42 @@
 				event.stopImmediatePropagation();
 				console.log('[Menu] Toggle button clicked, preventing default');
 				menuToggle();
-				// Also prevent hash change
-				if (window.location.hash === '#menu') {
-					window.history.replaceState(null, null, window.location.pathname + window.location.search);
-				}
+				// Also prevent hash change immediately
+				setTimeout(function() {
+					if (window.location.hash === '#menu') {
+						window.history.replaceState(null, null, window.location.pathname + window.location.search);
+					}
+				}, 0);
 				return false;
 			};
 			
-			// Attach handler multiple ways for maximum compatibility
+			// Remove any existing handlers first to prevent conflicts
+			$(document).off('click', 'a[href="#menu"]');
+			$('a[href="#menu"]').off('click');
+			
+			// Attach handler using capture phase to run before other handlers
+			document.addEventListener('click', function(event) {
+				var target = event.target;
+				// Check if clicked element or its parent is the menu link
+				while (target && target !== document) {
+					if (target.tagName === 'A' && target.getAttribute('href') === '#menu') {
+						event.preventDefault();
+						event.stopPropagation();
+						event.stopImmediatePropagation();
+						console.log('[Menu] Toggle button clicked (capture phase), preventing default');
+						menuToggle();
+						setTimeout(function() {
+							if (window.location.hash === '#menu') {
+								window.history.replaceState(null, null, window.location.pathname + window.location.search);
+							}
+						}, 0);
+						return false;
+					}
+					target = target.parentElement;
+				}
+			}, true); // Use capture phase
+			
+			// Also attach jQuery handlers for compatibility
 			$(document).on('click', 'a[href="#menu"]', menuButtonHandler);
 			$('a[href="#menu"]').on('click', menuButtonHandler);
 			

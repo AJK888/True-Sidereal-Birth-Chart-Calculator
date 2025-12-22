@@ -579,30 +579,7 @@
 		
 		<!-- Fallback: Remove is-preload class if main.js fails to load -->
 		<!-- Menu functionality test -->
-		<script>
-			// Test menu button after page loads
-			window.addEventListener('load', function() {
-				setTimeout(function() {
-					var menuBtn = document.querySelector('a[href="#menu"]');
-					if (menuBtn) {
-						console.log('[Menu Test] Menu button found:', menuBtn);
-						// Test if click handler is attached
-						var testClick = new Event('click', { bubbles: true, cancelable: true });
-					} else {
-						console.error('[Menu Test] Menu button NOT found!');
-					}
-					
-					var menuEl = document.getElementById('menu');
-					if (menuEl) {
-						console.log('[Menu Test] Menu element found:', menuEl);
-						console.log('[Menu Test] Menu parent:', menuEl.parentElement);
-						console.log('[Menu Test] Body has is-menu-visible:', document.body.classList.contains('is-menu-visible'));
-					} else {
-						console.error('[Menu Test] Menu element NOT found!');
-					}
-				}, 500);
-			});
-		</script>
+		<!-- Menu functionality is handled by main.js -->
 		<script>
 			// Fallback to ensure header is visible even if main.js doesn't load
 			window.addEventListener('load', function() {
