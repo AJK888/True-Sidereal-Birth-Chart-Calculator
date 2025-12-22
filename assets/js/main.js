@@ -243,21 +243,33 @@
 
 		// Menu toggle function - works even if menu doesn't exist yet
 		var menuToggle = function() {
-			var $menuEl = $('#menu');
-			if ($menuEl.length > 0 && typeof $menuEl._toggle === 'function') {
-				$menuEl._toggle();
-			} else {
-				// Fallback: just toggle the class directly
+			try {
+				var $menuEl = $('#menu');
+				if ($menuEl.length > 0 && typeof $menuEl._toggle === 'function') {
+					$menuEl._toggle();
+				} else {
+					// Fallback: just toggle the class directly
+					$body.toggleClass('is-menu-visible');
+				}
+			} catch (e) {
+				// If anything fails, use direct class toggle
+				console.warn('Menu toggle error:', e);
 				$body.toggleClass('is-menu-visible');
 			}
 		};
 
 		var menuHide = function() {
-			var $menuEl = $('#menu');
-			if ($menuEl.length > 0 && typeof $menuEl._hide === 'function') {
-				$menuEl._hide();
-			} else {
-				// Fallback: just remove the class directly
+			try {
+				var $menuEl = $('#menu');
+				if ($menuEl.length > 0 && typeof $menuEl._hide === 'function') {
+					$menuEl._hide();
+				} else {
+					// Fallback: just remove the class directly
+					$body.removeClass('is-menu-visible');
+				}
+			} catch (e) {
+				// If anything fails, use direct class removal
+				console.warn('Menu hide error:', e);
 				$body.removeClass('is-menu-visible');
 			}
 		};
@@ -267,6 +279,7 @@
 			.on('click', 'a[href="#menu"]', function(event) {
 				event.stopPropagation();
 				event.preventDefault();
+				console.log('[Menu] Toggle button clicked');
 				menuToggle();
 			})
 			.on('keydown', function(event) {
@@ -277,6 +290,7 @@
 
 		// Only initialize menu if it exists
 		if ($menu.length > 0) {
+			console.log('[Menu] Initializing menu...');
 			// Check if inner wrapper already exists to prevent double-wrapping
 			if ($menu.children('.inner').length === 0) {
 				$menu.wrapInner('<div class="inner"></div>');
@@ -305,8 +319,10 @@
 			};
 
 			$menu._toggle = function() {
-				if ($menu._lock())
+				if ($menu._lock()) {
 					$body.toggleClass('is-menu-visible');
+					console.log('[Menu] Toggled, is-menu-visible:', $body.hasClass('is-menu-visible'));
+				}
 			};
 
 			$menuInner
