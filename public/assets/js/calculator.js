@@ -1237,11 +1237,12 @@ const AstrologyCalculator = {
 		
 		let html = '';
 		
-		sortedMatches.forEach(match => {
+		sortedMatches.forEach((match, index) => {
 			const similarityColor = match.similarity_score >= 70 ? '#4CAF50' : 
 			                       match.similarity_score >= 50 ? '#FF9800' : '#2196F3';
+			const matchId = `famous-person-${index}`;
 			
-			// Build matching factors list
+			// Build matching factors list for expanded view
 			let matchingFactorsHtml = '';
 			if (match.matching_factors && match.matching_factors.length > 0) {
 				matchingFactorsHtml = '<div style="margin-top: 1em; padding-top: 1em; border-top: 1px solid rgba(27, 108, 168, 0.3);">';
@@ -1253,66 +1254,117 @@ const AstrologyCalculator = {
 				matchingFactorsHtml += '</ul></div>';
 			}
 			
+			// Compact list item with expandable details
 			html += `
-				<div class="famous-person-card" style="
+				<div class="famous-person-item" style="
 					background: rgba(27, 108, 168, 0.1);
 					border: 1px solid rgba(27, 108, 168, 0.3);
 					border-radius: 8px;
-					padding: 1.5em;
-					transition: transform 0.2s, box-shadow 0.2s;
-				" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 5px 15px rgba(27, 108, 168, 0.3)'" 
-				   onmouseout="this.style.transform=''; this.style.boxShadow=''">
-					<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1em;">
-						<h3 style="margin: 0; color: #1b6ca8;">${match.name}</h3>
+					margin-bottom: 0.75em;
+					overflow: hidden;
+					transition: all 0.3s ease;
+				">
+					<div class="famous-person-header" style="
+						display: flex;
+						justify-content: space-between;
+						align-items: center;
+						padding: 1em 1.25em;
+						cursor: pointer;
+						user-select: none;
+					" onclick="(function() {
+						const details = this.parentElement.querySelector('.famous-person-details');
+						const icon = this.querySelector('.expand-icon');
+						const isHidden = details.style.display === 'none' || !details.style.display;
+						details.style.display = isHidden ? 'block' : 'none';
+						icon.textContent = isHidden ? '▼' : '▶';
+					}).call(this);">
+						<div style="display: flex; align-items: center; gap: 1em; flex: 1;">
+							<span class="expand-icon" style="
+								color: #1b6ca8;
+								font-size: 0.75em;
+								transition: transform 0.2s;
+								min-width: 1em;
+							">▶</span>
+							<h3 style="margin: 0; color: #1b6ca8; font-size: 1.1em; font-weight: 600;">${match.name}</h3>
+							${match.occupation ? `<span style="color: rgba(255, 255, 255, 0.6); font-size: 0.9em; font-style: italic;">${match.occupation}</span>` : ''}
+						</div>
 						<div style="
 							background: ${similarityColor};
 							color: white;
-							padding: 0.3em 0.8em;
+							padding: 0.4em 0.9em;
 							border-radius: 20px;
-							font-size: 0.85em;
+							font-size: 0.9em;
 							font-weight: bold;
-						">Synthesis Score: ${match.similarity_score}</div>
+							margin-left: 1em;
+						">${match.similarity_score}</div>
 					</div>
-					${match.occupation ? `<p style="color: rgba(255, 255, 255, 0.8); margin: 0.5em 0; font-style: italic;">${match.occupation}</p>` : ''}
-					<div style="margin: 1em 0; padding: 1em; background: rgba(0, 0, 0, 0.2); border-radius: 4px;">
-						<p style="margin: 0.3em 0; font-size: 0.9em;">
-							<strong>Born:</strong> ${match.birth_date} in ${match.birth_location}
-						</p>
+					<div class="famous-person-details" style="
+						display: none;
+						padding: 0 1.25em 1.25em 1.25em;
+						border-top: 1px solid rgba(27, 108, 168, 0.2);
+						animation: slideDown 0.3s ease;
+					">
+						<div style="margin-top: 1em; padding: 1em; background: rgba(0, 0, 0, 0.2); border-radius: 4px;">
+							<p style="margin: 0.3em 0; font-size: 0.9em;">
+								<strong>Born:</strong> ${match.birth_date} in ${match.birth_location}
+							</p>
+						</div>
+						${matchingFactorsHtml}
+						<a href="${match.wikipedia_url}" target="_blank" rel="noopener noreferrer" 
+						   style="
+							display: inline-block;
+							margin-top: 1em;
+							padding: 0.6em 1.2em;
+							background: #1b6ca8;
+							color: white;
+							text-decoration: none;
+							border-radius: 4px;
+							transition: background 0.2s;
+						" onmouseover="this.style.background='#155a8a'" onmouseout="this.style.background='#1b6ca8'">
+							Learn More on Wikipedia →
+						</a>
 					</div>
-					${matchingFactorsHtml}
-					<a href="${match.wikipedia_url}" target="_blank" rel="noopener noreferrer" 
-					   style="
-						display: inline-block;
-						margin-top: 1em;
-						padding: 0.6em 1.2em;
-						background: #1b6ca8;
-						color: white;
-						text-decoration: none;
-						border-radius: 4px;
-						transition: background 0.2s;
-					" onmouseover="this.style.background='#155a8a'" onmouseout="this.style.background='#1b6ca8'">
-						Learn More on Wikipedia →
-					</a>
 				</div>
 			`;
 		});
 		
 		resultsDiv.innerHTML = html;
 		
-		// Add CSS for grid layout if not already present
-		if (!document.getElementById('famous-people-grid-style')) {
+		// Add CSS for list layout if not already present
+		if (!document.getElementById('famous-people-list-style')) {
 			const style = document.createElement('style');
-			style.id = 'famous-people-grid-style';
+			style.id = 'famous-people-list-style';
 			style.textContent = `
 				.famous-people-grid {
-					display: grid;
-					grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-					gap: 1.5em;
+					display: block;
 					margin-top: 2em;
 				}
+				.famous-person-item {
+					transition: background 0.2s;
+				}
+				.famous-person-item:hover {
+					background: rgba(27, 108, 168, 0.15);
+				}
+				.famous-person-header:hover {
+					background: rgba(27, 108, 168, 0.1);
+				}
+				@keyframes slideDown {
+					from {
+						opacity: 0;
+						max-height: 0;
+					}
+					to {
+						opacity: 1;
+						max-height: 1000px;
+					}
+				}
 				@media (max-width: 768px) {
-					.famous-people-grid {
-						grid-template-columns: 1fr;
+					.famous-person-header {
+						flex-wrap: wrap;
+						gap: 0.5em;
+					}
+					.famous-person-header > div:first-child {
+						flex-basis: 100%;
 					}
 				}
 			`;
