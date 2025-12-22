@@ -250,19 +250,35 @@
 			try {
 				var $menuEl = $('#menu');
 				console.log('[Menu] Toggle called, menu element found:', $menuEl.length > 0);
+				
+				// Always use direct class toggle - most reliable
+				var wasVisible = $body.hasClass('is-menu-visible');
+				$body.toggleClass('is-menu-visible');
+				var isNowVisible = $body.hasClass('is-menu-visible');
+				
+				console.log('[Menu] Toggle result - was:', wasVisible, 'now:', isNowVisible);
+				console.log('[Menu] Body class:', $body.hasClass('is-menu-visible'));
+				
+				if ($menuEl.length > 0) {
+					console.log('[Menu] Menu element display:', $menuEl.css('display'), 'visibility:', $menuEl.css('visibility'), 'opacity:', $menuEl.css('opacity'));
+				}
+				
+				// Also try using menu._toggle if available (for animations)
 				if ($menuEl.length > 0 && typeof $menuEl._toggle === 'function') {
-					console.log('[Menu] Using menu._toggle()');
-					$menuEl._toggle();
-				} else {
-					// Fallback: just toggle the class directly
-					console.log('[Menu] Using fallback toggle');
-					$body.toggleClass('is-menu-visible');
-					console.log('[Menu] Body class after toggle:', $body.hasClass('is-menu-visible'));
-					console.log('[Menu] Menu element:', $menuEl.length, 'Menu visible:', $menuEl.is(':visible'));
+					// The class toggle above already happened, but _toggle handles locking
+					// So we'll just ensure the state is correct
+					if (isNowVisible && !wasVisible) {
+						// Menu is opening - ensure it's visible
+						$menuEl.css({
+							'display': 'flex',
+							'visibility': 'visible',
+							'opacity': '1'
+						});
+					}
 				}
 			} catch (e) {
 				// If anything fails, use direct class toggle
-				console.error('Menu toggle error:', e);
+				console.error('[Menu] Toggle error:', e);
 				$body.toggleClass('is-menu-visible');
 			}
 		};
@@ -306,16 +322,33 @@
 			// Remove any existing handlers first to prevent conflicts
 			$(document).off('click', 'a[href="#menu"]');
 			$('a[href="#menu"]').off('click');
+			$('#menu-toggle').off('click');
 			
-			// Attach handler to menu toggle button by ID (most reliable)
-			$('#menu-toggle').on('click', function(event) {
-				event.preventDefault();
-				event.stopPropagation();
-				event.stopImmediatePropagation();
-				console.log('[Menu] Toggle button clicked (ID handler)');
-				menuToggle();
-				return false;
-			});
+			// Attach handler to menu toggle button by ID (most reliable) - use multiple methods
+			var menuToggleBtn = document.getElementById('menu-toggle');
+			if (menuToggleBtn) {
+				// Native event listener (most reliable)
+				menuToggleBtn.addEventListener('click', function(event) {
+					event.preventDefault();
+					event.stopPropagation();
+					event.stopImmediatePropagation();
+					console.log('[Menu] Toggle button clicked (native handler)');
+					menuToggle();
+					return false;
+				}, false);
+				
+				// Also attach jQuery handler as backup
+				$('#menu-toggle').on('click', function(event) {
+					event.preventDefault();
+					event.stopPropagation();
+					event.stopImmediatePropagation();
+					console.log('[Menu] Toggle button clicked (jQuery handler)');
+					menuToggle();
+					return false;
+				});
+			} else {
+				console.warn('[Menu] Menu toggle button not found!');
+			}
 			
 			// Also handle old href="#menu" links for compatibility
 			document.addEventListener('click', function(event) {
@@ -461,6 +494,48 @@
 				console.warn('[Menu] Menu element not found in DOM');
 			}
 		};
+		
+		// Attach menu button handler immediately (before full initialization)
+		// This ensures the button works even if other initialization fails
+		function attachMenuButtonHandler() {
+			var menuToggleBtn = document.getElementById('menu-toggle');
+			if (menuToggleBtn && !menuToggleBtn.hasAttribute('data-handler-attached')) {
+				// Mark as attached to prevent duplicates
+				menuToggleBtn.setAttribute('data-handler-attached', 'true');
+				
+				// Attach native event listener
+				menuToggleBtn.addEventListener('click', function(event) {
+					event.preventDefault();
+					event.stopPropagation();
+					event.stopImmediatePropagation();
+					console.log('[Menu] Button clicked (immediate handler)');
+					
+					// Toggle menu directly using native DOM
+					document.body.classList.toggle('is-menu-visible');
+					var isVisible = document.body.classList.contains('is-menu-visible');
+					console.log('[Menu] Toggled (native), is-menu-visible:', isVisible);
+					
+					// Also update jQuery if available
+					if (typeof $body !== 'undefined' && $body) {
+						if (isVisible) {
+							$body.addClass('is-menu-visible');
+						} else {
+							$body.removeClass('is-menu-visible');
+						}
+					}
+					return false;
+				}, false);
+				
+				console.log('[Menu] Immediate handler attached to button');
+			}
+		}
+		
+		// Try to attach immediately
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', attachMenuButtonHandler);
+		} else {
+			attachMenuButtonHandler();
+		}
 		
 		// Initialize menu when DOM is ready
 		if (document.readyState === 'loading') {
