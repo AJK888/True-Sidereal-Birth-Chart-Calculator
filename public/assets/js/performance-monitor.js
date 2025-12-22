@@ -226,20 +226,26 @@ class PerformanceMonitor {
 	 * @param {Object} data - Metric data
 	 */
 	logMetric(name, data) {
-		// Check for development mode (browser-safe - never access process directly)
-		// In browser, only check hostname to avoid ReferenceError
-		const isDevelopment = window.location.hostname === 'localhost' || 
-		                      window.location.hostname === '127.0.0.1' ||
-		                      window.location.hostname.includes('localhost');
-		
-		if (isDevelopment) {
-			console.log(`[Performance] ${name}:`, data);
-		}
+		try {
+			// Check for development mode (browser-safe - never access process directly)
+			// In browser, only check hostname to avoid ReferenceError
+			const isDevelopment = (typeof window !== 'undefined' && window.location) && 
+			                      (window.location.hostname === 'localhost' || 
+			                       window.location.hostname === '127.0.0.1' ||
+			                       window.location.hostname.includes('localhost'));
+			
+			if (isDevelopment) {
+				console.log(`[Performance] ${name}:`, data);
+			}
 
-		// Send to backend if API client is available
-		if (typeof apiClient !== 'undefined') {
-			// Optionally send to backend for analytics
-			// apiClient.logMetric({ name, ...data }).catch(() => {});
+			// Send to backend if API client is available
+			if (typeof apiClient !== 'undefined') {
+				// Optionally send to backend for analytics
+				// apiClient.logMetric({ name, ...data }).catch(() => {});
+			}
+		} catch (e) {
+			// Silently fail - don't break the app if logging fails
+			console.warn('[Performance] Error logging metric:', e);
 		}
 	}
 

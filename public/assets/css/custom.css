@@ -369,12 +369,16 @@ select:focus-visible {
     left: 0;
     right: 0;
     background: rgba(36, 41, 62, 0.95);
-    -webkit-backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* Safari 9+ support */
     backdrop-filter: blur(10px);
     padding: 1em;
     z-index: 999;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mobile-sticky-cta.hidden {
+    display: none; /* Hidden by default, JavaScript will toggle */
 }
 
 .sticky-cta-button {
@@ -676,7 +680,7 @@ html {
     /* Reduce banner height on mobile */
     #banner {
         padding: 2em 0 1em 0;
-        min-height: auto;
+        min-height: 0; /* Firefox 22+ compatibility - use 0 instead of auto */
     }
     
     #banner .inner {

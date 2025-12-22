@@ -53,7 +53,8 @@ table {
 
 body {
 	-webkit-text-size-adjust: none;
-	text-size-adjust: none;
+	-moz-text-size-adjust: none; /* Firefox fallback */
+	text-size-adjust: none; /* Standard property - not supported in Firefox/Safari but harmless */
 }
 
 mark {

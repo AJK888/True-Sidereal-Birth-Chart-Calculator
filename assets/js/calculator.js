@@ -247,14 +247,18 @@ const AstrologyCalculator = {
 		
 		// Only show on mobile
 		if (window.innerWidth > 736) {
-			stickyCTA.style.display = 'none';
+			stickyCTA.classList.add('hidden');
 			return;
 		}
 		
 		const checkScroll = () => {
 			const formRect = formSection.getBoundingClientRect();
 			const isFormVisible = formRect.top < window.innerHeight && formRect.bottom > 0;
-			stickyCTA.style.display = isFormVisible ? 'none' : 'block';
+			if (isFormVisible) {
+				stickyCTA.classList.add('hidden');
+			} else {
+				stickyCTA.classList.remove('hidden');
+			}
 		};
 		
 		window.addEventListener('scroll', checkScroll, { passive: true });
@@ -1778,14 +1782,18 @@ const AstrologyCalculator = {
 		
 		// Only show on mobile
 		if (window.innerWidth > 736) {
-			stickyCTA.style.display = 'none';
+			stickyCTA.classList.add('hidden');
 			return;
 		}
 		
 		const checkScroll = () => {
 			const formRect = formSection.getBoundingClientRect();
 			const isFormVisible = formRect.top < window.innerHeight && formRect.bottom > 0;
-			stickyCTA.style.display = isFormVisible ? 'none' : 'block';
+			if (isFormVisible) {
+				stickyCTA.classList.add('hidden');
+			} else {
+				stickyCTA.classList.remove('hidden');
+			}
 		};
 		
 		window.addEventListener('scroll', checkScroll, { passive: true });

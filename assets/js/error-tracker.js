@@ -89,12 +89,17 @@ class ErrorTracker {
 
 		// Log to console in development (browser-safe - never access process directly)
 		// In browser, only check hostname to avoid ReferenceError
-		const isDevelopment = window.location.hostname === 'localhost' || 
-		                      window.location.hostname === '127.0.0.1' ||
-		                      window.location.hostname.includes('localhost');
-		
-		if (isDevelopment) {
-			console.error('[Error Tracker]', error);
+		try {
+			const isDevelopment = (typeof window !== 'undefined' && window.location) && 
+			                      (window.location.hostname === 'localhost' || 
+			                       window.location.hostname === '127.0.0.1' ||
+			                       window.location.hostname.includes('localhost'));
+			
+			if (isDevelopment) {
+				console.error('[Error Tracker]', error);
+			}
+		} catch (e) {
+			// Silently fail - don't break error tracking if logging fails
 		}
 
 		// Add to queue for batching

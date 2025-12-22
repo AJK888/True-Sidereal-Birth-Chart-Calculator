@@ -13,17 +13,21 @@
 		$banner = $('#banner');
 
 	// Breakpoints.
-		if (typeof breakpoints !== 'undefined') {
-			breakpoints({
-				xlarge:    ['1281px',   '1680px'   ],
-				large:     ['981px',    '1280px'   ],
-				medium:    ['737px',    '980px'    ],
-				small:     ['481px',    '736px'    ],
-				xsmall:    ['361px',    '480px'    ],
-				xxsmall:   [null,       '360px'    ]
-			});
-		} else {
-			console.warn('[main.js] breakpoints library not loaded. Some responsive features may not work.');
+		try {
+			if (typeof breakpoints !== 'undefined' && typeof breakpoints === 'function') {
+				breakpoints({
+					xlarge:    ['1281px',   '1680px'   ],
+					large:     ['981px',    '1280px'   ],
+					medium:    ['737px',    '980px'    ],
+					small:     ['481px',    '736px'    ],
+					xsmall:    ['361px',    '480px'    ],
+					xxsmall:   [null,       '360px'    ]
+				});
+			} else {
+				console.warn('[main.js] breakpoints library not loaded. Some responsive features may not work.');
+			}
+		} catch (e) {
+			console.warn('[main.js] Error initializing breakpoints:', e);
 		}
 
 	/**
