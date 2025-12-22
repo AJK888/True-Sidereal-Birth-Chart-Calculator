@@ -48,9 +48,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     Adds comprehensive security headers:
     - X-Content-Type-Options: nosniff
     - Content-Security-Policy: default-src 'none'; frame-ancestors 'none' (replaces X-Frame-Options)
-    - Referrer-Policy: no-referrer
+    - Referrer-Policy: strict-origin-when-cross-origin
     - Strict-Transport-Security: max-age=31536000; includeSubDomains (HTTPS only)
     - Permissions-Policy: geolocation=(), microphone=(), camera=()
+    - X-DNS-Prefetch-Control: off
+    - X-Download-Options: noopen
     
     Note: X-Frame-Options and X-XSS-Protection are deprecated in favor of CSP.
     Uses setdefault so explicit headers from endpoints can override.
@@ -63,23 +65,27 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault(
             "Content-Security-Policy", 
-            "default-src 'none'; frame-ancestors 'none'"
+            "default-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
         )
-        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         # X-Frame-Options and X-XSS-Protection are deprecated - CSP handles this
         
         # HSTS header (only for HTTPS)
         if request.url.scheme == "https":
             response.headers.setdefault(
                 "Strict-Transport-Security",
-                "max-age=31536000; includeSubDomains"
+                "max-age=31536000; includeSubDomains; preload"
             )
         
-        # Permissions Policy
+        # Permissions Policy (more restrictive)
         response.headers.setdefault(
             "Permissions-Policy",
-            "geolocation=(), microphone=(), camera=()"
+            "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
         )
+        
+        # Additional security headers
+        response.headers.setdefault("X-DNS-Prefetch-Control", "off")
+        response.headers.setdefault("X-Download-Options", "noopen")
         
         return response
 

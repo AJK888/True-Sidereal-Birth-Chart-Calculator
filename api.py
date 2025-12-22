@@ -190,6 +190,15 @@ from app.core.cache import reading_cache, CACHE_EXPIRY_HOURS
 
 # --- Rate Limiter Key Function ---
 def get_rate_limit_key(request: Request) -> str:
+    """
+    Get rate limit key for a request.
+    
+    Priority:
+    1. Admin secret key (bypass rate limiting)
+    2. Authenticated user ID (per-user rate limiting)
+    3. IP address (anonymous users)
+    """
+    # Check for admin secret key bypass
     if ADMIN_SECRET_KEY:
         friends_and_family_key = request.query_params.get('FRIENDS_AND_FAMILY_KEY')
         if not friends_and_family_key:
@@ -199,7 +208,29 @@ def get_rate_limit_key(request: Request) -> str:
                     friends_and_family_key = header_value
                     break
         if friends_and_family_key and friends_and_family_key == ADMIN_SECRET_KEY:
-            return str(uuid.uuid4())
+            return str(uuid.uuid4())  # Unique key per request (bypass rate limiting)
+    
+    # Try to get authenticated user ID for per-user rate limiting
+    try:
+        # Check if user is authenticated via JWT token
+        from fastapi.security import HTTPBearer
+        from jose import jwt, JWTError
+        from app.config import SECRET_KEY
+        
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+            try:
+                payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+                user_id = payload.get("sub")
+                if user_id:
+                    return f"user:{user_id}"  # Per-user rate limiting
+            except (JWTError, Exception):
+                pass  # Invalid token, fall back to IP
+    except Exception:
+        pass  # Fall back to IP if anything fails
+    
+    # Fall back to IP address for anonymous users
     return get_remote_address(request)
 
 
@@ -348,6 +379,66 @@ async def trigger_webpage_deployment():
     except Exception as e:
         # Don't fail startup if webpage deployment trigger fails
         logger.warning(f"Failed to trigger webpage deployment on startup: {e}")
+
+
+@app.on_event("startup")
+async def startup_health_check():
+    """Perform health checks on startup and log status."""
+    try:
+        from app.utils.health import get_comprehensive_health
+        health = get_comprehensive_health()
+        
+        logger.info("=" * 60)
+        logger.info("Startup Health Check")
+        logger.info("=" * 60)
+        logger.info(f"Overall Status: {health['status']}")
+        
+        for component, check in health['checks'].items():
+            status = check.get('status', 'unknown')
+            logger.info(f"{component.capitalize()}: {status}")
+            if check.get('error'):
+                logger.warning(f"  Error: {check['error']}")
+        
+        logger.info("=" * 60)
+        
+        if health['status'] == 'unhealthy':
+            logger.error("CRITICAL: Service started with unhealthy dependencies!")
+    except Exception as e:
+        logger.warning(f"Startup health check failed: {e}")
+
+
+@app.on_event("shutdown")
+async def graceful_shutdown():
+    """
+    Graceful shutdown handler.
+    
+    Closes database connections, cache connections, and performs cleanup.
+    """
+    logger.info("=" * 60)
+    logger.info("Graceful Shutdown Initiated")
+    logger.info("=" * 60)
+    
+    try:
+        # Close database connections
+        from database import engine
+        logger.info("Closing database connections...")
+        engine.dispose()
+        logger.info("Database connections closed")
+    except Exception as e:
+        logger.error(f"Error closing database connections: {e}")
+    
+    try:
+        # Close Redis connection if available
+        from app.core.cache import _redis_client
+        if _redis_client:
+            logger.info("Closing Redis connection...")
+            _redis_client.close()
+            logger.info("Redis connection closed")
+    except Exception as e:
+        logger.warning(f"Error closing Redis connection: {e}")
+    
+    logger.info("Graceful shutdown complete")
+    logger.info("=" * 60)
 
 # --- CORS MIDDLEWARE (MUST BE ADDED BEFORE ROUTES) ---
 origins = [

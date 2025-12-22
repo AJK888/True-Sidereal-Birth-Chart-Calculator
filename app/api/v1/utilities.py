@@ -38,6 +38,13 @@ from app.config import SENDGRID_API_KEY, SENDGRID_FROM_EMAIL
 
 # Import monitoring utilities
 from app.utils.metrics import get_health_metrics
+from app.utils.health import (
+    get_comprehensive_health,
+    get_readiness,
+    get_liveness,
+    check_database_health,
+    check_cache_health
+)
 
 
 @router.api_route("/ping", methods=["GET", "HEAD"])
@@ -78,6 +85,40 @@ def get_metrics() -> Dict[str, Any]:
     Returns health status and performance statistics.
     """
     return get_health_metrics()
+
+
+@router.get("/health")
+def health_check() -> Dict[str, Any]:
+    """
+    Comprehensive health check endpoint.
+    
+    Checks all dependencies (database, cache, ephemeris) and returns
+    overall health status. Use for monitoring and alerting.
+    """
+    return get_comprehensive_health()
+
+
+@router.get("/health/ready")
+def readiness_check() -> Dict[str, Any]:
+    """
+    Readiness probe endpoint.
+    
+    Returns whether the service is ready to accept traffic.
+    Kubernetes/container orchestrators use this to determine if traffic
+    should be routed to this instance.
+    """
+    return get_readiness()
+
+
+@router.get("/health/live")
+def liveness_check() -> Dict[str, Any]:
+    """
+    Liveness probe endpoint.
+    
+    Returns whether the service is alive. Kubernetes/container orchestrators
+    use this to determine if the container should be restarted.
+    """
+    return get_liveness()
 
 
 @api_router.post("/log-clicks")

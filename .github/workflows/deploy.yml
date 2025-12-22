@@ -1,0 +1,105 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual triggering
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-asyncio
+    
+    - name: Set up test environment
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+      run: |
+        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_db" >> $GITHUB_ENV
+        echo "SECRET_KEY=test-secret-key-for-ci" >> $GITHUB_ENV
+        echo "GEMINI_API_KEY=test-key" >> $GITHUB_ENV
+        echo "SENDGRID_API_KEY=test-key" >> $GITHUB_ENV
+        echo "AI_MODE=stub" >> $GITHUB_ENV
+    
+    - name: Run tests
+      run: |
+        pytest tests/ --cov=app --cov-report=xml --cov-report=term
+    
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
+
+  deploy:
+    name: Deploy to Render
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to Render
+      uses: johnbeynon/render-deploy-action@v0.0.8
+      with:
+        service-id: ${{ secrets.RENDER_SERVICE_ID }}
+        api-key: ${{ secrets.RENDER_API_KEY }}
+    
+    - name: Wait for deployment
+      run: |
+        echo "Waiting for deployment to complete..."
+        sleep 30
+    
+    - name: Health check
+      run: |
+        API_URL="${{ secrets.RENDER_API_URL }}"
+        if [ -z "$API_URL" ]; then
+          echo "RENDER_API_URL not set, skipping health check"
+          exit 0
+        fi
+        
+        echo "Checking API health..."
+        for i in {1..10}; do
+          if curl -f "$API_URL/health" > /dev/null 2>&1; then
+            echo "Health check passed!"
+            exit 0
+          fi
+          echo "Health check attempt $i failed, retrying in 10 seconds..."
+          sleep 10
+        done
+        
+        echo "Health check failed after 10 attempts"
+        exit 1
+

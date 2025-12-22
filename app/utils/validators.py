@@ -5,7 +5,7 @@ Provides validation decorators and helper functions for request validation.
 """
 
 import re
-from typing import Any, Optional
+from typing import Any, Optional, Tuple
 from fastapi import HTTPException
 from pydantic import BaseModel
 
@@ -113,6 +113,8 @@ def sanitize_string(value: str, max_length: Optional[int] = None) -> str:
     """
     Sanitize string input by trimming whitespace and optionally limiting length.
     
+    Removes control characters and normalizes whitespace for security.
+    
     Args:
         value: String to sanitize
         max_length: Optional maximum length
@@ -123,12 +125,61 @@ def sanitize_string(value: str, max_length: Optional[int] = None) -> str:
     if not isinstance(value, str):
         return str(value) if value else ""
     
-    sanitized = value.strip()
+    # Remove control characters (except newline, tab, carriage return)
+    import re
+    sanitized = re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]', '', value)
+    
+    # Trim whitespace
+    sanitized = sanitized.strip()
+    
+    # Normalize multiple spaces to single space
+    sanitized = re.sub(r'\s+', ' ', sanitized)
     
     if max_length and len(sanitized) > max_length:
         sanitized = sanitized[:max_length]
     
     return sanitized
+
+
+def validate_password_strength(password: str) -> tuple[bool, Optional[str]]:
+    """
+    Validate password strength.
+    
+    Requirements:
+    - At least 8 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one number
+    - At most 128 characters
+    
+    Args:
+        password: Password to validate
+        
+    Returns:
+        Tuple of (is_valid: bool, error_message: Optional[str])
+    """
+    if not password or not isinstance(password, str):
+        return False, "Password is required"
+    
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    
+    if len(password) > 128:
+        return False, "Password must be less than 128 characters"
+    
+    # Check for at least one uppercase letter
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter"
+    
+    # Check for at least one lowercase letter
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter"
+    
+    # Check for at least one number
+    if not re.search(r'\d', password):
+        return False, "Password must contain at least one number"
+    
+    return True, None
 
 
 def validate_chart_request_data(data: dict) -> tuple[bool, Optional[str]]:
