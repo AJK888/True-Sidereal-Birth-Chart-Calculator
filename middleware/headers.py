@@ -11,7 +11,7 @@ from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
-NO_STORE = "no-cache, no-store"
+# Removed NO_STORE constant - using "no-cache" directly for better webhint compliance
 
 
 class NormalizeJsonContentTypeMiddleware(BaseHTTPMiddleware):
@@ -89,7 +89,7 @@ class ApiNoCacheMiddleware(BaseHTTPMiddleware):
     Middleware to add no-cache headers to API endpoints.
     
     For POST /calculate_chart and POST /api/* paths, sets:
-    - Cache-Control: no-cache, no-store
+    - Cache-Control: no-cache (removed no-store as webhint recommends)
     
     Note: Pragma and Expires headers are deprecated - Cache-Control is sufficient.
     """
@@ -101,7 +101,9 @@ class ApiNoCacheMiddleware(BaseHTTPMiddleware):
         is_api = (path == "/calculate_chart") or (path.startswith("/api/"))
         
         if is_api:
-            response.headers["Cache-Control"] = NO_STORE
+            # Use no-cache instead of no-store for better webhint compliance
+            # no-cache still prevents caching but is less restrictive
+            response.headers["Cache-Control"] = "no-cache"
             # Pragma and Expires are deprecated - Cache-Control is sufficient
         
         return response

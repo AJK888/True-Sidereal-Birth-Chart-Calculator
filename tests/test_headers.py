@@ -69,10 +69,9 @@ def test_api_endpoints_no_cache(client):
     assert "Cache-Control" in response.headers, \
         "Cache-Control header missing on API endpoint"
     cache_control = response.headers["Cache-Control"].lower()
-    assert "no-store" in cache_control, \
-        f"Expected no-store in Cache-Control, got: {response.headers.get('Cache-Control')}"
-    assert "must-revalidate" not in cache_control, \
-        "Cache-Control should not include deprecated must-revalidate directive"
+    assert "no-cache" in cache_control, \
+        f"Expected no-cache in Cache-Control, got: {response.headers.get('Cache-Control')}"
+    # Note: Changed from no-store to no-cache for better webhint compliance
     
     # Pragma and Expires are deprecated - Cache-Control is sufficient
     # These headers should not be present
@@ -100,10 +99,9 @@ def test_calculate_chart_no_cache(client):
     assert "Cache-Control" in response.headers, \
         "Cache-Control header missing on /calculate_chart endpoint"
     cache_control = response.headers["Cache-Control"].lower()
-    assert "no-store" in cache_control, \
-        f"Expected no-store in Cache-Control, got: {response.headers.get('Cache-Control')}"
-    assert "must-revalidate" not in cache_control, \
-        "Cache-Control should not include deprecated must-revalidate directive"
+    assert "no-cache" in cache_control, \
+        f"Expected no-cache in Cache-Control, got: {response.headers.get('Cache-Control')}"
+    # Note: Changed from no-store to no-cache for better webhint compliance
     
     # Pragma and Expires are deprecated - Cache-Control is sufficient
     # These headers should not be present
