@@ -93,18 +93,51 @@ The application uses **Supabase (PostgreSQL)** for data storage:
 2. **Configure Environment Variables**
    ```bash
    DATABASE_URL=postgresql://...  # Supabase connection string
-   OPENAI_API_KEY=...              # For AI features
+   SECRET_KEY=...                  # JWT secret key
+   GEMINI_API_KEY=...              # For AI features
+   SENDGRID_API_KEY=...            # For email
    STRIPE_SECRET_KEY=...           # For payments
+   REDIS_URL=...                   # Optional, for caching
    ```
 
 3. **Download Swiss Ephemeris Files**
    - See `docs/SWISS_EPHEMERIS.md` for instructions
    - Or run: `python scripts/utils/download_swiss_ephemeris.py`
 
-4. **Run the Application**
+4. **Run Database Migrations**
    ```bash
-   uvicorn api:app --reload
+   alembic upgrade head
    ```
+
+5. **Run the Application**
+   ```bash
+   # Development
+   uvicorn api:app --reload
+   
+   # Production
+   uvicorn api:app --host 0.0.0.0 --port 8000
+   ```
+
+6. **Access API Documentation**
+   - Swagger UI: http://localhost:8000/docs
+   - ReDoc: http://localhost:8000/redoc
+
+## Testing
+
+Run the test suite:
+
+```bash
+# All tests
+pytest
+
+# With coverage
+pytest --cov=app --cov-report=html
+
+# Specific test file
+pytest tests/unit/test_auth.py
+```
+
+See `tests/README.md` for more testing information.
 
 ## Scripts
 
@@ -126,12 +159,24 @@ The application uses **Supabase (PostgreSQL)** for data storage:
 
 ## Documentation
 
+### API Documentation
+- **Interactive API Docs**: Available at `/docs` (Swagger UI) and `/redoc` (ReDoc) when server is running
+- **API_DOCUMENTATION.md** - Complete API reference with examples
+- **DEVELOPER_GUIDE.md** - Developer setup, architecture, and guidelines
+
+### Other Documentation
 All documentation is in the `docs/` directory:
 
 - **MIGRATE_TO_SUPABASE.md** - Guide for migrating to Supabase
 - **DATABASE_USAGE_ANALYSIS.md** - How the application uses the database
 - **PRICING_STRATEGY.md** - Pricing and subscription strategy
 - **STRIPE_SETUP_GUIDE.md** - Stripe integration guide
+
+### Phase Documentation
+- **PHASE_0_COMPLETE.md** - Phase 0 (Quick Wins) completion
+- **PHASE_1_FINAL_SUMMARY.md** - Phase 1 (Structural Refactoring) summary
+- **PHASE_2_COMPLETE.md** - Phase 2 (Advanced Features) completion
+- **PHASE_3_START.md** - Phase 3 (Testing & Documentation) status
 
 ## License
 

@@ -66,16 +66,38 @@ from app.core.cache import get_reading_from_cache, set_reading_in_cache, CACHE_E
 
 # Pydantic Models
 class ChartRequest(BaseModel):
-    full_name: str
-    year: int
-    month: int
-    day: int
-    hour: int
-    minute: int
-    location: str
-    unknown_time: bool = False
-    user_email: Optional[str] = None
-    is_full_birth_name: bool = False
+    """
+    Request model for chart calculation.
+    
+    Calculates a complete birth chart including sidereal and tropical placements,
+    aspects, numerology, Chinese zodiac, and generates a snapshot reading.
+    """
+    full_name: str = Field(..., description="Full name of the person", example="John Doe")
+    year: int = Field(..., description="Birth year (1900-2100)", example=1990, ge=1900, le=2100)
+    month: int = Field(..., description="Birth month (1-12)", example=6, ge=1, le=12)
+    day: int = Field(..., description="Birth day (1-31, depends on month)", example=15, ge=1, le=31)
+    hour: int = Field(..., description="Birth hour in 24-hour format (0-23)", example=14, ge=0, le=23)
+    minute: int = Field(..., description="Birth minute (0-59)", example=30, ge=0, le=59)
+    location: str = Field(..., description="Birth location (city, state, country)", example="New York, NY, USA", min_length=2, max_length=500)
+    unknown_time: bool = Field(False, description="Set to true if birth time is unknown (uses noon chart)", example=False)
+    user_email: Optional[str] = Field(None, description="User email for sending readings (optional)", example="user@example.com")
+    is_full_birth_name: bool = Field(False, description="Set to true if full_name is the person's full birth name (for name numerology)", example=False)
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "full_name": "John Doe",
+                "year": 1990,
+                "month": 6,
+                "day": 15,
+                "hour": 14,
+                "minute": 30,
+                "location": "New York, NY, USA",
+                "unknown_time": False,
+                "user_email": "user@example.com",
+                "is_full_birth_name": True
+            }
+        }
     
     @validator('year')
     def validate_year(cls, v):
@@ -431,7 +453,27 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
         logger.error(f"Error in background task: {e}", exc_info=True)
 
 
-@router.post("/calculate_chart")
+@router.post(
+    "/calculate_chart",
+    summary="Calculate Birth Chart",
+    description="""
+    Calculate a complete birth chart with all astrological data.
+    
+    This endpoint calculates:
+    - **Sidereal and Tropical Placements**: All planetary positions in both zodiac systems
+    - **Aspects**: Planetary aspects and their strengths
+    - **House Cusps**: House positions for chart wheel rendering
+    - **Numerology**: Life path, day number, and lucky number
+    - **Chinese Zodiac**: Animal and element based on birth year
+    - **Snapshot Reading**: AI-generated brief reading (for non-transit charts)
+    
+    **Rate Limit**: 200 requests per day per IP address
+    
+    **Transit Charts**: Set `full_name` to "Current Transits" to calculate current planetary positions
+    """,
+    response_description="Complete chart data with all astrological information",
+    tags=["charts"]
+)
 @limiter.limit("200/day")
 async def calculate_chart_endpoint(
     request: Request, 

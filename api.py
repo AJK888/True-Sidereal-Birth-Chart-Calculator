@@ -205,7 +205,85 @@ def get_rate_limit_key(request: Request) -> str:
 
 # --- SETUP FASTAPI APP & RATE LIMITER ---
 limiter = Limiter(key_func=get_rate_limit_key)
-app = FastAPI(title="True Sidereal API", version="1.0")
+app = FastAPI(
+    title="Synthesis Astrology API",
+    version="1.0.0",
+    description="""
+    ## Synthesis Astrology - True Sidereal Birth Chart API
+    
+    A comprehensive API for calculating true sidereal birth charts, generating astrological readings,
+    and finding similar famous people based on astrological compatibility.
+    
+    ### Features
+    
+    * **Chart Calculation**: Calculate complete birth charts with sidereal and tropical placements
+    * **AI Readings**: Generate personalized astrological readings using AI
+    * **Famous People Matching**: Find famous people with similar astrological charts
+    * **Synastry Analysis**: Compare two birth charts for relationship compatibility
+    * **Chart Management**: Save and retrieve saved charts
+    
+    ### Authentication
+    
+    Most endpoints support optional authentication. Some features require authentication:
+    - Saving charts
+    - Accessing saved charts
+    - Subscription features
+    
+    ### Rate Limiting
+    
+    - Chart calculations: 200 requests per day per IP
+    - Other endpoints: Varies by endpoint
+    
+    ### Documentation
+    
+    - Interactive API docs: `/docs` (Swagger UI)
+    - Alternative docs: `/redoc` (ReDoc)
+    """,
+    terms_of_service="https://synthesisastrology.com/terms",
+    contact={
+        "name": "Synthesis Astrology Support",
+        "email": "support@synthesisastrology.com",
+    },
+    license_info={
+        "name": "Proprietary",
+    },
+    openapi_tags=[
+        {
+            "name": "charts",
+            "description": "Chart calculation and reading generation endpoints. Calculate birth charts with sidereal and tropical placements, aspects, numerology, and Chinese zodiac.",
+        },
+        {
+            "name": "auth",
+            "description": "Authentication endpoints. Register, login, and manage user accounts.",
+        },
+        {
+            "name": "saved-charts",
+            "description": "Saved charts management. Save, retrieve, update, and delete saved birth charts.",
+        },
+        {
+            "name": "subscriptions",
+            "description": "Subscription and payment management endpoints.",
+        },
+        {
+            "name": "utilities",
+            "description": "Utility endpoints for health checks, metrics, and configuration.",
+        },
+        {
+            "name": "synastry",
+            "description": "Synastry analysis endpoints for comparing two birth charts.",
+        },
+        {
+            "name": "famous-people",
+            "description": "Find famous people with similar astrological charts to your own.",
+        },
+        {
+            "name": "chat",
+            "description": "Chat endpoints for interacting with saved charts.",
+        },
+    ],
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
 app.state.limiter = limiter
 
 # --- Include Chat API Router ---
