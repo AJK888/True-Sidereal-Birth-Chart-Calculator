@@ -852,6 +852,11 @@ body.is-menu-visible #menu {
     opacity: 1 !important;
     pointer-events: auto !important;
     z-index: 10002 !important; /* Ensure menu is above everything */
+    /* Prevent blur from affecting menu */
+    filter: none !important;
+    -webkit-filter: none !important;
+    -moz-filter: none !important;
+    -ms-filter: none !important;
 }
 
 body.is-menu-visible #menu .inner {
@@ -859,6 +864,28 @@ body.is-menu-visible #menu .inner {
     visibility: visible !important;
     opacity: 1 !important;
     transform: none !important; /* Remove any transforms that might hide it */
+    /* Ensure menu content is not blurred */
+    filter: none !important;
+    -webkit-filter: none !important;
+    -moz-filter: none !important;
+    -ms-filter: none !important;
+}
+
+/* Prevent wrapper blur from affecting menu */
+body.is-menu-visible #wrapper {
+    filter: blur(0.5em);
+    -webkit-filter: blur(0.5em);
+    -moz-filter: blur(0.5em);
+    -ms-filter: blur(0.5em);
+}
+
+/* But menu itself should never be blurred */
+body.is-menu-visible #menu,
+body.is-menu-visible #menu * {
+    filter: none !important;
+    -webkit-filter: none !important;
+    -moz-filter: none !important;
+    -ms-filter: none !important;
 }
 #banner:before {
     background: rgba(36, 41, 62, 0.25) !important; 

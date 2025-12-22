@@ -9,9 +9,15 @@
 	function handleMenuClick(event) {
 		var target = event.target;
 		var isMenuButton = false;
+		var isMenuLink = false;
 		
 		// Check if clicked element or parent is menu button/link
 		while (target && target !== document) {
+			// Don't intercept clicks inside the menu itself (allow menu links to work)
+			if (target.id === 'menu' || target.closest('#menu')) {
+				return; // Let menu links work normally
+			}
+			
 			if (target.id === 'menu-toggle' || 
 			    (target.tagName === 'A' && (target.getAttribute('href') === '#menu' || target.getAttribute('href') === 'javascript:void(0)'))) {
 				isMenuButton = true;
@@ -536,14 +542,19 @@
 					})
 					.on('click', 'a', function(event) {
 						var href = $(this).attr('href');
-						event.preventDefault();
-						event.stopPropagation();
-						// Hide.
-						$menu._hide();
-						// Redirect.
-						window.setTimeout(function() {
+						// Don't prevent default for actual navigation links
+						if (href && href !== '#' && href !== '#menu' && href !== 'javascript:void(0)') {
+							event.stopPropagation(); // Stop bubbling but allow navigation
+							// Hide menu
+							$menu._hide();
+							// Navigate immediately
 							window.location.href = href;
-						}, 250);
+						} else {
+							// For close buttons or special links, prevent default
+							event.preventDefault();
+							event.stopPropagation();
+							$menu._hide();
+						}
 					});
 
 				// Check if menu is already appended to body to prevent duplicate close buttons
