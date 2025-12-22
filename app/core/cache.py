@@ -37,6 +37,7 @@ if REDIS_AVAILABLE and REDIS_URL:
 
 # In-memory cache fallback
 _reading_cache: Dict[str, Dict[str, Any]] = {}
+_famous_people_cache: Dict[str, Dict[str, Any]] = {}
 
 
 def get_reading_from_cache(chart_hash: str) -> Optional[Dict[str, Any]]:
@@ -124,6 +125,80 @@ def clear_expired_cache():
     
     if expired_keys:
         logger.info(f"Cleared {len(expired_keys)} expired cache entries")
+
+
+def get_famous_people_from_cache(cache_key: str) -> Optional[Dict[str, Any]]:
+    """
+    Retrieve famous people matches from cache (Redis or in-memory).
+    
+    Args:
+        cache_key: The cache key (typically chart_hash + limit)
+        
+    Returns:
+        Cached famous people matches or None if not found/expired
+    """
+    # Try Redis first
+    if _redis_client:
+        try:
+            cached_data = _redis_client.get(f"famous_people:{cache_key}")
+            if cached_data:
+                data = json.loads(cached_data)
+                # Check expiry
+                timestamp = datetime.fromisoformat(data["timestamp"])
+                if datetime.now() - timestamp < timedelta(hours=CACHE_EXPIRY_HOURS):
+                    logger.info(f"Cache hit for famous people: {cache_key}")
+                    return data
+                else:
+                    # Expired, remove it
+                    _redis_client.delete(f"famous_people:{cache_key}")
+            return None
+        except Exception as e:
+            logger.warning(f"Redis cache read error: {e}. Falling back to in-memory cache.")
+    
+    # Fallback to in-memory cache
+    now = datetime.now()
+    if cache_key in _famous_people_cache:
+        cached_data = _famous_people_cache[cache_key]
+        if now - cached_data['timestamp'] < timedelta(hours=CACHE_EXPIRY_HOURS):
+            logger.info(f"Cache hit for famous people (in-memory): {cache_key}")
+            return cached_data
+        else:
+            del _famous_people_cache[cache_key]
+    return None
+
+
+def set_famous_people_in_cache(cache_key: str, matches: Dict[str, Any]):
+    """
+    Store famous people matches in cache (Redis or in-memory).
+    
+    Args:
+        cache_key: The cache key (typically chart_hash + limit)
+        matches: The famous people matches data
+    """
+    cache_data = {
+        'matches': matches,
+        'timestamp': datetime.now().isoformat()
+    }
+    
+    # Try Redis first
+    if _redis_client:
+        try:
+            _redis_client.setex(
+                f"famous_people:{cache_key}",
+                timedelta(hours=CACHE_EXPIRY_HOURS),
+                json.dumps(cache_data)
+            )
+            logger.info(f"Cached famous people matches: {cache_key}")
+            return
+        except Exception as e:
+            logger.warning(f"Redis cache write error: {e}. Falling back to in-memory cache.")
+    
+    # Fallback to in-memory cache
+    _famous_people_cache[cache_key] = {
+        'matches': matches,
+        'timestamp': datetime.now()
+    }
+    logger.info(f"Cached famous people matches (in-memory): {cache_key}")
 
 
 # Backward compatibility - export reading_cache for existing code

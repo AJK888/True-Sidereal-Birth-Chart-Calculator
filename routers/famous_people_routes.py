@@ -22,6 +22,8 @@ from services.similarity_service import (
     normalize_master_number,
     extract_top_aspects_from_chart
 )
+from app.services.chart_service import generate_chart_hash
+from app.core.cache import get_famous_people_from_cache, set_famous_people_in_cache
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +115,19 @@ async def find_similar_famous_people_endpoint(
         # Ensure we have the expected structure
         if 'sidereal_major_positions' not in chart_data and 'tropical_major_positions' not in chart_data:
             logger.warning(f"chart_data missing expected keys. Keys present: {list(chart_data.keys())[:10]}")
+        
+        # Check cache first - generate cache key from chart hash and limit
+        try:
+            unknown_time = chart_data.get('unknown_time', False)
+            chart_hash = generate_chart_hash(chart_data, unknown_time)
+            cache_key = f"{chart_hash}:{limit}"
+            
+            cached_result = get_famous_people_from_cache(cache_key)
+            if cached_result:
+                logger.info(f"Returning cached famous people matches for chart_hash: {chart_hash[:16]}...")
+                return cached_result['matches']
+        except Exception as cache_error:
+            logger.warning(f"Cache check failed: {cache_error}. Continuing with database query.")
         
         # Extract user's signs for filtering (optimization)
         # Safely handle missing or invalid data
@@ -375,11 +390,23 @@ async def find_similar_famous_people_endpoint(
         
         logger.info(f"Endpoint returning {len(result)} matches out of {len(all_famous_people)} compared")
         
-        return {
+        response = {
             "matches": result,
             "total_compared": len(all_famous_people),  # Fixed: was famous_people, now all_famous_people
             "matches_found": len(result)
         }
+        
+        # Cache the results
+        try:
+            unknown_time = chart_data.get('unknown_time', False)
+            chart_hash = generate_chart_hash(chart_data, unknown_time)
+            cache_key = f"{chart_hash}:{limit}"
+            set_famous_people_in_cache(cache_key, response)
+            logger.info(f"Cached famous people matches for chart_hash: {chart_hash[:16]}...")
+        except Exception as cache_error:
+            logger.warning(f"Failed to cache famous people matches: {cache_error}")
+        
+        return response
     
     except HTTPException:
         # Re-raise HTTP exceptions

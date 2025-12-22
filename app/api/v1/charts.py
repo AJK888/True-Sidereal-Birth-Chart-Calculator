@@ -454,7 +454,13 @@ async def calculate_chart_endpoint(
         log_data = data.dict()
         if 'full_name' in log_data:
             log_data['chart_name'] = log_data.pop('full_name')
-        logger.info("New chart request received", extra=log_data)
+        
+        # Check if this is a transit chart request
+        is_transit_chart = data.full_name.lower() in ["current transits", "transits"]
+        if is_transit_chart:
+            logger.info(f"Transit chart request received - Location: {data.location}, Time: {data.year}-{data.month:02d}-{data.day:02d} {data.hour:02d}:{data.minute:02d}")
+        else:
+            logger.info("New chart request received", extra=log_data)
 
         # Ensure ephemeris files are accessible
         ephe_path = SWEP_PATH or DEFAULT_SWISS_EPHEMERIS_PATH
@@ -466,6 +472,8 @@ async def calculate_chart_endpoint(
 
         # Geocoding with fallback: Try OpenCage first, then Nominatim
         lat, lng, timezone_name = None, None, None
+        
+        logger.info(f"Geocoding location: {data.location}")
         
         # Try OpenCage first (if key is available)
         opencage_key = OPENCAGE_KEY
@@ -488,6 +496,9 @@ async def calculate_chart_endpoint(
                         lat = geometry.get("lat")
                         lng = geometry.get("lng")
                         timezone_name = annotations.get("name")
+                        logger.info(f"OpenCage geocoding successful: lat={lat}, lng={lng}, timezone={timezone_name}")
+                    else:
+                        logger.warning(f"OpenCage returned no results for location: {data.location}")
             except requests.exceptions.RequestException as e:
                 logger.warning(f"OpenCage geocoding failed: {e}. Falling back to Nominatim.")
         
@@ -511,6 +522,7 @@ async def calculate_chart_endpoint(
                     result_data = nominatim_data[0]
                     lat = float(result_data.get("lat", 0))
                     lng = float(result_data.get("lon", 0))
+                    logger.info(f"Nominatim geocoding successful: lat={lat}, lng={lng}")
                     
                     # Nominatim doesn't provide timezone directly, so we'll use a timezone lookup
                     # Use a free timezone API
@@ -522,12 +534,16 @@ async def calculate_chart_endpoint(
                             if tz_response.status_code == 200:
                                 tz_data = tz_response.json()
                                 timezone_name = tz_data.get("timeZone", "UTC")
+                                logger.info(f"Timezone lookup successful: {timezone_name}")
                             else:
                                 # Fallback: use UTC and let pendulum handle it
+                                logger.warning(f"Timezone API returned status {tz_response.status_code}, using UTC")
                                 timezone_name = "UTC"
                         except Exception as tz_e:
                             logger.warning(f"Timezone lookup failed: {tz_e}. Using UTC.")
                             timezone_name = "UTC"
+                else:
+                    logger.warning(f"Nominatim returned no results for location: {data.location}")
             except requests.exceptions.RequestException as e:
                 logger.error(f"Nominatim geocoding failed: {e}")
                 raise HTTPException(status_code=400, detail=f"Could not find location data for '{data.location}'. Please be more specific (e.g., City, State, Country).")
@@ -587,6 +603,32 @@ async def calculate_chart_endpoint(
         
         full_response = chart.get_full_chart_data(numerology, name_numerology, chinese_zodiac, data.unknown_time)
         
+        # Validate that transit charts have all required data for rendering
+        if is_transit_chart:
+            required_fields = [
+                'sidereal_major_positions', 'tropical_major_positions',
+                'sidereal_aspects', 'tropical_aspects',
+                'sidereal_house_cusps', 'tropical_house_cusps'
+            ]
+            missing_fields = [field for field in required_fields if field not in full_response or not full_response[field]]
+            if missing_fields:
+                logger.error(f"Transit chart missing required fields: {missing_fields}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Transit chart calculation incomplete. Missing fields: {', '.join(missing_fields)}"
+                )
+            
+            # Validate that Ascendant exists (required for chart wheel rotation)
+            sidereal_asc = next((p for p in full_response.get('sidereal_major_positions', []) if p.get('name') == 'Ascendant'), None)
+            tropical_asc = next((p for p in full_response.get('tropical_major_positions', []) if p.get('name') == 'Ascendant'), None)
+            
+            if not sidereal_asc or sidereal_asc.get('degrees') is None:
+                logger.error("Transit chart missing sidereal Ascendant data")
+            if not tropical_asc or tropical_asc.get('degrees') is None:
+                logger.error("Transit chart missing tropical Ascendant data")
+            
+            logger.info(f"Transit chart calculated successfully - Sidereal Ascendant: {sidereal_asc.get('degrees') if sidereal_asc else 'N/A'}, Tropical Ascendant: {tropical_asc.get('degrees') if tropical_asc else 'N/A'}")
+        
         # Add quick highlights to the response
         try:
             quick_highlights = get_quick_highlights(full_response, data.unknown_time)
@@ -596,7 +638,7 @@ async def calculate_chart_endpoint(
             full_response["quick_highlights"] = "Quick highlights are unavailable for this chart."
         
         # Generate snapshot reading (blinded, limited data) - only for actual birth charts, not transit charts
-        is_transit_chart = data.full_name.lower() in ["current transits", "transits"]
+        # (is_transit_chart already determined earlier)
         if not is_transit_chart:
             logger.info("Generating snapshot reading...")
             try:
@@ -736,6 +778,15 @@ async def calculate_chart_endpoint(
                     full_response["saved_chart_id"] = existing_chart.id
             except Exception as e:
                 logger.warning(f"Could not auto-save chart for user {current_user.email}: {e}", exc_info=True)
+        
+        # Final validation and logging for transit charts
+        if is_transit_chart:
+            # Log summary of transit chart data
+            logger.info(f"Transit chart response prepared - "
+                       f"Sidereal positions: {len(full_response.get('sidereal_major_positions', []))}, "
+                       f"Tropical positions: {len(full_response.get('tropical_major_positions', []))}, "
+                       f"Sidereal aspects: {len(full_response.get('sidereal_aspects', []))}, "
+                       f"Tropical aspects: {len(full_response.get('tropical_aspects', []))}")
             
         return full_response
 
