@@ -311,6 +311,22 @@ app = FastAPI(
             "name": "chat",
             "description": "Chat endpoints for interacting with saved charts.",
         },
+        {
+            "name": "webhooks",
+            "description": "Webhook management endpoints for integrations and event notifications.",
+        },
+        {
+            "name": "api-keys",
+            "description": "API key management endpoints for programmatic access.",
+        },
+        {
+            "name": "batch",
+            "description": "Batch processing endpoints for processing multiple charts or readings.",
+        },
+        {
+            "name": "analytics",
+            "description": "Analytics and reporting endpoints for usage metrics and business intelligence.",
+        },
     ],
     docs_url="/docs",
     redoc_url="/redoc",
@@ -324,7 +340,7 @@ app.include_router(chat_router)
 app.include_router(famous_people_router)
 
 # --- Include API v1 Routers ---
-from app.api.v1 import utilities, charts, auth, saved_charts, subscriptions, synastry
+from app.api.v1 import utilities, charts, auth, saved_charts, subscriptions, synastry, webhooks, api_keys, batch, analytics
 
 # Share limiter instance with routers
 # Update router modules to use the main app limiter
@@ -349,6 +365,18 @@ app.include_router(subscriptions.router)
 
 # Synastry (synastry analysis endpoint)
 app.include_router(synastry.router)
+
+# Webhooks (webhook management endpoints)
+app.include_router(webhooks.router)
+
+# API Keys (API key management endpoints)
+app.include_router(api_keys.router)
+
+# Batch Processing (batch operations endpoints)
+app.include_router(batch.router)
+
+# Analytics (analytics and reporting endpoints)
+app.include_router(analytics.router)
 
 # --- Initialize Database ---
 init_db()

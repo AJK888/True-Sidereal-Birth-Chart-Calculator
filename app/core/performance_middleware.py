@@ -49,4 +49,22 @@ class PerformanceMonitoringMiddleware(BaseHTTPMiddleware):
         finally:
             duration = time.time() - start_time
             track_request_metrics(endpoint, duration, status_code, error)
+            
+            # Track analytics event
+            try:
+                from app.services.analytics_service import track_event
+                user_id = getattr(request.state, "user_id", None)
+                track_event(
+                    event_type=f"api.request",
+                    user_id=user_id,
+                    metadata={
+                        "endpoint": endpoint,
+                        "method": request.method,
+                        "status_code": status_code,
+                        "response_time": duration
+                    }
+                )
+            except Exception as e:
+                # Don't fail request if analytics tracking fails
+                logger.debug(f"Analytics tracking failed: {e}")
 

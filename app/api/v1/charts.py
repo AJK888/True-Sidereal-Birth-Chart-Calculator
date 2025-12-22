@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, Depends
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 
 from app.core.logging_config import setup_logger
@@ -205,6 +205,22 @@ async def generate_reading_and_send_email(chart_data: Dict, unknown_time: bool, 
             chart_hash = generate_chart_hash(chart_data, unknown_time)
             set_reading_in_cache(chart_hash, reading_text, chart_name)
             logger.info(f"Reading stored in cache with hash: {chart_hash}")
+            
+            # Track analytics event
+            try:
+                from app.services.analytics_service import track_event
+                user_id = user_inputs.get('user_id')
+                track_event(
+                    event_type="reading.generated",
+                    user_id=user_id,
+                    metadata={
+                        "chart_name": chart_name,
+                        "reading_length": len(reading_text),
+                        "generation_time_seconds": reading_duration
+                    }
+                )
+            except Exception as e:
+                logger.debug(f"Analytics tracking failed: {e}")
             
             # Also save reading to user's saved chart if user exists
             # If chart doesn't exist, create it automatically
@@ -829,6 +845,22 @@ async def calculate_chart_endpoint(
                        f"Tropical positions: {len(full_response.get('tropical_major_positions', []))}, "
                        f"Sidereal aspects: {len(full_response.get('sidereal_aspects', []))}, "
                        f"Tropical aspects: {len(full_response.get('tropical_aspects', []))}")
+        
+        # Track analytics event
+        try:
+            from app.services.analytics_service import track_event
+            user_id = current_user.id if current_user else None
+            track_event(
+                event_type="chart.calculated",
+                user_id=user_id,
+                metadata={
+                    "is_transit": is_transit_chart,
+                    "location": data.location,
+                    "unknown_time": data.unknown_time
+                }
+            )
+        except Exception as e:
+            logger.debug(f"Analytics tracking failed: {e}")
             
         return full_response
 
@@ -918,6 +950,21 @@ async def generate_reading_endpoint(
             user_inputs=user_inputs
         )
         logger.info("Background task queued successfully. User can close browser now.")
+        
+        # Track analytics event
+        try:
+            from app.services.analytics_service import track_event
+            user_id = current_user.id if current_user else None
+            track_event(
+                event_type="reading.requested",
+                user_id=user_id,
+                metadata={
+                    "chart_hash": chart_hash,
+                    "unknown_time": reading_data.unknown_time
+                }
+            )
+        except Exception as e:
+            logger.debug(f"Analytics tracking failed: {e}")
 
         return {
             "status": "processing",
