@@ -379,14 +379,26 @@
 			// Also handle hashchange to prevent menu from opening on hash navigation
 			$(window).on('hashchange', function() {
 				if (window.location.hash === '#menu') {
-					console.log('[Menu] Hash change detected, removing hash');
+					console.log('[Menu] Hash change detected, removing hash and toggling menu');
 					window.history.replaceState(null, null, window.location.pathname + window.location.search);
-					// If menu isn't visible, toggle it
-					if (!$body.hasClass('is-menu-visible')) {
-						menuToggle();
-					}
+					// Always toggle menu when hash appears
+					menuToggle();
 				}
 			});
+			
+			// Also prevent hash from being added in the first place
+			window.addEventListener('hashchange', function(event) {
+				if (window.location.hash === '#menu') {
+					console.log('[Menu] Hash change intercepted (native), removing hash');
+					event.preventDefault();
+					window.history.replaceState(null, null, window.location.pathname + window.location.search);
+					// Toggle menu
+					document.body.classList.toggle('is-menu-visible');
+					if (typeof $body !== 'undefined' && $body) {
+						$body.toggleClass('is-menu-visible');
+					}
+				}
+			}, true);
 			
 			$body.on('keydown', function(event) {
 				// Hide on escape.
@@ -503,12 +515,17 @@
 				// Mark as attached to prevent duplicates
 				menuToggleBtn.setAttribute('data-handler-attached', 'true');
 				
-				// Attach native event listener
+				// Attach native event listener with capture phase to run first
 				menuToggleBtn.addEventListener('click', function(event) {
 					event.preventDefault();
 					event.stopPropagation();
 					event.stopImmediatePropagation();
 					console.log('[Menu] Button clicked (immediate handler)');
+					
+					// Prevent hash from being added
+					if (window.location.hash === '#menu') {
+						window.history.replaceState(null, null, window.location.pathname + window.location.search);
+					}
 					
 					// Toggle menu directly using native DOM
 					document.body.classList.toggle('is-menu-visible');
@@ -523,8 +540,20 @@
 							$body.removeClass('is-menu-visible');
 						}
 					}
+					
+					// Force menu to be visible if it should be
+					if (isVisible) {
+						var menu = document.getElementById('menu');
+						if (menu) {
+							menu.style.display = 'flex';
+							menu.style.visibility = 'visible';
+							menu.style.opacity = '1';
+							console.log('[Menu] Forced menu visibility');
+						}
+					}
+					
 					return false;
-				}, false);
+				}, true); // Use capture phase
 				
 				console.log('[Menu] Immediate handler attached to button');
 			}

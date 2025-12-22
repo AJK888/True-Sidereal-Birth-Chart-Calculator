@@ -791,6 +791,43 @@ html {
     width: 100% !important;
     z-index: 10000 !important;
 }
+
+/* Menu toggle button styling - make it look like the original link */
+#header nav #menu-toggle {
+    background: none !important;
+    border: none !important;
+    color: inherit !important;
+    font: inherit !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    text-decoration: none !important;
+    display: inline-block !important;
+    /* Match the original link styling from main.css */
+    padding-right: 3.75em !important;
+}
+
+#header nav #menu-toggle:before,
+#header nav #menu-toggle:after {
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 2.5em;
+    height: 3.75em;
+    opacity: 0.5;
+    transition: opacity 0.2s ease-in-out;
+}
+
+#header nav #menu-toggle:after {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='20px' height='20px' viewBox='0 0 20 20' zoomAndPan='disable'%3E%3Cstyle%3Eline %7B stroke: %23ffffff%3B stroke-width: 2%3B %7D%3C/style%3E%3Cline x1='0' y1='0' x2='20' y2='20' /%3E%3Cline x1='20' y1='0' x2='0' y2='20' /%3E%3C/svg%3E");
+    opacity: 0;
+}
+
+#header nav #menu-toggle:hover:after,
+#header nav #menu-toggle:active:after {
+    opacity: 1;
+}
 #description-wrapper, #results, #legal, #spiritual-context, #transit-section {
     background-color: #24293e;
 }
