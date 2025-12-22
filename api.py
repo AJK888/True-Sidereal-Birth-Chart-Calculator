@@ -1,7 +1,33 @@
+"""
+API Module - Main FastAPI Application
+
+NOTE: Many functions have been extracted to service modules:
+- LLM functions: app.services.llm_service, app.services.llm_prompts
+- Email functions: app.services.email_service
+- Chart formatting: app.services.chart_service
+
+All prompts and calculations are preserved exactly in their respective service modules.
+"""
+
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
+
+# Import custom exceptions and responses
+from app.core.exceptions import (
+    ChartCalculationError,
+    GeocodingError,
+    ReadingGenerationError,
+    EmailError,
+    LLMError,
+    ValidationError,
+    AuthenticationError,
+    AuthorizationError,
+    NotFoundError
+)
+from app.core.responses import success_response, error_response
 from natal_chart import (
     NatalChart,
     calculate_numerology, get_chinese_zodiac_and_element,
@@ -68,6 +94,46 @@ from routers.famous_people_routes import router as famous_people_router
 # --- Import Similarity Service ---
 from services.similarity_service import find_similar_famous_people_internal
 
+# --- Import Extracted Services ---
+# LLM Service
+from app.services.llm_service import (
+    Gemini3Client,
+    calculate_gemini3_cost,
+    _blueprint_to_json,
+    serialize_snapshot_data,
+    format_snapshot_for_prompt,
+    sanitize_reading_text,
+    _sign_from_position
+)
+
+# LLM Prompts (all prompt functions preserved exactly)
+from app.services.llm_prompts import (
+    g0_global_blueprint,
+    g1_natal_foundation,
+    g2_deep_dive_chapters,
+    g3_polish_full_reading,
+    g4_famous_people_section,
+    generate_snapshot_reading,
+    get_gemini3_reading,
+    generate_comprehensive_synastry
+)
+
+# Email Service
+from app.services.email_service import (
+    send_snapshot_email_via_sendgrid,
+    send_chart_email_via_sendgrid,
+    send_synastry_email
+)
+
+# Chart Service (formatting/utility functions only, no calculations)
+from app.services.chart_service import (
+    generate_chart_hash,
+    get_full_text_report,
+    format_full_report_for_email,
+    get_quick_highlights,
+    parse_pasted_chart_data
+)
+
 # --- SETUP THE LOGGER ---
 import sys
 
@@ -130,22 +196,8 @@ ADMIN_SECRET_KEY = os.getenv("FRIENDS_AND_FAMILY_KEY")
 reading_cache: Dict[str, Dict[str, Any]] = {}
 CACHE_EXPIRY_HOURS = 24  # Readings expire after 24 hours
 
-def generate_chart_hash(chart_data: Dict, unknown_time: bool) -> str:
-    """Generate a unique hash from chart data for caching."""
-    # Create a stable representation of the chart data
-    key_data = {
-        'unknown_time': unknown_time,
-        'major_positions': chart_data.get('sidereal_major_positions', []),
-        'aspects': chart_data.get('sidereal_aspects', [])
-    }
-    # Sort lists to ensure consistent hashing
-    if isinstance(key_data['major_positions'], list):
-        key_data['major_positions'] = sorted(key_data['major_positions'], key=lambda x: x.get('name', ''))
-    if isinstance(key_data['aspects'], list):
-        key_data['aspects'] = sorted(key_data['aspects'], key=lambda x: (x.get('p1_name', ''), x.get('p2_name', '')))
-    
-    key_string = json.dumps(key_data, sort_keys=True)
-    return hashlib.sha256(key_string.encode()).hexdigest()[:16]  # Use first 16 chars
+# NOTE: generate_chart_hash() has been moved to app.services.chart_service
+# Imported above from app.services.chart_service
 
 # --- Rate Limiter Key Function ---
 def get_rate_limit_key(request: Request) -> str:
@@ -243,6 +295,120 @@ app.add_middleware(NormalizeJsonContentTypeMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(ApiNoCacheMiddleware)
 
+# --- Import Custom Exceptions and Responses ---
+from app.core.exceptions import (
+    ChartCalculationError,
+    GeocodingError,
+    ReadingGenerationError,
+    EmailError,
+    LLMError,
+    ValidationError,
+    AuthenticationError,
+    AuthorizationError,
+    NotFoundError
+)
+from app.core.responses import success_response, error_response
+
+# --- Custom Exception Handlers ---
+@app.exception_handler(ChartCalculationError)
+async def chart_calculation_error_handler(request: Request, exc: ChartCalculationError):
+    """Handle chart calculation errors."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(
+            error="Chart calculation failed",
+            detail=exc.detail
+        )
+    )
+
+@app.exception_handler(GeocodingError)
+async def geocoding_error_handler(request: Request, exc: GeocodingError):
+    """Handle geocoding errors."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(
+            error="Geocoding failed",
+            detail=exc.detail
+        )
+    )
+
+@app.exception_handler(ReadingGenerationError)
+async def reading_generation_error_handler(request: Request, exc: ReadingGenerationError):
+    """Handle reading generation errors."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(
+            error="Reading generation failed",
+            detail=exc.detail
+        )
+    )
+
+@app.exception_handler(EmailError)
+async def email_error_handler(request: Request, exc: EmailError):
+    """Handle email sending errors."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(
+            error="Email sending failed",
+            detail=exc.detail
+        )
+    )
+
+@app.exception_handler(LLMError)
+async def llm_error_handler(request: Request, exc: LLMError):
+    """Handle LLM API errors."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(
+            error="LLM service error",
+            detail=exc.detail
+        )
+    )
+
+@app.exception_handler(ValidationError)
+async def validation_error_handler(request: Request, exc: ValidationError):
+    """Handle validation errors."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(
+            error="Validation failed",
+            detail=exc.detail
+        )
+    )
+
+@app.exception_handler(AuthenticationError)
+async def authentication_error_handler(request: Request, exc: AuthenticationError):
+    """Handle authentication errors."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(
+            error="Authentication failed",
+            detail=exc.detail
+        )
+    )
+
+@app.exception_handler(AuthorizationError)
+async def authorization_error_handler(request: Request, exc: AuthorizationError):
+    """Handle authorization errors."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(
+            error="Not authorized",
+            detail=exc.detail
+        )
+    )
+
+@app.exception_handler(NotFoundError)
+async def not_found_error_handler(request: Request, exc: NotFoundError):
+    """Handle not found errors."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(
+            error="Resource not found",
+            detail=exc.detail
+        )
+    )
+
 @app.exception_handler(RateLimitExceeded)
 async def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
     return JSONResponse(
@@ -318,165 +484,11 @@ class SynastryRequest(BaseModel):
     user_email: str
 
 # --- Functions ---
-
-def get_full_text_report(res: dict) -> str:
-    # This function remains the same.
-    out = f"=== SIDEREAL CHART: {res.get('name', 'N/A')} ===\n"
-    out += f"- UTC Date & Time: {res.get('utc_datetime', 'N/A')}{' (Noon Estimate)' if res.get('unknown_time') else ''}\n"
-    out += f"- Location: {res.get('location', 'N/A')}\n"
-    out += f"- Day/Night Determination: {res.get('day_night_status', 'N/A')}\n\n"
-    
-    out += f"--- CHINESE ZODIAC ---\n"
-    out += f"- Your sign is the {res.get('chinese_zodiac', 'N/A')}\n\n"
-
-    if res.get('numerology_analysis'):
-        numerology = res['numerology_analysis']
-        out += f"--- NUMEROLOGY REPORT ---\n"
-        out += f"- Life Path Number: {numerology.get('life_path_number', 'N/A')}\n"
-        out += f"- Day Number: {numerology.get('day_number', 'N/A')}\n"
-        if numerology.get('name_numerology'):
-            name_numerology = numerology['name_numerology']
-            out += f"\n-- NAME NUMEROLOGY --\n"
-            out += f"- Expression (Destiny) Number: {name_numerology.get('expression_number', 'N/A')}\n"
-            out += f"- Soul Urge Number: {name_numerology.get('soul_urge_number', 'N/A')}\n"
-            out += f"- Personality Number: {name_numerology.get('personality_number', 'N/A')}\n"
-    
-    if res.get('sidereal_chart_analysis'):
-        analysis = res['sidereal_chart_analysis']
-        out += f"\n-- SIDEREAL CHART ANALYSIS --\n"
-        out += f"- Chart Ruler: {analysis.get('chart_ruler', 'N/A')}\n"
-        out += f"- Dominant Sign: {analysis.get('dominant_sign', 'N/A')}\n"
-        out += f"- Dominant Element: {analysis.get('dominant_element', 'N/A')}\n"
-        out += f"- Dominant Modality: {analysis.get('dominant_modality', 'N/A')}\n"
-        out += f"- Dominant Planet: {analysis.get('dominant_planet', 'N/A')}\n\n"
-        
-    out += f"--- MAJOR POSITIONS ---\n"
-    if res.get('sidereal_major_positions'):
-        for p in res['sidereal_major_positions']:
-            line = f"- {p.get('name', '')}: {p.get('position', '')}"
-            if p.get('name') not in ['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node']:
-                line += f" ({p.get('percentage', 0)}%)"
-            if p.get('retrograde'): line += " (Rx)"
-            if p.get('house_info'): line += f" {p.get('house_info')}"
-            out += f"{line}\n"
-
-    if res.get('sidereal_retrogrades'):
-        out += f"\n--- RETROGRADE PLANETS (Energy turned inward) ---\n"
-        for p in res['sidereal_retrogrades']:
-            out += f"- {p.get('name', 'N/A')}\n"
-
-    out += f"\n--- MAJOR ASPECTS (ranked by influence score) ---\n"
-    if res.get('sidereal_aspects'):
-        for a in res['sidereal_aspects']:
-            out += f"- {a.get('p1_name','')} {a.get('type','')} {a.get('p2_name','')} (orb {a.get('orb','')}, score {a.get('score','')})\n"
-    else:
-        out += "- No major aspects detected.\n"
-        
-    out += f"\n--- ASPECT PATTERNS ---\n"
-    if res.get('sidereal_aspect_patterns'):
-        for p in res['sidereal_aspect_patterns']:
-            line = f"- {p.get('description', '')}"
-            if p.get('orb'): line += f" (avg orb {p.get('orb')})"
-            if p.get('score'): line += f" (score {p.get('score')})"
-            out += f"{line}\n"
-    else:
-        out += "- No major aspect patterns detected.\n"
-
-    if not res.get('unknown_time'):
-        out += f"\n--- ADDITIONAL POINTS & ANGLES ---\n"
-        if res.get('sidereal_additional_points'):
-            for p in res['sidereal_additional_points']:
-                line = f"- {p.get('name', '')}: {p.get('info', '')}"
-                if p.get('retrograde'): line += " (Rx)"
-                out += f"{line}\n"
-        out += f"\n--- HOUSE RULERS ---\n"
-        if res.get('house_rulers'):
-            for house, info in res['house_rulers'].items():
-                out += f"- {house}: {info}\n"
-        out += f"\n--- HOUSE SIGN DISTRIBUTIONS ---\n"
-        if res.get('house_sign_distributions'):
-            for house, segments in res['house_sign_distributions'].items():
-                out += f"{house}:\n"
-                if segments:
-                    for seg in segments:
-                        out += f"      - {seg}\n"
-    else:
-        out += f"\n- (House Rulers, House Distributions, and some additional points require a known birth time and are not displayed.)\n"
-
-    if res.get('tropical_major_positions'):
-        out += f"\n\n\n=== TROPICAL CHART ===\n\n"
-        trop_analysis = res.get('tropical_chart_analysis', {})
-        out += f"-- CHART ANALYSIS --\n"
-        out += f"- Dominant Sign: {trop_analysis.get('dominant_sign', 'N/A')}\n"
-        out += f"- Dominant Element: {trop_analysis.get('dominant_element', 'N/A')}\n"
-        out += f"- Dominant Modality: {trop_analysis.get('dominant_modality', 'N/A')}\n"
-        out += f"- Dominant Planet: {trop_analysis.get('dominant_planet', 'N/A')}\n\n"
-        out += f"--- MAJOR POSITIONS ---\n"
-        for p in res['tropical_major_positions']:
-            line = f"- {p.get('name', '')}: {p.get('position', '')}"
-            if p.get('name') not in ['Ascendant', 'Descendant', 'Midheaven (MC)', 'Imum Coeli (IC)', 'South Node']:
-                line += f" ({p.get('percentage', 0)}%)"
-            if p.get('retrograde'): line += " (Rx)"
-            if p.get('house_info'): line += f" {p.get('house_info')}"
-            out += f"{line}\n"
-
-        if res.get('tropical_retrogrades'):
-            out += f"\n--- RETROGRADE PLANETS (Energy turned inward) ---\n"
-            for p in res['tropical_retrogrades']:
-                out += f"- {p.get('name', 'N/A')}\n"
-
-        out += f"\n--- MAJOR ASPECTS (ranked by influence score) ---\n"
-        if res.get('tropical_aspects'):
-            for a in res['tropical_aspects']:
-                out += f"- {a.get('p1_name','')} {a.get('type','')} {a.get('p2_name','')} (orb {a.get('orb','')}, score {a.get('score','')})\n"
-        else:
-            out += "- No major aspects detected.\n"
-            
-        out += f"\n--- ASPECT PATTERNS ---\n"
-        if res.get('tropical_aspect_patterns'):
-            for p in res['tropical_aspect_patterns']:
-                line = f"- {p.get('description', '')}"
-                if p.get('orb'): line += f" (avg orb {p.get('orb')})"
-                if p.get('score'): line += f" (score {p.get('score')})"
-                out += f"{line}\n"
-        else:
-            out += "- No major aspect patterns detected.\n"
-            
-        if not res.get('unknown_time'):
-            out += f"\n--- ADDITIONAL POINTS & ANGLES ---\n"
-            if res.get('tropical_additional_points'):
-                for p in res['tropical_additional_points']:
-                    line = f"- {p.get('name', '')}: {p.get('info', '')}"
-                    if p.get('retrograde'): line += " (Rx)"
-                    out += f"{line}\n"
-    return out
-
-def format_full_report_for_email(chart_data: dict, reading_text: str, user_inputs: dict, chart_image_base64: Optional[str], include_inputs: bool = True) -> str:
-    # Note: This function is deprecated - PDF generation is used instead
-    html = "<h1>Synthesis Astrology Report</h1>"
-    
-    if include_inputs:
-        html += "<h2>Chart Inputs</h2>"
-        html += f"<p><b>Name:</b> {user_inputs.get('full_name', 'N/A')}</p>"
-        html += f"<p><b>Birth Date:</b> {user_inputs.get('birth_date', 'N/A')}</p>"
-        html += f"<p><b>Birth Time:</b> {user_inputs.get('birth_time', 'N/A')}</p>"
-        html += f"<p><b>Location:</b> {user_inputs.get('location', 'N/A')}</p>"
-        html += "<hr>"
-
-    if chart_image_base64:
-        html += "<h2>Natal Chart Wheel</h2>"
-        html += f'<img src="data:image/svg+xml;base64,{chart_image_base64}" alt="Natal Chart Wheel" width="600">'
-        html += "<hr>"
-
-    html += "<h2>AI Astrological Synthesis</h2>"
-    html += f"<p>{reading_text.replace('\\n', '<br><br>')}</p>"
-    html += "<hr>"
-
-    full_text_report = get_full_text_report(chart_data)
-    html += "<h2>Full Astrological Data</h2>"
-    html += f"<pre>{full_text_report}</pre>"
-    
-    return f"<html><head><style>body {{ font-family: sans-serif; }} pre {{ white-space: pre-wrap; word-wrap: break-word; }} img {{ max-width: 100%; height: auto; }}</style></head><body>{html}</body></html>"
+# NOTE: Many functions have been moved to service modules and are imported above.
+# The following functions are now provided by:
+# - Chart formatting: app.services.chart_service
+# - LLM functions: app.services.llm_service, app.services.llm_prompts
+# - Email functions: app.services.email_service
 
 def _safe_get_tokens(usage: dict, key: str) -> int:
     """Safely extract token count from usage metadata, handling None and invalid values."""
