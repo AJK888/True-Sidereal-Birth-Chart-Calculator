@@ -50,16 +50,22 @@
 			
 			console.log('[Menu] Toggled - was:', wasVisible, 'now:', isNowVisible);
 			
-			// Force menu visibility
+			// Force menu visibility and ensure it's above everything
 			var menu = document.getElementById('menu');
 			if (menu) {
+				// Ensure menu is appended to body (not inside wrapper)
+				if (menu.parentElement !== document.body) {
+					document.body.appendChild(menu);
+					console.log('[Menu] Moved menu to body');
+				}
+				
 				if (isNowVisible) {
-					menu.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; z-index: 10002 !important;';
+					menu.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; z-index: 99999 !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; filter: none !important; -webkit-filter: none !important;';
 					var menuInner = menu.querySelector('.inner');
 					if (menuInner) {
-						menuInner.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; transform: none !important;';
+						menuInner.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; transform: none !important; filter: none !important; -webkit-filter: none !important;';
 					}
-					console.log('[Menu] Menu forced visible');
+					console.log('[Menu] Menu forced visible with z-index 99999');
 				} else {
 					menu.style.cssText = '';
 					var menuInner = menu.querySelector('.inner');
@@ -78,6 +84,23 @@
 	// Attach in capture phase with highest priority - runs IMMEDIATELY
 	document.addEventListener('click', handleMenuClick, true);
 	console.log('[Menu] CRITICAL handler attached (immediate, capture phase)');
+	
+	// Immediately move menu to body if it exists (before DOM ready)
+	function moveMenuToBody() {
+		var menu = document.getElementById('menu');
+		if (menu && menu.parentElement !== document.body) {
+			// Menu is inside wrapper, move it to body
+			document.body.appendChild(menu);
+			console.log('[Menu] CRITICAL: Moved menu to body immediately');
+		}
+	}
+	
+	// Try to move menu immediately
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', moveMenuToBody);
+	} else {
+		moveMenuToBody();
+	}
 })();
 
 (function($) {
@@ -557,9 +580,16 @@
 						}
 					});
 
-				// Check if menu is already appended to body to prevent duplicate close buttons
+				// CRITICAL: Ensure menu is always appended to body (not inside wrapper)
+				// This prevents it from being affected by wrapper blur
 				if ($menu.parent().length === 0 || $menu.parent()[0] !== $body[0]) {
 					$menu.appendTo($body);
+					console.log('[Menu] Menu appended to body');
+				}
+				// Double-check menu is not inside wrapper
+				if ($menu.closest('#wrapper').length > 0) {
+					$menu.detach().appendTo($body);
+					console.log('[Menu] Menu was inside wrapper, moved to body');
 				}
 				
 				// Only add close button if it doesn't exist

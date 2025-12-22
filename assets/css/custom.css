@@ -846,17 +846,36 @@ html {
 }
 
 /* Ensure menu is visible when body has is-menu-visible class */
+/* Menu must be above everything - use very high z-index and ensure it's not blurred */
+/* Menu should be a direct child of body, not inside wrapper */
+body > #menu {
+    position: fixed !important;
+    z-index: 99999 !important; /* Extremely high z-index to be above everything */
+}
+
+#menu {
+    position: fixed !important;
+    z-index: 99999 !important; /* Extremely high z-index to be above everything */
+}
+
 body.is-menu-visible #menu {
     display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
     pointer-events: auto !important;
-    z-index: 10002 !important; /* Ensure menu is above everything */
-    /* Prevent blur from affecting menu */
+    z-index: 99999 !important; /* Ensure menu is above everything including wrapper */
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    /* Prevent blur from affecting menu - must be explicit */
     filter: none !important;
     -webkit-filter: none !important;
     -moz-filter: none !important;
     -ms-filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 
 body.is-menu-visible #menu .inner {
@@ -869,23 +888,32 @@ body.is-menu-visible #menu .inner {
     -webkit-filter: none !important;
     -moz-filter: none !important;
     -ms-filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 
-/* Prevent wrapper blur from affecting menu */
+/* Blur the wrapper but NOT the menu */
 body.is-menu-visible #wrapper {
-    filter: blur(0.5em);
-    -webkit-filter: blur(0.5em);
-    -moz-filter: blur(0.5em);
-    -ms-filter: blur(0.5em);
+    filter: blur(0.5em) !important;
+    -webkit-filter: blur(0.5em) !important;
+    -moz-filter: blur(0.5em) !important;
+    -ms-filter: blur(0.5em) !important;
+    /* Ensure wrapper stays below menu */
+    z-index: 1 !important;
+    position: relative !important;
 }
 
-/* But menu itself should never be blurred */
+/* But menu itself and all its children should never be blurred */
 body.is-menu-visible #menu,
-body.is-menu-visible #menu * {
+body.is-menu-visible #menu *,
+body.is-menu-visible #menu::before,
+body.is-menu-visible #menu::after {
     filter: none !important;
     -webkit-filter: none !important;
     -moz-filter: none !important;
     -ms-filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
 }
 #banner:before {
     background: rgba(36, 41, 62, 0.25) !important; 
