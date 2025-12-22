@@ -778,6 +778,8 @@ html {
 }
 #header.alt {
     background-color: transparent;
+    background: none !important;
+    box-shadow: none !important;
     /* Keep header fixed even with .alt class */
     position: fixed !important;
     top: 0 !important;
@@ -796,16 +798,24 @@ html {
     background-position: center center;
 }
 
-/* Header/Banner Overrides */
-#header.alt {
-    background: none !important;
-    box-shadow: none !important;
-}
-
 /* Ensure banner accounts for fixed header */
 #banner {
     margin-top: 3.25em !important; /* Header height */
     top: 0 !important; /* Remove negative top offset */
+}
+
+/* Ensure menu is visible when body has is-menu-visible class */
+body.is-menu-visible #menu {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+body.is-menu-visible #menu .inner {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 #banner:before {
     background: rgba(36, 41, 62, 0.25) !important; 

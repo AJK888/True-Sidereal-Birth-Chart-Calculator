@@ -245,15 +245,20 @@
 		var menuToggle = function() {
 			try {
 				var $menuEl = $('#menu');
+				console.log('[Menu] Toggle called, menu element found:', $menuEl.length > 0);
 				if ($menuEl.length > 0 && typeof $menuEl._toggle === 'function') {
+					console.log('[Menu] Using menu._toggle()');
 					$menuEl._toggle();
 				} else {
 					// Fallback: just toggle the class directly
+					console.log('[Menu] Using fallback toggle');
 					$body.toggleClass('is-menu-visible');
+					console.log('[Menu] Body class after toggle:', $body.hasClass('is-menu-visible'));
+					console.log('[Menu] Menu element:', $menuEl.length, 'Menu visible:', $menuEl.is(':visible'));
 				}
 			} catch (e) {
 				// If anything fails, use direct class toggle
-				console.warn('Menu toggle error:', e);
+				console.error('Menu toggle error:', e);
 				$body.toggleClass('is-menu-visible');
 			}
 		};
@@ -274,97 +279,153 @@
 			}
 		};
 
-		// Set up body click handlers first (these are needed for menu toggle button)
-		$body
-			.on('click', 'a[href="#menu"]', function(event) {
-				event.stopPropagation();
+		// Initialize menu functionality - run after DOM is ready
+		var initMenu = function() {
+			console.log('[Menu] Initializing menu functionality...');
+			
+			// Set up click handler for menu toggle button - multiple approaches for reliability
+			var menuButtonHandler = function(event) {
 				event.preventDefault();
-				console.log('[Menu] Toggle button clicked');
+				event.stopPropagation();
+				event.stopImmediatePropagation();
+				console.log('[Menu] Toggle button clicked, preventing default');
 				menuToggle();
-			})
-			.on('keydown', function(event) {
+				// Also prevent hash change
+				if (window.location.hash === '#menu') {
+					window.history.replaceState(null, null, window.location.pathname + window.location.search);
+				}
+				return false;
+			};
+			
+			// Attach handler multiple ways for maximum compatibility
+			$(document).on('click', 'a[href="#menu"]', menuButtonHandler);
+			$('a[href="#menu"]').on('click', menuButtonHandler);
+			
+			// Also handle hashchange to prevent menu from opening on hash navigation
+			$(window).on('hashchange', function() {
+				if (window.location.hash === '#menu') {
+					console.log('[Menu] Hash change detected, removing hash');
+					window.history.replaceState(null, null, window.location.pathname + window.location.search);
+					// If menu isn't visible, toggle it
+					if (!$body.hasClass('is-menu-visible')) {
+						menuToggle();
+					}
+				}
+			});
+			
+			$body.on('keydown', function(event) {
 				// Hide on escape.
 				if (event.keyCode == 27)
 					menuHide();
 			});
-
-		// Only initialize menu if it exists
-		if ($menu.length > 0) {
-			console.log('[Menu] Initializing menu...');
-			// Check if inner wrapper already exists to prevent double-wrapping
-			if ($menu.children('.inner').length === 0) {
-				$menu.wrapInner('<div class="inner"></div>');
+			
+			// Also prevent hash change on page load if hash is #menu
+			if (window.location.hash === '#menu') {
+				window.history.replaceState(null, null, window.location.pathname + window.location.search);
+				// Open menu if hash was present
+				setTimeout(function() {
+					if (!$body.hasClass('is-menu-visible')) {
+						menuToggle();
+					}
+				}, 100);
 			}
-			$menuInner = $menu.children('.inner');
-			$menu._locked = false;
 
-			$menu._lock = function() {
-				if ($menu._locked)
-					return false;
-				$menu._locked = true;
-				window.setTimeout(function() {
-					$menu._locked = false;
-				}, 350);
-				return true;
-			};
-
-			$menu._show = function() {
-				if ($menu._lock())
-					$body.addClass('is-menu-visible');
-			};
-
-			$menu._hide = function() {
-				if ($menu._lock())
-					$body.removeClass('is-menu-visible');
-			};
-
-			$menu._toggle = function() {
-				if ($menu._lock()) {
-					$body.toggleClass('is-menu-visible');
-					console.log('[Menu] Toggled, is-menu-visible:', $body.hasClass('is-menu-visible'));
+			// Only initialize menu if it exists
+			if ($menu.length > 0) {
+				console.log('[Menu] Menu element found, setting up...');
+				// Check if inner wrapper already exists to prevent double-wrapping
+				if ($menu.children('.inner').length === 0) {
+					$menu.wrapInner('<div class="inner"></div>');
 				}
-			};
+				$menuInner = $menu.children('.inner');
+				$menu._locked = false;
 
-			$menuInner
-				.on('click', function(event) {
-					event.stopPropagation();
-				})
-				.on('click', 'a', function(event) {
-					var href = $(this).attr('href');
-					event.preventDefault();
-					event.stopPropagation();
-					// Hide.
-					$menu._hide();
-					// Redirect.
+				$menu._lock = function() {
+					if ($menu._locked)
+						return false;
+					$menu._locked = true;
 					window.setTimeout(function() {
-						window.location.href = href;
-					}, 250);
-				});
+						$menu._locked = false;
+					}, 350);
+					return true;
+				};
 
-			// Check if menu is already appended to body to prevent duplicate close buttons
-			if ($menu.parent().length === 0 || $menu.parent()[0] !== $body[0]) {
-				$menu.appendTo($body);
-			}
-			
-			// Only add close button if it doesn't exist
-			if ($menu.find('a.close').length === 0) {
-				$menu.append('<a class="close" href="#menu">Close</a>');
-			}
-			
-			$menu
-				.on('click', function(event) {
-					event.stopPropagation();
-					event.preventDefault();
-					$body.removeClass('is-menu-visible');
-				});
+				$menu._show = function() {
+					if ($menu._lock())
+						$body.addClass('is-menu-visible');
+				};
 
-			// Add body click handler to close menu when clicking outside (only if menu exists and is visible)
-			$body.on('click', function(event) {
-				// Only close if menu is visible and click is outside the menu
-				if ($body.hasClass('is-menu-visible') && !$(event.target).closest('#menu').length) {
-					menuHide();
+				$menu._hide = function() {
+					if ($menu._lock())
+						$body.removeClass('is-menu-visible');
+				};
+
+				$menu._toggle = function() {
+					if ($menu._lock()) {
+						$body.toggleClass('is-menu-visible');
+						var isVisible = $body.hasClass('is-menu-visible');
+						console.log('[Menu] Toggled, is-menu-visible:', isVisible);
+						console.log('[Menu] Menu element:', $menu.length, 'Display:', $menu.css('display'), 'Visibility:', $menu.css('visibility'), 'Opacity:', $menu.css('opacity'));
+						// Force check menu visibility after a short delay
+						setTimeout(function() {
+							console.log('[Menu] After toggle - Display:', $menu.css('display'), 'Visibility:', $menu.css('visibility'), 'Opacity:', $menu.css('opacity'));
+						}, 100);
+					}
+				};
+
+				$menuInner
+					.on('click', function(event) {
+						event.stopPropagation();
+					})
+					.on('click', 'a', function(event) {
+						var href = $(this).attr('href');
+						event.preventDefault();
+						event.stopPropagation();
+						// Hide.
+						$menu._hide();
+						// Redirect.
+						window.setTimeout(function() {
+							window.location.href = href;
+						}, 250);
+					});
+
+				// Check if menu is already appended to body to prevent duplicate close buttons
+				if ($menu.parent().length === 0 || $menu.parent()[0] !== $body[0]) {
+					$menu.appendTo($body);
 				}
-			});
+				
+				// Only add close button if it doesn't exist
+				if ($menu.find('a.close').length === 0) {
+					$menu.append('<a class="close" href="#menu">Close</a>');
+				}
+				
+				$menu
+					.on('click', function(event) {
+						event.stopPropagation();
+						event.preventDefault();
+						$body.removeClass('is-menu-visible');
+					});
+
+				// Add body click handler to close menu when clicking outside (only if menu exists and is visible)
+				$body.on('click', function(event) {
+					// Only close if menu is visible and click is outside the menu
+					if ($body.hasClass('is-menu-visible') && !$(event.target).closest('#menu').length) {
+						menuHide();
+					}
+				});
+				
+				console.log('[Menu] Menu initialization complete');
+			} else {
+				console.warn('[Menu] Menu element not found in DOM');
+			}
+		};
+		
+		// Initialize menu when DOM is ready
+		if (document.readyState === 'loading') {
+			$(document).ready(initMenu);
+		} else {
+			// DOM already loaded, initialize immediately
+			initMenu();
 		}
 
 })(jQuery);
