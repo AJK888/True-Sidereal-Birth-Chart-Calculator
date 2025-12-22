@@ -88,8 +88,15 @@ class ErrorTracker {
 		};
 
 		// Log to console in development (browser-safe)
-		const isDevelopment = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development' ||
-			window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+		// Use try-catch to safely check for process (Node.js environment)
+		let isDevelopment = false;
+		try {
+			isDevelopment = (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development') ||
+				window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+		} catch (e) {
+			// process is not available (browser environment)
+			isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+		}
 		if (isDevelopment) {
 			console.error('[Error Tracker]', error);
 		}

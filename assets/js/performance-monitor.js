@@ -227,8 +227,15 @@ class PerformanceMonitor {
 	 */
 	logMetric(name, data) {
 		// Check for development mode (browser-safe)
-		const isDevelopment = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development' ||
-			window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+		// Use try-catch to safely check for process (Node.js environment)
+		let isDevelopment = false;
+		try {
+			isDevelopment = (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development') ||
+				window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+		} catch (e) {
+			// process is not available (browser environment)
+			isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+		}
 		if (isDevelopment) {
 			console.log(`[Performance] ${name}:`, data);
 		}
