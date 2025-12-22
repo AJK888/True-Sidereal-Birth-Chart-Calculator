@@ -32,9 +32,8 @@ router = APIRouter(tags=["utilities"])
 # Create separate router for /api endpoints
 api_router = APIRouter(prefix="/api", tags=["utilities"])
 
-# Environment variables for config check
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL")
+# Import centralized configuration
+from app.config import SENDGRID_API_KEY, SENDGRID_FROM_EMAIL
 
 
 @router.api_route("/ping", methods=["GET", "HEAD"])

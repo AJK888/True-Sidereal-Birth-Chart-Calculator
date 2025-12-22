@@ -4,15 +4,23 @@ Standardized logging configuration for the application.
 This module provides consistent logging setup across all services.
 """
 
-import os
 import sys
 import logging
 from typing import Optional
+
+# Import centralized configuration
+from app.config import LOG_LEVEL, LOGTAIL_HOST, LOGTAIL_PORT
 
 try:
     from logtail import LogtailHandler
 except ImportError:
     LogtailHandler = None
+
+# Get LOGTAIL_API_KEY from config (if available)
+try:
+    from app.config import LOGTAIL_API_KEY
+except ImportError:
+    LOGTAIL_API_KEY = None
 
 
 def setup_logger(
@@ -37,7 +45,7 @@ def setup_logger(
     
     # Set log level
     if level is None:
-        level_str = os.getenv("LOG_LEVEL", "INFO").upper()
+        level_str = LOG_LEVEL.upper() if LOG_LEVEL else "INFO"
         level = getattr(logging, level_str, logging.INFO)
     logger.setLevel(level)
     
@@ -56,14 +64,12 @@ def setup_logger(
     
     # Optionally add Logtail handler
     if logtail_token is None:
-        logtail_token = os.getenv("LOGTAIL_SOURCE_TOKEN")
+        logtail_token = LOGTAIL_API_KEY  # Use centralized config
     
     if logtail_token and LogtailHandler:
         if logtail_host is None:
-            logtail_host = os.getenv(
-                "LOGTAIL_HOST",
-                "https://s1450016.eu-nbg-2.betterstackdata.com"
-            )
+            # Use centralized config with fallback
+            logtail_host = LOGTAIL_HOST or "https://s1450016.eu-nbg-2.betterstackdata.com"
         
         try:
             logtail_handler = LogtailHandler(

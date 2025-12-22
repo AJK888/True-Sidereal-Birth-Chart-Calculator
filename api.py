@@ -139,9 +139,15 @@ from app.core.logging_config import setup_logger
 
 logger = setup_logger("api")
 
+# --- Import centralized configuration ---
+from app.config import (
+    GEMINI_API_KEY, AI_MODE, SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, 
+    ADMIN_EMAIL, ADMIN_SECRET_KEY, SWEP_PATH, DEFAULT_SWISS_EPHEMERIS_PATH,
+    BASE_DIR as CONFIG_BASE_DIR, WEBPAGE_DEPLOY_HOOK_URL, OPENCAGE_KEY
+)
+
 # --- SETUP GEMINI ---
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI3_MODEL = os.getenv("GEMINI3_MODEL", "gemini-3-pro-preview")
+GEMINI3_MODEL = os.getenv("GEMINI3_MODEL", "gemini-3-pro-preview")  # Model name not in config yet
 if GEMINI_API_KEY and genai:
     try:
         if GEMINI_PACKAGE_TYPE == "generativeai":
@@ -161,16 +167,19 @@ elif not genai:
     logger.error("Could not import google.genai or google.generativeai - Gemini unavailable")
 
 # --- SETUP SENDGRID ---
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL")  # Verified sender email in SendGrid
-ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")  # Admin email for receiving copies
+# SENDGRID_API_KEY, SENDGRID_FROM_EMAIL, ADMIN_EMAIL imported from app.config above
 
 # --- Swiss Ephemeris configuration ---
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_SWISS_EPHEMERIS_PATH = os.path.join(BASE_DIR, "swiss_ephemeris")
+# Use BASE_DIR from config, but fallback to current file's directory for compatibility
+import pathlib
+BASE_DIR = str(CONFIG_BASE_DIR) if CONFIG_BASE_DIR.exists() else os.path.dirname(os.path.abspath(__file__))
+# SWEP_PATH and DEFAULT_SWISS_EPHEMERIS_PATH imported from app.config above
+# Convert Path objects to strings for compatibility with existing code
+if isinstance(DEFAULT_SWISS_EPHEMERIS_PATH, pathlib.Path):
+    DEFAULT_SWISS_EPHEMERIS_PATH = str(DEFAULT_SWISS_EPHEMERIS_PATH)
 
 # --- Admin Secret Key for bypassing rate limit ---
-ADMIN_SECRET_KEY = os.getenv("FRIENDS_AND_FAMILY_KEY")
+# ADMIN_SECRET_KEY imported from app.config above
 
 # --- Reading Cache for Frontend Polling ---
 # Import from shared cache module
@@ -240,7 +249,7 @@ logger.info("Database initialized successfully")
 @app.on_event("startup")
 async def trigger_webpage_deployment():
     """Trigger webpage deployment when API service starts (after new deployment)."""
-    WEBPAGE_DEPLOY_HOOK_URL = os.getenv("WEBPAGE_DEPLOY_HOOK_URL")
+    # WEBPAGE_DEPLOY_HOOK_URL imported from app.config above
     
     if not WEBPAGE_DEPLOY_HOOK_URL:
         logger.info("WEBPAGE_DEPLOY_HOOK_URL not configured. Skipping webpage deployment trigger.")
@@ -526,10 +535,9 @@ def _safe_get_tokens(usage: dict, key: str) -> int:
 # NOTE: calculate_gemini3_cost() moved to app.services.llm_service - imported above
 
 # --- Unified LLM Client ---
-AI_MODE = os.getenv("AI_MODE", "real").lower()  # "real" or "stub" for local testing
+# AI_MODE imported from app.config above
 
 # NOTE: Gemini3Client class moved to app.services.llm_service - imported above
-# Keeping AI_MODE here as it's used by endpoints
 
 # NOTE: _blueprint_to_json() moved to app.services.llm_service - imported above
 
@@ -1733,7 +1741,7 @@ async def synastry_endpoint(
                 friends_and_family_key = header_value
                 break
     
-    ADMIN_SECRET_KEY = os.getenv("FRIENDS_AND_FAMILY_KEY")
+    # ADMIN_SECRET_KEY imported from app.config above
     if not friends_and_family_key or not ADMIN_SECRET_KEY or friends_and_family_key != ADMIN_SECRET_KEY:
         raise HTTPException(status_code=403, detail="Synastry analysis requires friends and family access")
     

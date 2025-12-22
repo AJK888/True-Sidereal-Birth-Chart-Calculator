@@ -15,6 +15,7 @@ Pillow
 google-genai
 # Authentication & Database
 sqlalchemy
+alembic  # Database migration tool
 aiosqlite
 python-jose[cryptography]
 passlib==1.7.4

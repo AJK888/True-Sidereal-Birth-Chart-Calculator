@@ -20,8 +20,8 @@ logger = setup_logger(__name__)
 # Create router
 router = APIRouter(prefix="/api", tags=["subscriptions"])
 
-# Environment variables
-STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+# Import centralized configuration
+from app.config import STRIPE_WEBHOOK_SECRET, ADMIN_SECRET_KEY, WEBPAGE_DEPLOY_HOOK_URL
 
 
 @router.get("/subscription/status")
@@ -41,7 +41,7 @@ async def get_subscription_status(
                 break
     
     # Check if FRIENDS_AND_FAMILY_KEY is valid
-    ADMIN_SECRET_KEY = os.getenv("FRIENDS_AND_FAMILY_KEY")
+    # ADMIN_SECRET_KEY imported from app.config above
     has_friends_family_access = friends_and_family_key and ADMIN_SECRET_KEY and friends_and_family_key == ADMIN_SECRET_KEY
     
     # All users now have access (Stripe requirements removed)
@@ -105,8 +105,7 @@ async def render_deploy_webhook(request: Request):
     It then triggers a deployment of the webpage service using Render's Deploy Hook URL.
     """
     try:
-        # Get webpage deploy hook URL from environment
-        WEBPAGE_DEPLOY_HOOK_URL = os.getenv("WEBPAGE_DEPLOY_HOOK_URL")
+        # WEBPAGE_DEPLOY_HOOK_URL imported from app.config above
         
         if not WEBPAGE_DEPLOY_HOOK_URL:
             logger.warning("Webpage deploy hook URL not configured. Skipping webpage deployment trigger.")

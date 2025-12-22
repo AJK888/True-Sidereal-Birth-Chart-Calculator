@@ -25,9 +25,8 @@ logger = setup_logger(__name__)
 # Create router
 router = APIRouter(prefix="/api", tags=["synastry"])
 
-# Environment variables
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-ADMIN_SECRET_KEY = os.getenv("FRIENDS_AND_FAMILY_KEY")
+# Import centralized configuration
+from app.config import GEMINI_API_KEY, ADMIN_SECRET_KEY
 
 
 # Pydantic Models

@@ -84,6 +84,7 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")  # development, staging, p
 # Logging Configuration
 # ============================================================
 
+LOGTAIL_API_KEY = os.getenv("LOGTAIL_API_KEY")  # Also known as LOGTAIL_SOURCE_TOKEN
 LOGTAIL_HOST = os.getenv("LOGTAIL_HOST")
 LOGTAIL_PORT = int(os.getenv("LOGTAIL_PORT", "0")) if os.getenv("LOGTAIL_PORT") else None
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

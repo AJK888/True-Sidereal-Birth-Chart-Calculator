@@ -13,6 +13,7 @@ import swisseph as swe
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, Depends
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -48,13 +49,15 @@ logger = setup_logger(__name__)
 # Create router
 router = APIRouter(tags=["charts"])
 
-# Environment variables
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-DEFAULT_SWISS_EPHEMERIS_PATH = os.path.join(BASE_DIR, "swiss_ephemeris")
-ADMIN_SECRET_KEY = os.getenv("FRIENDS_AND_FAMILY_KEY")
-ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-SENDGRID_FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL")
+# Import centralized configuration
+from app.config import (
+    ADMIN_SECRET_KEY, ADMIN_EMAIL, SENDGRID_API_KEY, SENDGRID_FROM_EMAIL,
+    SWEP_PATH, DEFAULT_SWISS_EPHEMERIS_PATH, OPENCAGE_KEY
+)
+import pathlib
+# Convert Path objects to strings for compatibility
+if isinstance(DEFAULT_SWISS_EPHEMERIS_PATH, pathlib.Path):
+    DEFAULT_SWISS_EPHEMERIS_PATH = str(DEFAULT_SWISS_EPHEMERIS_PATH)
 
 # Reading cache (shared cache module)
 from app.core.cache import reading_cache, CACHE_EXPIRY_HOURS
@@ -389,7 +392,7 @@ async def calculate_chart_endpoint(
     background_tasks: BackgroundTasks,
     current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
-):
+) -> Dict[str, Any]:
     """
     Calculate a birth chart with all astrological data.
     
@@ -407,17 +410,18 @@ async def calculate_chart_endpoint(
         logger.info("New chart request received", extra=log_data)
 
         # Ensure ephemeris files are accessible
-        ephe_path = os.getenv("SWEP_PATH") or DEFAULT_SWISS_EPHEMERIS_PATH
+        ephe_path = SWEP_PATH or DEFAULT_SWISS_EPHEMERIS_PATH
         if not os.path.exists(ephe_path):
             logger.warning(f"Ephemeris path '{ephe_path}' not found. Falling back to application root.")
-            ephe_path = BASE_DIR
+            from app.config import BASE_DIR
+            ephe_path = str(BASE_DIR)
         swe.set_ephe_path(ephe_path) 
 
         # Geocoding with fallback: Try OpenCage first, then Nominatim
         lat, lng, timezone_name = None, None, None
         
         # Try OpenCage first (if key is available)
-        opencage_key = os.getenv("OPENCAGE_KEY")
+        opencage_key = OPENCAGE_KEY
         if opencage_key:
             try:
                 geo_url = f"https://api.opencagedata.com/geocode/v1/json?q={data.location}&key={opencage_key}"
@@ -706,7 +710,7 @@ async def generate_reading_endpoint(
     background_tasks: BackgroundTasks,
     current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
-):
+) -> Dict[str, Any]:
     """
     Queue reading generation and email sending in the background.
     Returns immediately so users can close the browser and still receive their reading via email.
@@ -798,7 +802,7 @@ async def get_reading_endpoint(
     chart_hash: str,
     current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
-):
+) -> Dict[str, Any]:
     """
     Retrieve a completed reading from the cache by chart hash.
     Used by frontend to poll for completed readings.
