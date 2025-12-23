@@ -8,7 +8,7 @@ import logging
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_, ilike
+from sqlalchemy import func, and_, or_
 
 from database import User, SavedChart, ChatConversation, ChatMessage
 from app.core.logging_config import setup_logger

@@ -424,6 +424,14 @@ app.include_router(batch_operations.router, prefix="/api/v1")
 from app.api.v1 import jobs
 app.include_router(jobs.router, prefix="/api/v1")
 
+# Advanced Monitoring (monitoring, metrics, alerts endpoints)
+from app.api.v1 import monitoring
+app.include_router(monitoring.router, prefix="/api/v1")
+
+# Development Tools (development endpoints - dev mode only)
+from app.api.v1 import dev
+app.include_router(dev.router, prefix="/api/v1")
+
 # --- Import Admin Router ---
 from app.api.v1.admin import router as admin_router
 app.include_router(admin_router, prefix="/api/v1/admin")

@@ -88,7 +88,7 @@ class ChartRequest(BaseModel):
     is_full_birth_name: bool = Field(False, description="Set to true if full_name is the person's full birth name (for name numerology)", example=False)
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "full_name": "John Doe",
                 "year": 1990,

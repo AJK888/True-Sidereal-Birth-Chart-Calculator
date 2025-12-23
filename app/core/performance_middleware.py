@@ -50,6 +50,18 @@ class PerformanceMonitoringMiddleware(BaseHTTPMiddleware):
             duration = time.time() - start_time
             track_request_metrics(endpoint, duration, status_code, error)
             
+            # Record in advanced metrics collector
+            try:
+                from app.core.advanced_metrics import metrics_collector
+                metrics_collector.record_request(
+                    method=request.method,
+                    path=endpoint,
+                    status_code=status_code,
+                    duration=duration
+                )
+            except Exception as e:
+                logger.debug(f"Advanced metrics recording failed: {e}")
+            
             # Track API usage analytics
             try:
                 from app.utils.api_analytics import track_api_request

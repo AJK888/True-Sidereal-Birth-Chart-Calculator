@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.logging_config import setup_logger
 from app.core.rbac import require_admin
+from app.core.security_audit import SecurityAuditor
 from app.config import (
     API_BASE_URL, DATABASE_URL, SECRET_KEY, GEMINI_API_KEY,
     SENDGRID_API_KEY, STRIPE_SECRET_KEY, ADMIN_EMAIL
@@ -100,5 +101,26 @@ async def get_system_health(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to get system health: {str(e)}"
+        )
+
+
+@router.get("/system/security", response_model=Dict[str, Any])
+async def get_security_status(
+    current_user: User = Depends(require_admin()),
+    db: Session = Depends(get_db)
+) -> Dict[str, Any]:
+    """
+    Get security audit status and recommendations.
+    
+    Requires admin access.
+    """
+    try:
+        security_status = SecurityAuditor.get_security_status()
+        return security_status
+    except Exception as e:
+        logger.error(f"Error getting security status: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get security status: {str(e)}"
         )
 
