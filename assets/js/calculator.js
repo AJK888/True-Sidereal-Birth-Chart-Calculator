@@ -659,6 +659,12 @@ const AstrologyCalculator = {
 	},
 
 	async loadAndDrawTransitChart() {
+		// Ensure transit section is visible
+		const transitSection = document.getElementById('transit-section');
+		if (transitSection) {
+			transitSection.style.display = 'block';
+		}
+		
 		// Show loading skeleton
 		const transitLoadingSkeleton = document.getElementById('transit-loading-skeleton');
 		const transitWheelsContainer = document.getElementById('transit-wheels-container');

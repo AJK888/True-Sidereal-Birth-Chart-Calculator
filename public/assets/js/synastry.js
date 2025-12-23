@@ -78,19 +78,33 @@ const SynastryManager = {
 		// Get FRIENDS_AND_FAMILY_KEY (use stored value or extract from URL)
 		let friendsAndFamilyKey = this.friendsAndFamilyKey;
 		if (!friendsAndFamilyKey) {
+			// Try to get from URL - handle both direct param and split values
 			const urlParams = new URLSearchParams(window.location.search);
 			friendsAndFamilyKey = urlParams.get('FRIENDS_AND_FAMILY_KEY');
 			
-			// Handle URL-encoded values and split values
-			if (!friendsAndFamilyKey) {
+			// Handle URL-encoded values and split values (e.g., F&FKEY gets split)
+			if (!friendsAndFamilyKey || friendsAndFamilyKey.length < 3) {
+				// Check if key was split due to & character
 				const allParams = new URLSearchParams(window.location.search);
 				const keys = Array.from(allParams.keys());
 				const keyIndex = keys.indexOf('FRIENDS_AND_FAMILY_KEY');
 				if (keyIndex !== -1 && keyIndex < keys.length - 1) {
 					const nextKey = keys[keyIndex + 1];
-					if (nextKey === 'FKEY' || !allParams.get(nextKey)) {
-						friendsAndFamilyKey = allParams.get('FRIENDS_AND_FAMILY_KEY') + '&' + nextKey;
+					const nextValue = allParams.get(nextKey);
+					// If next param has no value or is likely part of the key
+					if (!nextValue || nextKey === 'FKEY' || (nextKey.length <= 10 && !nextValue.includes('='))) {
+						const firstPart = allParams.get('FRIENDS_AND_FAMILY_KEY') || '';
+						friendsAndFamilyKey = firstPart + '&' + nextKey;
 					}
+				}
+			}
+			
+			// Also check if key is in the raw URL string (for complex cases)
+			if (!friendsAndFamilyKey || friendsAndFamilyKey.length < 3) {
+				const rawUrl = window.location.href;
+				const keyMatch = rawUrl.match(/FRIENDS_AND_FAMILY_KEY=([^&]+)/);
+				if (keyMatch && keyMatch[1]) {
+					friendsAndFamilyKey = decodeURIComponent(keyMatch[1]);
 				}
 			}
 			
@@ -98,6 +112,9 @@ const SynastryManager = {
 				friendsAndFamilyKey = decodeURIComponent(friendsAndFamilyKey);
 			}
 		}
+		
+		// Log for debugging (first 3 chars only for security)
+		console.log('[Synastry] Using F&F key:', friendsAndFamilyKey ? (friendsAndFamilyKey.substring(0, 3) + '...') : 'none');
 		
 		if (!friendsAndFamilyKey) {
 			this.showError('Friends and family key is required. Please access this page with the correct key.');

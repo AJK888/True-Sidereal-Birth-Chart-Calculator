@@ -501,6 +501,18 @@ const AstrologyCalculator = {
 	},
 
 	async loadAndDrawTransitChart() {
+		// Ensure transit section is visible
+		const transitSection = document.getElementById('transit-section');
+		if (transitSection) {
+			transitSection.style.display = 'block';
+		}
+		
+		// Show loading skeleton, hide wheels container
+		const transitLoadingSkeleton = document.getElementById('transit-loading-skeleton');
+		const transitWheelsContainer = document.getElementById('transit-wheels-container');
+		if (transitLoadingSkeleton) transitLoadingSkeleton.style.display = 'block';
+		if (transitWheelsContainer) transitWheelsContainer.style.display = 'none';
+		
 		try {
 			// Get user's current location
 			let location = await this.getUserLocation();
@@ -536,20 +548,31 @@ const AstrologyCalculator = {
 			console.log('[Transit Chart] Sidereal positions:', transitData?.sidereal_major_positions);
 			console.log('[Transit Chart] Tropical positions:', transitData?.tropical_major_positions);
 			
+			// Hide skeleton, show wheels
+			if (transitLoadingSkeleton) transitLoadingSkeleton.style.display = 'none';
+			if (transitWheelsContainer) transitWheelsContainer.style.display = 'grid';
+			
 			this.drawChartWheel(transitData, 'sidereal-transit-wheel-svg', 'sidereal');
 			this.drawChartWheel(transitData, 'tropical-transit-wheel-svg', 'tropical');
 
 			const legendHtml = this.getLegendHtml();
 			const container = document.querySelector('#transit-chart .chart-wheels-wrapper');
-			const oldLegend = container.nextElementSibling;
-			if (oldLegend && oldLegend.classList.contains('glyph-legend-details')) {
-				oldLegend.remove();
+			if (container) {
+				const oldLegend = container.nextElementSibling;
+				if (oldLegend && oldLegend.classList.contains('glyph-legend-details')) {
+					oldLegend.remove();
+				}
+				container.insertAdjacentHTML('afterend', legendHtml);
 			}
-			container.insertAdjacentHTML('afterend', legendHtml);
 
 		} catch (err) {
 			console.error("Failed to load transit chart:", err);
 			console.error("Error details:", err.message, err.stack);
+			
+			// Hide skeleton, show wheels container even on error
+			if (transitLoadingSkeleton) transitLoadingSkeleton.style.display = 'none';
+			if (transitWheelsContainer) transitWheelsContainer.style.display = 'grid';
+			
 			const siderealSvg = document.getElementById('sidereal-transit-wheel-svg');
 			const tropicalSvg = document.getElementById('tropical-transit-wheel-svg');
 			if (siderealSvg) {
