@@ -227,19 +227,19 @@ html {
 #tropical-transit-wheel-container {
     transition: transform var(--transition-base);
     cursor: pointer;
-    max-width: 500px; /* Limit chart wheel size */
+    max-width: 600px; /* Increased chart wheel size (middle ground between 500px and original ~720px) */
     margin: 0 auto; /* Center the charts */
 }
 
 /* Make transit charts match reading chart size */
 #transit-section .chart-wheels-wrapper {
-    max-width: 1000px; /* Max width for both wheels side by side */
+    max-width: 1200px; /* Increased total width (middle ground between 1000px and original ~1440px) */
     margin: 0 auto;
 }
 
 /* Ensure reading charts match transit chart size */
 #results .chart-wheels-wrapper {
-    max-width: 1000px; /* Match transit chart size */
+    max-width: 1200px; /* Match transit chart size */
     margin: 0 auto;
 }
 
@@ -276,7 +276,7 @@ html {
 
 .skeleton-chart-wheel {
     width: 100%;
-    max-width: 500px; /* Match chart wheel size */
+    max-width: 600px; /* Match chart wheel size */
     aspect-ratio: 1;
     background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
     background-size: 200% 100%;
@@ -1021,7 +1021,7 @@ pre {
     grid-template-columns: 1fr 1fr;
     gap: 2em;
     align-items: center;
-    max-width: 1000px; /* Limit total width for both wheels side by side */
+    max-width: 1200px; /* Increased total width for both wheels side by side */
     margin: 0 auto; /* Center the wrapper */
 }
 .chart-wheels-wrapper h3 {
@@ -1106,7 +1106,7 @@ pre {
     width: 100%; 
     height: auto; 
     aspect-ratio: 1 / 1; 
-    max-width: 500px; /* Limit individual chart wheel size - matches container */
+    max-width: 600px; /* Increased chart wheel size - matches container */
 }
 .wheel-circle { stroke: rgba(255, 255, 255, 0.25); stroke-width: 2; fill: none; }
 .zodiac-divider { stroke: rgba(255, 255, 255, 0.25); stroke-width: 1; }
