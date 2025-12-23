@@ -79,7 +79,7 @@ async def search_charts(
     created_after: Optional[str] = None,
     created_before: Optional[str] = None,
     limit: int = Query(50, ge=1, le=100),
-    current_user: Optional[User] = Depends(get_current_user_optional()),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
@@ -144,7 +144,7 @@ async def search_conversations(
     created_after: Optional[str] = None,
     created_before: Optional[str] = None,
     limit: int = Query(50, ge=1, le=100),
-    current_user: Optional[User] = Depends(get_current_user_optional()),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """
@@ -238,7 +238,7 @@ async def search_messages(
 async def get_search_suggestions(
     q: str = Query(..., min_length=2, description="Search query (minimum 2 characters)"),
     search_type: str = Query("all", regex="^(all|users|charts|conversations)$"),
-    current_user: Optional[User] = Depends(get_current_user_optional()),
+    current_user: Optional[User] = Depends(get_current_user_optional),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
     """

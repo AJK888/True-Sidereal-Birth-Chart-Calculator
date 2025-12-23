@@ -6,6 +6,7 @@ Utilities and helpers for development and debugging.
 
 import logging
 import os
+import sys
 from typing import Dict, Any, Optional
 from datetime import datetime
 
@@ -32,7 +33,7 @@ def get_environment_info() -> Dict[str, Any]:
         "environment": os.getenv("ENVIRONMENT", "production"),
         "is_development": is_development(),
         "is_production": is_production(),
-        "python_version": os.sys.version,
+        "python_version": sys.version,
         "timestamp": datetime.utcnow().isoformat()
     }
 

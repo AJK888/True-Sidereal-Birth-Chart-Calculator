@@ -1,17 +1,21 @@
 """
-Retry Logic Implementation
+Retry Utilities
 
-Provides retry functionality with exponential backoff and jitter.
+Utilities for implementing retry logic with exponential backoff.
 """
 
 import logging
-import random
 import time
-from typing import Callable, Any, Optional, Type, Tuple, List
+import asyncio
+from typing import Callable, TypeVar, Optional, List, Type, Union
 from functools import wraps
 from datetime import datetime, timedelta
 
-logger = logging.getLogger(__name__)
+from app.core.logging_config import setup_logger
+
+logger = setup_logger(__name__)
+
+T = TypeVar('T')
 
 
 class RetryConfig:
@@ -24,285 +28,180 @@ class RetryConfig:
         max_delay: float = 60.0,
         exponential_base: float = 2.0,
         jitter: bool = True,
-        retry_on: Optional[Tuple[Type[Exception], ...]] = None,
-        retry_on_status: Optional[List[int]] = None
+        retryable_exceptions: Optional[List[Type[Exception]]] = None
     ):
-        """
-        Initialize retry configuration.
-        
-        Args:
-            max_attempts: Maximum number of retry attempts
-            initial_delay: Initial delay in seconds
-            max_delay: Maximum delay in seconds
-            exponential_base: Base for exponential backoff
-            jitter: Whether to add random jitter to delays
-            retry_on: Exception types to retry on
-            retry_on_status: HTTP status codes to retry on
-        """
         self.max_attempts = max_attempts
         self.initial_delay = initial_delay
         self.max_delay = max_delay
         self.exponential_base = exponential_base
         self.jitter = jitter
-        self.retry_on = retry_on or (Exception,)
-        self.retry_on_status = retry_on_status or [500, 502, 503, 504]
+        self.retryable_exceptions = retryable_exceptions or [Exception]
     
     def calculate_delay(self, attempt: int) -> float:
-        """
-        Calculate delay for retry attempt.
-        
-        Args:
-            attempt: Attempt number (0-indexed)
-        
-        Returns:
-            Delay in seconds
-        """
-        # Exponential backoff
-        delay = self.initial_delay * (self.exponential_base ** attempt)
-        
-        # Cap at max delay
+        """Calculate delay for a given attempt."""
+        delay = self.initial_delay * (self.exponential_base ** (attempt - 1))
         delay = min(delay, self.max_delay)
         
-        # Add jitter if enabled
         if self.jitter:
-            jitter_amount = delay * 0.1  # 10% jitter
-            delay += random.uniform(-jitter_amount, jitter_amount)
-            delay = max(0, delay)  # Ensure non-negative
+            import random
+            delay = delay * (0.5 + random.random() * 0.5)
         
         return delay
 
 
 def retry(
-    max_attempts: int = 3,
-    initial_delay: float = 1.0,
-    max_delay: float = 60.0,
-    exponential_base: float = 2.0,
-    jitter: bool = True,
-    retry_on: Optional[Tuple[Type[Exception], ...]] = None,
-    retry_on_status: Optional[List[int]] = None,
+    config: Optional[RetryConfig] = None,
     on_retry: Optional[Callable[[Exception, int], None]] = None
 ):
     """
-    Decorator to retry function on failure.
+    Decorator for retrying function calls with exponential backoff.
     
     Args:
-        max_attempts: Maximum number of retry attempts
-        initial_delay: Initial delay in seconds
-        max_delay: Maximum delay in seconds
-        exponential_base: Base for exponential backoff
-        jitter: Whether to add random jitter to delays
-        retry_on: Exception types to retry on
-        retry_on_status: HTTP status codes to retry on (for HTTP exceptions)
-        on_retry: Callback function called on each retry
-    
-    Usage:
-        @retry(max_attempts=3, initial_delay=1.0)
-        def my_function():
-            ...
+        config: Retry configuration
+        on_retry: Callback function called on each retry attempt
     """
-    config = RetryConfig(
-        max_attempts=max_attempts,
-        initial_delay=initial_delay,
-        max_delay=max_delay,
-        exponential_base=exponential_base,
-        jitter=jitter,
-        retry_on=retry_on,
-        retry_on_status=retry_on_status
-    )
+    if config is None:
+        config = RetryConfig()
     
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        async def async_wrapper(*args, **kwargs) -> T:
             last_exception = None
             
-            for attempt in range(config.max_attempts):
-                try:
-                    return func(*args, **kwargs)
-                except config.retry_on as e:
-                    last_exception = e
-                    
-                    # Check if we should retry
-                    if attempt < config.max_attempts - 1:
-                        delay = config.calculate_delay(attempt)
-                        
-                        # Check for HTTP status codes if applicable
-                        should_retry = True
-                        if hasattr(e, 'status_code'):
-                            should_retry = e.status_code in config.retry_on_status
-                        
-                        if should_retry:
-                            logger.warning(
-                                f"Retry {attempt + 1}/{config.max_attempts} for {func.__name__} "
-                                f"after {delay:.2f}s: {e}"
-                            )
-                            
-                            # Call retry callback if provided
-                            if on_retry:
-                                try:
-                                    on_retry(e, attempt + 1)
-                                except Exception as callback_error:
-                                    logger.warning(f"Retry callback failed: {callback_error}")
-                            
-                            time.sleep(delay)
-                            continue
-                    
-                    # Don't retry or max attempts reached
-                    raise
-                except Exception as e:
-                    # Not in retry_on list, raise immediately
-                    raise
-            
-            # Should not reach here, but just in case
-            if last_exception:
-                raise last_exception
-            raise RuntimeError("Retry logic error: no exception to raise")
-        
-        return wrapper
-    
-    return decorator
-
-
-def retry_async(
-    max_attempts: int = 3,
-    initial_delay: float = 1.0,
-    max_delay: float = 60.0,
-    exponential_base: float = 2.0,
-    jitter: bool = True,
-    retry_on: Optional[Tuple[Type[Exception], ...]] = None,
-    retry_on_status: Optional[List[int]] = None,
-    on_retry: Optional[Callable[[Exception, int], None]] = None
-):
-    """
-    Decorator to retry async function on failure.
-    
-    Args:
-        max_attempts: Maximum number of retry attempts
-        initial_delay: Initial delay in seconds
-        max_delay: Maximum delay in seconds
-        exponential_base: Base for exponential backoff
-        jitter: Whether to add random jitter to delays
-        retry_on: Exception types to retry on
-        retry_on_status: HTTP status codes to retry on
-        on_retry: Callback function called on each retry
-    
-    Usage:
-        @retry_async(max_attempts=3, initial_delay=1.0)
-        async def my_async_function():
-            ...
-    """
-    import asyncio
-    
-    config = RetryConfig(
-        max_attempts=max_attempts,
-        initial_delay=initial_delay,
-        max_delay=max_delay,
-        exponential_base=exponential_base,
-        jitter=jitter,
-        retry_on=retry_on,
-        retry_on_status=retry_on_status
-    )
-    
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            last_exception = None
-            
-            for attempt in range(config.max_attempts):
+            for attempt in range(1, config.max_attempts + 1):
                 try:
                     return await func(*args, **kwargs)
-                except config.retry_on as e:
+                except Exception as e:
                     last_exception = e
                     
-                    # Check if we should retry
-                    if attempt < config.max_attempts - 1:
-                        delay = config.calculate_delay(attempt)
-                        
-                        # Check for HTTP status codes if applicable
-                        should_retry = True
-                        if hasattr(e, 'status_code'):
-                            should_retry = e.status_code in config.retry_on_status
-                        
-                        if should_retry:
-                            logger.warning(
-                                f"Retry {attempt + 1}/{config.max_attempts} for {func.__name__} "
-                                f"after {delay:.2f}s: {e}"
-                            )
-                            
-                            # Call retry callback if provided
-                            if on_retry:
-                                try:
-                                    on_retry(e, attempt + 1)
-                                except Exception as callback_error:
-                                    logger.warning(f"Retry callback failed: {callback_error}")
-                            
-                            await asyncio.sleep(delay)
-                            continue
+                    # Check if exception is retryable
+                    if not any(isinstance(e, exc_type) for exc_type in config.retryable_exceptions):
+                        raise
                     
-                    # Don't retry or max attempts reached
-                    raise
-                except Exception as e:
-                    # Not in retry_on list, raise immediately
-                    raise
+                    # Don't retry on last attempt
+                    if attempt >= config.max_attempts:
+                        break
+                    
+                    # Calculate delay
+                    delay = config.calculate_delay(attempt)
+                    
+                    # Call retry callback
+                    if on_retry:
+                        try:
+                            on_retry(e, attempt)
+                        except Exception:
+                            pass
+                    
+                    logger.warning(
+                        f"Retry attempt {attempt}/{config.max_attempts} for {func.__name__}: {str(e)}"
+                    )
+                    
+                    # Wait before retrying
+                    await asyncio.sleep(delay)
             
-            # Should not reach here, but just in case
-            if last_exception:
-                raise last_exception
-            raise RuntimeError("Retry logic error: no exception to raise")
+            # All retries exhausted
+            logger.error(
+                f"All retry attempts exhausted for {func.__name__}: {str(last_exception)}"
+            )
+            raise last_exception
         
-        return wrapper
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs) -> T:
+            last_exception = None
+            
+            for attempt in range(1, config.max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    last_exception = e
+                    
+                    # Check if exception is retryable
+                    if not any(isinstance(e, exc_type) for exc_type in config.retryable_exceptions):
+                        raise
+                    
+                    # Don't retry on last attempt
+                    if attempt >= config.max_attempts:
+                        break
+                    
+                    # Calculate delay
+                    delay = config.calculate_delay(attempt)
+                    
+                    # Call retry callback
+                    if on_retry:
+                        try:
+                            on_retry(e, attempt)
+                        except Exception:
+                            pass
+                    
+                    logger.warning(
+                        f"Retry attempt {attempt}/{config.max_attempts} for {func.__name__}: {str(e)}"
+                    )
+                    
+                    # Wait before retrying
+                    time.sleep(delay)
+            
+            # All retries exhausted
+            logger.error(
+                f"All retry attempts exhausted for {func.__name__}: {str(last_exception)}"
+            )
+            raise last_exception
+        
+        # Determine if function is async
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        else:
+            return sync_wrapper
     
     return decorator
 
 
-def retry_with_circuit_breaker(
-    circuit_breaker_name: str,
-    max_attempts: int = 3,
-    initial_delay: float = 1.0,
-    max_delay: float = 60.0,
-    exponential_base: float = 2.0,
-    jitter: bool = True,
-    retry_on: Optional[Tuple[Type[Exception], ...]] = None,
-    retry_on_status: Optional[List[int]] = None
+def retry_with_fallback(
+    fallback_func: Callable[..., T],
+    config: Optional[RetryConfig] = None
 ):
     """
-    Decorator combining retry logic with circuit breaker.
+    Decorator for retrying with a fallback function.
     
     Args:
-        circuit_breaker_name: Name of circuit breaker to use
-        max_attempts: Maximum number of retry attempts
-        initial_delay: Initial delay in seconds
-        max_delay: Maximum delay in seconds
-        exponential_base: Base for exponential backoff
-        jitter: Whether to add random jitter to delays
-        retry_on: Exception types to retry on
-        retry_on_status: HTTP status codes to retry on
-    
-    Usage:
-        @retry_with_circuit_breaker("external_api", max_attempts=3)
-        def call_external_api():
-            ...
+        fallback_func: Function to call if all retries fail
+        config: Retry configuration
     """
-    from app.core.circuit_breaker import get_circuit_breaker
+    if config is None:
+        config = RetryConfig()
     
-    cb = get_circuit_breaker(circuit_breaker_name)
-    retry_decorator = retry(
-        max_attempts=max_attempts,
-        initial_delay=initial_delay,
-        max_delay=max_delay,
-        exponential_base=exponential_base,
-        jitter=jitter,
-        retry_on=retry_on,
-        retry_on_status=retry_on_status
-    )
-    
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        retry_decorator = retry(config=config)
         retried_func = retry_decorator(func)
         
         @wraps(func)
-        def wrapper(*args, **kwargs):
-            return cb.call(retried_func, *args, **kwargs)
+        async def async_wrapper(*args, **kwargs) -> T:
+            try:
+                if asyncio.iscoroutinefunction(func):
+                    return await retried_func(*args, **kwargs)
+                else:
+                    return retried_func(*args, **kwargs)
+            except Exception as e:
+                logger.warning(
+                    f"Retries exhausted for {func.__name__}, using fallback: {str(e)}"
+                )
+                if asyncio.iscoroutinefunction(fallback_func):
+                    return await fallback_func(*args, **kwargs)
+                else:
+                    return fallback_func(*args, **kwargs)
         
-        return wrapper
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs) -> T:
+            try:
+                return retried_func(*args, **kwargs)
+            except Exception as e:
+                logger.warning(
+                    f"Retries exhausted for {func.__name__}, using fallback: {str(e)}"
+                )
+                return fallback_func(*args, **kwargs)
+        
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        else:
+            return sync_wrapper
     
     return decorator
-
