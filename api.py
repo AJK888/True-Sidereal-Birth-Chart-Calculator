@@ -251,8 +251,10 @@ app = FastAPI(
     * **Chart Calculation**: Calculate complete birth charts with sidereal and tropical placements
     * **AI Readings**: Generate personalized astrological readings using AI
     * **Famous People Matching**: Find famous people with similar astrological charts
-    * **Synastry Analysis**: Compare two birth charts for relationship compatibility
+    * **Advanced Astrology**: Synastry, composite charts, transits, progressed charts, solar returns
     * **Chart Management**: Save and retrieve saved charts
+    * **Real-Time Features**: WebSocket support for live updates
+    * **Analytics**: API usage tracking and statistics
     
     ### Authentication
     
@@ -328,6 +330,14 @@ app = FastAPI(
             "name": "analytics",
             "description": "Analytics and reporting endpoints for usage metrics and business intelligence.",
         },
+        {
+            "name": "advanced-charts",
+            "description": "Advanced astrology features including synastry, composite charts, transits, progressed charts, and solar returns.",
+        },
+        {
+            "name": "chart-results",
+            "description": "Combined chart results endpoints for single-page results experience.",
+        },
     ],
     docs_url="/docs",
     redoc_url="/redoc",
@@ -341,7 +351,7 @@ app.include_router(chat_router)
 app.include_router(famous_people_router)
 
 # --- Include API v1 Routers ---
-from app.api.v1 import utilities, charts, auth, saved_charts, subscriptions, synastry, websocket, webhooks, api_keys, batch, analytics
+from app.api.v1 import utilities, charts, auth, saved_charts, subscriptions, synastry, websocket, webhooks, api_keys, batch, analytics, advanced_charts, chart_results
 
 # Share limiter instance with routers
 # Update router modules to use the main app limiter
@@ -366,6 +376,16 @@ app.include_router(subscriptions.router)
 
 # Synastry (synastry analysis endpoint)
 app.include_router(synastry.router)
+
+# Advanced Charts (synastry, composite, transits, etc.)
+app.include_router(advanced_charts.router)
+
+# Chart Results (combined results endpoint)
+app.include_router(chart_results.router)
+
+# Mobile (mobile-optimized endpoints)
+from app.api.v1 import mobile
+app.include_router(mobile.router)
 
 # Webhooks (webhook management endpoints)
 app.include_router(webhooks.router)

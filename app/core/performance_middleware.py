@@ -50,7 +50,27 @@ class PerformanceMonitoringMiddleware(BaseHTTPMiddleware):
             duration = time.time() - start_time
             track_request_metrics(endpoint, duration, status_code, error)
             
-            # Track analytics event
+            # Track API usage analytics
+            try:
+                from app.utils.api_analytics import track_api_request
+                from slowapi.util import get_remote_address
+                
+                user_id = getattr(request.state, "user_id", None)
+                ip_address = get_remote_address(request)
+                
+                track_api_request(
+                    endpoint=endpoint,
+                    method=request.method,
+                    user_id=user_id,
+                    ip_address=ip_address,
+                    response_time=duration,
+                    status_code=status_code
+                )
+            except Exception as e:
+                # Don't fail request if analytics tracking fails
+                logger.debug(f"API analytics tracking failed: {e}")
+            
+            # Track analytics event (if analytics service exists)
             try:
                 from app.services.analytics_service import track_event
                 user_id = getattr(request.state, "user_id", None)
@@ -64,7 +84,7 @@ class PerformanceMonitoringMiddleware(BaseHTTPMiddleware):
                         "response_time": duration
                     }
                 )
-            except Exception as e:
+            except (ImportError, Exception) as e:
                 # Don't fail request if analytics tracking fails
                 logger.debug(f"Analytics tracking failed: {e}")
 

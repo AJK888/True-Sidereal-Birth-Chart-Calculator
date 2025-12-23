@@ -381,6 +381,88 @@ def get_metrics() -> Dict[str, Any]:
     return get_health_metrics()
 
 
+@router.get("/version")
+def get_api_version_info() -> Dict[str, Any]:
+    """
+    Get API version information.
+    
+    Returns current API version, supported versions, and deprecation info.
+    """
+    try:
+        from app.core.api_versioning import get_version_info
+        return {
+            "status": "success",
+            "version": get_version_info()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get version info: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/languages")
+def get_supported_languages_endpoint() -> Dict[str, Any]:
+    """
+    Get supported languages.
+    
+    Returns list of supported languages with codes and names.
+    """
+    try:
+        from app.core.i18n import get_supported_languages
+        return {
+            "status": "success",
+            **get_supported_languages()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get languages: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/content/{key:path}")
+def get_localized_content_endpoint(
+    request: Request,
+    key: str,
+    language: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Get localized content by key.
+    
+    Args:
+        key: Content key
+        language: Optional language code (defaults to Accept-Language header or English)
+    
+    Returns:
+        Localized content
+    """
+    try:
+        from app.core.i18n import detect_language, get_translation
+        from app.services.localization import get_localized_content
+        
+        # Detect language if not provided
+        if not language:
+            language = detect_language(dict(request.headers))
+        
+        content = get_localized_content(key, language)
+        
+        return {
+            "status": "success",
+            "key": key,
+            "language": language,
+            "content": content
+        }
+    except Exception as e:
+        logger.error(f"Failed to get content: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
 @router.get("/health")
 def health_check() -> Dict[str, Any]:
     """
