@@ -227,6 +227,20 @@ html {
 #tropical-transit-wheel-container {
     transition: transform var(--transition-base);
     cursor: pointer;
+    max-width: 500px; /* Limit chart wheel size */
+    margin: 0 auto; /* Center the charts */
+}
+
+/* Make transit charts match reading chart size */
+#transit-section .chart-wheels-wrapper {
+    max-width: 1000px; /* Max width for both wheels side by side */
+    margin: 0 auto;
+}
+
+/* Ensure reading charts match transit chart size */
+#results .chart-wheels-wrapper {
+    max-width: 1000px; /* Match transit chart size */
+    margin: 0 auto;
 }
 
 /* ============================================================
@@ -262,11 +276,13 @@ html {
 
 .skeleton-chart-wheel {
     width: 100%;
+    max-width: 500px; /* Match chart wheel size */
     aspect-ratio: 1;
     background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
     background-size: 200% 100%;
     border-radius: 50%;
     animation: skeleton-loading 1.5s ease-in-out infinite;
+    margin: 0 auto; /* Center the skeleton */
 }
 
 .loading-skeleton-text {
@@ -1005,6 +1021,8 @@ pre {
     grid-template-columns: 1fr 1fr;
     gap: 2em;
     align-items: center;
+    max-width: 1000px; /* Limit total width for both wheels side by side */
+    margin: 0 auto; /* Center the wrapper */
 }
 .chart-wheels-wrapper h3 {
     text-align: center;
@@ -1084,7 +1102,12 @@ pre {
     color: #24293e; 
 }
 /* 5. Chart Wheel SVG styles */
-#sidereal-wheel-svg, #tropical-wheel-svg, #sidereal-transit-wheel-svg, #tropical-transit-wheel-svg { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+#sidereal-wheel-svg, #tropical-wheel-svg, #sidereal-transit-wheel-svg, #tropical-transit-wheel-svg { 
+    width: 100%; 
+    height: auto; 
+    aspect-ratio: 1 / 1; 
+    max-width: 500px; /* Limit individual chart wheel size - matches container */
+}
 .wheel-circle { stroke: rgba(255, 255, 255, 0.25); stroke-width: 2; fill: none; }
 .zodiac-divider { stroke: rgba(255, 255, 255, 0.25); stroke-width: 1; }
 .house-cusp { stroke: #ffffff; stroke-width: 1.5; }
