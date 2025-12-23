@@ -8,8 +8,13 @@ import os
 import logging
 from datetime import datetime
 from typing import Dict, Any, Optional
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Depends
+from sqlalchemy.orm import Session
+from database import get_db
 from app.core.logging_config import setup_logger
+from app.core.health import HealthChecker
+from app.utils.query_analyzer import get_query_statistics
+from app.core.cache_enhancements import get_cache_statistics
 # Limiter will be set from main app - create placeholder for decorators
 try:
     from slowapi import Limiter
@@ -464,7 +469,18 @@ def get_localized_content_endpoint(
 
 
 @router.get("/health")
-def health_check() -> Dict[str, Any]:
+async def health_check(db: Session = Depends(get_db)) -> Dict[str, Any]:
+    """Enhanced health check with component status."""
+    try:
+        health_status = HealthChecker.get_health_status(db)
+        return health_status
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }
     """
     Comprehensive health check endpoint.
     
@@ -475,7 +491,7 @@ def health_check() -> Dict[str, Any]:
 
 
 @router.get("/health/ready")
-def readiness_check() -> Dict[str, Any]:
+async def readiness_check() -> Dict[str, Any]:
     """
     Readiness probe endpoint.
     
@@ -483,18 +499,18 @@ def readiness_check() -> Dict[str, Any]:
     Kubernetes/container orchestrators use this to determine if traffic
     should be routed to this instance.
     """
-    return get_readiness()
+    return HealthChecker.get_readiness()
 
 
 @router.get("/health/live")
-def liveness_check() -> Dict[str, Any]:
+async def liveness_check() -> Dict[str, Any]:
     """
     Liveness probe endpoint.
     
     Returns whether the service is alive. Kubernetes/container orchestrators
     use this to determine if the container should be restarted.
     """
-    return get_liveness()
+    return HealthChecker.get_liveness()
 
 
 # Development-only endpoints

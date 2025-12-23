@@ -400,6 +400,34 @@ app.include_router(batch.router)
 app.include_router(analytics.router)
 app.include_router(websocket.router)
 
+# Reports (report generation endpoints)
+from app.api.v1 import reports
+app.include_router(reports.router, prefix="/api/v1")
+
+# Data Management (data export and GDPR endpoints)
+from app.api.v1 import data_management
+app.include_router(data_management.router, prefix="/api/v1")
+
+# Search (advanced search and filtering endpoints)
+from app.api.v1 import search
+app.include_router(search.router, prefix="/api/v1")
+
+# Performance (performance monitoring endpoints)
+from app.api.v1 import performance
+app.include_router(performance.router, prefix="/api/v1")
+
+# Batch Operations (batch operation endpoints)
+from app.api.v1 import batch_operations
+app.include_router(batch_operations.router, prefix="/api/v1")
+
+# Jobs (background job management endpoints)
+from app.api.v1 import jobs
+app.include_router(jobs.router, prefix="/api/v1")
+
+# --- Import Admin Router ---
+from app.api.v1.admin import router as admin_router
+app.include_router(admin_router, prefix="/api/v1/admin")
+
 # --- Initialize Database ---
 init_db()
 logger.info("Database initialized successfully")
@@ -541,6 +569,9 @@ from app.core.performance_middleware import PerformanceMonitoringMiddleware
 # 2. SecurityHeadersMiddleware (added second, executes second - sets security defaults)
 # 3. NormalizeJsonContentTypeMiddleware (added third, executes third - normalizes content-type)
 # 4. PerformanceMonitoringMiddleware (added first, executes last - tracks performance)
+# 5. CompressionMiddleware (compresses responses)
+from app.middleware.compression import CompressionMiddleware
+app.add_middleware(CompressionMiddleware)
 app.add_middleware(PerformanceMonitoringMiddleware)
 app.add_middleware(NormalizeJsonContentTypeMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
