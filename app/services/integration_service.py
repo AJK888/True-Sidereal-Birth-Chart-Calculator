@@ -5,7 +5,7 @@ Service for managing third-party integrations and external services.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Callable
 from datetime import datetime
 from enum import Enum
 
@@ -149,7 +149,7 @@ class IntegrationService:
     def call_integration(
         self,
         name: str,
-        func: callable,
+        func: Callable,
         *args,
         **kwargs
     ) -> Any:

@@ -5,6 +5,7 @@ Utilities for implementing fallback mechanisms when primary services fail.
 """
 
 import logging
+import asyncio
 from typing import Callable, TypeVar, Optional, Dict, Any, List
 from functools import wraps
 from enum import Enum
@@ -118,7 +119,6 @@ def with_fallback(
                 else:
                     raise
         
-        import asyncio
         if asyncio.iscoroutinefunction(func):
             return async_wrapper
         else:
@@ -183,7 +183,6 @@ def graceful_degradation(
                 # If minimum features are required, raise error
                 raise
         
-        import asyncio
         if asyncio.iscoroutinefunction(func):
             return async_wrapper
         else:

@@ -69,3 +69,29 @@ def debug_request(request: Any) -> Dict[str, Any]:
             "port": request.client.port if request.client else None,
         }
     }
+
+
+def log_request_details(request: Any, include_body: bool = False) -> Dict[str, Any]:
+    """Get request details for logging (similar to debug_request but for logging)."""
+    details = {
+        "method": request.method,
+        "url": str(request.url),
+        "path": request.url.path,
+        "query_params": dict(request.query_params),
+        "headers": {k: v for k, v in request.headers.items() if k.lower() not in ["authorization", "cookie"]},  # Exclude sensitive headers
+        "client": {
+            "host": request.client.host if request.client else None,
+            "port": request.client.port if request.client else None,
+        }
+    }
+    
+    if include_body:
+        # Note: Body reading should be done carefully in async context
+        # This is a simplified version
+        try:
+            if hasattr(request, "_body"):
+                details["body"] = request._body
+        except Exception:
+            pass
+    
+    return details

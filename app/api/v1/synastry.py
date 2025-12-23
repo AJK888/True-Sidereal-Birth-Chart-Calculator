@@ -7,7 +7,8 @@ Comprehensive synastry analysis endpoint (friends & family only).
 import os
 import logging
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, Depends
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from fastapi import Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from urllib.parse import urlparse, parse_qs

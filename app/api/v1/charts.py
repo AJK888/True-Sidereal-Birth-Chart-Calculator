@@ -12,7 +12,8 @@ import pendulum
 import swisseph as swe
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
-from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, Depends
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
+from fastapi import Request
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 
