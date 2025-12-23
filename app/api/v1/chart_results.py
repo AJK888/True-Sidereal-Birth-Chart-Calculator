@@ -20,7 +20,7 @@ from app.core.exceptions import NotFoundError
 from database import get_db, User, SavedChart, ChatConversation, ChatMessage
 from auth import get_current_user_optional
 from app.services.chart_service import generate_chart_hash
-from app.services.similarity_service import find_similar_famous_people
+from services.similarity_service import find_similar_famous_people_internal
 
 logger = setup_logger(__name__)
 
@@ -87,8 +87,8 @@ async def get_full_results_endpoint(
         if data.include_matches:
             try:
                 # Get famous matches
-                matches = find_similar_famous_people(chart_data, limit=10)
-                results["famous_matches"] = matches
+                matches_result = await find_similar_famous_people_internal(chart_data, limit=10, db=db)
+                results["famous_matches"] = matches_result.get("matches", [])
             except Exception as e:
                 logger.warning(f"Failed to get famous matches: {e}")
                 results["famous_matches"] = []

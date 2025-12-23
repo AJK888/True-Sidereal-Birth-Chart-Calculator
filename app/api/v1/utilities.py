@@ -440,7 +440,7 @@ def get_localized_content_endpoint(
         Localized content
     """
     try:
-        from app.core.i18n import detect_language, get_translation
+        from app.core.i18n import detect_language
         from app.services.localization import get_localized_content
         
         # Detect language if not provided
