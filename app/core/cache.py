@@ -78,7 +78,7 @@ def get_reading_from_cache(chart_hash: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def set_reading_in_cache(chart_hash: str, reading: str, chart_name: str):
+def set_reading_in_cache(chart_hash: str, reading: str, chart_name: str = None):
     """
     Store a reading in cache (Redis or in-memory).
     

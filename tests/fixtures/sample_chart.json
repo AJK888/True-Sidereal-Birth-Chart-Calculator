@@ -1,0 +1,20 @@
+{
+  "name": "Sample Birth Chart",
+  "birth_date": "1990-01-15",
+  "birth_time": "10:30:00",
+  "birth_location": {
+    "city": "New York",
+    "state": "NY",
+    "country": "USA",
+    "latitude": 40.7128,
+    "longitude": -74.0060,
+    "timezone": "America/New_York"
+  },
+  "description": "Sample birth chart fixture for testing",
+  "expected_signs": {
+    "sun": "Capricorn",
+    "moon": "Leo",
+    "rising": "Scorpio"
+  }
+}
+

@@ -56,6 +56,12 @@ def get_from_cache(key: str) -> Optional[Dict[str, Any]]:
         timestamp = _l1_cache_timestamps.get(l1_key)
         if timestamp and datetime.now() - timestamp < timedelta(minutes=L1_CACHE_EXPIRY_MINUTES):
             logger.debug(f"L1 cache hit: {key}")
+            # Track cache hit
+            try:
+                from app.core.cache_analytics import track_cache_hit
+                track_cache_hit(key, source="l1")
+            except ImportError:
+                pass
             return _l1_cache[l1_key]
         else:
             # L1 cache expired, remove it
@@ -74,6 +80,12 @@ def get_from_cache(key: str) -> Optional[Dict[str, Any]]:
                     # Promote to L1 cache
                     _set_l1_cache(key, data)
                     logger.debug(f"L2 cache hit (promoted to L1): {key}")
+                    # Track cache hit
+                    try:
+                        from app.core.cache_analytics import track_cache_hit
+                        track_cache_hit(key, source="l2")
+                    except ImportError:
+                        pass
                     return data
                 else:
                     _redis_client.delete(l2_key)
@@ -81,6 +93,12 @@ def get_from_cache(key: str) -> Optional[Dict[str, Any]]:
             logger.warning(f"L2 cache read error: {e}")
     
     logger.debug(f"Cache miss: {key}")
+    # Track cache miss
+    try:
+        from app.core.cache_analytics import track_cache_miss
+        track_cache_miss(key)
+    except ImportError:
+        pass
     return None
 
 
@@ -116,6 +134,13 @@ def set_in_cache(key: str, value: Dict[str, Any], expiry_hours: Optional[int] = 
             logger.debug(f"Stored in L2 cache: {key}")
         except Exception as e:
             logger.warning(f"L2 cache write error: {e}")
+    
+    # Track cache set
+    try:
+        from app.core.cache_analytics import track_cache_set
+        track_cache_set(key)
+    except ImportError:
+        pass
 
 
 def _set_l1_cache(key: str, value: Dict[str, Any]):

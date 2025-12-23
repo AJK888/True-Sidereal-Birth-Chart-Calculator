@@ -4,8 +4,8 @@ Charts API Routes
 Endpoints for chart calculation, reading generation, and reading retrieval.
 """
 
-import os
 import json
+import os
 import asyncio
 import requests
 import pendulum
@@ -13,11 +13,15 @@ import swisseph as swe
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, Request, BackgroundTasks, Depends
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, validator
 from sqlalchemy.orm import Session
 
 from app.core.logging_config import setup_logger
+from app.core.exceptions import (
+    ChartCalculationError,
+    GeocodingError,
+    ReadingGenerationError
+)
 # Limiter will be set from main app - create placeholder for decorators
 try:
     from slowapi import Limiter

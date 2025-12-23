@@ -1,0 +1,16 @@
+{
+  "chart_hash": "sample_chart_hash_12345",
+  "reading_type": "full",
+  "options": {
+    "include_transits": true,
+    "include_synastry": false,
+    "detail_level": "comprehensive"
+  },
+  "expected_sections": [
+    "overview",
+    "planets",
+    "houses",
+    "aspects"
+  ]
+}
+

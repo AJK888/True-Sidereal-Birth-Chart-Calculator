@@ -77,6 +77,300 @@ def check_email_config() -> Dict[str, Any]:
     return config_status
 
 
+@router.get("/cache/stats")
+async def get_cache_stats() -> Dict[str, Any]:
+    """Get cache performance statistics."""
+    try:
+        from app.core.cache_analytics import get_cache_statistics
+        stats = get_cache_statistics()
+        return {
+            "status": "success",
+            "stats": stats
+        }
+    except Exception as e:
+        logger.error(f"Failed to get cache stats: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/cache/recommendations")
+async def get_cache_recommendations() -> Dict[str, Any]:
+    """Get cache optimization recommendations."""
+    try:
+        from app.core.cache_analytics import get_cache_recommendations
+        recommendations = get_cache_recommendations()
+        return {
+            "status": "success",
+            "recommendations": recommendations
+        }
+    except Exception as e:
+        logger.error(f"Failed to get cache recommendations: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.post("/cache/warm")
+async def warm_cache(request: Request) -> Dict[str, Any]:
+    """Manually trigger cache warming."""
+    try:
+        from app.utils.cache_warming import cache_warmer
+        from app.core.exceptions import AuthorizationError
+        from auth import get_current_user
+        from database import get_db
+        
+        # Check if user is admin
+        db = next(get_db())
+        try:
+            current_user = get_current_user(request, db)
+            if not current_user or not current_user.is_admin:
+                raise AuthorizationError("Admin access required")
+        finally:
+            db.close()
+        
+        # Get strategy names from request (optional)
+        body = await request.json() if request.method == "POST" else {}
+        strategy_names = body.get("strategies", [])
+        
+        if strategy_names:
+            results = await cache_warmer.warm_selective(strategy_names)
+        else:
+            results = await cache_warmer.warm_all()
+        
+        return {
+            "status": "success",
+            "results": results
+        }
+    except Exception as e:
+        logger.error(f"Cache warming failed: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/performance/stats")
+async def get_performance_stats() -> Dict[str, Any]:
+    """Get performance profiling statistics."""
+    try:
+        from app.utils.performance_profiler import get_performance_statistics
+        stats = get_performance_statistics()
+        return {
+            "status": "success",
+            "stats": stats
+        }
+    except Exception as e:
+        logger.error(f"Failed to get performance stats: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/performance/slow")
+async def get_slow_operations(limit: int = 20) -> Dict[str, Any]:
+    """Get slowest operations."""
+    try:
+        from app.utils.performance_profiler import get_slow_operations
+        slow_ops = get_slow_operations(limit=limit)
+        return {
+            "status": "success",
+            "operations": slow_ops
+        }
+    except Exception as e:
+        logger.error(f"Failed to get slow operations: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/performance/function/{function_name:path}")
+async def get_function_stats(function_name: str) -> Dict[str, Any]:
+    """Get statistics for a specific function."""
+    try:
+        from app.utils.performance_profiler import get_function_statistics
+        stats = get_function_statistics(function_name)
+        if stats:
+            return {
+                "status": "success",
+                "stats": stats
+            }
+        else:
+            return {
+                "status": "not_found",
+                "message": f"Function '{function_name}' not found"
+            }
+    except Exception as e:
+        logger.error(f"Failed to get function stats: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/performance/resources")
+async def get_resource_usage() -> Dict[str, Any]:
+    """Get current resource usage statistics."""
+    try:
+        from app.utils.performance_profiler import get_resource_usage
+        usage = get_resource_usage()
+        return {
+            "status": "success",
+            "resources": usage
+        }
+    except Exception as e:
+        logger.error(f"Failed to get resource usage: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/performance/recommendations")
+async def get_performance_recommendations() -> Dict[str, Any]:
+    """Get performance optimization recommendations."""
+    try:
+        from app.utils.performance_profiler import get_performance_recommendations
+        recommendations = get_performance_recommendations()
+        return {
+            "status": "success",
+            "recommendations": recommendations
+        }
+    except Exception as e:
+        logger.error(f"Failed to get recommendations: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.post("/performance/profiler/start")
+async def start_profiler(request: Request, name: str) -> Dict[str, Any]:
+    """Start a profiler for a specific operation (admin only)."""
+    try:
+        from app.utils.performance_profiler import start_profiler
+        from app.core.exceptions import AuthorizationError
+        from auth import get_current_user
+        from database import get_db
+        
+        # Check if user is admin
+        db = next(get_db())
+        try:
+            current_user = get_current_user(request, db)
+            if not current_user or not current_user.is_admin:
+                raise AuthorizationError("Admin access required")
+        finally:
+            db.close()
+        
+        profiler_id = start_profiler(name)
+        return {
+            "status": "success",
+            "profiler_id": profiler_id
+        }
+    except Exception as e:
+        logger.error(f"Failed to start profiler: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.post("/performance/profiler/stop")
+async def stop_profiler(request: Request, profiler_id: str) -> Dict[str, Any]:
+    """Stop a profiler and get results (admin only)."""
+    try:
+        from app.utils.performance_profiler import stop_profiler
+        from app.core.exceptions import AuthorizationError
+        from auth import get_current_user
+        from database import get_db
+        
+        # Check if user is admin
+        db = next(get_db())
+        try:
+            current_user = get_current_user(request, db)
+            if not current_user or not current_user.is_admin:
+                raise AuthorizationError("Admin access required")
+        finally:
+            db.close()
+        
+        results = stop_profiler(profiler_id)
+        if results:
+            return {
+                "status": "success",
+                "results": results
+            }
+        else:
+            return {
+                "status": "not_found",
+                "message": f"Profiler '{profiler_id}' not found"
+            }
+    except Exception as e:
+        logger.error(f"Failed to stop profiler: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/circuit-breakers")
+async def get_circuit_breakers() -> Dict[str, Any]:
+    """Get all circuit breaker statistics."""
+    try:
+        from app.core.circuit_breaker import get_all_circuit_breakers
+        breakers = get_all_circuit_breakers()
+        stats = {name: cb.get_stats() for name, cb in breakers.items()}
+        return {
+            "status": "success",
+            "circuit_breakers": stats
+        }
+    except Exception as e:
+        logger.error(f"Failed to get circuit breakers: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.post("/circuit-breakers/{name}/reset")
+async def reset_circuit_breaker_endpoint(request: Request, name: str) -> Dict[str, Any]:
+    """Reset a circuit breaker (admin only)."""
+    try:
+        from app.core.circuit_breaker import reset_circuit_breaker
+        from app.core.exceptions import AuthorizationError
+        from auth import get_current_user
+        from database import get_db
+        
+        # Check if user is admin
+        db = next(get_db())
+        try:
+            current_user = get_current_user(request, db)
+            if not current_user or not current_user.is_admin:
+                raise AuthorizationError("Admin access required")
+        finally:
+            db.close()
+        
+        reset_circuit_breaker(name)
+        return {
+            "status": "success",
+            "message": f"Circuit breaker '{name}' reset"
+        }
+    except ValueError as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+    except Exception as e:
+        logger.error(f"Failed to reset circuit breaker: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
 @router.get("/metrics")
 def get_metrics() -> Dict[str, Any]:
     """
@@ -119,6 +413,194 @@ def liveness_check() -> Dict[str, Any]:
     use this to determine if the container should be restarted.
     """
     return get_liveness()
+
+
+# Development-only endpoints
+@router.get("/dev/environment")
+async def get_environment_info() -> Dict[str, Any]:
+    """Get environment information (development only)."""
+    try:
+        from app.utils.dev_tools import get_environment_info, is_development
+        
+        if not is_development():
+            return {
+                "status": "error",
+                "message": "This endpoint is only available in development mode"
+            }
+        
+        return {
+            "status": "success",
+            "environment": get_environment_info()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get environment info: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/dev/imports")
+async def get_import_info() -> Dict[str, Any]:
+    """Get import information (development only)."""
+    try:
+        from app.utils.dev_tools import get_import_info, is_development
+        
+        if not is_development():
+            return {
+                "status": "error",
+                "message": "This endpoint is only available in development mode"
+            }
+        
+        return {
+            "status": "success",
+            "imports": get_import_info()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get import info: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/dev/database")
+async def get_database_info(request: Request) -> Dict[str, Any]:
+    """Get database connection information (development only)."""
+    try:
+        from app.utils.dev_tools import get_database_info, is_development
+        from database import get_db
+        
+        if not is_development():
+            return {
+                "status": "error",
+                "message": "This endpoint is only available in development mode"
+            }
+        
+        db = next(get_db())
+        try:
+            db_info = get_database_info(db)
+            return {
+                "status": "success",
+                "database": db_info
+            }
+        finally:
+            db.close()
+    except Exception as e:
+        logger.error(f"Failed to get database info: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/dev/cache")
+async def get_cache_info() -> Dict[str, Any]:
+    """Get cache connection information (development only)."""
+    try:
+        from app.utils.dev_tools import get_cache_info, is_development
+        
+        if not is_development():
+            return {
+                "status": "error",
+                "message": "This endpoint is only available in development mode"
+            }
+        
+        cache_info = get_cache_info()
+        return {
+            "status": "success",
+            "cache": cache_info
+        }
+    except Exception as e:
+        logger.error(f"Failed to get cache info: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/dev/config")
+async def validate_config_endpoint() -> Dict[str, Any]:
+    """Validate application configuration (development only)."""
+    try:
+        from app.utils.dev_tools import validate_config, is_development
+        
+        if not is_development():
+            return {
+                "status": "error",
+                "message": "This endpoint is only available in development mode"
+            }
+        
+        validation = validate_config()
+        return {
+            "status": "success",
+            "validation": validation
+        }
+    except Exception as e:
+        logger.error(f"Failed to validate config: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.post("/dev/test-fixture/{name}")
+async def create_test_fixture_endpoint(request: Request, name: str) -> Dict[str, Any]:
+    """Create a test fixture from request data (development only)."""
+    try:
+        from app.utils.dev_tools import create_test_fixture, is_development
+        import json
+        
+        if not is_development():
+            return {
+                "status": "error",
+                "message": "This endpoint is only available in development mode"
+            }
+        
+        body = await request.json()
+        fixture_path = create_test_fixture(name, body)
+        
+        return {
+            "status": "success",
+            "message": f"Fixture created: {fixture_path}",
+            "path": fixture_path
+        }
+    except Exception as e:
+        logger.error(f"Failed to create test fixture: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
+
+@router.get("/dev/test-fixture/{name}")
+async def load_test_fixture_endpoint(name: str) -> Dict[str, Any]:
+    """Load a test fixture (development only)."""
+    try:
+        from app.utils.dev_tools import load_test_fixture, is_development
+        
+        if not is_development():
+            return {
+                "status": "error",
+                "message": "This endpoint is only available in development mode"
+            }
+        
+        fixture_data = load_test_fixture(name)
+        return {
+            "status": "success",
+            "fixture": fixture_data
+        }
+    except FileNotFoundError as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+    except Exception as e:
+        logger.error(f"Failed to load test fixture: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
 @api_router.post("/log-clicks")

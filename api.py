@@ -17,6 +17,7 @@ from typing import Optional, Dict, Any, List
 
 # Import custom exceptions and responses
 from app.core.exceptions import (
+    SynthesisAPIException,
     ChartCalculationError,
     GeocodingError,
     ReadingGenerationError,
@@ -340,7 +341,7 @@ app.include_router(chat_router)
 app.include_router(famous_people_router)
 
 # --- Include API v1 Routers ---
-from app.api.v1 import utilities, charts, auth, saved_charts, subscriptions, synastry, webhooks, api_keys, batch, analytics
+from app.api.v1 import utilities, charts, auth, saved_charts, subscriptions, synastry, websocket, webhooks, api_keys, batch, analytics
 
 # Share limiter instance with routers
 # Update router modules to use the main app limiter
@@ -377,6 +378,7 @@ app.include_router(batch.router)
 
 # Analytics (analytics and reporting endpoints)
 app.include_router(analytics.router)
+app.include_router(websocket.router)
 
 # --- Initialize Database ---
 init_db()
@@ -410,6 +412,17 @@ async def trigger_webpage_deployment():
 
 
 @app.on_event("startup")
+async def startup_cache_warming():
+    """Warm cache on startup with popular data."""
+    try:
+        from app.utils.cache_warming import cache_warmer
+        logger.info("Starting cache warming...")
+        results = await cache_warmer.warm_all()
+        logger.info(f"Cache warming complete: {results['total_warmed']} items warmed")
+    except Exception as e:
+        logger.warning(f"Cache warming failed: {e}", exc_info=True)
+
+
 async def startup_health_check():
     """Perform health checks on startup and log status."""
     try:
@@ -526,6 +539,50 @@ from app.core.exceptions import (
     NotFoundError
 )
 from app.core.responses import success_response, error_response
+from app.utils.dev_tools import is_development, log_request_details
+
+# --- Helper function for enhanced error responses ---
+def build_error_response(
+    error: str,
+    detail: str,
+    exc: SynthesisAPIException,
+    request: Optional[Request] = None
+) -> Dict[str, Any]:
+    """
+    Build an error response with enhanced context in development mode.
+    
+    Args:
+        error: Error message
+        detail: Detailed error information
+        exc: Exception instance
+        request: Optional request object for context
+    
+    Returns:
+        Error response dictionary
+    """
+    response = error_response(
+        error=error,
+        detail=detail,
+        code=exc.error_code
+    )
+    
+    # Add context in development mode
+    if is_development() and exc.context:
+        response["context"] = exc.context
+    
+    # Add request details in development mode
+    if is_development() and request:
+        try:
+            request_details = log_request_details(request, include_body=False)
+            response["request"] = {
+                "method": request_details.get("method"),
+                "path": request_details.get("path"),
+                "query_params": request_details.get("query_params")
+            }
+        except Exception:
+            pass  # Don't fail if we can't get request details
+    
+    return response
 
 # --- Custom Exception Handlers ---
 @app.exception_handler(ChartCalculationError)
@@ -533,9 +590,11 @@ async def chart_calculation_error_handler(request: Request, exc: ChartCalculatio
     """Handle chart calculation errors."""
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response(
+        content=build_error_response(
             error="Chart calculation failed",
-            detail=exc.detail
+            detail=exc.detail,
+            exc=exc,
+            request=request
         )
     )
 
@@ -544,9 +603,11 @@ async def geocoding_error_handler(request: Request, exc: GeocodingError):
     """Handle geocoding errors."""
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response(
+        content=build_error_response(
             error="Geocoding failed",
-            detail=exc.detail
+            detail=exc.detail,
+            exc=exc,
+            request=request
         )
     )
 
@@ -555,9 +616,11 @@ async def reading_generation_error_handler(request: Request, exc: ReadingGenerat
     """Handle reading generation errors."""
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response(
+        content=build_error_response(
             error="Reading generation failed",
-            detail=exc.detail
+            detail=exc.detail,
+            exc=exc,
+            request=request
         )
     )
 
@@ -566,9 +629,11 @@ async def email_error_handler(request: Request, exc: EmailError):
     """Handle email sending errors."""
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response(
+        content=build_error_response(
             error="Email sending failed",
-            detail=exc.detail
+            detail=exc.detail,
+            exc=exc,
+            request=request
         )
     )
 
@@ -577,9 +642,11 @@ async def llm_error_handler(request: Request, exc: LLMError):
     """Handle LLM API errors."""
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response(
+        content=build_error_response(
             error="LLM service error",
-            detail=exc.detail
+            detail=exc.detail,
+            exc=exc,
+            request=request
         )
     )
 
@@ -588,9 +655,11 @@ async def validation_error_handler(request: Request, exc: ValidationError):
     """Handle validation errors."""
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response(
+        content=build_error_response(
             error="Validation failed",
-            detail=exc.detail
+            detail=exc.detail,
+            exc=exc,
+            request=request
         )
     )
 
@@ -599,9 +668,11 @@ async def authentication_error_handler(request: Request, exc: AuthenticationErro
     """Handle authentication errors."""
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response(
+        content=build_error_response(
             error="Authentication failed",
-            detail=exc.detail
+            detail=exc.detail,
+            exc=exc,
+            request=request
         )
     )
 
@@ -610,9 +681,11 @@ async def authorization_error_handler(request: Request, exc: AuthorizationError)
     """Handle authorization errors."""
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response(
+        content=build_error_response(
             error="Not authorized",
-            detail=exc.detail
+            detail=exc.detail,
+            exc=exc,
+            request=request
         )
     )
 
@@ -621,9 +694,11 @@ async def not_found_error_handler(request: Request, exc: NotFoundError):
     """Handle not found errors."""
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response(
+        content=build_error_response(
             error="Resource not found",
-            detail=exc.detail
+            detail=exc.detail,
+            exc=exc,
+            request=request
         )
     )
 
