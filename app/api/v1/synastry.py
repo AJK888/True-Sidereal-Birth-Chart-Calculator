@@ -67,7 +67,20 @@ async def synastry_endpoint(
                 friends_and_family_key = header_value
                 break
     
-    if not friends_and_family_key or not ADMIN_SECRET_KEY or friends_and_family_key != ADMIN_SECRET_KEY:
+    # Log key detection for debugging
+    logger.info(f"[Synastry] FRIENDS_AND_FAMILY_KEY received: {friends_and_family_key[:3] + '...' if friends_and_family_key and len(friends_and_family_key) >= 3 else friends_and_family_key}")
+    logger.info(f"[Synastry] ADMIN_SECRET_KEY configured: {bool(ADMIN_SECRET_KEY)}, length: {len(ADMIN_SECRET_KEY) if ADMIN_SECRET_KEY else 0}")
+    
+    if not friends_and_family_key:
+        logger.warning("[Synastry] No FRIENDS_AND_FAMILY_KEY provided")
+        raise HTTPException(status_code=403, detail="Synastry analysis requires friends and family access")
+    
+    if not ADMIN_SECRET_KEY:
+        logger.error("[Synastry] ADMIN_SECRET_KEY not configured on server")
+        raise HTTPException(status_code=500, detail="Server configuration error: Admin secret key not set")
+    
+    if friends_and_family_key != ADMIN_SECRET_KEY:
+        logger.warning(f"[Synastry] Key mismatch - received length: {len(friends_and_family_key)}, expected length: {len(ADMIN_SECRET_KEY) if ADMIN_SECRET_KEY else 0}")
         raise HTTPException(status_code=403, detail="Synastry analysis requires friends and family access")
     
     if not GEMINI_API_KEY:

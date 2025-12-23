@@ -149,10 +149,22 @@ async def process_batch_charts(
             )
             utc_time = local_time.in_timezone('UTC')
             
-            ephe_path = SWEP_PATH or DEFAULT_SWISS_EPHEMERIS_PATH
-            if not os.path.exists(ephe_path):
+            # Try SWEP_PATH first (if set), then DEFAULT_SWISS_EPHEMERIS_PATH, then BASE_DIR/swiss_ephemeris, then BASE_DIR
+            ephe_path = None
+            if SWEP_PATH and os.path.exists(SWEP_PATH):
+                ephe_path = SWEP_PATH
+            elif DEFAULT_SWISS_EPHEMERIS_PATH and os.path.exists(DEFAULT_SWISS_EPHEMERIS_PATH):
+                ephe_path = DEFAULT_SWISS_EPHEMERIS_PATH
+            else:
+                # Try relative to BASE_DIR
                 from app.config import BASE_DIR
-                ephe_path = str(BASE_DIR)
+                swiss_ephe_dir = BASE_DIR / "swiss_ephemeris"
+                if swiss_ephe_dir.exists():
+                    ephe_path = str(swiss_ephe_dir)
+                else:
+                    # Final fallback to BASE_DIR (ephemeris files might be in root)
+                    ephe_path = str(BASE_DIR)
+            
             swe.set_ephe_path(ephe_path)
             
             chart = NatalChart(

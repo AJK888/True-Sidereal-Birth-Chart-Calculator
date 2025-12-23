@@ -526,12 +526,25 @@ async def calculate_chart_endpoint(
             logger.info("New chart request received", extra=log_data)
 
         # Ensure ephemeris files are accessible
-        ephe_path = SWEP_PATH or DEFAULT_SWISS_EPHEMERIS_PATH
-        if not os.path.exists(ephe_path):
-            logger.warning(f"Ephemeris path '{ephe_path}' not found. Falling back to application root.")
+        # Try SWEP_PATH first (if set), then DEFAULT_SWISS_EPHEMERIS_PATH, then BASE_DIR/swiss_ephemeris, then BASE_DIR
+        ephe_path = None
+        if SWEP_PATH and os.path.exists(SWEP_PATH):
+            ephe_path = SWEP_PATH
+        elif DEFAULT_SWISS_EPHEMERIS_PATH and os.path.exists(DEFAULT_SWISS_EPHEMERIS_PATH):
+            ephe_path = DEFAULT_SWISS_EPHEMERIS_PATH
+        else:
+            # Try relative to BASE_DIR
             from app.config import BASE_DIR
-            ephe_path = str(BASE_DIR)
-        swe.set_ephe_path(ephe_path) 
+            swiss_ephe_dir = BASE_DIR / "swiss_ephemeris"
+            if swiss_ephe_dir.exists():
+                ephe_path = str(swiss_ephe_dir)
+            else:
+                # Final fallback to BASE_DIR (ephemeris files might be in root)
+                ephe_path = str(BASE_DIR)
+                logger.info(f"Using BASE_DIR as ephemeris path: {ephe_path}")
+        
+        swe.set_ephe_path(ephe_path)
+        logger.debug(f"Swiss Ephemeris path set to: {ephe_path}") 
 
         # Geocoding with fallback: Try OpenCage first, then Nominatim
         lat, lng, timezone_name = None, None, None
