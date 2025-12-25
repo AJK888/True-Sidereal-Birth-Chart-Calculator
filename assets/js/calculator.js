@@ -383,60 +383,69 @@ const AstrologyCalculator = {
 
 			// Use API client if available, otherwise fallback to direct fetch
 			let readingResult;
-			if (this.apiClient) {
-				readingResult = await this.apiClient.generateReading(chartData, userInputs, null);
-			} else {
-				// Fallback to direct fetch
-				const readingRes = await fetch(this.API_URLS.reading, {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						chart_data: chartData,
-						unknown_time: chartData.unknown_time,
-						user_inputs: userInputs,
-						chart_image_base64: null
-					})
-				});
-
-			if (!readingRes.ok) {
-                let errorData;
-                try {
-                    errorData = await readingRes.json();
-                } catch (jsonErr) {
-                    const text = await readingRes.text();
-                    console.error("Failed to parse error response as JSON:", text);
-                    errorData = { detail: 'AI Reading service failed to respond correctly.' };
-                }
-                
-                // Check if it's a subscription error
-                if (readingRes.status === 402 && errorData.detail && errorData.detail.error === "Subscription required") {
-                    // Display friendly subscription message instead of error
-                    const message = errorData.detail.message || 'A monthly subscription is required for comprehensive full readings and other premium services.';
-                    this.geminiOutput.innerHTML = `
-                        <div style="padding: 20px; background-color: rgba(27, 108, 168, 0.1); border-left: 4px solid #1b6ca8; margin-bottom: 15px; border-radius: 4px;">
-                            <h3 style="margin-top: 0; color: #1b6ca8;">Unlock Full Readings & Premium Features</h3>
-                            <p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 1em;">${message}</p>
-                            <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 1em;">Good news! You can still get <strong>unlimited free snapshot readings</strong> with your chart calculation. The snapshot provides quick insights into your core patterns.</p>
-                        </div>
-                    `;
-                    if (this.copyReadingBtn) {
-                        this.copyReadingBtn.style.display = 'none';
-                    }
-                    this.setLoadingState(false);
-                    return; // Exit early - don't throw error
-                }
-                
-                throw new Error(errorData.detail || 'AI Reading service failed.');
-            }
-
-			let readingResult;
+			console.log('[Reading] Starting reading generation request...');
 			try {
-				readingResult = await readingRes.json();
-				console.log("Reading response received:", readingResult); // Debug log
-			} catch (jsonErr) {
-				const text = await readingRes.text();
-				console.error("Failed to parse response as JSON:", text);
-				throw new Error("Invalid response format from server. Please try again.");
+				if (this.apiClient) {
+					console.log('[Reading] Using API client...');
+					readingResult = await this.apiClient.generateReading(chartData, userInputs, null);
+					console.log('[Reading] API client response received:', readingResult);
+				} else {
+					// Fallback to direct fetch
+					console.log('[Reading] Using direct fetch...');
+					const readingRes = await fetch(this.API_URLS.reading, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							chart_data: chartData,
+							unknown_time: chartData.unknown_time,
+							user_inputs: userInputs,
+							chart_image_base64: null
+						})
+					});
+
+					if (!readingRes.ok) {
+						let errorData;
+						try {
+							errorData = await readingRes.json();
+						} catch (jsonErr) {
+							const text = await readingRes.text();
+							console.error("[Reading] Failed to parse error response as JSON:", text);
+							errorData = { detail: 'AI Reading service failed to respond correctly.' };
+						}
+						
+						// Check if it's a subscription error
+						if (readingRes.status === 402 && errorData.detail && errorData.detail.error === "Subscription required") {
+							// Display friendly subscription message instead of error
+							const message = errorData.detail.message || 'A monthly subscription is required for comprehensive full readings and other premium services.';
+							this.geminiOutput.innerHTML = `
+								<div style="padding: 20px; background-color: rgba(27, 108, 168, 0.1); border-left: 4px solid #1b6ca8; margin-bottom: 15px; border-radius: 4px;">
+									<h3 style="margin-top: 0; color: #1b6ca8;">Unlock Full Readings & Premium Features</h3>
+									<p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 1em;">${message}</p>
+									<p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 1em;">Good news! You can still get <strong>unlimited free snapshot readings</strong> with your chart calculation. The snapshot provides quick insights into your core patterns.</p>
+								</div>
+							`;
+							if (this.copyReadingBtn) {
+								this.copyReadingBtn.style.display = 'none';
+							}
+							this.setLoadingState(false);
+							return; // Exit early - don't throw error
+						}
+						
+						throw new Error(errorData.detail || 'AI Reading service failed.');
+					}
+
+					try {
+						readingResult = await readingRes.json();
+						console.log("[Reading] Response received:", readingResult);
+					} catch (jsonErr) {
+						const text = await readingRes.text();
+						console.error("[Reading] Failed to parse response as JSON:", text);
+						throw new Error("Invalid response format from server. Please try again.");
+					}
+				}
+			} catch (apiError) {
+				console.error("[Reading] API request error:", apiError);
+				throw apiError;
 			}
             
 			// Hide loading skeleton
