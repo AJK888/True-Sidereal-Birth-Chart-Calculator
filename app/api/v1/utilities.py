@@ -713,6 +713,14 @@ async def log_clicks_endpoint(
         page = data.get('page', 'unknown')
         timestamp = data.get('timestamp', datetime.now().isoformat())
         
+        # Skip logging if no clicks (empty batch)
+        if not clicks or len(clicks) == 0:
+            return {"status": "skipped", "clicks_received": 0, "reason": "empty_batch"}
+        
+        # Normalize page path - use '/' if pathname is empty or 'unknown'
+        if not page or page == 'unknown' or page.strip() == '':
+            page = '/'
+        
         # Log each click with detailed information
         logger.info("="*80)
         logger.info("CLICK TRACKING - BATCH RECEIVED")

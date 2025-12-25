@@ -82,8 +82,10 @@ def setup_logger(
             # Don't fail if Logtail setup fails
             logger.warning(f"Failed to set up Logtail handler: {e}")
     
-    # Ensure logs propagate to root logger
-    logger.propagate = True
+    # Prevent duplicate logging by not propagating to root logger
+    # Root logger may have its own handlers causing duplicates
+    # If root logger needs to receive logs, it should be configured separately
+    logger.propagate = False
     
     return logger
 

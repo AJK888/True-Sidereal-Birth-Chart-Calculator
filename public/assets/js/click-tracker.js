@@ -159,7 +159,7 @@ const ClickTracker = {
                 },
                 body: JSON.stringify({
                     clicks: batch,
-                    page: window.location.pathname,
+                    page: window.location.pathname || '/',
                     timestamp: new Date().toISOString(),
                 }),
                 // Don't wait for response if not immediate (fire and forget)
