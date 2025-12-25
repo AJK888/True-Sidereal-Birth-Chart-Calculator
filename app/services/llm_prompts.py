@@ -312,8 +312,9 @@ For EACH of the 12 houses, you MUST provide a COMPREHENSIVE, DETAILED analysis f
    - Show how this house connects to other houses through planetary rulerships
 
 5. STELLIUMS & CONCENTRATIONS (if applicable, 4-6 paragraphs):
-   - **CRITICAL: If 3+ planets are in this house, you MUST explicitly list ALL planets in the stellium.**
-   - Format: "Your [House Name] Stellium includes [Planet 1] in [Sign] at [degree], [Planet 2] in [Sign] at [degree], [Planet 3] in [Sign] at [degree], and [Planet 4] in [Sign] at [degree] (if applicable)."
+   - **CRITICAL: If 3+ planets are in this house, you MUST explicitly list ALL planets in the stellium with their signs and degrees in BOTH sidereal and tropical systems.**
+   - Format: "Your [House Name] Stellium includes [Planet 1] in [Sign] (Sidereal [degree]') / [Sign] (Tropical [degree]'), [Planet 2] in [Sign] (Sidereal [degree]') / [Sign] (Tropical [degree]'), [Planet 3] in [Sign] (Sidereal [degree]') / [Sign] (Tropical [degree]'), and [Planet 4] in [Sign] (Sidereal [degree]') / [Sign] (Tropical [degree]') (if applicable)."
+   - **NEVER say "12th House Stellium" or "[House] Stellium" without immediately listing ALL planets with their signs and degrees.**
    - For EACH planet in the stellium, explain what it contributes to the stellium energy
    - Explain how the stellium concentrates focus in this domain
    - Note if the stellium appears in sidereal, tropical, or both systems (and list planets for each system if different)
@@ -391,7 +392,7 @@ Blueprint notes for Snapshot (use them to prioritize chart factors):
    
    THEME TITLE (plain language, no jargon)
    
-   **CRITICAL: If you mention a stellium anywhere in the themes, you MUST explicitly list ALL planets in that stellium with their signs and degrees. Never say "12th House Stellium" without listing the planets.**
+   **CRITICAL: If you mention a stellium anywhere in the themes, you MUST explicitly list ALL planets in that stellium with their signs and degrees in BOTH sidereal and tropical systems. Never say "12th House Stellium" or "[House] Stellium" without immediately listing ALL planets. Format: "Your [House] Stellium includes [Planet 1] in [Sign] (Sidereal [degree]') / [Sign] (Tropical [degree]'), [Planet 2] in [Sign] (Sidereal [degree]') / [Sign] (Tropical [degree]'), etc."**
    
    Opening: 2-3 sentences stating the pattern in everyday language. Make this vivid and specific. Include the shadow expression in the opening.
    
@@ -423,7 +424,29 @@ Blueprint notes for Snapshot (use them to prioritize chart factors):
 
 5. Houses & Life Domains: {houses_instruction}
 
-6. EVIDENCE TRAIL: Every paragraph must make the reader feel the weight of analysis by naming specific factors. Use phrases like:
+6. PLANETARY DIGNITIES & CONDITIONS (REQUIRED SECTION):
+   After the Houses section, add a section titled "PLANETARY DIGNITIES & CONDITIONS" that covers:
+   
+   For EACH planet in the chart, identify and explain:
+   - **Exaltation**: If a planet is in its exaltation sign, explain what this means. Example: "Mars in Capricorn (Sidereal) is in its exaltation, meaning Mars operates at maximum capacity here. This gives you [specific quality] because [why exaltation works this way]. In your life, this shows up as [concrete example]."
+   - **Fall**: If a planet is in its fall sign, explain what this means. Example: "Moon in Scorpio (Tropical) is in its fall, meaning the Moon struggles to express its natural need for security and nurturing. This creates [specific pattern] because [why fall works this way]. In your life, this manifests as [concrete example]."
+   - **Detriment**: If a planet is in its detriment (opposite sign of its home), explain what this means. Example: "Venus in Aries is in detriment because Aries is opposite Libra (Venus's home sign). This means Venus operates against its nature, creating [specific dynamic] because [why detriment works this way]."
+   - **Domicile**: If a planet is in its home sign, explain what this means. Example: "Jupiter in Sagittarius is in its domicile, meaning Jupiter operates naturally and easily here. This gives you [specific quality] because [why domicile works this way]."
+   - **Retrograde**: If a planet is retrograde, explain what this means. Example: "Jupiter in Virgo (Rx) means Jupiter's energy is internalized. Instead of expanding outward, you [specific pattern] because [why retrograde works this way]."
+   
+   **CRITICAL REQUIREMENTS:**
+   - Cover ALL planets that have dignities or debilities (exaltation, fall, detriment, domicile)
+   - Cover ALL retrograde planets
+   - For EACH planet, explain:
+     * What the dignity/debility means (the mechanism - why does this condition work this way?)
+     * How it affects the planet's expression
+     * How it shows up in their life (concrete examples)
+     * Both sidereal AND tropical dignities if they differ
+   - This section should be SUBSTANTIAL (at least 8-12 paragraphs total)
+   - Make it educational: explain WHY these conditions matter, not just that they exist
+   - Connect to the overall chart themes and life patterns
+
+7. EVIDENCE TRAIL: Every paragraph must make the reader feel the weight of analysis by naming specific factors. Use phrases like:
    - "because your [placement] at [degree] [aspect] your [other placement]"
    - "this is amplified by"
    - "the [numerology number] confirms this pattern"
@@ -557,27 +580,35 @@ EMOTIONAL LIFE, FAMILY & HEALING
 - Reveal family imprints and healing arcs with visceral examples (e.g., "This is the moment you shut down during conflict…").
 
 SPIRITUAL PATH & MEANING
-- Nodes, Neptune, Pluto, numerology, blueprint spiritual chapter. Explain how surrender vs control repeats everywhere, and prescribe tangible practices that tie back to numerology/Life Path.
+- **CRITICAL: This section must be SEPARATE from the Famous People section. Do NOT mix famous people analysis into the spiritual path section.**
+- Use Nodes, Neptune, Pluto, 12th house stellium (if present - MUST list all planets with signs and degrees), numerology, blueprint spiritual chapter.
+- Analyze: What is their spiritual path? How do they connect to the divine/unconscious? What spiritual practices align with their chart?
+- Explain how surrender vs control repeats everywhere, and prescribe tangible practices that tie back to numerology/Life Path.
+- If there's a 12th house stellium, analyze how it creates spiritual gifts and challenges. **MUST list all planets in the stellium with signs and degrees.**
+- Analyze Neptune aspects and how they create spiritual illusions or gifts.
+- Analyze True Node and spiritual evolution.
+- Provide specific spiritual practices, meditation approaches, or connection methods that align with their chart.
+- This section should be SUBSTANTIAL (at least 8-10 paragraphs) and focused on spirituality, not famous people.
 
 MAJOR LIFE DYNAMICS: THE TIGHTEST ASPECTS & PATTERNS
 
-This section covers the TOP 5-7 TIGHTEST ASPECTS (by orb) plus any significant aspect patterns in the chart.
+**CRITICAL: This section MUST cover the TOP 5-7 TIGHTEST ASPECTS (by orb, ordered from tightest to widest) plus any significant aspect patterns in the chart. Do NOT cover fewer than 5 aspects. Prioritize by orb - the tightest aspects are the most important.**
 
 FORMAT FOR EACH ASPECT (cover the TOP 5-7 tightest aspects, ordered by orb from tightest to widest):
 
 [PLANET 1] [ASPECT TYPE] [PLANET 2] ([orb]°)
 
-[Paragraph 1: Aspect Mechanism - REQUIRED. You MUST explain what this aspect type actually does psychologically. For example:
-- Conjunction (0°): Merges energies, creates fusion
-- Opposition (180°): Creates polarity/tension, requires integration
-- Square (90°): Creates challenge/friction, requires action
-- Trine (120°): Creates harmony/flow, natural talent
-- Sextile (60°): Creates opportunity/cooperation, requires activation
-- Quincunx/Inconjunct (150°): Creates irritation/incompatibility, requires adjustment
-- Semisextile (30°): Creates subtle tension, requires awareness
-- Biquintile (72°): Creates creative genius, harmonic flow
-- Quintile (72°): Creates creative talent, specialized skill
-- Sesquiquadrate (135°): Creates minor friction, requires adjustment
+[Paragraph 1: Aspect Mechanism - REQUIRED. You MUST explain what this aspect type actually does psychologically and WHY. For example:
+- Conjunction (0°): Merges energies, creates fusion. WHY: The planets occupy the same space, blending their functions completely.
+- Opposition (180°): Creates polarity/tension, requires integration. WHY: The planets are opposite each other, creating a push-pull dynamic that requires balancing both sides.
+- Square (90°): Creates challenge/friction, requires action. WHY: The planets are at right angles, creating tension that demands resolution through action.
+- Trine (120°): Creates harmony/flow, natural talent. WHY: The planets are 120° apart, creating an easy flow of energy between them.
+- Sextile (60°): Creates opportunity/cooperation, requires activation. WHY: The planets are 60° apart, creating a supportive relationship that needs conscious activation.
+- Quincunx/Inconjunct (150°): Creates irritation/incompatibility, requires adjustment. WHY: The planets are 150° apart, creating an awkward angle where their energies don't naturally align, requiring constant adjustment.
+- Semisextile (30°): Creates subtle tension, requires awareness. WHY: The planets are 30° apart, creating a subtle friction that needs conscious attention.
+- Biquintile (144°): Creates creative genius, harmonic flow. WHY: The planets are 144° apart (2/5 of a circle), creating a specialized harmonic relationship that unlocks creative potential.
+- Quintile (72°): Creates creative talent, specialized skill. WHY: The planets are 72° apart (1/5 of a circle), creating a specialized creative connection.
+- Sesquiquadrate (135°): Creates minor friction, requires adjustment. WHY: The planets are 135° apart, creating a subtle but persistent tension.
 Explain the psychological mechanism of THIS specific aspect type and why it creates the dynamic it does. Then name the fundamental tension or gift this creates. Explain the archetypal meaning of this aspect combination. What is the essential dynamic between these two planetary energies?]
 
 [Paragraph 2: Why This Matters - Explain the psychological mechanism in detail. What does this aspect create internally? How does it shape their default responses, emotional patterns, and decision-making? Reference both sidereal and tropical contexts if relevant. Show how this aspect amplifies or modifies the individual planet meanings. Provide MULTIPLE concrete examples (at least 3-4) of how this shows up in relationships, work, or daily life. Use specific scenarios: "When [trigger], you [specific behavior] because [aspect mechanism]."]
@@ -607,9 +638,9 @@ For each significant pattern found in the chart (Grand Trines, T-Squares, Stelli
 [Use "---" between each pattern for visual separation]
 
 CRITICAL REQUIREMENTS:
-- Cover the TOP 5-7 tightest aspects (prioritize by orb - tightest first)
+- **MUST cover the TOP 5-7 tightest aspects (prioritize by orb - tightest first). Do NOT cover fewer than 5 aspects.**
 - Each aspect should be EXACTLY 3 paragraphs (not more, not less)
-- **REQUIRED: Paragraph 1 MUST explain the aspect mechanism (what the aspect type does psychologically)**
+- **REQUIRED: Paragraph 1 MUST explain the aspect mechanism (what the aspect type does psychologically AND WHY - explain the geometric/astrological reason)**
 - Be detailed and specific - show the forensic analysis
 - Provide MULTIPLE concrete examples (at least 3-4 per aspect), not generic descriptions
 - Reference both sidereal and tropical placements where relevant
