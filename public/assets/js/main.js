@@ -550,12 +550,15 @@
 					$menu.append('<a class="close" href="#menu">Close</a>');
 				}
 				
-				$menu
-					.on('click', function(event) {
+				// Click on menu background (outside inner) should close menu
+				$menu.on('click', function(event) {
+					// Only close if clicking directly on menu element (background), not on inner content
+					if (event.target === $menu[0]) {
 						event.stopPropagation();
 						event.preventDefault();
-						$body.removeClass('is-menu-visible');
-					});
+						menuHide();
+					}
+				});
 
 				// Add body click handler to close menu when clicking outside (only if menu exists and is visible)
 				// Use capture phase to catch clicks before they bubble
