@@ -41,7 +41,7 @@
 	
 	// Remove hash on page load - run immediately and aggressively
 	(function removeMenuHash() {
-		if (window.location.hash === '#menu' || window.location.hash === '#menu') {
+		if (window.location.hash === '#menu') {
 			var cleanUrl = window.location.pathname + window.location.search;
 			window.history.replaceState(null, null, cleanUrl);
 			// Also prevent menu from opening if body class was set
