@@ -28,7 +28,6 @@
 		<!-- PWA -->
 		<meta name="theme-color" content="#9f7aea" />
 		<meta name="mobile-web-app-capable" content="yes" />
-		<!-- apple-mobile-web-app-capable is deprecated but kept for older iOS versions -->
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 		<meta name="apple-mobile-web-app-title" content="Synthesis Astrology" />
@@ -555,12 +554,14 @@
 
 <!-- Critical scripts loaded immediately -->
 <script src="assets/js/jquery.min.js"></script>
+		<!-- util.js: Theme utility functions from HTML5 UP template (required by main.js) -->
 		<script src="assets/js/util.js"></script>
 		<!-- Load breakpoints and browser BEFORE main.js (main.js depends on them) -->
 		<script src="assets/js/browser.min.js"></script>
 		<script src="assets/js/breakpoints.min.js"></script>
 		<script src="assets/js/main.js"></script>
 		<!-- New modular structure -->
+		<!-- utils.js: Custom application utility functions (date formatting, validation, DOM helpers) -->
 		<script src="assets/js/utils.js"></script>
 		<script src="assets/js/state-manager.js"></script>
 		<script src="assets/js/api-client.js"></script>
@@ -580,7 +581,6 @@
 		<script defer src="assets/js/click-tracker.js"></script>
 		
 		<!-- Fallback: Remove is-preload class if main.js fails to load -->
-		<!-- Menu functionality test -->
 		<!-- Menu functionality is handled by main.js -->
 		<script>
 			// Fallback to ensure header is visible even if main.js doesn't load

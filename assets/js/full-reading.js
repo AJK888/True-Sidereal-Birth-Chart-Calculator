@@ -3,8 +3,15 @@ const FullReadingManager = {
 	chartHash: null,
 	chartId: null,
 	conversationId: null,
+	initialized: false, // Guard to prevent duplicate initialization
 	
 	init() {
+		// Prevent duplicate initialization
+		if (this.initialized) {
+			console.warn('FullReadingManager.init() called multiple times - skipping duplicate initialization');
+			return;
+		}
+		this.initialized = true;
 		// Wait for AuthManager to be available
 		const checkAuthManager = () => {
 			if (typeof AuthManager === 'undefined') {
