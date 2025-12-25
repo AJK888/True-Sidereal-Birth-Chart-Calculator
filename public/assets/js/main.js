@@ -568,37 +568,8 @@
 
 		// Initialize menu functionality - run after DOM is ready
 		var initMenu = function() {
-			// Remove hash on page load if present
-			if (window.location.hash === '#menu') {
-				window.history.replaceState(null, null, window.location.pathname + window.location.search);
-			}
-			
-			// CRITICAL: Prevent hash from being added to URL
-			// Intercept hashchange events
-			window.addEventListener('hashchange', function(event) {
-				if (window.location.hash === '#menu') {
-					event.preventDefault();
-					window.history.replaceState(null, null, window.location.pathname + window.location.search);
-					// Don't toggle menu on hash change - only on button click
-				}
-			}, false);
-			
-			// Also prevent hash from being set in the first place
-			var originalPushState = history.pushState;
-			history.pushState = function() {
-				if (arguments[2] && arguments[2].includes('#menu')) {
-					arguments[2] = arguments[2].split('#')[0];
-				}
-				return originalPushState.apply(history, arguments);
-			};
-			
-			var originalReplaceState = history.replaceState;
-			history.replaceState = function() {
-				if (arguments[2] && arguments[2].includes('#menu')) {
-					arguments[2] = arguments[2].split('#')[0];
-				}
-				return originalReplaceState.apply(history, arguments);
-			};
+			// Hash prevention is already handled at top of file (lines 15-40)
+			// No need to duplicate hashchange/history handlers here
 			
 			// ESC key handler - use document level to catch all ESC presses
 			$(document).on('keydown', function(event) {

@@ -16,8 +16,16 @@ const AstrologyCalculator = {
 	geminiTitle: null, geminiOutput: null, copyReadingBtn: null,
 	resultsTitle: null, wheelTitle: null, resultsContainer: null, 
 	siderealWheelSvg: null, tropicalWheelSvg: null,
+	initialized: false, // Guard to prevent duplicate initialization
 	
 	init() {
+		// Prevent duplicate initialization
+		if (this.initialized) {
+			console.warn('AstrologyCalculator.init() called multiple times - skipping duplicate initialization');
+			return;
+		}
+		this.initialized = true;
+		
 		this.cacheDOMElements();
 		this.addEventListeners();
 		// Email is now required - ensure it's set as required
@@ -257,6 +265,12 @@ const AstrologyCalculator = {
 	},
 	
 	initMobileStickyCTA() {
+		// Prevent duplicate initialization
+		if (this.stickyCTAInitialized) {
+			return;
+		}
+		this.stickyCTAInitialized = true;
+		
 		// Show/hide sticky CTA based on scroll position
 		const stickyCTA = document.getElementById('mobile-sticky-cta');
 		const formSection = document.getElementById('form-section');
@@ -278,6 +292,8 @@ const AstrologyCalculator = {
 			}
 		};
 		
+		// Store handlers for cleanup if needed
+		this.stickyCTAScrollHandler = checkScroll;
 		window.addEventListener('scroll', checkScroll, { passive: true });
 		window.addEventListener('resize', checkScroll, { passive: true });
 		checkScroll(); // Initial check
@@ -1841,33 +1857,6 @@ const AstrologyCalculator = {
 			console.log('[Transit Chart] IntersectionObserver not supported, loading immediately');
 			this.loadAndDrawTransitChart();
 		}
-	},
-	
-	initMobileStickyCTA() {
-		// Show/hide sticky CTA based on scroll position
-		const stickyCTA = document.getElementById('mobile-sticky-cta');
-		const formSection = document.getElementById('form-section');
-		if (!stickyCTA || !formSection) return;
-		
-		// Only show on mobile
-		if (window.innerWidth > 736) {
-			stickyCTA.classList.add('hidden');
-			return;
-		}
-		
-		const checkScroll = () => {
-			const formRect = formSection.getBoundingClientRect();
-			const isFormVisible = formRect.top < window.innerHeight && formRect.bottom > 0;
-			if (isFormVisible) {
-				stickyCTA.classList.add('hidden');
-			} else {
-				stickyCTA.classList.remove('hidden');
-			}
-		};
-		
-		window.addEventListener('scroll', checkScroll, { passive: true });
-		window.addEventListener('resize', checkScroll, { passive: true });
-		checkScroll(); // Initial check
 	}
 };
 

@@ -12,8 +12,17 @@ const AuthManager = {
     currentChatConversation: null,
     currentChartId: null,
     subscriptionStatus: null,
+    initialized: false, // Guard to prevent duplicate initialization
+    eventsBound: false, // Guard to prevent duplicate event binding
     
     init() {
+        // Prevent duplicate initialization
+        if (this.initialized) {
+            console.warn('AuthManager.init() called multiple times - skipping duplicate initialization');
+            return;
+        }
+        this.initialized = true;
+        
         // Load stored auth state
         this.loadAuthState();
         this.bindEvents();
