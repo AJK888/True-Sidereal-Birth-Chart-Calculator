@@ -408,6 +408,7 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
             r'^action checklist:?\s*$',
             # Aspect section subsections
             r'^core dynamic:?\s*$',
+            r'^aspect mechanism:?\s*$',
             r'^why this matters:?\s*$',
             r'^how it shows up:?\s*$',
             r'^the growth edge:?\s*$',
@@ -415,12 +416,32 @@ def format_section_content(content: str, is_bullet_section: bool, styles_dict: d
             r'^the life theme:?\s*$',
             r'^real-life expression:?\s*$',
             r'^aspect patterns in your chart:?\s*$',
-            # Shadow section subsections
+            r'^the integration path:?\s*$',
+            # Shadow section subsections (enhanced)
+            r'^the gift first:?\s*$',
             r'^the pattern:?\s*$',
+            r'^the protective function:?\s*$',
             r'^the driver:?\s*$',
+            r'^the contradiction:?\s*$',
             r'^the cost:?\s*$',
+            r'^what they\'?re avoiding:?\s*$',
             r'^the integration:?\s*$',
+            r'^real-life example:?\s*$',
+            # Growth edges subsections
             r'^growth edges:?\s*$',
+            r'^the opportunity:?\s*$',
+            r'^the chart evidence:?\s*$',
+            r'^why they resist:?\s*$',
+            r'^the practice:?\s*$',
+            # Owner's Manual subsections
+            r'^your operating system:?\s*$',
+            r'^operating system:?\s*$',
+            r'^guiding principles:?\s*$',
+            r'^integration prompts:?\s*$',
+            # Theme subsections
+            r'^opening:?\s*$',
+            r'^how it plays out:?\s*$',
+            r'^synthesis:?\s*$',
         ]
         line_lower = line.strip().lower()
         return any(re.match(p, line_lower) for p in patterns)
