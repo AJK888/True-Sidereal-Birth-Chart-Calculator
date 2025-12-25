@@ -32,6 +32,9 @@ const AstrologyCalculator = {
 		this.ensureEmailRequired();
 		// Initialize polling interval tracker
 		this.pollingInterval = null;
+		// Initialize transit chart loading tracker
+		this.transitChartLoading = false;
+		this.transitChartLoaded = false;
 		// Initialize lazy loading for transit chart
 		this.initLazyLoading();
 		// Initialize mobile sticky CTA
@@ -222,6 +225,13 @@ const AstrologyCalculator = {
 	},
 	
 	initLazyLoading() {
+		// Prevent duplicate initialization
+		if (this.lazyLoadingInitialized) {
+			console.log('[Transit Chart] Lazy loading already initialized, skipping');
+			return;
+		}
+		this.lazyLoadingInitialized = true;
+		
 		// Lazy load transit chart when it comes into view
 		const transitSection = document.getElementById('transit-section');
 		if (!transitSection) {
@@ -244,7 +254,7 @@ const AstrologyCalculator = {
 		if ('IntersectionObserver' in window) {
 			const observer = new IntersectionObserver((entries) => {
 				entries.forEach(entry => {
-					if (entry.isIntersecting) {
+					if (entry.isIntersecting && !this.transitChartLoaded && !this.transitChartLoading) {
 						// Load transit chart when section is visible
 						console.log('[Transit Chart] Section became visible, loading chart');
 						this.loadAndDrawTransitChart();
@@ -684,6 +694,14 @@ const AstrologyCalculator = {
 	},
 
 	async loadAndDrawTransitChart() {
+		// Prevent duplicate loading
+		if (this.transitChartLoading || this.transitChartLoaded) {
+			console.log('[Transit Chart] Already loading or loaded, skipping duplicate request');
+			return;
+		}
+		
+		this.transitChartLoading = true;
+		
 		// Ensure transit section is visible
 		const transitSection = document.getElementById('transit-section');
 		if (transitSection) {
@@ -753,10 +771,17 @@ const AstrologyCalculator = {
 				oldLegend.remove();
 			}
 			container.insertAdjacentHTML('afterend', legendHtml);
+			
+			// Mark as successfully loaded
+			this.transitChartLoaded = true;
+			this.transitChartLoading = false;
+			console.log('[Transit Chart] Successfully loaded and drawn');
 
 		} catch (err) {
-			console.error("Failed to load transit chart:", err);
-			console.error("Error details:", err.message, err.stack);
+			console.error("[Transit Chart] Failed to load transit chart:", err);
+			console.error("[Transit Chart] Error details:", err.message, err.stack);
+			// Reset loading flag on error so user can retry
+			this.transitChartLoading = false;
 			// Hide skeleton on error
 			if (transitLoadingSkeleton) transitLoadingSkeleton.style.display = 'none';
 			if (transitWheelsContainer) transitWheelsContainer.style.display = 'grid';
