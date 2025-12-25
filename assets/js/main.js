@@ -8,6 +8,41 @@
 // SINGLE CONSOLIDATED HANDLER - no duplicates
 (function() {
 	var menuHandlerAttached = false;
+	var outsideClickHandlerAttached = false;
+	
+	// CRITICAL: Prevent hash from ever being added to URL
+	// Intercept all hash changes
+	window.addEventListener('hashchange', function(event) {
+		if (window.location.hash === '#menu') {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			var cleanUrl = window.location.href.split('#')[0];
+			window.history.replaceState(null, null, cleanUrl);
+			return false;
+		}
+	}, true);
+	
+	// Override history methods to strip #menu
+	var originalPushState = history.pushState;
+	history.pushState = function() {
+		if (arguments[2] && typeof arguments[2] === 'string' && arguments[2].includes('#menu')) {
+			arguments[2] = arguments[2].split('#')[0];
+		}
+		return originalPushState.apply(history, arguments);
+	};
+	
+	var originalReplaceState = history.replaceState;
+	history.replaceState = function() {
+		if (arguments[2] && typeof arguments[2] === 'string' && arguments[2].includes('#menu')) {
+			arguments[2] = arguments[2].split('#')[0];
+		}
+		return originalReplaceState.apply(history, arguments);
+	};
+	
+	// Remove hash on page load
+	if (window.location.hash === '#menu') {
+		window.history.replaceState(null, null, window.location.pathname + window.location.search);
+	}
 	
 	function handleMenuClick(event) {
 		var target = event.target;
@@ -34,16 +69,10 @@
 			event.stopPropagation();
 			event.stopImmediatePropagation();
 			
-			// CRITICAL: Prevent hash from being added to URL
-			// Do this immediately, not in setTimeout
-			if (window.location.hash === '#menu') {
-				window.history.replaceState(null, null, window.location.pathname + window.location.search);
-			}
-			
-			// Also prevent it from being added
-			var currentUrl = window.location.href.split('#')[0];
-			if (window.location.href !== currentUrl) {
-				window.history.replaceState(null, null, currentUrl);
+			// CRITICAL: Prevent hash from being added to URL - do this FIRST
+			var cleanUrl = window.location.href.split('#')[0];
+			if (window.location.href !== cleanUrl) {
+				window.history.replaceState(null, null, cleanUrl);
 			}
 			
 			// Toggle menu immediately
@@ -67,7 +96,7 @@
 					menu.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; z-index: 99999 !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; filter: none !important; -webkit-filter: none !important;';
 					var menuInner = menu.querySelector('.inner');
 					if (menuInner) {
-						menuInner.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; transform: none !important; filter: none !important; -webkit-filter: none !important;';
+						menuInner.style.cssText = 'display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; visibility: visible !important; opacity: 1 !important; transform: none !important; filter: none !important; -webkit-filter: none !important;';
 					}
 				} else {
 					// Clear inline styles when closing to let CSS handle it
@@ -79,14 +108,49 @@
 				}
 			}
 			
-			// Prevent hash one more time after event
+			// Prevent hash one more time after event (multiple checks)
 			setTimeout(function() {
 				if (window.location.hash === '#menu') {
 					window.history.replaceState(null, null, window.location.pathname + window.location.search);
 				}
 			}, 0);
+			setTimeout(function() {
+				if (window.location.hash === '#menu') {
+					window.history.replaceState(null, null, window.location.pathname + window.location.search);
+				}
+			}, 10);
+			setTimeout(function() {
+				if (window.location.hash === '#menu') {
+					window.history.replaceState(null, null, window.location.pathname + window.location.search);
+				}
+			}, 50);
 			
 			return false;
+		}
+	}
+	
+	// Outside click handler - close menu when clicking outside
+	function handleOutsideClick(event) {
+		var body = document.body;
+		if (!body || !body.classList.contains('is-menu-visible')) {
+			return; // Menu not visible, do nothing
+		}
+		
+		var target = event.target;
+		var clickedMenu = target.id === 'menu' || target.closest('#menu');
+		var clickedMenuButton = target.id === 'menu-toggle' || target.closest('#menu-toggle');
+		
+		// Close if clicked outside menu (but not on menu button - that's handled separately)
+		if (!clickedMenu && !clickedMenuButton) {
+			body.classList.remove('is-menu-visible');
+			var menu = document.getElementById('menu');
+			if (menu) {
+				menu.style.cssText = '';
+				var menuInner = menu.querySelector('.inner');
+				if (menuInner) {
+					menuInner.style.cssText = '';
+				}
+			}
 		}
 	}
 	
@@ -95,6 +159,12 @@
 	if (!menuHandlerAttached) {
 		document.addEventListener('click', handleMenuClick, true);
 		menuHandlerAttached = true;
+	}
+	
+	// Attach outside click handler
+	if (!outsideClickHandlerAttached) {
+		document.addEventListener('click', handleOutsideClick, true);
+		outsideClickHandlerAttached = true;
 	}
 	
 	// Immediately move menu to body if it exists (before DOM ready)
@@ -560,23 +630,8 @@
 					}
 				});
 
-				// Add body click handler to close menu when clicking outside (only if menu exists and is visible)
-				// Use capture phase to catch clicks before they bubble
-				document.addEventListener('click', function(event) {
-					// Only close if menu is visible and click is outside the menu
-					if ($body.hasClass('is-menu-visible')) {
-						var target = event.target;
-						var clickedMenu = target.id === 'menu' || target.closest('#menu');
-						var clickedMenuButton = target.id === 'menu-toggle' || target.closest('#menu-toggle');
-						
-						// Close if clicked outside menu (but not on menu button - that's handled separately)
-						if (!clickedMenu && !clickedMenuButton) {
-							menuHide();
-							event.preventDefault();
-							event.stopPropagation();
-						}
-					}
-				}, true); // Use capture phase
+				// Outside click handler is already attached at top of file
+				// No need to attach again here
 				
 				console.log('[Menu] Menu initialization complete');
 			} else {
