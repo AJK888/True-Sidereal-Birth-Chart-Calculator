@@ -180,6 +180,78 @@
 		outsideClickHandlerAttached = true;
 	}
 	
+	// CRITICAL: Also attach direct listener to button when it becomes available
+	// This ensures it works even if the document-level handler has timing issues
+	function attachDirectButtonListener() {
+		var menuButton = document.getElementById('menu-toggle');
+		if (menuButton && !menuButton.dataset.listenerAttached) {
+			menuButton.addEventListener('click', function(event) {
+				event.preventDefault();
+				event.stopPropagation();
+				event.stopImmediatePropagation();
+				
+				// Prevent hash
+				var cleanUrl = window.location.href.split('#')[0];
+				if (window.location.href !== cleanUrl) {
+					window.history.replaceState(null, null, cleanUrl);
+				}
+				
+				// Toggle menu
+				var body = document.body;
+				if (!body) return false;
+				
+				var wasVisible = body.classList.contains('is-menu-visible');
+				body.classList.toggle('is-menu-visible');
+				var isNowVisible = body.classList.contains('is-menu-visible');
+				
+				// Ensure menu is positioned correctly
+				var menu = document.getElementById('menu');
+				if (menu) {
+					if (menu.parentElement !== document.body) {
+						document.body.appendChild(menu);
+					}
+					
+					if (isNowVisible) {
+						menu.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; z-index: 99999 !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; filter: none !important; -webkit-filter: none !important;';
+						var menuInner = menu.querySelector('.inner');
+						if (menuInner) {
+							menuInner.style.cssText = 'display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; visibility: visible !important; opacity: 1 !important; transform: none !important; filter: none !important; -webkit-filter: none !important;';
+						}
+					} else {
+						menu.style.cssText = '';
+						var menuInner = menu.querySelector('.inner');
+						if (menuInner) {
+							menuInner.style.cssText = '';
+						}
+					}
+				}
+				
+				// Prevent hash after event
+				setTimeout(function() {
+					if (window.location.hash === '#menu') {
+						window.history.replaceState(null, null, window.location.pathname + window.location.search);
+					}
+				}, 0);
+				
+				return false;
+			}, true);
+			menuButton.dataset.listenerAttached = 'true';
+			console.log('[Menu] Direct button listener attached');
+		}
+	}
+	
+	// Try to attach immediately
+	attachDirectButtonListener();
+	
+	// Also try when DOM is ready
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', attachDirectButtonListener);
+	}
+	
+	// Also try after a short delay to catch late-loading elements
+	setTimeout(attachDirectButtonListener, 100);
+	setTimeout(attachDirectButtonListener, 500);
+	
 	// Immediately move menu to body if it exists (before DOM ready)
 	function moveMenuToBody() {
 		var menu = document.getElementById('menu');
@@ -194,6 +266,9 @@
 	} else {
 		moveMenuToBody();
 	}
+	
+	// Also try after a delay
+	setTimeout(moveMenuToBody, 100);
 })();
 
 (function($) {
