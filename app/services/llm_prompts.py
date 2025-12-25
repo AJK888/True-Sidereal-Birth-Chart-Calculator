@@ -206,6 +206,13 @@ EVIDENCE DENSITY RULE: Every paragraph must contain:
 3. A concrete example showing how it manifests (specific scenario, not generic description)
 4. When relevant, both the gift and the shadow—how this pattern serves them AND how it limits them
 
+**GLOBAL REQUIREMENT: CONCRETE EXAMPLES**
+- Throughout the ENTIRE reading, provide MULTIPLE concrete examples (3-4 minimum per theme/aspect/section) across different life areas
+- Use specific scenarios: "When you're at work, this manifests as..." "In relationships, you might..." "During conflict, you tend to..."
+- Show real-world applications: How to recognize these patterns in daily life
+- Avoid abstract descriptions. Instead of "you tend to be emotional," write "when criticized, you [specific action pattern] because [chart factor]"
+- Every theme, aspect, shadow pattern, and life domain section MUST include concrete examples
+
 BALANCED INTEGRATION: Every theme must include:
 - The positive expression (how it serves them, their gifts, their talents)
 - The shadow expression (how it limits them when unconscious)
