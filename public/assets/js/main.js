@@ -137,16 +137,29 @@
 		}
 		
 		var target = event.target;
-		var clickedMenu = target.id === 'menu' || target.closest('#menu');
-		var clickedMenuButton = target.id === 'menu-toggle' || target.closest('#menu-toggle');
+		var menu = document.getElementById('menu');
+		var menuInner = menu ? menu.querySelector('.inner') : null;
 		
-		// Close if clicked outside menu (but not on menu button - that's handled separately)
-		if (!clickedMenu && !clickedMenuButton) {
+		// Check if clicked on menu button (handled separately)
+		var clickedMenuButton = target.id === 'menu-toggle' || target.closest('#menu-toggle');
+		if (clickedMenuButton) {
+			return; // Menu button click is handled by handleMenuClick
+		}
+		
+		// Check if clicked inside menu inner content (don't close)
+		var clickedMenuInner = menuInner && (target === menuInner || menuInner.contains(target));
+		if (clickedMenuInner) {
+			return; // Clicked inside menu content, don't close
+		}
+		
+		// Check if clicked on menu background (the overlay itself) - close menu
+		var clickedMenuBackground = target.id === 'menu' || (menu && target === menu);
+		
+		// If clicked outside menu OR on menu background, close it
+		if (!clickedMenuInner && (clickedMenuBackground || !menu || !menu.contains(target))) {
 			body.classList.remove('is-menu-visible');
-			var menu = document.getElementById('menu');
 			if (menu) {
 				menu.style.cssText = '';
-				var menuInner = menu.querySelector('.inner');
 				if (menuInner) {
 					menuInner.style.cssText = '';
 				}
