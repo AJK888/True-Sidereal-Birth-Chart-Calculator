@@ -927,6 +927,46 @@ body.is-menu-visible #menu {
     -webkit-backdrop-filter: none !important;
 }
 
+/* Menu centering and formatting - ensure proper display */
+#menu {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+}
+
+#menu .inner {
+    margin: 0 auto !important;
+    text-align: center !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#menu ul.links {
+    text-align: center !important;
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+}
+
+#menu ul.links > li {
+    width: 100% !important;
+    text-align: center !important;
+}
+
+#menu ul.links > li > a {
+    display: block !important;
+    text-align: center !important;
+    width: 100% !important;
+    padding: 1em 2em !important;
+}
+
 /* Mobile menu improvements */
 @media screen and (max-width: 736px) {
     #menu {
@@ -955,7 +995,10 @@ body.is-menu-visible #menu {
 }
 
 body.is-menu-visible #menu .inner {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
     visibility: visible !important;
     opacity: 1 !important;
     transform: none !important; /* Remove any transforms that might hide it */

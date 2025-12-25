@@ -34,12 +34,17 @@
 			event.stopPropagation();
 			event.stopImmediatePropagation();
 			
-			// Immediately prevent hash
-			setTimeout(function() {
-				if (window.location.hash === '#menu') {
-					window.history.replaceState(null, null, window.location.pathname + window.location.search);
-				}
-			}, 0);
+			// CRITICAL: Prevent hash from being added to URL
+			// Do this immediately, not in setTimeout
+			if (window.location.hash === '#menu') {
+				window.history.replaceState(null, null, window.location.pathname + window.location.search);
+			}
+			
+			// Also prevent it from being added
+			var currentUrl = window.location.href.split('#')[0];
+			if (window.location.href !== currentUrl) {
+				window.history.replaceState(null, null, currentUrl);
+			}
 			
 			// Toggle menu immediately
 			var body = document.body;
@@ -73,6 +78,13 @@
 					}
 				}
 			}
+			
+			// Prevent hash one more time after event
+			setTimeout(function() {
+				if (window.location.hash === '#menu') {
+					window.history.replaceState(null, null, window.location.pathname + window.location.search);
+				}
+			}, 0);
 			
 			return false;
 		}
@@ -403,18 +415,41 @@
 				window.history.replaceState(null, null, window.location.pathname + window.location.search);
 			}
 			
-			// Handle hashchange to prevent menu from opening on hash navigation
-			$(window).on('hashchange', function() {
+			// CRITICAL: Prevent hash from being added to URL
+			// Intercept hashchange events
+			window.addEventListener('hashchange', function(event) {
 				if (window.location.hash === '#menu') {
+					event.preventDefault();
 					window.history.replaceState(null, null, window.location.pathname + window.location.search);
-					menuToggle();
+					// Don't toggle menu on hash change - only on button click
 				}
-			});
+			}, false);
 			
-			$body.on('keydown', function(event) {
-				// Hide on escape.
-				if (event.keyCode == 27)
+			// Also prevent hash from being set in the first place
+			var originalPushState = history.pushState;
+			history.pushState = function() {
+				if (arguments[2] && arguments[2].includes('#menu')) {
+					arguments[2] = arguments[2].split('#')[0];
+				}
+				return originalPushState.apply(history, arguments);
+			};
+			
+			var originalReplaceState = history.replaceState;
+			history.replaceState = function() {
+				if (arguments[2] && arguments[2].includes('#menu')) {
+					arguments[2] = arguments[2].split('#')[0];
+				}
+				return originalReplaceState.apply(history, arguments);
+			};
+			
+			// ESC key handler - use document level to catch all ESC presses
+			$(document).on('keydown', function(event) {
+				// Hide on escape when menu is visible
+				if (event.keyCode == 27 && $body.hasClass('is-menu-visible')) {
+					event.preventDefault();
+					event.stopPropagation();
 					menuHide();
+				}
 			});
 			
 
@@ -467,18 +502,34 @@
 					})
 					.on('click', 'a', function(event) {
 						var href = $(this).attr('href');
-						// Don't prevent default for actual navigation links
+						// CRITICAL: Prevent navigation - just close menu
+						// User wants to stay on same page to preserve calculated data
+						event.preventDefault();
+						event.stopPropagation();
+						
+						// Hide menu immediately
+						$menu._hide();
+						
+						// If it's a valid link, scroll to section or handle internally
+						// But don't navigate away from page
 						if (href && href !== '#' && href !== '#menu' && href !== 'javascript:void(0)') {
-							event.stopPropagation(); // Stop bubbling but allow navigation
-							// Hide menu
-							$menu._hide();
-							// Navigate immediately
-							window.location.href = href;
-						} else {
-							// For close buttons or special links, prevent default
-							event.preventDefault();
-							event.stopPropagation();
-							$menu._hide();
+							// Check if it's an anchor link on same page
+							if (href.startsWith('#')) {
+								var target = $(href);
+								if (target.length) {
+									// Scroll to section on same page
+									$('html, body').animate({
+										scrollTop: target.offset().top
+									}, 500);
+								}
+							} else if (href.startsWith('/') || href.startsWith('./') || href.includes(window.location.hostname)) {
+								// Same domain - could navigate, but user wants to stay on page
+								// Just close menu, don't navigate
+								console.log('[Menu] Link clicked but navigation prevented to preserve data:', href);
+							} else {
+								// External link - could open in new tab, but for now just close menu
+								console.log('[Menu] External link clicked but navigation prevented:', href);
+							}
 						}
 					});
 
@@ -507,12 +558,22 @@
 					});
 
 				// Add body click handler to close menu when clicking outside (only if menu exists and is visible)
-				$body.on('click', function(event) {
+				// Use capture phase to catch clicks before they bubble
+				document.addEventListener('click', function(event) {
 					// Only close if menu is visible and click is outside the menu
-					if ($body.hasClass('is-menu-visible') && !$(event.target).closest('#menu').length) {
-						menuHide();
+					if ($body.hasClass('is-menu-visible')) {
+						var target = event.target;
+						var clickedMenu = target.id === 'menu' || target.closest('#menu');
+						var clickedMenuButton = target.id === 'menu-toggle' || target.closest('#menu-toggle');
+						
+						// Close if clicked outside menu (but not on menu button - that's handled separately)
+						if (!clickedMenu && !clickedMenuButton) {
+							menuHide();
+							event.preventDefault();
+							event.stopPropagation();
+						}
 					}
-				});
+				}, true); // Use capture phase
 				
 				console.log('[Menu] Menu initialization complete');
 			} else {
