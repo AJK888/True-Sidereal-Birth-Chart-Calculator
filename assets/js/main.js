@@ -5,19 +5,22 @@
 */
 
 // CRITICAL: Menu handler - MUST run immediately, before everything else
+// SINGLE CONSOLIDATED HANDLER - no duplicates
 (function() {
+	var menuHandlerAttached = false;
+	
 	function handleMenuClick(event) {
 		var target = event.target;
 		var isMenuButton = false;
-		var isMenuLink = false;
 		
 		// Check if clicked element or parent is menu button/link
+		// Don't intercept clicks inside the menu itself (allow menu links to work)
+		if (target.id === 'menu' || target.closest('#menu')) {
+			return; // Let menu links work normally
+		}
+		
+		// Check if clicked element or parent is menu toggle button
 		while (target && target !== document) {
-			// Don't intercept clicks inside the menu itself (allow menu links to work)
-			if (target.id === 'menu' || target.closest('#menu')) {
-				return; // Let menu links work normally
-			}
-			
 			if (target.id === 'menu-toggle' || 
 			    (target.tagName === 'A' && (target.getAttribute('href') === '#menu' || target.getAttribute('href') === 'javascript:void(0)'))) {
 				isMenuButton = true;
@@ -30,8 +33,6 @@
 			event.preventDefault();
 			event.stopPropagation();
 			event.stopImmediatePropagation();
-			
-			console.log('[Menu] CRITICAL: Menu button clicked - intercepting');
 			
 			// Immediately prevent hash
 			setTimeout(function() {
@@ -48,33 +49,29 @@
 			body.classList.toggle('is-menu-visible');
 			var isNowVisible = body.classList.contains('is-menu-visible');
 			
-			console.log('[Menu] Toggled - was:', wasVisible, 'now:', isNowVisible);
-			
-			// Force menu visibility and ensure it's above everything
+			// Ensure menu is positioned correctly
 			var menu = document.getElementById('menu');
 			if (menu) {
 				// Ensure menu is appended to body (not inside wrapper)
 				if (menu.parentElement !== document.body) {
 					document.body.appendChild(menu);
-					console.log('[Menu] Moved menu to body');
 				}
 				
+				// Use consistent z-index (99999 to match custom.css)
 				if (isNowVisible) {
 					menu.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; z-index: 99999 !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; filter: none !important; -webkit-filter: none !important;';
 					var menuInner = menu.querySelector('.inner');
 					if (menuInner) {
 						menuInner.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; transform: none !important; filter: none !important; -webkit-filter: none !important;';
 					}
-					console.log('[Menu] Menu forced visible with z-index 99999');
 				} else {
+					// Clear inline styles when closing to let CSS handle it
 					menu.style.cssText = '';
 					var menuInner = menu.querySelector('.inner');
 					if (menuInner) {
 						menuInner.style.cssText = '';
 					}
 				}
-			} else {
-				console.warn('[Menu] Menu element not found!');
 			}
 			
 			return false;
@@ -82,16 +79,17 @@
 	}
 	
 	// Attach in capture phase with highest priority - runs IMMEDIATELY
-	document.addEventListener('click', handleMenuClick, true);
-	console.log('[Menu] CRITICAL handler attached (immediate, capture phase)');
+	// Only attach once to prevent duplicates
+	if (!menuHandlerAttached) {
+		document.addEventListener('click', handleMenuClick, true);
+		menuHandlerAttached = true;
+	}
 	
 	// Immediately move menu to body if it exists (before DOM ready)
 	function moveMenuToBody() {
 		var menu = document.getElementById('menu');
 		if (menu && menu.parentElement !== document.body) {
-			// Menu is inside wrapper, move it to body
 			document.body.appendChild(menu);
-			console.log('[Menu] CRITICAL: Moved menu to body immediately');
 		}
 	}
 	
@@ -400,104 +398,18 @@
 
 		// Initialize menu functionality - run after DOM is ready
 		var initMenu = function() {
-			console.log('[Menu] Initializing menu functionality...');
-			
-			// Set up click handler for menu toggle button - multiple approaches for reliability
-			var menuButtonHandler = function(event) {
-				event.preventDefault();
-				event.stopPropagation();
-				event.stopImmediatePropagation();
-				console.log('[Menu] Toggle button clicked, preventing default');
-				menuToggle();
-				// Also prevent hash change immediately
-				setTimeout(function() {
-					if (window.location.hash === '#menu') {
-						window.history.replaceState(null, null, window.location.pathname + window.location.search);
-					}
-				}, 0);
-				return false;
-			};
-			
-			// Remove any existing handlers first to prevent conflicts
-			$(document).off('click', 'a[href="#menu"]');
-			$('a[href="#menu"]').off('click');
-			$('#menu-toggle').off('click');
-			
-			// Attach handler to menu toggle button by ID (most reliable) - use multiple methods
-			var menuToggleBtn = document.getElementById('menu-toggle');
-			if (menuToggleBtn) {
-				// Native event listener (most reliable)
-				menuToggleBtn.addEventListener('click', function(event) {
-					event.preventDefault();
-					event.stopPropagation();
-					event.stopImmediatePropagation();
-					console.log('[Menu] Toggle button clicked (native handler)');
-					menuToggle();
-					return false;
-				}, false);
-				
-				// Also attach jQuery handler as backup
-				$('#menu-toggle').on('click', function(event) {
-					event.preventDefault();
-					event.stopPropagation();
-					event.stopImmediatePropagation();
-					console.log('[Menu] Toggle button clicked (jQuery handler)');
-					menuToggle();
-					return false;
-				});
-			} else {
-				console.warn('[Menu] Menu toggle button not found!');
+			// Remove hash on page load if present
+			if (window.location.hash === '#menu') {
+				window.history.replaceState(null, null, window.location.pathname + window.location.search);
 			}
 			
-			// Also handle old href="#menu" links for compatibility
-			document.addEventListener('click', function(event) {
-				var target = event.target;
-				// Check if clicked element or its parent is the menu link
-				while (target && target !== document) {
-					if ((target.id === 'menu-toggle') || 
-					    (target.tagName === 'A' && target.getAttribute('href') === '#menu')) {
-						event.preventDefault();
-						event.stopPropagation();
-						event.stopImmediatePropagation();
-						console.log('[Menu] Toggle button clicked (capture phase)');
-						menuToggle();
-						setTimeout(function() {
-							if (window.location.hash === '#menu') {
-								window.history.replaceState(null, null, window.location.pathname + window.location.search);
-							}
-						}, 0);
-						return false;
-					}
-					target = target.parentElement;
-				}
-			}, true); // Use capture phase
-			
-			// Also attach jQuery handlers for compatibility with old href="#menu"
-			$(document).on('click', 'a[href="#menu"]', menuButtonHandler);
-			
-			// Also handle hashchange to prevent menu from opening on hash navigation
+			// Handle hashchange to prevent menu from opening on hash navigation
 			$(window).on('hashchange', function() {
 				if (window.location.hash === '#menu') {
-					console.log('[Menu] Hash change detected, removing hash and toggling menu');
 					window.history.replaceState(null, null, window.location.pathname + window.location.search);
-					// Always toggle menu when hash appears
 					menuToggle();
 				}
 			});
-			
-			// Also prevent hash from being added in the first place
-			window.addEventListener('hashchange', function(event) {
-				if (window.location.hash === '#menu') {
-					console.log('[Menu] Hash change intercepted (native), removing hash');
-					event.preventDefault();
-					window.history.replaceState(null, null, window.location.pathname + window.location.search);
-					// Toggle menu
-					document.body.classList.toggle('is-menu-visible');
-					if (typeof $body !== 'undefined' && $body) {
-						$body.toggleClass('is-menu-visible');
-					}
-				}
-			}, true);
 			
 			$body.on('keydown', function(event) {
 				// Hide on escape.
@@ -505,16 +417,6 @@
 					menuHide();
 			});
 			
-			// Also prevent hash change on page load if hash is #menu
-			if (window.location.hash === '#menu') {
-				window.history.replaceState(null, null, window.location.pathname + window.location.search);
-				// Open menu if hash was present
-				setTimeout(function() {
-					if (!$body.hasClass('is-menu-visible')) {
-						menuToggle();
-					}
-				}, 100);
-			}
 
 			// Only initialize menu if it exists
 			if ($menu.length > 0) {
@@ -618,73 +520,8 @@
 			}
 		};
 		
-		// CRITICAL: Attach menu handler IMMEDIATELY - before ANY other scripts
-		// This must run in the earliest possible capture phase to intercept clicks
-		(function() {
-			// Use immediate function to run as soon as script loads
-			function handleMenuClick(event) {
-				var target = event.target;
-				var isMenuButton = false;
-				
-				// Check if clicked element or parent is menu button/link
-				while (target && target !== document) {
-					if (target.id === 'menu-toggle' || 
-					    (target.tagName === 'A' && (target.getAttribute('href') === '#menu' || target.getAttribute('href') === 'javascript:void(0)'))) {
-						isMenuButton = true;
-						break;
-					}
-					target = target.parentElement;
-				}
-				
-				if (isMenuButton) {
-					event.preventDefault();
-					event.stopPropagation();
-					event.stopImmediatePropagation();
-					
-					console.log('[Menu] CRITICAL: Menu button clicked - intercepting');
-					
-					// Immediately prevent hash
-					setTimeout(function() {
-						if (window.location.hash === '#menu') {
-							window.history.replaceState(null, null, window.location.pathname + window.location.search);
-						}
-					}, 0);
-					
-					// Toggle menu immediately
-					var body = document.body;
-					var wasVisible = body.classList.contains('is-menu-visible');
-					body.classList.toggle('is-menu-visible');
-					var isNowVisible = body.classList.contains('is-menu-visible');
-					
-					console.log('[Menu] Toggled - was:', wasVisible, 'now:', isNowVisible);
-					
-					// Force menu visibility
-					var menu = document.getElementById('menu');
-					if (menu) {
-						if (isNowVisible) {
-							menu.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; z-index: 10002 !important;';
-							var menuInner = menu.querySelector('.inner');
-							if (menuInner) {
-								menuInner.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; transform: none !important;';
-							}
-							console.log('[Menu] Menu forced visible');
-						} else {
-							menu.style.cssText = '';
-							var menuInner = menu.querySelector('.inner');
-							if (menuInner) {
-								menuInner.style.cssText = '';
-							}
-						}
-					}
-					
-					return false;
-				}
-			}
-			
-			// Attach in capture phase with highest priority
-			document.addEventListener('click', handleMenuClick, true);
-			console.log('[Menu] CRITICAL handler attached (capture phase)');
-		})();
+		// NOTE: Menu toggle handler is already attached at top of file (lines 8-104)
+		// No need to attach again here - this prevents duplicate handlers
 		
 		// Initialize menu when DOM is ready
 		if (document.readyState === 'loading') {
