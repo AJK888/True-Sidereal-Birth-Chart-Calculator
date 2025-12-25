@@ -1,0 +1,236 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>Full Reading - Synthesis Astrology</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="stylesheet" href="assets/css/custom.css" />
+		<link rel="stylesheet" href="assets/css/fontawesome-all.min.css" />
+		<link rel="icon" type="image/jpeg" href="images/star-background.jpg" />
+		<link rel="shortcut icon" type="image/jpeg" href="images/star-background.jpg" />
+		<link rel="apple-touch-icon" href="images/star-background.jpg" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+		<style>
+			.chat-container {
+				position: fixed;
+				bottom: 20px;
+				right: 20px;
+				width: 400px;
+				max-height: 600px;
+				background: rgba(27, 108, 168, 0.95);
+				border-radius: 12px;
+				box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+				display: flex;
+				flex-direction: column;
+				z-index: 1000;
+			}
+			
+			.chat-header {
+				padding: 1em;
+				background: rgba(27, 108, 168, 1);
+				border-radius: 12px 12px 0 0;
+				color: white;
+				cursor: pointer;
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+			}
+			
+			.chat-messages {
+				flex: 1;
+				overflow-y: auto;
+				padding: 1em;
+				max-height: 400px;
+				background: rgba(255, 255, 255, 0.05);
+			}
+			
+			.chat-message {
+				margin-bottom: 1em;
+				padding: 0.8em;
+				border-radius: 8px;
+				background: rgba(255, 255, 255, 0.1);
+				color: white;
+			}
+			
+			.chat-message.user {
+				background: rgba(27, 108, 168, 0.3);
+				text-align: right;
+			}
+			
+			.chat-input-container {
+				padding: 1em;
+				border-top: 1px solid rgba(255, 255, 255, 0.2);
+				display: flex;
+				gap: 0.5em;
+			}
+			
+			.chat-input {
+				flex: 1;
+				padding: 0.8em;
+				border: 1px solid rgba(255, 255, 255, 0.3);
+				border-radius: 6px;
+				background: rgba(255, 255, 255, 0.1);
+				color: white;
+			}
+			
+			.chat-input::placeholder {
+				color: rgba(255, 255, 255, 0.6);
+			}
+			
+			.chat-send-btn {
+				padding: 0.8em 1.5em;
+				background: #1b6ca8;
+				color: white;
+				border: none;
+				border-radius: 6px;
+				cursor: pointer;
+			}
+			
+			.chat-minimized {
+				height: 60px;
+			}
+			
+			.chat-minimized .chat-messages,
+			.chat-minimized .chat-input-container {
+				display: none;
+			}
+		</style>
+	</head>
+	<body class="is-preload">
+		<div id="wrapper">
+			<header id="header" class="alt">
+				<a href="index.html" class="logo"><strong>Synthesis</strong> <span>Astrology</span></a>
+				<nav>
+					<a href="#menu">Menu</a>
+				</nav>
+			</header>
+
+			<nav id="menu">
+				<ul class="links">
+					<li><a href="index.html">Home</a></li>
+					<li><a href="index.html#calculator">Calculator</a></li>
+				</ul>
+			</nav>
+
+			<section id="banner" class="major">
+				<div class="inner">
+					<header class="major">
+						<h1>Your Complete Astrological Reading</h1>
+					</header>
+					<div class="content">
+						<p>Comprehensive analysis of your birth chart with interactive chat</p>
+					</div>
+				</div>
+			</section>
+
+			<div id="main">
+				<!-- Inline inputs so users can (re)enter their data and generate a full reading directly on this page -->
+				<section id="full-reading-inputs">
+					<div class="inner">
+						<header class="major">
+							<h2>Generate or Regenerate Your Full Reading</h2>
+						</header>
+						<p>
+							Re‑enter your birth details here to recalculate your complete report. Your full reading will also be
+							sent to the email address you provide.
+						</p>
+						<form id="fullReadingForm">
+							<div class="row gtr-uniform">
+								<div class="col-6 col-12-xsmall">
+									<label for="fr-fullName">Full Name</label>
+									<input type="text" name="fullName" id="fr-fullName" placeholder="Enter your full name" required />
+								</div>
+								<div class="col-6 col-12-xsmall">
+									<label for="fr-birthDate">Birth Date</label>
+									<input type="text" name="birthDate" id="fr-birthDate" placeholder="MM/DD/YYYY" required />
+								</div>
+								<div class="col-6 col-12-xsmall">
+									<label for="fr-birthTime">Birth Time</label>
+									<input type="text" name="birthTime" id="fr-birthTime" placeholder="02:30 PM" required />
+									<div style="margin-top: 0.5em;">
+										<input type="checkbox" id="fr-unknownTime" name="unknownTime" />
+										<label for="fr-unknownTime">I don't know my exact birth time</label>
+									</div>
+								</div>
+								<div class="col-6 col-12-xsmall">
+									<label for="fr-location">Birth Location</label>
+									<input type="text" name="location" id="fr-location" placeholder="City, State/Region, Country" required />
+								</div>
+								<div class="col-6 col-12-xsmall">
+									<label for="fr-userEmail">Your Email</label>
+									<input type="email" name="userEmail" id="fr-userEmail" placeholder="you@example.com" required />
+								</div>
+								<div class="col-12">
+									<input type="checkbox" id="fr-isFullBirthName" name="isFullBirthName" />
+									<label for="fr-isFullBirthName">
+										This is my full birth name (including middle name) – calculate my complete name numerology
+									</label>
+								</div>
+								<div class="col-12">
+									<ul class="actions">
+										<li>
+											<button type="submit" class="primary" id="fr-generate-btn">
+												Generate / Regenerate Full Reading
+											</button>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</form>
+					</div>
+				</section>
+
+				<section id="full-reading-content" class="tiles">
+					<div class="inner">
+						<div id="loading-message" style="text-align: center; padding: 3em;">
+							<h2>Loading your full reading...</h2>
+							<p>Please wait while we retrieve your comprehensive analysis.</p>
+						</div>
+						
+						<div id="auth-required" style="display: none; text-align: center; padding: 3em;">
+							<h2>Account Required</h2>
+							<p>You need to create an account to access your full reading.</p>
+							<p>Your chart will be automatically saved to your account.</p>
+							<div style="display: flex; gap: 1em; margin-top: 1em; flex-wrap: wrap;">
+								<button id="signup-btn" class="button primary">Create Account</button>
+								<button id="login-btn" class="button">Sign In</button>
+							</div>
+						</div>
+						
+						<div id="reading-content" style="display: none;">
+							<div id="reading-text" class="content"></div>
+						</div>
+					</div>
+				</section>
+			</div>
+
+			<!-- Chatbot Container -->
+			<div id="chat-container" class="chat-container chat-minimized">
+				<div class="chat-header" onclick="toggleChat()">
+					<span><i class="fas fa-comments"></i> Chat with Your Chart</span>
+					<span id="chat-toggle-icon"><i class="fas fa-chevron-up"></i></span>
+				</div>
+				<div class="chat-messages" id="chat-messages"></div>
+				<div class="chat-input-container">
+					<input type="text" id="chat-input" class="chat-input" placeholder="Ask a question about your chart..." />
+					<button id="chat-send-btn" class="chat-send-btn" onclick="sendChatMessage()">
+						<i class="fas fa-paper-plane"></i>
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<script src="assets/js/jquery.min.js"></script>
+		<script src="assets/js/jquery.scrolly.min.js"></script>
+		<script src="assets/js/jquery.scrollex.min.js"></script>
+		<script src="assets/js/browser.min.js"></script>
+		<script src="assets/js/breakpoints.min.js"></script>
+		<script src="assets/js/util.js"></script>
+		<script src="assets/js/main.js"></script>
+		<script src="assets/js/auth.js"></script>
+		<script src="assets/js/full-reading.js"></script>
+		<script src="assets/js/click-tracker.js"></script>
+	</body>
+</html>
+

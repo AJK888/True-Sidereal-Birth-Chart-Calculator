@@ -1,0 +1,645 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>Synthesis Astrology - True Sidereal Birth Chart Calculator</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		
+		<!-- SEO Meta Tags -->
+		<meta name="description" content="Calculate your true sidereal birth chart with comprehensive astrological readings. Discover your tropical and sidereal placements, numerology, and Chinese zodiac." />
+		<meta name="keywords" content="astrology, birth chart, sidereal, tropical, numerology, Chinese zodiac, horoscope" />
+		<meta name="author" content="Synthesis Astrology" />
+		<meta name="robots" content="index, follow" />
+		
+		<!-- Open Graph / Facebook -->
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content="https://synthesisastrology.com/" />
+		<meta property="og:title" content="Synthesis Astrology - True Sidereal Birth Chart Calculator" />
+		<meta property="og:description" content="Calculate your true sidereal birth chart with comprehensive astrological readings." />
+		<meta property="og:image" content="https://synthesisastrology.com/images/star-background.jpg" />
+		
+		<!-- Twitter -->
+		<meta property="twitter:card" content="summary_large_image" />
+		<meta property="twitter:url" content="https://synthesisastrology.com/" />
+		<meta property="twitter:title" content="Synthesis Astrology - True Sidereal Birth Chart Calculator" />
+		<meta property="twitter:description" content="Calculate your true sidereal birth chart with comprehensive astrological readings." />
+		<meta property="twitter:image" content="https://synthesisastrology.com/images/star-background.jpg" />
+		
+		<!-- PWA -->
+		<meta name="theme-color" content="#9f7aea" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="Synthesis Astrology" />
+		<link rel="manifest" href="/manifest.json" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="stylesheet" href="assets/css/design-tokens.css" />
+		<link rel="stylesheet" href="assets/css/custom.css" />
+		<link rel="stylesheet" href="assets/css/fontawesome-all.min.css" />
+		<link rel="icon" type="image/jpeg" href="images/star-background.jpg" />
+		<link rel="shortcut icon" type="image/jpeg" href="images/star-background.jpg" />
+		<link rel="apple-touch-icon" href="images/star-background.jpg" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+		<style>
+			/* Keep main title in normal case */
+			#banner .inner .major h1 {
+				text-transform: none !important;
+			}
+			/* Keep banner paragraph in normal case and fix letter spacing */
+			#banner .content p {
+				text-transform: none !important;
+				letter-spacing: normal !important;
+			}
+			/* Style for the new copy button */
+			.copy-button {
+				margin-left: 20px;
+				padding: 5px 15px;
+				font-size: 0.8em;
+				border-radius: 5px;
+				border: 1px solid white;
+				background-color: transparent;
+				color: white;
+				cursor: pointer;
+				vertical-align: middle;
+				transition: background-color 0.3s, color 0.3s;
+			}
+			.copy-button:hover {
+				background-color: white;
+				color: #242943; /* Body color from main.css */
+			}
+			/* Ensure header is visible even if JS doesn't load */
+			/* Fallback: remove preload class after a delay if JS fails */
+			body.is-preload #header.alt {
+				animation: fadeInHeader 0.5s ease-in 1s forwards;
+			}
+			@keyframes fadeInHeader {
+				to {
+					opacity: 1;
+				}
+			}
+			/* Also ensure header is visible after JS removes preload class */
+			body:not(.is-preload) #header.alt {
+				opacity: 1 !important;
+			}
+			/* Mobile sticky CTA */
+			.mobile-sticky-cta {
+				position: fixed;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				background: rgba(36, 41, 62, 0.95);
+				-webkit-backdrop-filter: blur(10px);
+				backdrop-filter: blur(10px);
+				padding: 1em;
+				z-index: 999;
+				box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+				border-top: 1px solid rgba(255, 255, 255, 0.1);
+			}
+			.sticky-cta-button {
+				width: 100%;
+				padding: 1em;
+				background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
+				color: white;
+				border: none;
+				border-radius: 6px;
+				font-size: 1.1em;
+				font-weight: bold;
+				cursor: pointer;
+				box-shadow: 0 4px 20px rgba(159, 122, 234, 0.3);
+				transition: all 0.3s ease;
+			}
+			.sticky-cta-button:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 6px 30px rgba(159, 122, 234, 0.5);
+			}
+			/* Loading skeletons */
+			.loading-skeleton {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 2em;
+				padding: 2em 0;
+			}
+			.skeleton-chart-wheel {
+				width: 100%;
+				aspect-ratio: 1;
+				background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+				background-size: 200% 100%;
+				border-radius: 50%;
+				animation: skeleton-loading 1.5s ease-in-out infinite;
+			}
+			.loading-skeleton-text {
+				padding: 1em 0;
+			}
+			.skeleton-line {
+				height: 1em;
+				background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+				background-size: 200% 100%;
+				border-radius: 4px;
+				margin-bottom: 0.8em;
+				animation: skeleton-loading 1.5s ease-in-out infinite;
+			}
+			.skeleton-line.short {
+				width: 60%;
+			}
+			.loading-skeleton-cards {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+				gap: 1.5em;
+				padding: 1em 0;
+			}
+			.skeleton-card {
+				height: 150px;
+				background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 75%);
+				background-size: 200% 100%;
+				border-radius: 8px;
+				animation: skeleton-loading 1.5s ease-in-out infinite;
+			}
+			@keyframes skeleton-loading {
+				0% { background-position: 200% 0; }
+				100% { background-position: -200% 0; }
+			}
+			/* Screen reader only */
+			.sr-only {
+				position: absolute;
+				width: 1px;
+				height: 1px;
+				padding: 0;
+				margin: -1px;
+				overflow: hidden;
+				clip: rect(0, 0, 0, 0);
+				white-space: nowrap;
+				border-width: 0;
+			}
+			/* Mobile optimizations */
+			@media screen and (max-width: 736px) {
+				#banner {
+					padding: 2em 0 1em 0;
+				}
+				#banner .inner {
+					padding: 1em;
+				}
+				#banner h1 {
+					font-size: 2em;
+					margin-bottom: 0.5em;
+				}
+				#banner .content p {
+					font-size: 0.9em;
+					margin-bottom: 0;
+				}
+				#description-wrapper {
+					padding: 1.5em 0;
+				}
+				.mobile-sticky-cta {
+					display: block !important;
+				}
+				#form-section {
+					padding: 2em 0;
+				}
+			}
+		</style>
+	</head>
+	<body class="is-preload">
+
+		<div id="wrapper">
+
+				<header id="header" class="alt" role="banner">
+						<a href="index.html" class="logo" aria-label="Synthesis Astrology home"><strong>Synthesis</strong> <span>Astrology</span></a>
+						<nav role="navigation" aria-label="Site navigation">
+							<button type="button" id="menu-toggle" aria-label="Open navigation menu" style="background: none; border: none; color: inherit; font: inherit; cursor: pointer; padding: 0; text-decoration: none;">Menu</button>
+						</nav>
+					</header>
+
+				<nav id="menu" role="navigation" aria-label="Main navigation">
+						<ul class="links">
+							<li><a href="index.html" aria-label="Go to home page">Home</a></li>
+							<li><a href="examples/index.html" aria-label="View example readings">Example Readings</a></li>
+							<li><a href="synastry.html" aria-label="Access synastry analysis">Synastry Analysis</a></li>
+							<li><a href="full-reading.html" aria-label="View full reading">Full Reading</a></li>
+						</ul>
+						<ul class="links auth-menu-section" id="authMenuSection">
+							<!-- Auth links (Login/Register or Logout) will be populated by auth.js -->
+						</ul>
+					</nav>
+
+			<section id="banner" class="major">
+					<div class="inner">
+						<header class="major">
+							<h1>Synthesis Astrology</h1>
+						</header>
+						<div class="content">
+							<p>Using modern analytical methods to provide deep insights into your personality, life patterns, and spiritual growth based on numerology, Sidereal, Tropical, and Chinese astrology.</p>
+						</div>
+					</div>
+				</section>
+
+			<div id="main">
+					<!-- Form moved above fold for better mobile conversion -->
+					<section id="form-section">
+							<div class="inner">
+								<header class="major">
+									<h2>Generate Your Chart</h2>
+								</header>
+								<form id="chartForm" onsubmit="return false;" aria-label="Birth chart calculation form">
+									<div class="fields">
+										<div class="field">
+											<label for="fullName">Name <span class="field-note">Enter the name you go by</span></label>
+											<input type="text" id="fullName" name="fullName" required aria-required="true" aria-describedby="fullName-note">
+											<span id="fullName-note" class="sr-only">Enter the name you go by</span>
+											<div class="name-numerology-toggle">
+												<input type="checkbox" id="isFullBirthName" name="isFullBirthName">
+												<label for="isFullBirthName">This is my full birth name (including middle name) – calculate my complete name numerology</label>
+											</div>
+										</div>
+						
+										<div class="field">
+											<label for="userEmail">Your Email <span class="field-note">Required: Your comprehensive reading will be sent to this email address.</span></label>
+											<input type="email" id="userEmail" name="userEmail" required aria-required="true" aria-describedby="userEmail-note" autocomplete="email">
+											<span id="userEmail-note" class="sr-only">Required: Your comprehensive reading will be sent to this email address</span>
+										</div>
+						
+										<div class="field half">
+											<label for="birthDate">Birth Date <span class="field-note">MM/DD/YYYY</span></label>
+											<input type="text" id="birthDate" name="birthDate" required>
+										</div>
+						
+										<div class="field half">
+											<label for="location">Birth Location <span class="field-note">City, State, Country</span></label>
+											<input type="text" id="location" name="location" required>
+										</div>
+						
+										<div class="field half">
+											<label for="birthTime">Birth Time <span class="field-note">HH:MM AM/PM | For the most accurate results, please enter your exact birth time.</span></label>
+											<input type="text" id="birthTime" name="birthTime" required>
+										</div>
+								
+										<div class="field half time-checkbox-container">
+											<div class="time-inputs-container">
+												<input type="checkbox" id="unknownTime" name="unknownTime">
+												<label for="unknownTime">I don't know my exact birth time (Excludes time sensitive output)</label>
+											</div>
+										</div>
+									</div>
+									
+									<div class="field">
+										<input type="checkbox" id="terms" name="terms">
+										<label for="terms">I have read and agree to the <a href="#legal" style="text-decoration: underline;">Disclaimer, Terms of Service and Privacy Policy</a>.</label>
+										<p id="termsError" style="color: #e53e3e; display: none; margin-top: 0.5em; font-weight: 600;">You must agree to the terms to continue.</p>
+									</div>
+
+									<ul class="actions">
+										<li><button type="submit" id="submitBtn" class="primary" aria-label="Generate your astrological reading">Generate My Reading</button></li>
+									</ul>
+								</form>
+							</div>
+						</section>
+
+					<!-- Sticky CTA for mobile -->
+					<div id="mobile-sticky-cta" class="mobile-sticky-cta hidden">
+						<button type="button" class="sticky-cta-button" onclick="document.getElementById('form-section').scrollIntoView({behavior: 'smooth'})">
+							Generate My Reading
+						</button>
+					</div>
+
+					<section id="description-wrapper">
+						<div class="inner">
+							<div class="description-content">
+								<header class="major">
+									<h2>Your Astrological Blueprint</h2>
+								</header>
+								<p>This platform uniquely uses powerful python code to calculate a dual-zodiac analysis of your unique birth chart providing you your raw astrological placements, Chinese zodiac sign, and name and birthdate numerology. <strong>Get a free snapshot reading instantly</strong> - a quick AI-generated overview of your core patterns delivered via email. For deeper insights, subscribe for comprehensive full readings and unlimited chat conversations with our AI astrologer about your chart. All your personal information (name, birthdate, location) is fully blinded and private to the AI.</p>
+								<h4>Sidereal Astrology:</h4>
+								<p>The Tropical zodiac is the system used by most Western astrologers. It's based on the Earth's seasons and divides the sky into twelve equal 30-degree signs. Tropical astrology describes how cosmic energies express themselves through your personality and daily life. The Sidereal zodiac, on the other hand, aligns with the actual constellations in the sky. Each sign covers a different portion of the ecliptic, revealing deeper insights into your soul's karmic path and spiritual evolution. By exploring both systems side by side, you gain a more complete and nuanced understanding of yourself—connecting the outer personality with the inner essence.</p>
+								<p style="margin-top: 2em;"><a href="examples/index.html" class="button primary">View Example Readings</a></p>
+							</div>
+						</div>
+					</section>
+
+					<!-- Transit section with lazy loading -->
+					<section id="transit-section" data-lazy-load="true">
+						<div class="inner">
+							<div id="transit-chart">
+								<header class="major">
+									<h2>Where the Stars and Planets Currently Are at Your Location</h2>
+								</header>
+								<div id="transit-loading-skeleton" class="loading-skeleton" style="display: none;">
+									<div class="skeleton-chart-wheel"></div>
+									<div class="skeleton-chart-wheel"></div>
+								</div>
+								<div class="chart-wheels-wrapper" id="transit-wheels-container" style="display: none;">
+										<div id="sidereal-transit-wheel-container">
+											<h3>Sidereal</h3>
+											<svg id="sidereal-transit-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Sidereal transit chart wheel" role="img">
+												<title>Sidereal transit chart wheel showing current planetary positions</title>
+											</svg>
+										</div>
+										<div id="tropical-transit-wheel-container">
+											<h3>Tropical</h3>
+											<svg id="tropical-transit-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Tropical transit chart wheel" role="img">
+												<title>Tropical transit chart wheel showing current planetary positions</title>
+											</svg>
+										</div>
+								</div>
+							</div>
+						</div>
+					</section>
+					
+						<section id="results" class="results-container" aria-live="polite" aria-label="Chart calculation results">
+								<div class="inner">
+									<div id="wheel-title" class="result-section">
+										<header class="major"><h2>Your Natal Chart</h2></header>
+										<!-- Loading skeleton for chart wheels -->
+										<div id="chart-loading-skeleton" class="loading-skeleton" style="display: none;">
+											<div class="skeleton-chart-wheel"></div>
+											<div class="skeleton-chart-wheel"></div>
+										</div>
+										<div class="chart-wheels-wrapper" id="chart-wheels-container" style="display: none;">
+											<div id="sidereal-wheel-container">
+												<h3>Sidereal</h3>
+												<svg id="sidereal-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Sidereal natal chart wheel" role="img">
+													<title>Sidereal natal chart wheel showing your birth chart placements</title>
+												</svg>
+											</div>
+											<div id="tropical-wheel-container">
+												<h3>Tropical</h3>
+												<svg id="tropical-wheel-svg" viewBox="-100 -100 1200 1200" aria-label="Tropical natal chart wheel" role="img">
+													<title>Tropical natal chart wheel showing your birth chart placements</title>
+												</svg>
+											</div>
+										</div>
+										<div id="chart-placeholder" class="chart-placeholder-message" style="display: none;">
+											<p>Provide your exact birth time to see Chart images.</p>
+										</div>
+									</div>
+							
+									<div id="snapshot-title" class="result-section" style="display: none;" aria-labelledby="snapshot-heading">
+										<header class="major">
+											<h2 id="snapshot-heading">Chart Snapshot</h2>
+										</header>
+										<!-- Loading skeleton for snapshot -->
+										<div id="snapshot-loading-skeleton" class="loading-skeleton-text" style="display: none;">
+											<div class="skeleton-line"></div>
+											<div class="skeleton-line"></div>
+											<div class="skeleton-line short"></div>
+											<div class="skeleton-line"></div>
+											<div class="skeleton-line short"></div>
+										</div>
+										<div id="snapshot-output" class="content"></div>
+									</div>
+							
+								<div id="gemini-title" class="result-section" style="display: none;" aria-labelledby="ai-synthesis-heading">
+									<header class="major">
+										<h2 id="ai-synthesis-heading">AI Astrological Synthesis</h2>
+										<button id="copyReadingBtn" class="copy-button" style="display: none;" aria-label="Copy reading to clipboard">Copy Reading</button>
+									</header>
+									<!-- Loading skeleton for AI reading -->
+									<div id="gemini-loading-skeleton" class="loading-skeleton-text" style="display: none;">
+										<div class="skeleton-line"></div>
+										<div class="skeleton-line"></div>
+										<div class="skeleton-line short"></div>
+										<div class="skeleton-line"></div>
+										<div class="skeleton-line"></div>
+										<div class="skeleton-line short"></div>
+										<div class="skeleton-line"></div>
+									</div>
+									<div id="gemini-output" class="content"></div>
+									<!-- CTA for full reading -->
+									<div id="full-reading-cta" class="full-reading-cta" style="display: none; margin-top: 2em; padding: 1.5em; background: rgba(27, 108, 168, 0.1); border-left: 4px solid #1b6ca8; border-radius: 6px;">
+										<h3 style="margin-top: 0; color: #1b6ca8;">Get Your Complete Full Reading</h3>
+										<p style="margin-bottom: 1em;">Unlock comprehensive insights with your full astrological reading, including detailed planetary analysis, aspect patterns, and personalized guidance.</p>
+										<a href="full-reading.html" class="button primary">View Full Reading</a>
+									</div>
+								</div>
+									
+								<div id="famous-people-section" class="result-section" style="display: none;" aria-labelledby="famous-people-heading">
+									<header class="major">
+										<h2 id="famous-people-heading">Famous People Like You</h2>
+										<p style="font-size: 0.9em; color: rgba(255, 255, 255, 0.7); margin-top: 0.5em;">
+											Discover which famous people share similar astrological patterns with you
+										</p>
+									</header>
+									<!-- Loading skeleton for famous people -->
+									<div id="famous-people-loading-skeleton" class="loading-skeleton-cards" style="display: none;">
+										<div class="skeleton-card"></div>
+										<div class="skeleton-card"></div>
+										<div class="skeleton-card"></div>
+									</div>
+									<div id="famous-people-loading" style="text-align: center; padding: 2em; display: none;">
+										<p>Finding your astrological matches...</p>
+									</div>
+									<div id="famous-people-results" class="famous-people-grid" style="display: none;" role="list" aria-label="Famous people with similar astrological patterns"></div>
+								</div>
+								
+								<div id="results-title" class="result-section" aria-labelledby="full-report-heading">
+									<header class="major"><h2 id="full-report-heading">Full Report</h2></header>
+									<div class="report-columns">
+										<div class="report-column">
+											<pre id="sidereal-output"></pre>
+										</div>
+										<div class="report-column">
+											<pre id="tropical-output"></pre>
+										</div>
+									</div>
+								</div>
+							
+								</div>
+							</section>
+
+						<section id="legal">
+							<div class="inner">
+								<details>
+									<summary>Disclaimer</summary>
+									<div>
+										<p><strong>Astrology is a symbolic language and contemplative tool for self-reflection, not a deterministic science or predictive system that overrides your free will.</strong></p>
+										<p>This reading describes potentials, tendencies, and psychological patterns—not fixed outcomes or limitations. You are always the author of your own life, and this analysis is offered to support your self-awareness and personal growth, not to replace professional psychological, medical, or financial guidance.</p>
+										<p>The insights presented here are interpretive in nature and should be engaged with discernment, taking what resonates and leaving what does not serve your highest understanding.</p>
+										<p>The astrological and numerological interpretations provided by this calculator, including any AI-generated text from Google's Gemini model, are for entertainment and informational purposes only. The readings are not intended to be a substitute for professional advice from a qualified person in any field, including but not limited to medical, financial, or legal matters.</p>
+										<p>By using this service, you agree that you are solely responsible for any actions you take based on the information provided, and you will not hold the website or its creator liable for any decisions or outcomes.</p>
+										
+										<h4 style="margin-top: 2em;">Religious Disclaimer: Please use your Personal Discernment while Exploring Occult Divination Practices</h4>
+										<h4>Religious Perspectives on Divination:</h4>
+										<p>The Catholic Church, Islam, and Judaism all strongly discourage or reject divination, viewing it as an attempt to divert trust away from God. These faiths emphasize that seeking knowledge of the future through supernatural means is contrary to divine providence. Instead, they advocate for believers to place their trust in God's plan, seeking guidance through prayer, faith, and divine revelation.</p>
+										<h4>A Warning on the Occult:</h4>
+										<p>Occult practices, such as tarot readings, psychic readings, crystal gazing, and Ouija boards, often provide accurate information. They are influenced by spiritual forces that are usually not aligned with God's will. By practicing these you may be unintentionally inviting their influence into your life to serve their will. Your astrological placements are a measure of the energies emanating from the planets and stars at the exact moment of your birth. The planets and stars represent angels and demons, their divine and fallen qualities. Your chart explains how these qualities manifest in your personality and psyche. The goal of this website is to liberate people from the fallen aspects of their personalities and step into the divine qualities through deep self reflection. This exercise is divination and risks the potential to be evil in the eyes of the Lord. Do not use astrology if your instinct is to avoid it.</p>										
+										<h4>Commitment to Integrity:</h4>
+										<p>I am deeply committed to God and remain open to reevaluating my views on astrology with careful reflection. If I ever receive new insights that challenge my approach or feel uncomfortable with how this website is being used, I will take the necessary steps to ensure it aligns with my values and beliefs.</p>
+									</div>
+								</details>
+								<details>
+									<summary>Privacy Policy</summary>
+									<div>
+										<h4>Last Updated: January 15, 2025</h4>
+										<p>Thank you for using Synthesis Astrology. This Privacy Policy explains what information we collect when you use our service, why we collect it, and how it is handled. Your privacy is important to us, and we are committed to being transparent about our data practices.</p>
+										<h4>1. Information We Collect</h4>
+										<p>When you use the calculator, we collect the following information that you voluntarily provide:</p>
+										<ul>
+											<li><strong>Name:</strong> The name you enter for the chart calculation.</li>
+											<li><strong>Birth Information:</strong> The date of birth (year, month, day) and time of birth (hour, minute) you provide.</li>
+											<li><strong>Location Information:</strong> The birth location (e.g., "Boston, MA, USA") you enter.</li>
+											<li><strong>Email Address (Required):</strong> Your email address is required to receive your comprehensive astrology reading report.</li>
+										</ul>
+										<p><strong>Automatically Collected Information:</strong> Your IP address is automatically collected by our hosting provider (Render) as part of standard web server logging. This information is used for security, debugging, and service monitoring purposes. We do not use IP addresses to identify individual users or for marketing purposes.</p>
+										<h4>2. How We Use Your Information</h4>
+										<p>The information you provide is used for the following purposes:</p>
+										<ul>
+											<li><strong>To Perform Calculations:</strong> The birth data is sent to our secure server to perform the astrological and numerological calculations and generate your personalized report.</li>
+											<li><strong>To Deliver Your Report via Email:</strong> If you provide your email address, it is used for the sole purpose of sending you a copy of your complete astrological report.</li>
+											<li><strong>To Generate AI Readings:</strong> Anonymized astrological data (your planetary positions, but not your name, date, time, or location) is sent to Google's Gemini 2.5 Pro API to generate the comprehensive "AI Astrological Synthesis" portion of your report.</li>
+											<li><strong>Application Monitoring & Debugging:</strong> The input data, including your email if provided, is sent to a secure, third-party logging service (Better Stack/Logtail) for the sole purpose of monitoring application performance, identifying bugs, and troubleshooting errors.</li>
+											<li><strong>To Maintain and Improve the Service:</strong> A complete copy of the generated report, including your inputs and the final output, is sent to an administrative email address. This allows us to verify that the service is functioning correctly, troubleshoot any errors, and ensure the quality of the reports.</li>
+											<li><strong>Research and Service Improvement:</strong> Birth data may be used to analyze astrological patterns, conduct research, and train artificial intelligence designed to improve the accuracy and depth of our astrological readings and to further the study of astrology.</li>
+										</ul>
+										<h4>3. Data Storage and Sharing</h4>
+										<ul>
+											<li><strong>Storage:</strong> The data you provide is stored in two ways: (1) It is logged in our secure, third-party application monitoring service (Better Stack/Logtail) for the purposes of debugging and ensuring the calculator functions correctly. (2) The data may be exported and stored securely in private documents (e.g., spreadsheets) for the sole purpose of future astrological research, as described in Section 2.</li>
+											<li><strong>Sharing:</strong> We are committed to protecting your privacy. We will not sell or rent your personal information. We only share data with the essential third-party services described in this policy that are required for the calculator to function.
+												<ul>
+													<li><strong>SendGrid:</strong> If you provide your email address, it is shared with our email delivery provider, SendGrid, to send you your report. This is subject to SendGrid's privacy policy.</li>
+													<li><strong>Google Gemini 2.5 Pro:</strong> Anonymized astrological data is processed by Google's Gemini 2.5 Pro API to provide the AI reading, subject to Google's privacy policies.</li>
+													<li><strong>OpenCage Geocoding:</strong> Your birth location is sent to OpenCage Geocoding API to convert location names into precise coordinates and timezone information required for accurate chart calculations. This is subject to OpenCage's privacy policy.</li>
+													<li><strong>Better Stack/Logtail:</strong> Application logs and debugging data are sent to Better Stack (via Logtail) for monitoring and troubleshooting purposes.</li>
+													<li><strong>Render:</strong> Our hosting provider (Render) automatically collects IP addresses and server logs as part of standard web hosting operations.</li>
+												</ul>
+											</li>
+										</ul>
+										<h4>4. Your Rights and Data Deletion</h4>
+										<p>You have the right to request the deletion of your personal data from our logs and research documents. If you would like to have your information removed, please contact us with the details of the data you entered (name, date, location), and we will permanently delete the corresponding entries.</p>
+										<h4>5. Consent for Research Use</h4>
+										<p>By using this calculator, you acknowledge and consent that the birth data you provide may be stored and used for the research and potential artificial intelligence training purposes described in Section 2 and 3. This is essential for helping us learn more about astrology and improve the quality of the service we provide to you and other users.</p>
+										<h4>6. Contact Us</h4>
+										<p>If you have any questions about this Privacy Policy or wish to request the deletion of your data, please contact us at: <a href="mailto:synthesisastrology@outlook.com"><strong>synthesisastrology@outlook.com</strong></a></p>
+										<p>Visit our website: <a href="https://synthesisastrology.com"><strong>synthesisastrology.com</strong></a></p>
+									</div>
+								</details>
+								<details>
+									<summary>Terms of Service</summary>
+									<div>
+										<h4>Last Updated: January 15, 2025</h4>
+										<p>Welcome to Synthesis Astrology. These Terms of Service ("Terms") govern your use of this website and the services provided. By accessing or using the service, you agree to be bound by these Terms.</p>
+										<h4>1. Description of Service</h4>
+										<p>This website provides personalized astrological and numerological reports based on data you provide, including Sidereal and Tropical zodiac calculations, a visual chart wheel, comprehensive AI-generated astrological synthesis using Google's Gemini 2.5 Pro, and numerology reports. The service is provided for informational and entertainment purposes.</p>
+										<h4>2. Acceptance of Terms</h4>
+										<p>By using this service, you confirm that you have read, understood, and agree to be bound by these Terms. If you do not agree with the Terms, please do not use the service.</p>
+										<h4>3. User-Provided Data</h4>
+										<p>The accuracy of the astrological and numerological reports generated by this service is entirely dependent on the accuracy of the birth data (name, date, time, and location) you provide. You are solely responsible for providing correct information. The service cannot be held liable for an inaccurate report resulting from incorrect user input.</p>
+										<h4>4. Acceptable Use</h4>
+										<p>You agree not to use this service for any unlawful purpose or in any way that could damage, disable, or impair the service. This includes, but is not limited to: Submitting data through automated means (e.g., bots, scripts), attempting to gain unauthorized access to the server or its data, or using the service for any commercial purpose without prior written consent.</p>
+										<h4>5. Intellectual Property</h4>
+										<p>All content on this website, including the design, text, graphics, and the underlying source code, is the intellectual property of the site owner. The astrological and numerological reports generated by this service are for your <strong>personal, non-commercial use only</strong>. You may not resell, redistribute, or use the reports for any commercial purpose without prior written consent.</p>
+										<h4>6. Disclaimer of Warranties</h4>
+										<p>The information and data provided by this calculator are for <strong>entertainment and informational purposes only</strong>. The service is provided "as is" and "as available" without any warranties, express or implied. We do not warrant that the service will be error-free or that the information provided will be completely accurate. The interpretations are not a substitute for professional advice.</p>
+										<h4>7. Limitation of Liability</h4>
+										<p>By using this service, you agree that you are solely responsible for any actions you take based on the information provided. The owner of this website shall not be held liable for any damages resulting from the use or inability to use this service.</p>
+										<h4>8. Privacy Policy</h4>
+										<p>Your use of this service is also governed by our Privacy Policy, which explains how we collect, use, and protect your personal data.</p>
+										<h4>9. Changes to Terms</h4>
+										<p>We reserve the right to modify these Terms at any time. Your continued use of the service after such changes constitutes your acceptance of the new Terms.</p>
+										<h4>10. Contact Information</h4>
+										<p>If you have any questions about these Terms, please contact us at: <a href="mailto:synthesisastrology@outlook.com"><strong>synthesisastrology@outlook.com</strong></a></p>
+										<p>Visit our website: <a href="https://synthesisastrology.com"><strong>synthesisastrology.com</strong></a></p>
+									</div>
+								</details>
+							</div>
+						</section>
+					</div>
+
+				<footer id="footer">
+						<div class="inner">
+							<ul class="copyright">
+								<li>&copy; Synthesis Astrology</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li>
+							</ul>
+						</div>
+					</footer>
+
+			</div>
+
+<!-- Critical scripts loaded immediately -->
+<script src="assets/js/jquery.min.js"></script>
+		<script src="assets/js/util.js"></script>
+		<!-- Load breakpoints and browser BEFORE main.js (main.js depends on them) -->
+		<script src="assets/js/browser.min.js"></script>
+		<script src="assets/js/breakpoints.min.js"></script>
+		<script src="assets/js/main.js"></script>
+		<!-- New modular structure -->
+		<script src="assets/js/utils.js"></script>
+		<script src="assets/js/state-manager.js"></script>
+		<script src="assets/js/api-client.js"></script>
+		<script src="assets/js/form-validator.js"></script>
+		<script src="assets/js/performance-monitor.js"></script>
+		<script src="assets/js/error-tracker.js"></script>
+		<script src="assets/js/accessibility.js"></script>
+		<script src="assets/js/results-navigation.js"></script>
+		<script src="assets/js/calculator.js"></script>
+		<script src="assets/js/auth.js"></script>
+		<script src="assets/js/pwa-install.js"></script>
+		<!-- Test helpers (development only - remove in production if desired) -->
+		<script src="assets/js/test-helpers.js"></script>
+		<!-- Non-critical scripts deferred -->
+		<script defer src="assets/js/jquery.scrolly.min.js"></script>
+		<script defer src="assets/js/jquery.scrollex.min.js"></script>
+		<script defer src="assets/js/click-tracker.js"></script>
+		
+		<!-- Fallback: Remove is-preload class if main.js fails to load -->
+		<!-- Menu functionality test -->
+		<script>
+			// Test menu button after page loads
+			window.addEventListener('load', function() {
+				setTimeout(function() {
+					var menuBtn = document.querySelector('a[href="#menu"]');
+					if (menuBtn) {
+						console.log('[Menu Test] Menu button found:', menuBtn);
+						// Test if click handler is attached
+						var testClick = new Event('click', { bubbles: true, cancelable: true });
+					} else {
+						console.error('[Menu Test] Menu button NOT found!');
+					}
+					
+					var menuEl = document.getElementById('menu');
+					if (menuEl) {
+						console.log('[Menu Test] Menu element found:', menuEl);
+						console.log('[Menu Test] Menu parent:', menuEl.parentElement);
+						console.log('[Menu Test] Body has is-menu-visible:', document.body.classList.contains('is-menu-visible'));
+					} else {
+						console.error('[Menu Test] Menu element NOT found!');
+					}
+				}, 500);
+			});
+		</script>
+		<script>
+			// Fallback to ensure header is visible even if main.js doesn't load
+			window.addEventListener('load', function() {
+				setTimeout(function() {
+					if (document.body.classList.contains('is-preload')) {
+						document.body.classList.remove('is-preload');
+					}
+				}, 200);
+			});
+		</script>
+		
+		<!-- Service Worker Registration -->
+		<script>
+			if ('serviceWorker' in navigator) {
+				window.addEventListener('load', () => {
+					navigator.serviceWorker.register('/sw.js')
+						.then((registration) => {
+							console.log('SW registered:', registration.scope);
+							
+							// Check for updates
+							registration.addEventListener('updatefound', () => {
+								const newWorker = registration.installing;
+								newWorker.addEventListener('statechange', () => {
+									if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+										// New service worker available
+										console.log('New service worker available');
+									}
+								});
+							});
+						})
+						.catch((error) => {
+							console.log('SW registration failed:', error);
+						});
+				});
+			}
+		</script>
+
+	</body>
+</html>

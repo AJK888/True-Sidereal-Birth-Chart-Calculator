@@ -26,6 +26,16 @@ env/
 ENV/
 .venv
 
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build output
+dist/
+
+# Vite
+.vite/
+
 # IDE
 .vscode/
 .idea/
@@ -58,6 +68,3 @@ Cursor/
 # Test files with API keys (DO NOT COMMIT)
 test_gemini_with_key.py
 *_with_key.py
-
-
-
