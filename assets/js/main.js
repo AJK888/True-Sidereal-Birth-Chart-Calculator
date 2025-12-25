@@ -39,10 +39,44 @@
 		return originalReplaceState.apply(history, arguments);
 	};
 	
-	// Remove hash on page load
-	if (window.location.hash === '#menu') {
-		window.history.replaceState(null, null, window.location.pathname + window.location.search);
+	// Remove hash on page load - run immediately and aggressively
+	(function removeMenuHash() {
+		if (window.location.hash === '#menu' || window.location.hash === '#menu') {
+			var cleanUrl = window.location.pathname + window.location.search;
+			window.history.replaceState(null, null, cleanUrl);
+			// Also prevent menu from opening if body class was set
+			if (document.body && document.body.classList.contains('is-menu-visible')) {
+				document.body.classList.remove('is-menu-visible');
+			}
+		}
+	})();
+	
+	// Also remove hash after DOM is ready (in case it was added by theme scripts)
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', function() {
+			if (window.location.hash === '#menu') {
+				window.history.replaceState(null, null, window.location.pathname + window.location.search);
+				if (document.body && document.body.classList.contains('is-menu-visible')) {
+					document.body.classList.remove('is-menu-visible');
+				}
+			}
+		});
 	}
+	
+	// Continuous monitoring to catch any hash additions (runs every 100ms for first 2 seconds)
+	var hashCheckCount = 0;
+	var hashCheckInterval = setInterval(function() {
+		if (window.location.hash === '#menu') {
+			window.history.replaceState(null, null, window.location.pathname + window.location.search);
+			if (document.body && document.body.classList.contains('is-menu-visible')) {
+				document.body.classList.remove('is-menu-visible');
+			}
+		}
+		hashCheckCount++;
+		if (hashCheckCount >= 20) { // Stop after 2 seconds (20 * 100ms)
+			clearInterval(hashCheckInterval);
+		}
+	}, 100);
 	
 	function handleMenuClick(event) {
 		var target = event.target;
