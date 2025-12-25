@@ -1814,49 +1814,6 @@ const AstrologyCalculator = {
 		const snapshotOutput = document.getElementById('snapshot-output');
 		if (snapshotLoadingSkeleton) snapshotLoadingSkeleton.style.display = 'none';
 		if (snapshotOutput) snapshotOutput.style.display = 'block';
-	},
-	
-	initLazyLoading() {
-		// Lazy load transit chart when it comes into view
-		const transitSection = document.getElementById('transit-section');
-		if (!transitSection) {
-			console.warn('[Transit Chart] Transit section not found');
-			return;
-		}
-		
-		// Check if section is already visible (e.g., on page load)
-		const rect = transitSection.getBoundingClientRect();
-		const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
-		
-		if (isVisible) {
-			// Section is already visible, load immediately
-			console.log('[Transit Chart] Section already visible, loading immediately');
-			this.loadAndDrawTransitChart();
-			return;
-		}
-		
-		// Check if Intersection Observer is supported
-		if ('IntersectionObserver' in window) {
-			const observer = new IntersectionObserver((entries) => {
-				entries.forEach(entry => {
-					if (entry.isIntersecting) {
-						// Load transit chart when section is visible
-						console.log('[Transit Chart] Section became visible, loading chart');
-						this.loadAndDrawTransitChart();
-						observer.unobserve(entry.target);
-					}
-				});
-			}, {
-				rootMargin: '100px' // Start loading 100px before section is visible
-			});
-			
-			observer.observe(transitSection);
-			console.log('[Transit Chart] IntersectionObserver set up, waiting for section to be visible');
-		} else {
-			// Fallback: load immediately if IntersectionObserver not supported
-			console.log('[Transit Chart] IntersectionObserver not supported, loading immediately');
-			this.loadAndDrawTransitChart();
-		}
 	}
 };
 
