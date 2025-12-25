@@ -1,184 +1,157 @@
-# Synthesis Astrology - True Sidereal Birth Chart
+# Synthesis Astrology - Frontend Calculator
 
-A comprehensive astrology application that calculates true sidereal birth charts, provides AI-powered readings, and matches users with famous people who share similar astrological placements.
+Frontend application for the Synthesis Astrology birth chart calculator. Built with Vite and based on the HTML5 UP "Forty" theme.
 
-## Project Structure
+## 🚀 Quick Start
 
-```
-True-Sidereal-Birth-Chart/
-├── api.py                    # Main FastAPI application
-├── auth.py                   # Authentication and user management
-├── chat_api.py               # Chat/conversation API endpoints
-├── database.py               # SQLAlchemy models and database setup
-├── llm_schemas.py            # LLM request/response schemas
-├── natal_chart.py            # Core chart calculation logic
-├── pdf_generator.py          # PDF report generation
-├── stripe_integration.py     # Stripe payment integration
-├── subscription.py           # Subscription management
-├── v2_pipeline_functions.py  # Pipeline processing functions
-├── requirements.txt          # Python dependencies
-├── render.yaml               # Render deployment configuration
-│
-├── docs/                     # Documentation
-│   ├── MIGRATE_TO_SUPABASE.md
-│   ├── MIGRATE_USERS_TO_SUPABASE.md
-│   ├── DATABASE_USAGE_ANALYSIS.md
-│   ├── PRICING_STRATEGY.md
-│   ├── STRIPE_SETUP_GUIDE.md
-│   └── ...
-│
-├── scripts/                  # Utility scripts
-│   ├── migration/            # Database migration scripts
-│   │   ├── migrate_to_supabase.py
-│   │   └── migrate_all_to_supabase.py
-│   │
-│   ├── scrapers/            # Web scraping scripts
-│   │   ├── scrape_famous_people_by_category.py
-│   │   ├── scrape_wikidata_5000.py
-│   │   └── scrape_and_calculate_5000.py
-│   │
-│   ├── maintenance/         # Database maintenance scripts
-│   │   ├── quality_control_database.py
-│   │   ├── fix_database_issues.py
-│   │   ├── calculate_all_placements.py
-│   │   ├── update_pageviews.py
-│   │   └── export_to_csv.py
-│   │
-│   └── utils/               # Utility scripts
-│       ├── check_database_status.py
-│       ├── download_swiss_ephemeris.py
-│       └── ...
-│
-├── swiss_ephemeris/         # Swiss Ephemeris data files
-│   ├── seas_18.se1
-│   ├── semo_18.se1
-│   └── sepl_18.se1
-│
-└── True-Sidereal-Birth-Chart-Calculator/  # Frontend calculator
-    ├── index.html
-    ├── assets/
-    └── examples/
-```
-
-## Features
-
-- **True Sidereal Chart Calculation**: Uses the Swiss Ephemeris for accurate astronomical calculations
-- **Tropical & Sidereal Systems**: Supports both tropical and sidereal zodiac systems
-- **AI-Powered Readings**: Generates personalized astrological readings using Google Gemini
-- **Famous People Matching**: Matches users with famous people who share similar chart placements
-- **User Accounts**: User registration, authentication, and saved charts
-- **Chat Interface**: Interactive chat about birth charts
-- **PDF Reports**: Generate downloadable PDF birth chart reports
-- **Stripe Integration**: Payment processing for subscriptions and readings
-
-## Database
-
-The application uses **Supabase (PostgreSQL)** for data storage:
-
-- **famous_people**: Database of famous people with birth chart data (7,435+ records)
-- **users**: User accounts and authentication
-- **saved_charts**: User-saved birth charts
-- **chat_conversations**: Chat conversation metadata
-- **chat_messages**: Individual chat messages
-- **credit_transactions**: Credit purchase/usage tracking
-- **subscription_payments**: Stripe subscription payment history
-
-## Setup
-
-1. **Install Dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Configure Environment Variables**
-   ```bash
-   DATABASE_URL=postgresql://...  # Supabase connection string
-   SECRET_KEY=...                  # JWT secret key
-   GEMINI_API_KEY=...              # For AI features
-   SENDGRID_API_KEY=...            # For email
-   STRIPE_SECRET_KEY=...           # For payments
-   REDIS_URL=...                   # Optional, for caching
-   ```
-
-3. **Download Swiss Ephemeris Files**
-   - See `docs/SWISS_EPHEMERIS.md` for instructions
-   - Or run: `python scripts/utils/download_swiss_ephemeris.py`
-
-4. **Run Database Migrations**
-   ```bash
-   alembic upgrade head
-   ```
-
-5. **Run the Application**
-   ```bash
-   # Development
-   uvicorn api:app --reload
-   
-   # Production
-   uvicorn api:app --host 0.0.0.0 --port 8000
-   ```
-
-6. **Access API Documentation**
-   - Swagger UI: http://localhost:8000/docs
-   - ReDoc: http://localhost:8000/redoc
-
-## Testing
-
-Run the test suite:
+### Development
 
 ```bash
-# All tests
-pytest
+# Install dependencies
+npm install
 
-# With coverage
-pytest --cov=app --cov-report=html
+# Start development server
+npm run dev
 
-# Specific test file
-pytest tests/unit/test_auth.py
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-See `tests/README.md` for more testing information.
+### Important: Syncing Assets
 
-## Scripts
+**CRITICAL:** After editing files in `assets/`, you MUST sync them to `public/`:
 
-### Migration Scripts (`scripts/migration/`)
-- `migrate_to_supabase.py` - Migrate famous_people data to Supabase
-- `migrate_all_to_supabase.py` - Migrate all user data to Supabase
+```powershell
+.\sync-assets-to-public.ps1
+```
 
-### Maintenance Scripts (`scripts/maintenance/`)
-- `quality_control_database.py` - Run quality checks on database
-- `fix_database_issues.py` - Automatically fix common data issues
-- `calculate_all_placements.py` - Calculate planetary placements
-- `update_pageviews.py` - Update Wikipedia pageview data
-- `export_to_csv.py` - Export database to CSV
+Or manually:
+```powershell
+Copy-Item -Path "assets\js\main.js" -Destination "public\assets\js\main.js" -Force
+Copy-Item -Path "assets\css\custom.css" -Destination "public\assets\css\custom.css" -Force
+Copy-Item -Path "assets\css\main.css" -Destination "public\assets\css\main.css" -Force
+```
 
-### Scraper Scripts (`scripts/scrapers/`)
-- `scrape_famous_people_by_category.py` - Scrape famous people by category
-- `scrape_wikidata_5000.py` - Scrape from Wikidata
-- `scrape_and_calculate_5000.py` - Scrape and calculate charts
+**Why?** The build process copies `public/` → `dist/`, not `assets/`. See `BUILD_PROCESS.md` for details.
 
-## Documentation
+## 📁 Directory Structure
 
-### API Documentation
-- **Interactive API Docs**: Available at `/docs` (Swagger UI) and `/redoc` (ReDoc) when server is running
-- **API_DOCUMENTATION.md** - Complete API reference with examples
-- **DEVELOPER_GUIDE.md** - Developer setup, architecture, and guidelines
+```
+True-Sidereal-Birth-Chart-Calculator/
+├── assets/              # SOURCE FILES (edit here)
+│   ├── js/             # JavaScript source
+│   │   ├── main.js     # Menu functionality
+│   │   ├── calculator.js # Chart calculation
+│   │   └── ...
+│   ├── css/            # CSS source
+│   │   ├── main.css    # Base theme
+│   │   └── custom.css  # Custom styles
+│   └── sass/           # SCSS source files
+│
+├── public/              # STATIC FILES (copied to dist/)
+│   └── assets/         # Must match assets/ structure
+│
+├── index.html          # Main page
+├── full-reading.html   # Full reading page
+├── synastry.html       # Synastry analysis page
+├── examples/           # Example readings
+│
+├── package.json        # Dependencies
+├── vite.config.js      # Build configuration
+└── sync-assets-to-public.ps1 # Sync script
+```
 
-### Other Documentation
-All documentation is in the `docs/` directory:
+## 🏗️ Build Process
 
-- **MIGRATE_TO_SUPABASE.md** - Guide for migrating to Supabase
-- **DATABASE_USAGE_ANALYSIS.md** - How the application uses the database
-- **PRICING_STRATEGY.md** - Pricing and subscription strategy
-- **STRIPE_SETUP_GUIDE.md** - Stripe integration guide
+### How It Works
 
-### Phase Documentation
-- **PHASE_0_COMPLETE.md** - Phase 0 (Quick Wins) completion
-- **PHASE_1_FINAL_SUMMARY.md** - Phase 1 (Structural Refactoring) summary
-- **PHASE_2_COMPLETE.md** - Phase 2 (Advanced Features) completion
-- **PHASE_3_START.md** - Phase 3 (Testing & Documentation) status
+1. **Edit source files** in `assets/` directory
+2. **Sync to public** using `sync-assets-to-public.ps1`
+3. **Build** with `npm run build`
+4. **Output** goes to `dist/` directory
 
-## License
+### Vite Configuration
 
-See LICENSE file for details.
+- **Public Directory:** `public/` (copied as-is to `dist/`)
+- **Assets Directory:** `assets/` (processed if ES modules)
+- **Legacy Scripts:** Must be in `public/assets/` (not bundled)
 
+See `BUILD_PROCESS.md` for complete details.
+
+## 🎨 Key Features
+
+### Menu System
+
+- **Location:** `assets/js/main.js`
+- **Features:**
+  - Single consolidated handler (no duplicates)
+  - Hamburger icon styling
+  - Mobile-friendly touch targets
+  - Proper z-index management (99999)
+
+### Chart Visualization
+
+- SVG-based chart wheels
+- Sidereal and Tropical systems
+- Transit charts
+- Responsive design
+
+### API Integration
+
+- Centralized API client (`api-client.js`)
+- State management (`state-manager.js`)
+- Error handling (`error-tracker.js`)
+- Performance monitoring (`performance-monitor.js`)
+
+## 📚 Documentation
+
+- **`BUILD_PROCESS.md`** - Build system explanation
+- **`ASSETS_VS_PUBLIC.md`** - Understanding the two directories
+- **`../README.md`** - Main project README
+- **`../AI_CONTEXT.md`** - Context for AI editors
+
+## 🔧 Development Workflow
+
+1. **Make changes** in `assets/` directory
+2. **Sync to public** with `sync-assets-to-public.ps1`
+3. **Test locally** with `npm run dev`
+4. **Build** with `npm run build`
+5. **Commit and push**
+
+## ⚠️ Common Issues
+
+### Changes Not Appearing
+
+**Problem:** Edited `assets/` but changes don't show in build
+
+**Solution:** Run `sync-assets-to-public.ps1` to copy files to `public/`
+
+### Menu Not Working
+
+**Problem:** Menu button doesn't open menu
+
+**Check:**
+- Are both `assets/js/main.js` and `public/assets/js/main.js` updated?
+- Check browser console for errors
+- Verify z-index is 99999
+
+## 📦 Dependencies
+
+- **Vite** - Build tool
+- **jQuery** - Theme functionality (legacy)
+- **Font Awesome** - Icons
+
+See `package.json` for complete list.
+
+## 🚢 Deployment
+
+The frontend is deployed as a static site on Render.com:
+- **Build Command:** `npm ci && npm run build`
+- **Publish Directory:** `dist/`
+
+---
+
+**For backend documentation, see:** `../README.md`

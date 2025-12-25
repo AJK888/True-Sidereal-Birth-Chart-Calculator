@@ -8,6 +8,41 @@
 // SINGLE CONSOLIDATED HANDLER - no duplicates
 (function() {
 	var menuHandlerAttached = false;
+	var outsideClickHandlerAttached = false;
+	
+	// CRITICAL: Prevent hash from ever being added to URL
+	// Intercept all hash changes
+	window.addEventListener('hashchange', function(event) {
+		if (window.location.hash === '#menu') {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			var cleanUrl = window.location.href.split('#')[0];
+			window.history.replaceState(null, null, cleanUrl);
+			return false;
+		}
+	}, true);
+	
+	// Override history methods to strip #menu
+	var originalPushState = history.pushState;
+	history.pushState = function() {
+		if (arguments[2] && typeof arguments[2] === 'string' && arguments[2].includes('#menu')) {
+			arguments[2] = arguments[2].split('#')[0];
+		}
+		return originalPushState.apply(history, arguments);
+	};
+	
+	var originalReplaceState = history.replaceState;
+	history.replaceState = function() {
+		if (arguments[2] && typeof arguments[2] === 'string' && arguments[2].includes('#menu')) {
+			arguments[2] = arguments[2].split('#')[0];
+		}
+		return originalReplaceState.apply(history, arguments);
+	};
+	
+	// Remove hash on page load
+	if (window.location.hash === '#menu') {
+		window.history.replaceState(null, null, window.location.pathname + window.location.search);
+	}
 	
 	function handleMenuClick(event) {
 		var target = event.target;
@@ -34,12 +69,11 @@
 			event.stopPropagation();
 			event.stopImmediatePropagation();
 			
-			// Immediately prevent hash
-			setTimeout(function() {
-				if (window.location.hash === '#menu') {
-					window.history.replaceState(null, null, window.location.pathname + window.location.search);
-				}
-			}, 0);
+			// CRITICAL: Prevent hash from being added to URL - do this FIRST
+			var cleanUrl = window.location.href.split('#')[0];
+			if (window.location.href !== cleanUrl) {
+				window.history.replaceState(null, null, cleanUrl);
+			}
 			
 			// Toggle menu immediately
 			var body = document.body;
@@ -62,7 +96,7 @@
 					menu.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; z-index: 99999 !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; filter: none !important; -webkit-filter: none !important;';
 					var menuInner = menu.querySelector('.inner');
 					if (menuInner) {
-						menuInner.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; transform: none !important; filter: none !important; -webkit-filter: none !important;';
+						menuInner.style.cssText = 'display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; visibility: visible !important; opacity: 1 !important; transform: none !important; filter: none !important; -webkit-filter: none !important;';
 					}
 				} else {
 					// Clear inline styles when closing to let CSS handle it
@@ -74,7 +108,62 @@
 				}
 			}
 			
+			// Prevent hash one more time after event (multiple checks)
+			setTimeout(function() {
+				if (window.location.hash === '#menu') {
+					window.history.replaceState(null, null, window.location.pathname + window.location.search);
+				}
+			}, 0);
+			setTimeout(function() {
+				if (window.location.hash === '#menu') {
+					window.history.replaceState(null, null, window.location.pathname + window.location.search);
+				}
+			}, 10);
+			setTimeout(function() {
+				if (window.location.hash === '#menu') {
+					window.history.replaceState(null, null, window.location.pathname + window.location.search);
+				}
+			}, 50);
+			
 			return false;
+		}
+	}
+	
+	// Outside click handler - close menu when clicking outside
+	function handleOutsideClick(event) {
+		var body = document.body;
+		if (!body || !body.classList.contains('is-menu-visible')) {
+			return; // Menu not visible, do nothing
+		}
+		
+		var target = event.target;
+		var menu = document.getElementById('menu');
+		var menuInner = menu ? menu.querySelector('.inner') : null;
+		
+		// Check if clicked on menu button (handled separately)
+		var clickedMenuButton = target.id === 'menu-toggle' || target.closest('#menu-toggle');
+		if (clickedMenuButton) {
+			return; // Menu button click is handled by handleMenuClick
+		}
+		
+		// Check if clicked inside menu inner content (don't close)
+		var clickedMenuInner = menuInner && (target === menuInner || menuInner.contains(target));
+		if (clickedMenuInner) {
+			return; // Clicked inside menu content, don't close
+		}
+		
+		// Check if clicked on menu background (the overlay itself) - close menu
+		var clickedMenuBackground = target.id === 'menu' || (menu && target === menu);
+		
+		// If clicked outside menu OR on menu background, close it
+		if (!clickedMenuInner && (clickedMenuBackground || !menu || !menu.contains(target))) {
+			body.classList.remove('is-menu-visible');
+			if (menu) {
+				menu.style.cssText = '';
+				if (menuInner) {
+					menuInner.style.cssText = '';
+				}
+			}
 		}
 	}
 	
@@ -84,6 +173,84 @@
 		document.addEventListener('click', handleMenuClick, true);
 		menuHandlerAttached = true;
 	}
+	
+	// Attach outside click handler
+	if (!outsideClickHandlerAttached) {
+		document.addEventListener('click', handleOutsideClick, true);
+		outsideClickHandlerAttached = true;
+	}
+	
+	// CRITICAL: Also attach direct listener to button when it becomes available
+	// This ensures it works even if the document-level handler has timing issues
+	function attachDirectButtonListener() {
+		var menuButton = document.getElementById('menu-toggle');
+		if (menuButton && !menuButton.dataset.listenerAttached) {
+			menuButton.addEventListener('click', function(event) {
+				event.preventDefault();
+				event.stopPropagation();
+				event.stopImmediatePropagation();
+				
+				// Prevent hash
+				var cleanUrl = window.location.href.split('#')[0];
+				if (window.location.href !== cleanUrl) {
+					window.history.replaceState(null, null, cleanUrl);
+				}
+				
+				// Toggle menu
+				var body = document.body;
+				if (!body) return false;
+				
+				var wasVisible = body.classList.contains('is-menu-visible');
+				body.classList.toggle('is-menu-visible');
+				var isNowVisible = body.classList.contains('is-menu-visible');
+				
+				// Ensure menu is positioned correctly
+				var menu = document.getElementById('menu');
+				if (menu) {
+					if (menu.parentElement !== document.body) {
+						document.body.appendChild(menu);
+					}
+					
+					if (isNowVisible) {
+						menu.style.cssText = 'display: flex !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; z-index: 99999 !important; position: fixed !important; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; filter: none !important; -webkit-filter: none !important;';
+						var menuInner = menu.querySelector('.inner');
+						if (menuInner) {
+							menuInner.style.cssText = 'display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; visibility: visible !important; opacity: 1 !important; transform: none !important; filter: none !important; -webkit-filter: none !important;';
+						}
+					} else {
+						menu.style.cssText = '';
+						var menuInner = menu.querySelector('.inner');
+						if (menuInner) {
+							menuInner.style.cssText = '';
+						}
+					}
+				}
+				
+				// Prevent hash after event
+				setTimeout(function() {
+					if (window.location.hash === '#menu') {
+						window.history.replaceState(null, null, window.location.pathname + window.location.search);
+					}
+				}, 0);
+				
+				return false;
+			}, true);
+			menuButton.dataset.listenerAttached = 'true';
+			console.log('[Menu] Direct button listener attached');
+		}
+	}
+	
+	// Try to attach immediately
+	attachDirectButtonListener();
+	
+	// Also try when DOM is ready
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', attachDirectButtonListener);
+	}
+	
+	// Also try after a short delay to catch late-loading elements
+	setTimeout(attachDirectButtonListener, 100);
+	setTimeout(attachDirectButtonListener, 500);
 	
 	// Immediately move menu to body if it exists (before DOM ready)
 	function moveMenuToBody() {
@@ -99,6 +266,9 @@
 	} else {
 		moveMenuToBody();
 	}
+	
+	// Also try after a delay
+	setTimeout(moveMenuToBody, 100);
 })();
 
 (function($) {
@@ -403,18 +573,41 @@
 				window.history.replaceState(null, null, window.location.pathname + window.location.search);
 			}
 			
-			// Handle hashchange to prevent menu from opening on hash navigation
-			$(window).on('hashchange', function() {
+			// CRITICAL: Prevent hash from being added to URL
+			// Intercept hashchange events
+			window.addEventListener('hashchange', function(event) {
 				if (window.location.hash === '#menu') {
+					event.preventDefault();
 					window.history.replaceState(null, null, window.location.pathname + window.location.search);
-					menuToggle();
+					// Don't toggle menu on hash change - only on button click
 				}
-			});
+			}, false);
 			
-			$body.on('keydown', function(event) {
-				// Hide on escape.
-				if (event.keyCode == 27)
+			// Also prevent hash from being set in the first place
+			var originalPushState = history.pushState;
+			history.pushState = function() {
+				if (arguments[2] && arguments[2].includes('#menu')) {
+					arguments[2] = arguments[2].split('#')[0];
+				}
+				return originalPushState.apply(history, arguments);
+			};
+			
+			var originalReplaceState = history.replaceState;
+			history.replaceState = function() {
+				if (arguments[2] && arguments[2].includes('#menu')) {
+					arguments[2] = arguments[2].split('#')[0];
+				}
+				return originalReplaceState.apply(history, arguments);
+			};
+			
+			// ESC key handler - use document level to catch all ESC presses
+			$(document).on('keydown', function(event) {
+				// Hide on escape when menu is visible
+				if (event.keyCode == 27 && $body.hasClass('is-menu-visible')) {
+					event.preventDefault();
+					event.stopPropagation();
 					menuHide();
+				}
 			});
 			
 
@@ -467,18 +660,34 @@
 					})
 					.on('click', 'a', function(event) {
 						var href = $(this).attr('href');
-						// Don't prevent default for actual navigation links
+						// CRITICAL: Prevent navigation - just close menu
+						// User wants to stay on same page to preserve calculated data
+						event.preventDefault();
+						event.stopPropagation();
+						
+						// Hide menu immediately
+						$menu._hide();
+						
+						// If it's a valid link, scroll to section or handle internally
+						// But don't navigate away from page
 						if (href && href !== '#' && href !== '#menu' && href !== 'javascript:void(0)') {
-							event.stopPropagation(); // Stop bubbling but allow navigation
-							// Hide menu
-							$menu._hide();
-							// Navigate immediately
-							window.location.href = href;
-						} else {
-							// For close buttons or special links, prevent default
-							event.preventDefault();
-							event.stopPropagation();
-							$menu._hide();
+							// Check if it's an anchor link on same page
+							if (href.startsWith('#')) {
+								var target = $(href);
+								if (target.length) {
+									// Scroll to section on same page
+									$('html, body').animate({
+										scrollTop: target.offset().top
+									}, 500);
+								}
+							} else if (href.startsWith('/') || href.startsWith('./') || href.includes(window.location.hostname)) {
+								// Same domain - could navigate, but user wants to stay on page
+								// Just close menu, don't navigate
+								console.log('[Menu] Link clicked but navigation prevented to preserve data:', href);
+							} else {
+								// External link - could open in new tab, but for now just close menu
+								console.log('[Menu] External link clicked but navigation prevented:', href);
+							}
 						}
 					});
 
@@ -499,20 +708,18 @@
 					$menu.append('<a class="close" href="#menu">Close</a>');
 				}
 				
-				$menu
-					.on('click', function(event) {
+				// Click on menu background (outside inner) should close menu
+				$menu.on('click', function(event) {
+					// Only close if clicking directly on menu element (background), not on inner content
+					if (event.target === $menu[0]) {
 						event.stopPropagation();
 						event.preventDefault();
-						$body.removeClass('is-menu-visible');
-					});
-
-				// Add body click handler to close menu when clicking outside (only if menu exists and is visible)
-				$body.on('click', function(event) {
-					// Only close if menu is visible and click is outside the menu
-					if ($body.hasClass('is-menu-visible') && !$(event.target).closest('#menu').length) {
 						menuHide();
 					}
 				});
+
+				// Outside click handler is already attached at top of file
+				// No need to attach again here
 				
 				console.log('[Menu] Menu initialization complete');
 			} else {
