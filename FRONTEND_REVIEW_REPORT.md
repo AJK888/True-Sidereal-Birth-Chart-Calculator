@@ -214,19 +214,34 @@ Multiple z-index values used inconsistently:
 
 ## 📋 Recommended Actions
 
-### Immediate Fixes:
+### ✅ Immediate Fixes (COMPLETED):
 
-1. **Remove menu test code from `public/index.html`**
-   - Lines 583-606 should be removed
-   - Match `index.html` structure
+1. **✅ Remove menu test code from `public/index.html`**
+   - Lines 583-606 removed
+   - Files now match
 
-2. **Standardize z-index values**
-   - Create z-index constants/variables
-   - Update all CSS files to use standardized values
+2. **✅ Standardize z-index values**
+   - Z-index values standardized with comments:
+     - Menu: 99999 (highest)
+     - Header: 10000
+     - Chat: 10001
+     - Notifications: 10011
 
-3. **Document util.js vs utils.js**
-   - Add comments explaining the difference
-   - Consider renaming for clarity
+3. **✅ Document util.js vs utils.js**
+   - Added comments in HTML explaining the difference
+   - util.js = Theme utility (HTML5 UP template)
+   - utils.js = Custom application utilities
+
+4. **✅ Fix duplicate event handlers**
+   - Added initialization guards to all managers:
+     - AstrologyCalculator: `initialized` flag
+     - AuthManager: `initialized` + `eventsBound` flags
+     - FullReadingManager: `initialized` flag
+   - Removed duplicate `initMobileStickyCTA` function
+   - Removed duplicate hash prevention code from initMenu
+
+5. **✅ Fix duplicate scroll/resize handlers**
+   - Added `stickyCTAInitialized` guard to prevent duplicate scroll handlers
 
 ### Short-term Improvements:
 
