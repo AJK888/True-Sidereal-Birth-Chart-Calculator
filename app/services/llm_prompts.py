@@ -265,13 +265,20 @@ Cover each house in this exact order with the heading format: [NUMBER]st/nd/rd/t
 
 For EACH of the 12 houses, you MUST provide a COMPREHENSIVE, DETAILED analysis following this structure:
 
-1. HOUSE CUSP & RULER (2-3 paragraphs):
+1. HOUSE CUSP & RULER (3-4 paragraphs):
    - The sign on the cusp in BOTH sidereal and tropical systems (note if they differ and what that means)
    - The ruling planet(s) for that sign
    - Where the ruling planet is located (sign, house, degree) in BOTH sidereal and tropical systems
-   - The condition of the ruler (dignified, debilitated, retrograde, in fall, in detriment, etc.) in both systems
+   - The condition of the ruler (dignified, debilitated, retrograde, in fall, in detriment, in exaltation, etc.) in both systems
+   - **REQUIRED: If the ruler is in a dignity or debility, you MUST explain what this means. For example:**
+     * Exaltation: Planet is in its most powerful expression, operates at maximum capacity
+     * Fall: Planet is in its weakest expression, struggles to express its nature
+     * Detriment: Planet is in opposite sign, operates against its nature
+     * Dignity: Planet is in its home sign, operates naturally
+     * Retrograde: Planet's energy is internalized, operates differently
    - What the ruler's condition tells us about how this life domain functions
    - How the ruler's placement in another house connects this domain to that other area of life
+   - Provide concrete examples of how the ruler's condition manifests in this life domain
 
 2. ALL PLANETS IN THE HOUSE (3-5 paragraphs):
    - List EVERY planet that falls in this house in the SIDEREAL system (Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Chiron, Nodes, etc.)
@@ -304,11 +311,15 @@ For EACH of the 12 houses, you MUST provide a COMPREHENSIVE, DETAILED analysis f
    - If the house is empty (no planets), explain what that means - but still provide substantial analysis of the ruler and sign distributions
    - Show how this house connects to other houses through planetary rulerships
 
-5. STELLIUMS & CONCENTRATIONS (if applicable, 2-3 paragraphs):
-   - If 3+ planets are in this house, analyze the stellium energy in detail
-   - Explain how it concentrates focus in this domain
-   - Note if the stellium appears in sidereal, tropical, or both systems
+5. STELLIUMS & CONCENTRATIONS (if applicable, 4-6 paragraphs):
+   - **CRITICAL: If 3+ planets are in this house, you MUST explicitly list ALL planets in the stellium.**
+   - Format: "Your [House Name] Stellium includes [Planet 1] in [Sign] at [degree], [Planet 2] in [Sign] at [degree], [Planet 3] in [Sign] at [degree], and [Planet 4] in [Sign] at [degree] (if applicable)."
+   - For EACH planet in the stellium, explain what it contributes to the stellium energy
+   - Explain how the stellium concentrates focus in this domain
+   - Note if the stellium appears in sidereal, tropical, or both systems (and list planets for each system if different)
    - Show how the stellium creates intensity, focus, or complexity in this area
+   - Explain how the planets in the stellium interact with each other (aspects between stellium planets)
+   - Provide concrete examples of how this stellium manifests in daily life
 
 6. REAL-LIFE EXPRESSION (2-3 paragraphs):
    - Provide concrete, specific examples of how this house manifests in daily life
@@ -380,11 +391,13 @@ Blueprint notes for Snapshot (use them to prioritize chart factors):
    
    THEME TITLE (plain language, no jargon)
    
+   **CRITICAL: If you mention a stellium anywhere in the themes, you MUST explicitly list ALL planets in that stellium with their signs and degrees. Never say "12th House Stellium" without listing the planets.**
+   
    Opening: 2-3 sentences stating the pattern in everyday language. Make this vivid and specific. Include the shadow expression in the opening.
    
-   The Evidence (3-4 sentences): "This shows up because [Sidereal X at degree] creates [quality], while [Tropical Y at degree] adds [quality], and this tension is [amplified/softened] by [Aspect Z at N° orb with specific planets]. Your Life Path [N] [confirms/complicates] this by [specific connection]. Additionally, [another chart factor with degree] reinforces this pattern by [explanation]."
+   The Evidence (4-6 sentences): "This shows up because [Sidereal X at degree] creates [quality], while [Tropical Y at degree] adds [quality], and this tension is [amplified/softened] by [Aspect Z at N° orb with specific planets]. Explain the aspect mechanism: [Aspect type] creates [psychological mechanism] because [why this aspect type does this]. Your Life Path [N] [confirms/complicates] this by [specific connection]. Additionally, [another chart factor with degree] reinforces this pattern by [explanation]. The [planetary dignity/debility if applicable] of [planet] means [what this dignity/debility does], which [how it affects this theme]."
    
-   How It Plays Out (3-4 sentences): Describe MULTIPLE specific scenarios—a relationship moment, a work situation, AND an internal experience. Be concrete: "When your partner criticizes you, you [specific action pattern] because [chart factor]. In meetings, you tend to [specific behavior] which comes from [chart factor]. Internally, you experience [specific feeling/thought pattern] when [trigger]."
+   How It Plays Out (4-6 sentences): Describe MULTIPLE specific scenarios—a relationship moment, a work situation, AND an internal experience. Be concrete: "When your partner criticizes you, you [specific action pattern] because [chart factor with degree]. In meetings, you tend to [specific behavior] which comes from [chart factor with degree]. Internally, you experience [specific feeling/thought pattern] when [trigger]. This also shows up as [another concrete example] because [chart factor]. You've probably noticed this when [specific scenario]." Provide at least 3-4 different concrete examples across different life areas.
    
    The Contradiction (2-3 sentences): If sidereal and tropical pull in different directions, name the internal split explicitly: "Part of you [sidereal quality], while another part [tropical quality]. This creates an ongoing negotiation where [specific behavior]. You've probably noticed this most when [situation]."
    
@@ -397,13 +410,16 @@ Blueprint notes for Snapshot (use them to prioritize chart factors):
    - The conflict_or_harmony field to determine if this is a tension or amplification
    - The integration_notes to inform the growth direction
    
-   End with a SUBSTANTIAL SYNTHESIS PARAGRAPH (5-7 sentences) that:
-   - Names the central paradox from the blueprint
-   - Shows how the 5 themes interact and reinforce each other
-   - Identifies the ONE thing that would shift everything if they worked on it (be specific)
+   End with a SUBSTANTIAL SYNTHESIS SECTION (8-12 paragraphs) that:
+   - Names the central paradox from the blueprint and explains HOW it creates the 5 themes
+   - Shows how the 5 themes interact and reinforce each other (which theme is PRIMARY? How do they create feedback loops?)
+   - Explains the hierarchy of influences: which chart factors are most dominant? Which themes are driven by tight aspects vs sign placements?
+   - Identifies the ONE thing that would shift everything if they worked on it (be specific with chart evidence)
    - Names the PRIMARY SHADOW PATTERN that blocks their growth (with behavioral evidence) AND the corresponding strength that, when developed, transforms this shadow into a gift
-   - Describes what integration looks like in concrete daily terms
+   - Shows how working with ONE theme creates cascading shifts in the others (be specific about the connections)
+   - Describes what integration looks like in concrete daily terms with specific examples
    - Ends with an empowering but REALISTIC statement about their potential (acknowledge the work required)
+   - Provides a "theme map" showing which themes are most active in which life areas (relationships, work, internal experience)
 
 5. Houses & Life Domains: {houses_instruction}
 
@@ -545,17 +561,28 @@ SPIRITUAL PATH & MEANING
 
 MAJOR LIFE DYNAMICS: THE TIGHTEST ASPECTS & PATTERNS
 
-This section covers the TOP 5 TIGHTEST ASPECTS (by orb) plus any significant aspect patterns in the chart.
+This section covers the TOP 5-7 TIGHTEST ASPECTS (by orb) plus any significant aspect patterns in the chart.
 
-FORMAT FOR EACH ASPECT (cover ONLY the TOP 5 tightest aspects, ordered by orb from tightest to widest):
+FORMAT FOR EACH ASPECT (cover the TOP 5-7 tightest aspects, ordered by orb from tightest to widest):
 
 [PLANET 1] [ASPECT TYPE] [PLANET 2] ([orb]°)
 
-[Paragraph 1: Core Dynamic - Name the fundamental tension or gift this creates. Explain the archetypal meaning of this aspect combination. What is the essential dynamic between these two planetary energies?]
+[Paragraph 1: Aspect Mechanism - REQUIRED. You MUST explain what this aspect type actually does psychologically. For example:
+- Conjunction (0°): Merges energies, creates fusion
+- Opposition (180°): Creates polarity/tension, requires integration
+- Square (90°): Creates challenge/friction, requires action
+- Trine (120°): Creates harmony/flow, natural talent
+- Sextile (60°): Creates opportunity/cooperation, requires activation
+- Quincunx/Inconjunct (150°): Creates irritation/incompatibility, requires adjustment
+- Semisextile (30°): Creates subtle tension, requires awareness
+- Biquintile (72°): Creates creative genius, harmonic flow
+- Quintile (72°): Creates creative talent, specialized skill
+- Sesquiquadrate (135°): Creates minor friction, requires adjustment
+Explain the psychological mechanism of THIS specific aspect type and why it creates the dynamic it does. Then name the fundamental tension or gift this creates. Explain the archetypal meaning of this aspect combination. What is the essential dynamic between these two planetary energies?]
 
-[Paragraph 2: Why This Matters - Explain the psychological mechanism. What does this aspect create internally? How does it shape their default responses, emotional patterns, and decision-making? Reference both sidereal and tropical contexts if relevant. Show how this aspect amplifies or modifies the individual planet meanings. Provide concrete examples of how this shows up in relationships, work, or daily life.]
+[Paragraph 2: Why This Matters - Explain the psychological mechanism in detail. What does this aspect create internally? How does it shape their default responses, emotional patterns, and decision-making? Reference both sidereal and tropical contexts if relevant. Show how this aspect amplifies or modifies the individual planet meanings. Provide MULTIPLE concrete examples (at least 3-4) of how this shows up in relationships, work, or daily life. Use specific scenarios: "When [trigger], you [specific behavior] because [aspect mechanism]."]
 
-[Paragraph 3: The Growth Edge - What shifts when they work with this consciously? What's the integrated expression vs the reactive pattern? What does mastery of this aspect look like?]
+[Paragraph 3: The Growth Edge - What shifts when they work with this consciously? What's the integrated expression vs the reactive pattern? What does mastery of this aspect look like? Provide concrete examples of both the reactive pattern and the integrated expression.]
 
 ---
 
@@ -580,14 +607,16 @@ For each significant pattern found in the chart (Grand Trines, T-Squares, Stelli
 [Use "---" between each pattern for visual separation]
 
 CRITICAL REQUIREMENTS:
-- Cover ONLY the TOP 5 tightest aspects (prioritize by orb - tightest first)
+- Cover the TOP 5-7 tightest aspects (prioritize by orb - tightest first)
 - Each aspect should be EXACTLY 3 paragraphs (not more, not less)
+- **REQUIRED: Paragraph 1 MUST explain the aspect mechanism (what the aspect type does psychologically)**
 - Be detailed and specific - show the forensic analysis
-- Provide concrete examples, not generic descriptions
+- Provide MULTIPLE concrete examples (at least 3-4 per aspect), not generic descriptions
 - Reference both sidereal and tropical placements where relevant
 - Connect aspects to the overall chart themes
 - Include ALL significant aspect patterns found in the chart
 - Each pattern should be EXACTLY 3 paragraphs
+- When mentioning planetary dignities (exaltation, fall, detriment, etc.), you MUST explain what this means and why it matters
 
 SHADOW, CONTRADICTIONS & GROWTH EDGES
 
@@ -635,7 +664,7 @@ The Chart Evidence: [3-4 paragraphs showing which chart factors support this gro
 
 Why They Resist: [3-4 paragraphs explaining the psychological mechanism that creates resistance. What chart factors create the resistance? What fear or pattern blocks this growth? Be specific: "You resist this because [chart factor] creates [specific fear/pattern]. This shows up as [specific resistance behavior]."]
 
-The Practice: [4-5 paragraphs with specific, actionable experiments or practices. What can they do to develop this? Give concrete exercises, awareness practices, or approaches. Be detailed and specific - not vague suggestions. Include how to work with the resistance.]
+The Practice: [4-5 paragraphs with specific, actionable experiments or practices. What can they do to develop this? Give concrete exercises, awareness practices, or approaches. Be detailed and specific - not vague suggestions. Include how to work with the resistance. REQUIRED: Explain WHY each practice works - what chart mechanism does it engage? How does the practice create the shift? What specific aspect/placement does it activate or integrate?]
 
 The Integration: [3-4 paragraphs on how this growth edge connects to the overall chart themes and shadow patterns. How does developing this help integrate the shadows? What shifts when this is developed?]
 
@@ -667,30 +696,52 @@ Each growth edge bullet must start with "- " and be 1-2 sentences.
 OWNER'S MANUAL: FINAL INTEGRATION
 This is the "so what do I do with all this?" section. Structure it as:
 
-YOUR OPERATING SYSTEM (2-3 paragraphs)
+YOUR OPERATING SYSTEM (4-5 paragraphs)
 - Synthesize the central paradox and how it affects daily decisions
-- Name the "default mode" they fall into under stress (with evidence)
-- Name the "high expression" mode they access when integrated
+- Name the "default mode" they fall into under stress (with evidence from specific chart factors)
+- Name the "high expression" mode they access when integrated (with evidence from specific chart factors)
+- Explain the mechanism: HOW does the chart create the default mode? What specific aspects/placements trigger it?
+- Explain the mechanism: HOW does the chart support the high expression mode? What needs to shift?
 
 GUIDING PRINCIPLES (3-4 principles)
 Each principle must:
-- Reference a specific theme or pattern from earlier
+- Reference a specific theme or pattern from earlier WITH chart evidence (degrees/orbs)
 - Be actionable, not abstract
-- Include the "because" (why this principle matters for THIS chart)
+- Include the "because" (why this principle matters for THIS chart - explain the mechanism)
+- Explain HOW following this principle works (what shifts in the chart when they do this?)
+- Provide a concrete example of the principle in action
+
+Format each principle as:
+[PRINCIPLE NAME]
+
+[2-3 paragraphs explaining:]
+- What this principle means in practical terms
+- Why it matters for THIS specific chart (reference specific placements/aspects with degrees)
+- How following this principle creates shifts (explain the mechanism)
+- A concrete example of how this shows up in daily life
 
 INTEGRATION PROMPTS (3-4 questions)
-Questions they should sit with, each tied to a specific chart dynamic.
+Each question must:
+- Be tied to a specific chart dynamic (name the chart factors)
+- Help them see something they're avoiding
+- Lead to actionable awareness
+- Include context: "Your [chart factor] creates [pattern]. This question helps you see [insight]."
+
+Format each prompt as:
+- [Question text]. This addresses [chart factor/section] which showed [specific pattern]. When you sit with this, notice [what to observe].
 
 ACTION CHECKLIST (7 bullets)
 Format each bullet EXACTLY like this, starting with "- " on its own line:
-- [Action verb] [specific task] this week. This addresses [Theme/Section reference] which showed [specific pattern].
+- [Action verb] [specific task] this week. This addresses [Theme/Section reference] which showed [specific pattern]. When you do this, you'll notice [expected shift/awareness] because [chart mechanism explanation].
 
 Each bullet must:
 - Start on a new line with "- " (dash space)
 - Begin with a specific action verb (Practice, Notice, Try, Schedule, Write, Ask, etc.)
 - Be concrete enough to do THIS WEEK
 - Reference which section/theme it addresses
-- Keep each bullet to 1-2 sentences maximum
+- Explain WHY this practice works (what chart mechanism does it engage?)
+- Explain what they'll notice when they do it (expected shift/awareness)
+- Keep each bullet to 2-3 sentences maximum
 
 Example format:
 - Practice pausing for 3 breaths before responding to criticism this week. This addresses Theme 2 (The Reactive Protector) which showed your Mars-Moon square creates defensive reactions.
