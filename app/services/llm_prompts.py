@@ -570,14 +570,45 @@ LOVE, RELATIONSHIPS & ATTACHMENT
 - Provide at least 3 concrete relational dynamics that show contradiction + lesson. Every paragraph must cite multiple signals (e.g., Venus/Mars aspect + nodal axis + numerology) and end with "so this often looks like…".
 
 WORK, MONEY & VOCATION
+- **CRITICAL: This section must be SUBSTANTIAL (at least 10-12 paragraphs). Do not make it brief.**
 - Integrate Midheaven/10th/2nd houses when available, Saturn/Jupiter signatures, dominant elements, numerology if reinforcing.
 - Reference blueprint.sun_moon_ascendant_plan.Sun data—the Sun's sidereal/tropical split shapes core identity and career expression.
+- **REQUIRED: Specific Career Paths (3-4 paragraphs):**
+  - What types of work align with this chart? Be specific: "Your [chart factor] suggests you thrive in [specific career types] because [reason]."
+  - What career paths would allow them to express their chart gifts?
+  - What work environments would support their chart needs?
+  - Reference specific placements (Mars, Saturn, 10th house, Midheaven) to support career guidance.
+- **REQUIRED: Detailed Money Patterns (3-4 paragraphs):**
+  - How does the Venus-Jupiter quincunx (or other money aspects) create specific money patterns?
+  - What is their relationship with money? How do 2nd house placements (if time known) reveal this?
+  - What money patterns are driven by emotional needs vs practical needs?
+  - Provide concrete examples of how money patterns show up in daily life.
+- **REQUIRED: Mars in Capricorn Analysis (2-3 paragraphs):**
+  - How does Mars in Capricorn (or their Mars placement) drive career?
+  - What does this placement reveal about their work ethic and ambition?
+  - How does this interact with other career indicators?
 - Show how internal motives (from earlier sections) become strategy, and call back to Mars/Saturn themes where relevant.
+- Provide MULTIPLE concrete examples of work/money patterns across different scenarios.
 
 EMOTIONAL LIFE, FAMILY & HEALING
+- **CRITICAL: This section must be SUBSTANTIAL (at least 10-12 paragraphs). Do not make it brief.**
 - Use Moon aspects, 4th/8th/12th houses, Chiron, blueprint notes.
 - Reference blueprint.sun_moon_ascendant_plan.Moon extensively—this is the Moon's primary domain.
+- **REQUIRED: Family Dynamics Analysis (3-4 paragraphs):**
+  - How does the chart explain family relationships? What patterns were inherited?
+  - What childhood experiences shaped these emotional patterns? Be specific with chart evidence.
+  - How do 4th house placements (if time known) reveal family dynamics?
+  - What emotional patterns were learned in childhood that still operate?
+- **REQUIRED: Childhood Patterns (2-3 paragraphs):**
+  - What early experiences shaped these patterns? Reference specific chart factors.
+  - How did the family environment interact with their chart placements?
+  - What protective mechanisms developed in childhood?
+- **REQUIRED: Healing Modalities (3-4 paragraphs):**
+  - What specific practices work for this chart? Reference chart factors that indicate effective healing approaches.
+  - What healing modalities align with their Moon, Chiron, and 4th/8th/12th house placements?
+  - How can they work with their emotional patterns consciously?
 - Reveal family imprints and healing arcs with visceral examples (e.g., "This is the moment you shut down during conflict…").
+- Provide MULTIPLE concrete examples of emotional patterns across different life areas.
 
 SPIRITUAL PATH & MEANING
 - **CRITICAL: This section must be SEPARATE from the Famous People section. Do NOT mix famous people analysis into the spiritual path section.**
@@ -681,6 +712,13 @@ Real-Life Example: [3-4 paragraphs with a concrete scenario showing this shadow 
 
 Cover at least 5-6 shadow patterns from blueprint.shadow_contradictions. Be thorough, comprehensive, and HONEST. Balance every shadow with its gift and protective function. Frame as: gift → shadow → protective function → cost → integration path.
 
+**REQUIRED: After covering all shadow patterns, add a subsection called "HOW SHADOWS INTERACT" (4-5 paragraphs):**
+- Show how the shadow patterns interact with each other. Which shadows reinforce each other? Which create internal conflicts?
+- Explain the hierarchy: Which shadow is most dominant? Which shadows are triggered by others?
+- Provide concrete examples of how multiple shadows can be activated simultaneously in a situation.
+- Show how working with one shadow can help integrate others.
+- Connect to the overall chart themes and central paradox.
+
 GROWTH EDGES
 
 After the shadow patterns, add a section called "Growth Edges" with actionable experiments and practices:
@@ -727,12 +765,17 @@ Each growth edge bullet must start with "- " and be 1-2 sentences.
 OWNER'S MANUAL: FINAL INTEGRATION
 This is the "so what do I do with all this?" section. Structure it as:
 
-YOUR OPERATING SYSTEM (4-5 paragraphs)
+YOUR OPERATING SYSTEM (6-8 paragraphs - EXPANDED)
 - Synthesize the central paradox and how it affects daily decisions
 - Name the "default mode" they fall into under stress (with evidence from specific chart factors)
 - Name the "high expression" mode they access when integrated (with evidence from specific chart factors)
 - Explain the mechanism: HOW does the chart create the default mode? What specific aspects/placements trigger it?
 - Explain the mechanism: HOW does the chart support the high expression mode? What needs to shift?
+- **REQUIRED: Provide detailed comparison (2-3 paragraphs):**
+  - Show the contrast between default mode and high expression mode with concrete examples.
+  - Explain what triggers the shift from default to high expression.
+  - What practices or awareness help them access high expression mode?
+  - How does high expression mode transform the central paradox?
 
 GUIDING PRINCIPLES (3-4 principles)
 Each principle must:
