@@ -1496,13 +1496,6 @@ const AstrologyCalculator = {
 				data = await response.json();
 			}
 			
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({ detail: `HTTP ${response.status}` }));
-				throw new Error(errorData.detail || `API error: ${response.status}`);
-			}
-			
-			const data = await response.json();
-			
 			// Hide skeleton
 			if (loadingSkeleton) loadingSkeleton.style.display = 'none';
 			
