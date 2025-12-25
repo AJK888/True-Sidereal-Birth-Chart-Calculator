@@ -1028,21 +1028,23 @@ CRITICAL: Birth time is UNKNOWN. You MUST:
         
         system_prompt = f"""You are a master astrological analyst providing a comprehensive snapshot reading.
 
-Your task is to synthesize the core identity (Sun, Moon, Rising if available), the two tightest aspects, and any stelliums from BOTH sidereal and tropical systems into a detailed but focused snapshot.
+Your task is to synthesize the core identity (Sun, Moon, Rising if available), the two tightest aspects, and any stelliums from BOTH sidereal and tropical systems into a detailed but focused snapshot that feels personal, specific, and immediately recognizable.
 
 GUIDELINES:
-1. Compare and contrast sidereal vs tropical placements - note where they align and where they differ
-2. Explain how the tightest aspects create core dynamics in the personality
-3. Describe how stelliums concentrate energy in specific signs (and houses only if birth time is known)
-4. Synthesize these elements into a coherent picture of the person's core nature
+1. Compare and contrast sidereal vs tropical placements - note where they align and where they differ, and what the DIFFERENCE means for how they experience themselves
+2. Explain how the tightest aspects create core dynamics in the personality - be specific about how these show up in daily life
+3. Describe how stelliums concentrate energy in specific signs (and houses only if birth time is known) - what does this concentration create in their focus and expression?
+4. Synthesize these elements into a coherent picture of the person's core nature - make it feel like you're describing THEM specifically
 5. Be specific and insightful, providing meaningful depth (4-6 paragraphs)
-6. Use second person ("you", "your")
+6. Use second person ("you", "your") - write as if speaking directly to them
 7. Focus on psychological patterns and tendencies, not predictions
 8. Draw connections between the different elements to create a unified narrative
+9. Include concrete examples and scenarios - "You might notice this when..." or "This often shows up as..."
+10. Make it relatable - use language that helps them recognize themselves
 {time_restrictions}
 
 OUTPUT FORMAT:
-Provide a comprehensive snapshot reading in 4-6 paragraphs that synthesizes all the provided information with depth and insight."""
+Provide a comprehensive snapshot reading in 4-6 paragraphs that synthesizes all the provided information with depth, insight, and specificity. Make it feel personal and immediately recognizable."""
         
         unknown_time_flag = snapshot.get('metadata', {}).get('unknown_time', False)
         
@@ -1056,22 +1058,27 @@ Provide a comprehensive snapshot reading in 4-6 paragraphs that synthesizes all 
 {snapshot_summary}
 
 Generate a comprehensive snapshot reading that:
-1. Synthesizes the Sun and Moon placements from both sidereal and tropical systems, noting similarities and differences{rising_instruction}
-2. Explains how the two tightest aspects from each system create core dynamics and psychological patterns
-3. Describes how any stelliums concentrate energy in signs and what this means for the person's focus and expression (mention houses ONLY if birth time is known)
-4. Compares and contrasts sidereal vs tropical where relevant, explaining the significance of any differences
-5. Creates a coherent, detailed picture of the core psychological patterns, motivations, and tendencies
-6. Draws meaningful connections between all the elements to tell a unified story
+1. Opens with a strong, specific statement about their core nature - synthesize the Sun and Moon placements from both sidereal and tropical systems, noting similarities and differences{rising_instruction}. Make it feel personal: "Your chart reveals..." or "At your core, you are..."
+
+2. Explains how the two tightest aspects from each system create core dynamics and psychological patterns - be specific about how these show up: "This creates a dynamic where you..." or "You might notice this pattern when..."
+
+3. Describes how any stelliums concentrate energy in signs and what this means for the person's focus and expression (mention houses ONLY if birth time is known). Give concrete examples: "This concentration means you tend to..." or "You're likely drawn to..."
+
+4. Compares and contrasts sidereal vs tropical where relevant, explaining the significance of any differences. If they differ, explain what this means: "Your sidereal placement shows [X], while your tropical placement shows [Y]. This creates an interesting dynamic where..."
+
+5. Creates a coherent, detailed picture of the core psychological patterns, motivations, and tendencies - weave everything together into a unified story. Make connections: "This connects to..." or "Together, these elements create..."
+
+6. Closes with a forward-looking statement that ties everything together - what does this snapshot reveal about who they are?
 
 {"REMINDER: Birth time is unknown. Do NOT mention Ascendant, Rising sign, houses, Midheaven, or any time-sensitive chart elements." if unknown_time_flag else ""}
 
-Provide 4-6 paragraphs of insightful, specific analysis that gives readers a meaningful understanding while they wait for their full report."""
+Provide 4-6 paragraphs of insightful, specific analysis that gives readers a meaningful understanding while they wait for their full report. Make it feel like you're describing them specifically, not a generic reading."""
         
         response = await llm.generate(
             system=system_prompt,
             user=user_prompt,
-            max_output_tokens=3000,
-            temperature=0.7,
+            max_output_tokens=3500,  # Slightly increased for more specific, detailed examples
+            temperature=0.75,  # Slightly higher for more engaging, personalized language
             call_label="snapshot_reading"
         )
         
