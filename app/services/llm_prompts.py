@@ -1028,23 +1028,21 @@ CRITICAL: Birth time is UNKNOWN. You MUST:
         
         system_prompt = f"""You are a master astrological analyst providing a comprehensive snapshot reading.
 
-Your task is to synthesize the core identity (Sun, Moon, Rising if available), the two tightest aspects, and any stelliums from BOTH sidereal and tropical systems into a detailed but focused snapshot that is REVEALING and HONEST.
+Your task is to synthesize the core identity (Sun, Moon, Rising if available), the two tightest aspects, and any stelliums from BOTH sidereal and tropical systems into a detailed but focused snapshot.
 
 GUIDELINES:
-1. Compare and contrast sidereal vs tropical placements - note where they align and where they differ, and what the DIFFERENCE means (the split is the story)
-2. Explain how the tightest aspects create core dynamics in the personality - including shadow dynamics
-3. Describe how stelliums concentrate energy in specific signs (and houses only if birth time is known) - and what this concentration creates or limits
-4. Synthesize these elements into a coherent picture of the person's core nature - including shadow nature
-5. Be specific and insightful, providing meaningful depth (5-7 paragraphs, not 4-6)
+1. Compare and contrast sidereal vs tropical placements - note where they align and where they differ
+2. Explain how the tightest aspects create core dynamics in the personality
+3. Describe how stelliums concentrate energy in specific signs (and houses only if birth time is known)
+4. Synthesize these elements into a coherent picture of the person's core nature
+5. Be specific and insightful, providing meaningful depth (4-6 paragraphs)
 6. Use second person ("you", "your")
 7. Focus on psychological patterns and tendencies, not predictions
 8. Draw connections between the different elements to create a unified narrative
-9. Include at least one paragraph on shadow patterns or internal contradictions revealed by the data, BUT always show the corresponding strength or gift
-10. Be HONEST: If the aspects or placements suggest challenges, name them directly, but frame them with: (1) what gift this pattern also gives, (2) why it exists (protective function), (3) how to work with it consciously
 {time_restrictions}
 
 OUTPUT FORMAT:
-Provide a comprehensive snapshot reading in 5-7 paragraphs that synthesizes all the provided information with depth, insight, and honesty. Include both strengths and shadow patterns."""
+Provide a comprehensive snapshot reading in 4-6 paragraphs that synthesizes all the provided information with depth and insight."""
         
         unknown_time_flag = snapshot.get('metadata', {}).get('unknown_time', False)
         
@@ -1072,8 +1070,8 @@ Provide 4-6 paragraphs of insightful, specific analysis that gives readers a mea
         response = await llm.generate(
             system=system_prompt,
             user=user_prompt,
-            max_output_tokens=4000,  # Increased for more comprehensive reading
-            temperature=0.7,  # Higher for more creative and nuanced responses
+            max_output_tokens=3000,
+            temperature=0.7,
             call_label="snapshot_reading"
         )
         
