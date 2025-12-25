@@ -3811,7 +3811,7 @@ input, select, textarea {
 		top: 0;
 		visibility: hidden;
 		width: 100%;
-		z-index: 10002;
+		z-index: 99999; /* STANDARDIZED: Match custom.css z-index */
 	}
 
 		#menu .inner {
