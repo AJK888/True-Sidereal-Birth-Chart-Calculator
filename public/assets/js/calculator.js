@@ -135,6 +135,15 @@ const AstrologyCalculator = {
 
 		this.setLoadingState(true);
 		
+		// Make results visible immediately so loading skeletons + scroll work reliably
+		// (especially important on mobile Safari when scrolling to hidden elements).
+		if (this.resultsContainer) {
+			this.resultsContainer.style.display = 'block';
+		}
+		if (this.wheelTitle && this.wheelTitle.parentElement) {
+			this.wheelTitle.parentElement.style.display = 'block';
+		}
+		
 		// Show loading skeletons
 		this.showLoadingSkeletons();
 
@@ -188,8 +197,13 @@ const AstrologyCalculator = {
 			if (typeof stateManager !== 'undefined') {
 				stateManager.setState('isLoading', false);
 			}
-		} 
-		// finally block is removed as loading state is handled in fetchAndDisplayAIReading or catch block
+		} finally {
+			// Always restore UI state (main page no longer calls fetchAndDisplayAIReading)
+			this.setLoadingState(false);
+			if (typeof stateManager !== 'undefined') {
+				stateManager.setState('isLoading', false);
+			}
+		}
 	},
 	
 	showLoadingSkeletons() {
