@@ -5,8 +5,9 @@
  * @version 1.0.0
  */
 
-const CACHE_NAME = 'synthesis-astrology-v1';
-const RUNTIME_CACHE = 'synthesis-astrology-runtime-v1';
+// Bump versions to ensure clients receive updated JS/CSS promptly.
+const CACHE_NAME = 'synthesis-astrology-v2';
+const RUNTIME_CACHE = 'synthesis-astrology-runtime-v2';
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [
@@ -20,6 +21,7 @@ const PRECACHE_ASSETS = [
 	'/assets/js/state-manager.js',
 	'/assets/js/api-client.js',
 	'/assets/js/form-validator.js',
+	'/assets/js/calculator.js',
 	'/images/star-background.jpg'
 ];
 
