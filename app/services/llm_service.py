@@ -46,7 +46,15 @@ logger = logging.getLogger(__name__)
 # --- Configuration ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI3_MODEL = os.getenv("GEMINI3_MODEL", "gemini-3-pro-preview")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-opus-4-5-20251101")
 AI_MODE = os.getenv("AI_MODE", "real").lower()  # "real" or "stub" for local testing
+
+# Import anthropic for Claude client
+try:
+    import anthropic
+except ImportError:
+    anthropic = None
 
 # --- Cost Calculation (exact copy) ---
 def calculate_gemini3_cost(prompt_tokens: int, completion_tokens: int,
@@ -270,6 +278,214 @@ class Gemini3Client:
             'total_tokens': self.total_prompt_tokens + self.total_completion_tokens,
             'total_cost_usd': self.total_cost_usd,
             'call_count': self.call_count
+        }
+
+
+# --- ClaudeClient ---
+class ClaudeClient:
+    """Claude 3.5 Sonnet client with token + cost tracking."""
+    
+    def __init__(self):
+        self.total_prompt_tokens = 0
+        self.total_completion_tokens = 0
+        self.total_cost_usd = 0.0
+        self.call_count = 0
+        self.model_name = CLAUDE_MODEL
+        # Claude Opus 4.5 has max 64,000 output tokens
+        self.default_max_tokens = int(os.getenv("CLAUDE_MAX_OUTPUT_TOKENS", "64000"))
+        self.client = None
+        
+        if ANTHROPIC_API_KEY and AI_MODE != "stub":
+            try:
+                if anthropic is None:
+                    raise ImportError("anthropic package not installed")
+                self.client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+            except ImportError:
+                logger.error("anthropic package not installed. Install with: pip install anthropic")
+                self.client = None
+            except Exception as e:
+                logger.error(f"Error initializing Claude client: {e}")
+                self.client = None
+    
+    async def generate(self, system: str, user: str, max_output_tokens: int, temperature: float, call_label: str) -> str:
+        self.call_count += 1
+        logger.info(f"[{call_label}] Starting Claude call #{self.call_count}")
+        logger.info(f"[{call_label}] System prompt length: {len(system)} chars")
+        logger.info(f"[{call_label}] User content length: {len(user)} chars")
+        max_tokens = max_output_tokens or self.default_max_tokens
+        logger.info(f"[{call_label}] max_output_tokens set to {max_tokens}")
+        
+        if AI_MODE == "stub":
+            logger.info(f"[{call_label}] AI_MODE=stub: Returning stub response")
+            stub_response = f"[STUB CLAUDE RESPONSE for {call_label}] System: {system[:120]}... User: {user[:120]}..."
+            self.total_prompt_tokens += len(system.split()) + len(user.split())
+            self.total_completion_tokens += len(stub_response.split())
+            return stub_response
+        
+        if not ANTHROPIC_API_KEY:
+            logger.error(f"[{call_label}] ANTHROPIC_API_KEY not configured - cannot call Claude")
+            raise Exception("Anthropic API key not configured")
+        
+        if self.client is None:
+            try:
+                if anthropic is None:
+                    raise ImportError("anthropic package not installed")
+                self.client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+            except Exception as e:
+                logger.error(f"[{call_label}] Failed to initialize Claude client: {e}", exc_info=True)
+                raise
+        
+        try:
+            logger.info(f"[{call_label}] Calling Claude model '{self.model_name}'...")
+            
+            # Claude API call - enable streaming for long requests (>10 min)
+            # For large max_tokens, we need to use streaming
+            # Also cap max_tokens at 64,000 (Claude Opus 4.5 limit)
+            max_tokens = min(max_tokens, 64000)
+            use_streaming = max_tokens > 20000  # Stream if expecting large output
+            
+            if use_streaming:
+                logger.info(f"[{call_label}] Using streaming mode for large output (max_tokens={max_tokens})")
+                text_parts = []
+                usage_metadata = {
+                    'prompt_tokens': 0,
+                    'completion_tokens': 0,
+                    'total_tokens': 0
+                }
+                
+                with self.client.messages.stream(
+                    model=self.model_name,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    system=system,
+                    messages=[
+                        {"role": "user", "content": user}
+                    ]
+                ) as stream:
+                    chunk_count = 0
+                    for event in stream:
+                        if event.type == "content_block_delta" and event.delta.type == "text_delta":
+                            text_parts.append(event.delta.text)
+                            chunk_count += 1
+                            if chunk_count % 100 == 0:  # Log progress every 100 chunks
+                                logger.info(f"[{call_label}] Received {chunk_count} text chunks, {len(''.join(text_parts))} chars so far...")
+                        elif event.type == "message_delta" and event.usage:
+                            # Capture usage when available
+                            usage_metadata = {
+                                'prompt_tokens': event.usage.input_tokens or 0,
+                                'completion_tokens': event.usage.output_tokens or 0,
+                                'total_tokens': (event.usage.input_tokens or 0) + (event.usage.output_tokens or 0)
+                            }
+                        elif event.type == "message_stop":
+                            # Final event - try to get usage if not already captured
+                            if usage_metadata['total_tokens'] == 0:
+                                # Estimate tokens if we can't get usage
+                                usage_metadata = {
+                                    'prompt_tokens': len(system.split()) + len(user.split()),
+                                    'completion_tokens': len(''.join(text_parts).split()),
+                                    'total_tokens': len(system.split()) + len(user.split()) + len(''.join(text_parts).split())
+                                }
+                
+                response_text = "".join(text_parts).strip()
+                
+                if not response_text:
+                    logger.error(f"[{call_label}] Claude streaming response empty")
+                    raise Exception("Claude streaming response was empty")
+            else:
+                # Non-streaming for smaller requests
+                message = self.client.messages.create(
+                    model=self.model_name,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    system=system,
+                    messages=[
+                        {"role": "user", "content": user}
+                    ]
+                )
+                
+                # Extract response text
+                response_text = ""
+                if message.content:
+                    # Claude returns a list of content blocks
+                    text_parts = []
+                    for block in message.content:
+                        if block.type == "text":
+                            text_parts.append(block.text)
+                    response_text = "".join(text_parts).strip()
+                
+                if not response_text:
+                    logger.error(f"[{call_label}] Claude response empty")
+                    raise Exception("Claude response was empty")
+                
+                # Extract token usage
+                usage = message.usage
+                usage_metadata = {
+                    'prompt_tokens': usage.input_tokens if usage else 0,
+                    'completion_tokens': usage.output_tokens if usage else 0,
+                    'total_tokens': (usage.input_tokens + usage.output_tokens) if usage else 0
+                }
+            
+                logger.info(f"[{call_label}] Claude API call completed successfully")
+            
+            logger.info(f"[{call_label}] Claude API call completed successfully")
+        except Exception as e:
+            logger.error(f"[{call_label}] Claude API error: {e}", exc_info=True)
+            raise
+        
+        logger.info(f"[{call_label}] Token usage - Input: {usage_metadata['prompt_tokens']}, Output: {usage_metadata['completion_tokens']}, Total: {usage_metadata['total_tokens']}")
+        
+        self.total_prompt_tokens += usage_metadata['prompt_tokens']
+        self.total_completion_tokens += usage_metadata['completion_tokens']
+        
+        # Claude 3.5 Sonnet pricing: $3/1M input, $15/1M output
+        call_cost = calculate_claude_cost(usage_metadata['prompt_tokens'], usage_metadata['completion_tokens'])
+        self.total_cost_usd += call_cost['total_cost_usd']
+        logger.info(f"[{call_label}] Call cost: ${call_cost['total_cost_usd']:.6f} (Input: ${call_cost['input_cost_usd']:.6f}, Output: ${call_cost['output_cost_usd']:.6f})")
+        
+        logger.info(f"[{call_label}] Response length: {len(response_text)} characters")
+        return response_text
+    
+    def get_summary(self) -> dict:
+        return {
+            'total_prompt_tokens': self.total_prompt_tokens,
+            'total_completion_tokens': self.total_completion_tokens,
+            'total_tokens': self.total_prompt_tokens + self.total_completion_tokens,
+            'total_cost_usd': self.total_cost_usd,
+            'call_count': self.call_count
+        }
+
+
+def calculate_claude_cost(prompt_tokens: int, completion_tokens: int,
+                          input_price_per_million: float = 3.00,
+                          output_price_per_million: float = 15.00) -> dict:
+    """Calculate Claude 3.5 Sonnet API cost based on token usage."""
+    try:
+        prompt_tokens = int(prompt_tokens) if prompt_tokens is not None else 0
+        completion_tokens = int(completion_tokens) if completion_tokens is not None else 0
+        prompt_tokens = max(0, prompt_tokens)
+        completion_tokens = max(0, completion_tokens)
+        
+        input_cost = (prompt_tokens / 1_000_000) * input_price_per_million
+        output_cost = (completion_tokens / 1_000_000) * output_price_per_million
+        total_cost = input_cost + output_cost
+        
+        return {
+            'prompt_tokens': prompt_tokens,
+            'completion_tokens': completion_tokens,
+            'total_tokens': prompt_tokens + completion_tokens,
+            'input_cost_usd': round(input_cost, 6),
+            'output_cost_usd': round(output_cost, 6),
+            'total_cost_usd': round(total_cost, 6)
+        }
+    except (TypeError, ValueError) as e:
+        logger.error(f"Error calculating Claude cost: {e}. Tokens: prompt={prompt_tokens}, completion={completion_tokens}")
+        return {
+            'prompt_tokens': 0,
+            'completion_tokens': 0,
+            'total_tokens': 0,
+            'input_cost_usd': 0.0,
+            'output_cost_usd': 0.0,
+            'total_cost_usd': 0.0
         }
 
 

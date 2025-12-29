@@ -83,11 +83,11 @@
 		var isMenuButton = false;
 		
 		// Check if clicked element or parent is menu button/link
-		// Don't intercept clicks inside the menu itself (allow menu links to work)
-		if (target.id === 'menu' || target.closest('#menu')) {
-			return; // Let menu links work normally
-		}
-		
+			// Don't intercept clicks inside the menu itself (allow menu links to work)
+			if (target.id === 'menu' || target.closest('#menu')) {
+				return; // Let menu links work normally
+			}
+			
 		// Check if clicked element or parent is menu toggle button
 		while (target && target !== document) {
 			if (target.id === 'menu-toggle' || 
@@ -107,7 +107,7 @@
 			var cleanUrl = window.location.href.split('#')[0];
 			if (window.location.href !== cleanUrl) {
 				window.history.replaceState(null, null, cleanUrl);
-			}
+				}
 			
 			// Toggle menu immediately
 			var body = document.body;
@@ -156,7 +156,7 @@
 			setTimeout(function() {
 				if (window.location.hash === '#menu') {
 					window.history.replaceState(null, null, window.location.pathname + window.location.search);
-				}
+			}
 			}, 50);
 			
 			return false;
@@ -204,7 +204,7 @@
 	// Attach in capture phase with highest priority - runs IMMEDIATELY
 	// Only attach once to prevent duplicates
 	if (!menuHandlerAttached) {
-		document.addEventListener('click', handleMenuClick, true);
+	document.addEventListener('click', handleMenuClick, true);
 		menuHandlerAttached = true;
 	}
 	
@@ -689,7 +689,7 @@
 								// Same domain - could navigate, but user wants to stay on page
 								// Just close menu, don't navigate
 								console.log('[Menu] Link clicked but navigation prevented to preserve data:', href);
-							} else {
+						} else {
 								// External link - could open in new tab, but for now just close menu
 								console.log('[Menu] External link clicked but navigation prevented:', href);
 							}

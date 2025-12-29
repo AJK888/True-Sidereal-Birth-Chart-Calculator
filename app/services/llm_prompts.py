@@ -31,7 +31,9 @@ from llm_schemas import (
 # Use relative import since we're in the same package
 from .llm_service import (
     Gemini3Client,
+    ClaudeClient,
     calculate_gemini3_cost,
+    calculate_claude_cost,
     _blueprint_to_json,
     serialize_snapshot_data,
     format_snapshot_for_prompt,
@@ -47,11 +49,12 @@ logger = get_logger(__name__)
 
 # --- Configuration ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 AI_MODE = os.getenv("AI_MODE", "real").lower()  # "real" or "stub" for local testing
 
 
 # ⚠️ PRESERVATION ZONE START - PROMPT FUNCTION: g0_global_blueprint
-async def g0_global_blueprint(llm: Gemini3Client, serialized_chart: dict, chart_summary: str, unknown_time: bool) -> Dict[str, Any]:
+async def g0_global_blueprint(llm, serialized_chart: dict, chart_summary: str, unknown_time: bool) -> Dict[str, Any]:
     """Gemini Call 0 - produce JSON planning blueprint with forensic depth."""
     step_start_time = time.time()
     logger.info("="*80)
@@ -174,7 +177,7 @@ Return ONLY the JSON object."""
 
 # ⚠️ PRESERVATION ZONE START - PROMPT FUNCTION: g1_natal_foundation
 async def g1_natal_foundation(
-    llm: Gemini3Client,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any],
@@ -490,7 +493,7 @@ Blueprint notes for Snapshot (use them to prioritize chart factors):
 
 # ⚠️ PRESERVATION ZONE START - PROMPT FUNCTION: g2_deep_dive_chapters
 async def g2_deep_dive_chapters(
-    llm: Gemini3Client,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     blueprint: Dict[str, Any],
@@ -859,7 +862,7 @@ FINAL INSTRUCTION: The reading should end with a single paragraph that returns t
 
 # ⚠️ PRESERVATION ZONE START - PROMPT FUNCTION: g3_polish_full_reading
 async def g3_polish_full_reading(
-    llm: Gemini3Client,
+    llm,
     full_draft: str,
     chart_summary: str
 ) -> str:
@@ -966,7 +969,7 @@ Return the polished reading. Ensure:
 
 # ⚠️ PRESERVATION ZONE START - PROMPT FUNCTION: g4_famous_people_section
 async def g4_famous_people_section(
-    llm: Gemini3Client,
+    llm,
     serialized_chart: dict,
     chart_summary: str,
     famous_people_matches: list,
@@ -1343,9 +1346,16 @@ async def get_gemini3_reading(chart_data: dict, unknown_time: bool, db: Session 
         print("=== GEMINI 3 API COST BREAKDOWN ===")
         print(f"Input Cost:  ${cost_info['input_cost_usd']:.6f} USD")
         print(f"Output Cost: ${cost_info['output_cost_usd']:.6f} USD")
-        print(f"───────────────────────────────────")
-        print(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f} USD")
-        print(f"{'='*80}\n")
+        try:
+            print(f"───────────────────────────────────")
+        except UnicodeEncodeError:
+            print(f"-----------------------------------")
+        try:
+            print(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f} USD")
+            print(f"{'='*80}\n")
+        except UnicodeEncodeError:
+            print(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f} USD")
+            print(f"{'='*80}\n")
         
         return final_reading
     except Exception as e:
@@ -1353,6 +1363,143 @@ async def get_gemini3_reading(chart_data: dict, unknown_time: bool, db: Session 
         logger.error(f"Error during Gemini 3 reading generation after {reading_duration:.2f} seconds: {e}", exc_info=True)
         raise Exception(f"An error occurred while generating the detailed AI reading: {e}")
 # ⚠️ PRESERVATION ZONE END - PROMPT FUNCTION: get_gemini3_reading
+
+
+# ⚠️ PRESERVATION ZONE START - PROMPT FUNCTION: get_claude_reading
+async def get_claude_reading(chart_data: dict, unknown_time: bool, db: Session = None) -> str:
+    """Four-call Claude 3.5 Sonnet pipeline with optional famous people section."""
+    reading_start_time = time.time()
+    
+    if not ANTHROPIC_API_KEY and AI_MODE != "stub":
+        logger.error("Anthropic API key not configured - AI reading unavailable")
+        raise Exception("Anthropic API key not configured. AI reading is unavailable.")
+    
+    logger.info("="*80)
+    logger.info("="*80)
+    logger.info("FULL READING GENERATION - STARTING (CLAUDE 3.5 SONNET)")
+    logger.info("="*80)
+    logger.info("="*80)
+    logger.info(f"AI_MODE: {AI_MODE}")
+    logger.info(f"Unknown time: {unknown_time}")
+    logger.info(f"Database session available: {db is not None}")
+    logger.info("="*80)
+    
+    llm = ClaudeClient()
+    
+    try:
+        # Step 0: Serialize chart data
+        logger.info("Preparing chart data for LLM...")
+        serialized_chart = serialize_chart_for_llm(chart_data, unknown_time=unknown_time)
+        chart_summary = format_serialized_chart_for_prompt(serialized_chart)
+        logger.info(f"Chart serialized - Summary length: {len(chart_summary)} characters")
+        logger.info("="*80)
+        
+        # Step 1: Global Blueprint
+        blueprint = await g0_global_blueprint(llm, serialized_chart, chart_summary, unknown_time)
+        
+        # Step 2: Natal Foundation
+        natal_sections = await g1_natal_foundation(llm, serialized_chart, chart_summary, blueprint, unknown_time)
+        
+        # Step 3: Deep Dive Chapters
+        deep_sections = await g2_deep_dive_chapters(llm, serialized_chart, chart_summary, blueprint, natal_sections, unknown_time)
+        
+        # Step 4: Combine and Polish
+        full_draft = f"{natal_sections}\n\n{deep_sections}"
+        logger.info(f"Combined draft length: {len(full_draft)} characters")
+        final_reading = await g3_polish_full_reading(llm, full_draft, chart_summary)
+        
+        # Step 5: Generate famous people section if database session is available
+        famous_people_section = ""
+        if db:
+            try:
+                logger.info("="*80)
+                logger.info("FAMOUS PEOPLE MATCHING - STARTING")
+                logger.info("="*80)
+                logger.info("Calling find_similar_famous_people_internal to find matches...")
+                famous_start = time.time()
+                famous_people_matches = await find_similar_famous_people_internal(chart_data, limit=8, db=db)
+                famous_duration = time.time() - famous_start
+                logger.info(f"Famous people matching completed in {famous_duration:.2f} seconds")
+                logger.info(f"find_similar_famous_people_internal returned: {famous_people_matches.get('matches_found', 0)} matches out of {famous_people_matches.get('total_compared', 0)} compared")
+                
+                if famous_people_matches and len(famous_people_matches.get('matches', [])) > 0:
+                    logger.info(f"Found {len(famous_people_matches['matches'])} famous people matches, generating section...")
+                    famous_people_section = await g4_famous_people_section(
+                        llm, serialized_chart, chart_summary, famous_people_matches['matches'], unknown_time
+                    )
+                    final_reading = f"{final_reading}\n\n{famous_people_section}"
+                    logger.info(f"Famous people section added - Final reading length: {len(final_reading)} characters")
+                else:
+                    logger.info("No famous people matches found or empty result")
+                logger.info("="*80)
+            except Exception as e:
+                logger.error(f"Error generating famous people section: {e}", exc_info=True)
+                # Continue without famous people section
+        
+        # Finalize reading
+        final_reading = sanitize_reading_text(final_reading).strip()
+        reading_duration = time.time() - reading_start_time
+        
+        # Calculate final costs
+        summary = llm.get_summary()
+        cost_info = calculate_claude_cost(summary['total_prompt_tokens'], summary['total_completion_tokens'])
+        
+        # Comprehensive cost summary
+        logger.info("="*80)
+        logger.info("="*80)
+        logger.info("FULL READING GENERATION - COMPLETE")
+        logger.info("="*80)
+        logger.info("="*80)
+        logger.info(f"Total Generation Time: {reading_duration:.2f} seconds ({reading_duration/60:.2f} minutes)")
+        logger.info(f"Final Reading Length: {len(final_reading):,} characters")
+        logger.info("")
+        logger.info("=== CLAUDE 3.5 SONNET API USAGE SUMMARY ===")
+        logger.info(f"Total API Calls: {summary['call_count']}")
+        logger.info(f"Total Input Tokens: {summary['total_prompt_tokens']:,}")
+        logger.info(f"Total Output Tokens: {summary['total_completion_tokens']:,}")
+        logger.info(f"Total Tokens: {summary['total_tokens']:,}")
+        logger.info("")
+        logger.info("=== CLAUDE 3.5 SONNET API COST BREAKDOWN ===")
+        logger.info(f"Input Cost:  ${cost_info['input_cost_usd']:.6f} USD")
+        logger.info(f"Output Cost: ${cost_info['output_cost_usd']:.6f} USD")
+        logger.info(f"───────────────────────────────────")
+        logger.info(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f} USD")
+        logger.info("="*80)
+        logger.info("="*80)
+        
+        # Also print to stdout for visibility
+        print(f"\n{'='*80}")
+        print("FULL READING GENERATION - COMPLETE")
+        print(f"{'='*80}")
+        print(f"Total Generation Time: {reading_duration:.2f} seconds ({reading_duration/60:.2f} minutes)")
+        print(f"Final Reading Length: {len(final_reading):,} characters")
+        print("")
+        print("=== CLAUDE 3.5 SONNET API USAGE SUMMARY ===")
+        print(f"Total API Calls: {summary['call_count']}")
+        print(f"Total Input Tokens: {summary['total_prompt_tokens']:,}")
+        print(f"Total Output Tokens: {summary['total_completion_tokens']:,}")
+        print(f"Total Tokens: {summary['total_tokens']:,}")
+        print("")
+        print("=== CLAUDE 3.5 SONNET API COST BREAKDOWN ===")
+        print(f"Input Cost:  ${cost_info['input_cost_usd']:.6f} USD")
+        print(f"Output Cost: ${cost_info['output_cost_usd']:.6f} USD")
+        try:
+            print(f"───────────────────────────────────")
+        except UnicodeEncodeError:
+            print(f"-----------------------------------")
+        try:
+            print(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f} USD")
+            print(f"{'='*80}\n")
+        except UnicodeEncodeError:
+            print(f"TOTAL COST: ${cost_info['total_cost_usd']:.6f} USD")
+            print(f"{'='*80}\n")
+        
+        return final_reading
+    except Exception as e:
+        reading_duration = time.time() - reading_start_time
+        logger.error(f"Error during Claude reading generation after {reading_duration:.2f} seconds: {e}", exc_info=True)
+        raise Exception(f"An error occurred while generating the detailed AI reading: {e}")
+# ⚠️ PRESERVATION ZONE END - PROMPT FUNCTION: get_claude_reading
 
 
 # ⚠️ PRESERVATION ZONE START - PROMPT FUNCTION: generate_comprehensive_synastry

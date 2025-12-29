@@ -1,0 +1,36 @@
+{
+  "overall_grade": "B",
+  "score": 88.18181818181819,
+  "grades": {
+    "stellium_listing": "PASS",
+    "planetary_dignities": "PASS",
+    "aspects_coverage": "PASS",
+    "aspect_mechanisms": "PASS",
+    "houses_coverage": "PASS",
+    "spiritual_separate": "PARTIAL",
+    "concrete_examples": "FAIL",
+    "shadow_interactions": "PASS",
+    "emotional_depth": "PASS",
+    "work_depth": "PASS",
+    "operating_system": "PASS"
+  },
+  "strengths": [
+    "Stellium explicitly lists planets",
+    "Planetary Dignities section present",
+    "Good aspect coverage (8 mentions)",
+    "Aspect mechanisms explained",
+    "All 12 houses covered",
+    "How Shadows Interact subsection present",
+    "Emotional Life section has required subsections",
+    "Work/Money section has required subsections",
+    "Operating System section expanded with mode comparison"
+  ],
+  "issues": [
+    "Missing Spiritual Path or Famous People section",
+    "Insufficient concrete examples (5 found)"
+  ],
+  "pass_count": 9,
+  "partial_count": 1,
+  "fail_count": 1,
+  "total_checks": 11
+}

@@ -13,6 +13,7 @@ reportlab
 cairosvg
 Pillow
 google-genai
+anthropic
 # Authentication & Database
 sqlalchemy
 alembic  # Database migration tool
